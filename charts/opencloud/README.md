@@ -1,6 +1,6 @@
 <img src="https://helm.sh/img/helm.svg" width="100px" heigth="100px">
 
-# OpenCloud Helm Charts
+# Fork of OpenCloud Helm Chart
 
 Welcome to the **OpenCloud Helm Charts** repository! This repository is intended as a community-driven space for developing and maintaining Helm charts for deploying OpenCloud on Kubernetes.
 
