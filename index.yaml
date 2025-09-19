@@ -1,0 +1,26 @@
+apiVersion: v1
+entries:
+  opencloud:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2025-09-19T15:50:15.265179845Z"
+    description: OpenCloud Helm community chart
+    digest: 682a399b5fe8a3210bd525afa4d2bf88241f9d86d7695ab9174dcecbc39314d0
+    keywords:
+    - opencloud
+    - owncloud
+    - ocis
+    maintainers:
+    - email: info@opencloud.eu
+      name: OpenCloud EU
+      url: https://opencloud.eu
+    name: opencloud
+    sources:
+    - https://github.com/opencloud-eu/opencloud
+    - https://github.com/owncloud/ocis
+    - https://github.com/cs3org/reva
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/opencloud-0.2.3/opencloud-0.2.3.tgz
+    version: 0.2.3
+generated: "2025-09-19T15:50:15.265186538Z"
