@@ -1,5 +1,25 @@
 apiVersion: v1
 entries:
+  cloudreve:
+  - apiVersion: v2
+    appVersion: 3.8.0
+    created: "2025-11-10T20:21:27.886488806Z"
+    description: Self-hosted file management and sharing system, supports multiple
+      storage providers.
+    digest: 81bc010be48bcc56d0049c27463dbe0eed68e4d7dea83fb90f553eb04cae72eb
+    home: https://cloudreve.org/
+    icon: https://raw.githubusercontent.com/cloudreve/frontend/master/public/static/img/logo192.png
+    kubeVersion: ^1.8.0-0
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+    name: cloudreve
+    sources:
+    - https://github.com/cloudreve/Cloudreve
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/cloudreve-0.1.0/cloudreve-0.1.0.tgz
+    version: 0.1.0
   opencloud:
   - apiVersion: v2
     appVersion: latest
@@ -23,4 +43,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/opencloud-0.2.3/opencloud-0.2.3.tgz
     version: 0.2.3
-generated: "2025-09-19T15:50:15.265186538Z"
+generated: "2025-11-10T20:21:27.886506729Z"
