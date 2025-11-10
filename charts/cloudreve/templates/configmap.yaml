@@ -1,23 +1,3 @@
-{{- if .Values.createConfigmap }}
-{{- $dbType := .Values.database.type -}}
-{{- $dbHost := .Values.database.host -}}
-{{- $dbPort := .Values.database.port -}}
-{{- $dbName := .Values.database.name -}}
-{{- $dbUser := .Values.database.user -}}
-{{- $dbPassword := .Values.database.password -}}
-
-{{- if .Values.database.existingSecret -}}
-{{- $secret := lookup "v1" "Secret" .Release.Namespace .Values.database.existingSecret -}}
-{{- if $secret -}}
-{{- $dbType = index $secret.data (.Values.database.existingSecretKeys.type) | b64dec -}}
-{{- $dbHost = index $secret.data (.Values.database.existingSecretKeys.host) | b64dec -}}
-{{- $dbPort = index $secret.data (.Values.database.existingSecretKeys.port) | b64dec -}}
-{{- $dbName = index $secret.data (.Values.database.existingSecretKeys.name) | b64dec -}}
-{{- $dbUser = index $secret.data (.Values.database.existingSecretKeys.user) | b64dec -}}
-{{- $dbPassword = index $secret.data (.Values.database.existingSecretKeys.password) | b64dec -}}
-{{- end -}}
-{{- end -}}
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -57,10 +37,10 @@ data:
     {{- end }}
   {{- end }}
     [Database]
-    Type = {{ $dbType }}
-    Host = {{ $dbHost }}
-    Port = {{ $dbPort }}
-    Name = {{ $dbName }}
-    User = {{ $dbUser }}
-    Password = {{ $dbPassword }}
+    Type = {{ .Values.database.type }}
+    Host = {{ .Values.database.host }}
+    Port = {{ .Values.database.port }}
+    Name = {{ .Values.database.name }}
+    User = {{ include "cloudreve.database.username" . }}
+    Password = {{ include "cloudreve.database.password" . }}
 {{- end}}

@@ -73,68 +73,51 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
 {{- end }}
 {{- end }}
 
-{{/*
-Get database type from values or secret
-*/}}
-{{- define "cloudreve.database.type" -}}
+{{/* Return the database secret name */}}
+{{- define "cloudreve.database.secretName" -}}
 {{- if .Values.database.existingSecret -}}
-{{- printf "valueFrom:\n  secretKeyRef:\n    name: %s\n    key: %s" .Values.database.existingSecret .Values.database.existingSecretKeys.type | nindent 8 -}}
+  {{- printf "%s" (tpl .Values.database.existingSecret $) -}}
 {{- else -}}
-{{- .Values.database.type -}}
+  {{- printf "%s-db" (include "cloudreve.fullname" .) -}}
 {{- end -}}
 {{- end -}}
 
-{{/*
-Get database host from values or secret
-*/}}
-{{- define "cloudreve.database.host" -}}
-{{- if .Values.database.existingSecret -}}
-{{- printf "valueFrom:\n  secretKeyRef:\n    name: %s\n    key: %s" .Values.database.existingSecret .Values.database.existingSecretKeys.host | nindent 8 -}}
+{{/* Return the key for the username */}}
+{{- define "cloudreve.database.usernameKey" -}}
+{{- if .Values.database.existingSecretKeys.user -}}
+  {{- printf "%s" (tpl .Values.database.existingSecretKeys.user $) -}}
 {{- else -}}
-{{- .Values.database.host -}}
+  {{- "user" -}}
 {{- end -}}
 {{- end -}}
 
-{{/*
-Get database port from values or secret
-*/}}
-{{- define "cloudreve.database.port" -}}
-{{- if .Values.database.existingSecret -}}
-{{- printf "valueFrom:\n  secretKeyRef:\n    name: %s\n    key: %s" .Values.database.existingSecret .Values.database.existingSecretKeys.port | nindent 8 -}}
+{{/* Return the key for the password */}}
+{{- define "cloudreve.database.passwordKey" -}}
+{{- if .Values.database.existingSecretKeys.password -}}
+  {{- printf "%s" (tpl .Values.database.existingSecretKeys.password $) -}}
 {{- else -}}
-{{- .Values.database.port -}}
+  {{- "password" -}}
 {{- end -}}
 {{- end -}}
 
-{{/*
-Get database name from values or secret
-*/}}
-{{- define "cloudreve.database.name" -}}
-{{- if .Values.database.existingSecret -}}
-{{- printf "valueFrom:\n  secretKeyRef:\n    name: %s\n    key: %s" .Values.database.existingSecret .Values.database.existingSecretKeys.name | nindent 8 -}}
+{{/* Return the username value, reading from secret if exists */}}
+{{- define "cloudreve.database.username" -}}
+{{- $secret := lookup "v1" "Secret" .Release.Namespace (include "cloudreve.database.secretName" .) -}}
+{{- if $secret -}}
+  {{- $value := index $secret.data (include "cloudreve.database.usernameKey" .) | b64dec -}}
+  {{- $value -}}
 {{- else -}}
-{{- .Values.database.name -}}
+  {{- .Values.database.user -}}
 {{- end -}}
 {{- end -}}
 
-{{/*
-Get database user from values or secret
-*/}}
-{{- define "cloudreve.database.user" -}}
-{{- if .Values.database.existingSecret -}}
-{{- printf "valueFrom:\n  secretKeyRef:\n    name: %s\n    key: %s" .Values.database.existingSecret .Values.database.existingSecretKeys.user | nindent 8 -}}
-{{- else -}}
-{{- .Values.database.user -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Get database password from values or secret
-*/}}
+{{/* Return the password value, reading from secret if exists */}}
 {{- define "cloudreve.database.password" -}}
-{{- if .Values.database.existingSecret -}}
-{{- printf "valueFrom:\n  secretKeyRef:\n    name: %s\n    key: %s" .Values.database.existingSecret .Values.database.existingSecretKeys.password | nindent 8 -}}
+{{- $secret := lookup "v1" "Secret" .Release.Namespace (include "cloudreve.database.secretName" .) -}}
+{{- if $secret -}}
+  {{- $value := index $secret.data (include "cloudreve.database.passwordKey" .) | b64dec -}}
+  {{- $value -}}
 {{- else -}}
-{{- .Values.database.password -}}
+  {{- .Values.database.password -}}
 {{- end -}}
 {{- end -}}
