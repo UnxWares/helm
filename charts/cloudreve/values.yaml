@@ -142,7 +142,7 @@ database:
 ## cloudreve's primary configuration
 ## NOTE: values in map will be converted to ini format
 ## ref: https://docs.cloudreve.org/getting-started/config
-conf.ini:
+confini:
   fromSecret: false      # if true, the conf.ini will come from a secret
   secretName: ""         # name of the secret containing conf.ini
   data: |                # used only if fromSecret is false

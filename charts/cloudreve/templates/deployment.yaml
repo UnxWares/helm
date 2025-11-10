@@ -68,9 +68,9 @@ spec:
       {{- end }}
       volumes:
         - name: config
-          {{- if .Values.conf.ini.fromSecret }}
+          {{- if .Values.confini.fromSecret }}
           secret:
-            secretName: {{ .Values.conf.ini.secretName }}
+            secretName: {{ .Values.confini.secretName }}
             items:
               - key: conf.ini
                 path: conf.ini
