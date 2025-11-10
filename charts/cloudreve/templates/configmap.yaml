@@ -1,3 +1,4 @@
+{{- if not .Values.conf.ini.fromSecret }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,35 +12,29 @@ metadata:
   {{- end }}
 data:
   conf.ini: |
-  {{- range $elem, $elemVal := index .Values "conf.ini" }}
+  {{- range $elem, $elemVal := index .Values.conf.ini "data" }}
     {{- if not (kindIs "map" $elemVal) }}
-    {{- if kindIs "invalid" $elemVal }}
-    {{ $elem }} =
-    {{- else if kindIs "string" $elemVal }}
-    {{ $elem }} = {{ tpl $elemVal $ }}
-    {{- else }}
-    {{ $elem }} = {{ $elemVal }}
-    {{- end }}
+      {{- if kindIs "invalid" $elemVal }}
+{{ $elem }} =
+      {{- else if kindIs "string" $elemVal }}
+{{ $elem }} = {{ tpl $elemVal $ }}
+      {{- else }}
+{{ $elem }} = {{ $elemVal }}
+      {{- end }}
     {{- end }}
   {{- end }}
-  {{- range $key, $value := index .Values "conf.ini" }}
+  {{- range $key, $value := index .Values.conf.ini "data" }}
     {{- if kindIs "map" $value }}
-    [{{ $key }}]
-    {{- range $elem, $elemVal := $value }}
-    {{- if kindIs "invalid" $elemVal }}
-    {{ $elem }} =
-    {{- else if kindIs "string" $elemVal }}
-    {{ $elem }} = {{ tpl $elemVal $ }}
-    {{- else }}
-    {{ $elem }} = {{ $elemVal }}
-    {{- end }}
-    {{- end }}
+[{{ $key }}]
+      {{- range $elem, $elemVal := $value }}
+        {{- if kindIs "invalid" $elemVal }}
+{{ $elem }} =
+        {{- else if kindIs "string" $elemVal }}
+{{ $elem }} = {{ tpl $elemVal $ }}
+        {{- else }}
+{{ $elem }} = {{ $elemVal }}
+        {{- end }}
+      {{- end }}
     {{- end }}
   {{- end }}
-    [Database]
-    Type = {{ .Values.database.type }}
-    Host = {{ .Values.database.host }}
-    Port = {{ .Values.database.port }}
-    Name = {{ .Values.database.name }}
-    User = {{ include "cloudreve.database.username" . }}
-    Password = {{ include "cloudreve.database.password" . }}
+{{- end }}

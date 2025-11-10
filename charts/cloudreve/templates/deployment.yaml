@@ -49,6 +49,7 @@ spec:
             - name: config
               mountPath: "/cloudreve/conf.ini"
               subPath: conf.ini
+              readOnly: true
             - name: storage
               mountPath: "/data"
           resources:
@@ -67,8 +68,16 @@ spec:
       {{- end }}
       volumes:
         - name: config
+          {{- if .Values.conf.ini.fromSecret }}
+          secret:
+            secretName: {{ .Values.conf.ini.secretName }}
+            items:
+              - key: conf.ini
+                path: conf.ini
+          {{- else }}
           configMap:
             name: {{ include "cloudreve.fullname" . }}
+          {{- end }}
         {{- if and .Values.persistence.enabled (eq .Values.persistence.type "pvc") }}
         - name: storage
           persistentVolumeClaim:
