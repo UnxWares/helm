@@ -1,0 +1,40 @@
+{{- if .Values.createConfigmap }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cloudreve.fullname" . }}
+  namespace: {{ include "cloudreve.namespace" . }}
+  labels:
+    {{- include "cloudreve.labels" . | nindent 4 }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+data:
+  conf.ini: |
+  {{- range $elem, $elemVal := index .Values "conf.ini" }}
+    {{- if not (kindIs "map" $elemVal) }}
+    {{- if kindIs "invalid" $elemVal }}
+    {{ $elem }} =
+    {{- else if kindIs "string" $elemVal }}
+    {{ $elem }} = {{ tpl $elemVal $ }}
+    {{- else }}
+    {{ $elem }} = {{ $elemVal }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- range $key, $value := index .Values "conf.ini" }}
+    {{- if kindIs "map" $value }}
+    [{{ $key }}]
+    {{- range $elem, $elemVal := $value }}
+    {{- if kindIs "invalid" $elemVal }}
+    {{ $elem }} =
+    {{- else if kindIs "string" $elemVal }}
+    {{ $elem }} = {{ tpl $elemVal $ }}
+    {{- else }}
+    {{ $elem }} = {{ $elemVal }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end}}
