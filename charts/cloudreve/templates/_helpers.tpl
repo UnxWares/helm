@@ -72,3 +72,69 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
 {{- .Release.Namespace }}
 {{- end }}
 {{- end }}
+
+{{/*
+Get database type from values or secret
+*/}}
+{{- define "cloudreve.database.type" -}}
+{{- if .Values.database.existingSecret -}}
+{{- printf "valueFrom:\n  secretKeyRef:\n    name: %s\n    key: %s" .Values.database.existingSecret .Values.database.existingSecretKeys.type | nindent 8 -}}
+{{- else -}}
+{{- .Values.database.type -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get database host from values or secret
+*/}}
+{{- define "cloudreve.database.host" -}}
+{{- if .Values.database.existingSecret -}}
+{{- printf "valueFrom:\n  secretKeyRef:\n    name: %s\n    key: %s" .Values.database.existingSecret .Values.database.existingSecretKeys.host | nindent 8 -}}
+{{- else -}}
+{{- .Values.database.host -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get database port from values or secret
+*/}}
+{{- define "cloudreve.database.port" -}}
+{{- if .Values.database.existingSecret -}}
+{{- printf "valueFrom:\n  secretKeyRef:\n    name: %s\n    key: %s" .Values.database.existingSecret .Values.database.existingSecretKeys.port | nindent 8 -}}
+{{- else -}}
+{{- .Values.database.port -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get database name from values or secret
+*/}}
+{{- define "cloudreve.database.name" -}}
+{{- if .Values.database.existingSecret -}}
+{{- printf "valueFrom:\n  secretKeyRef:\n    name: %s\n    key: %s" .Values.database.existingSecret .Values.database.existingSecretKeys.name | nindent 8 -}}
+{{- else -}}
+{{- .Values.database.name -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get database user from values or secret
+*/}}
+{{- define "cloudreve.database.user" -}}
+{{- if .Values.database.existingSecret -}}
+{{- printf "valueFrom:\n  secretKeyRef:\n    name: %s\n    key: %s" .Values.database.existingSecret .Values.database.existingSecretKeys.user | nindent 8 -}}
+{{- else -}}
+{{- .Values.database.user -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get database password from values or secret
+*/}}
+{{- define "cloudreve.database.password" -}}
+{{- if .Values.database.existingSecret -}}
+{{- printf "valueFrom:\n  secretKeyRef:\n    name: %s\n    key: %s" .Values.database.existingSecret .Values.database.existingSecretKeys.password | nindent 8 -}}
+{{- else -}}
+{{- .Values.database.password -}}
+{{- end -}}
+{{- end -}}

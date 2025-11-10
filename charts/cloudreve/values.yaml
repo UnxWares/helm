@@ -1,19 +1,15 @@
 # Default values for cloudreve.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-
 replicaCount: 1
-
 image:
   repository: cloudreve/cloudreve
   pullPolicy: Always 
   # Overrides the image tag whose default is the chart appVersion.
   tag: "3.8.0"
-
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -22,13 +18,10 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
-
 podAnnotations: {}
-
 podSecurityContext:
   {}
   # fsGroup: 2000
-
 securityContext:
   {}
   # capabilities:
@@ -37,12 +30,10 @@ securityContext:
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
 service:
   type: ClusterIP
   port: 80
   targetPort: 5212
-
 ingress:
   enabled: false
   className: ""
@@ -59,7 +50,6 @@ ingress:
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
-
 resources:
   {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -72,20 +62,15 @@ resources:
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 ## Override the deployment namespace
 ##
 namespaceOverride: ""
@@ -93,7 +78,6 @@ namespaceOverride: ""
 labels: {}
 ## Deployment annotations
 annotations: {}
-
 ## Enable persistence using Persistent Volume Claims
 ## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
 ##
@@ -114,7 +98,6 @@ persistence:
   # existingClaim:
   ## Extra labels to apply to a PVC.
   extraPvcLabels: {}
-
   ## If persistence is not enabled, this allows to mount the
   ## local storage in-memory to improve performance
   ##
@@ -125,11 +108,36 @@ persistence:
     ## here and the sum of memory limits of all containers in a pod
     ##
     # sizeLimit: 300Mi
-
 podPortName: cloudreve
-
 # Enable creating the cloudreve configmap
 createConfigmap: true
+
+## Database configuration
+## Can be overridden by valuesFromSecret
+database:
+  type: mysql
+  host: 127.0.0.1
+  port: 3306
+  name: v3
+  user: root
+  password: root
+  # Use existing secret for database credentials
+  # If existingSecret is set, the secret should contain the following keys:
+  # - type (optional)
+  # - host (optional)
+  # - port (optional)
+  # - name (optional)
+  # - user (required)
+  # - password (required)
+  existingSecret: ""
+  # Keys in the existing secret (if different from default)
+  existingSecretKeys:
+    type: type
+    host: host
+    port: port
+    name: name
+    user: user
+    password: password
 
 ## cloudreve's primary configuration
 ## NOTE: values in map will be converted to ini format
@@ -141,10 +149,3 @@ conf.ini:
     Listen: ":5212"
     Debug: false
     SessionSecret: 23333
-  Database:
-    Type: mysql
-    Port: 3306
-    User: root
-    Password: root
-    Host: 127.0.0.1
-    Name: v3
