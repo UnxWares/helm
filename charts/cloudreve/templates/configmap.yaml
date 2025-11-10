@@ -43,4 +43,3 @@ data:
     Name = {{ .Values.database.name }}
     User = {{ include "cloudreve.database.username" . }}
     Password = {{ include "cloudreve.database.password" . }}
-{{- end}}
