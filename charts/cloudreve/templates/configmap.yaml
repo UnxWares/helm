@@ -1,4 +1,4 @@
-{{- if not .Values.conf.ini.fromSecret }}
+{{- if not .Values.confini.fromSecret }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -12,7 +12,7 @@ metadata:
   {{- end }}
 data:
   conf.ini: |
-  {{- range $elem, $elemVal := index .Values.conf.ini "data" }}
+  {{- range $elem, $elemVal := index .Values.confini "data" }}
     {{- if not (kindIs "map" $elemVal) }}
       {{- if kindIs "invalid" $elemVal }}
 {{ $elem }} =
@@ -23,7 +23,7 @@ data:
       {{- end }}
     {{- end }}
   {{- end }}
-  {{- range $key, $value := index .Values.conf.ini "data" }}
+  {{- range $key, $value := index .Values.confini "data" }}
     {{- if kindIs "map" $value }}
 [{{ $key }}]
       {{- range $elem, $elemVal := $value }}
