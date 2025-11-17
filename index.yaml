@@ -1,5 +1,40 @@
 apiVersion: v1
 entries:
+  bind9:
+  - annotations:
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        [
+          { "name": "Upstream", "url": "https://www.isc.org/bind/" }
+        ]
+      category: networking
+    apiVersion: v2
+    appVersion: "9.21"
+    created: "2025-11-17T20:56:10.990628393Z"
+    description: A flexible and production-ready Helm chart for running ISC Bind9
+      DNS server on Kubernetes.
+    digest: 7effddc9cd37ed86182dbf2ee71cb12e9e6894b6f973d140d8c8ac12b1278691
+    keywords:
+    - dns
+    - bind
+    - bind9
+    - authoritative-dns
+    - kubernetes
+    - helm
+    - network
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    name: bind9
+    sources:
+    - https://github.com/isc-projects/bind9
+    - https://hub.docker.com/r/internetsystemsconsortium/bind9
+    - https://github.com/UnxWare/helm
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/bind9-2025.11.1/bind9-2025.11.1.tgz
+    version: 2025.11.1
   cloudreve:
   - apiVersion: v2
     appVersion: 3.8.0
@@ -157,4 +192,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/opencloud-0.2.3/opencloud-0.2.3.tgz
     version: 0.2.3
-generated: "2025-11-11T14:04:17.534762655Z"
+generated: "2025-11-17T20:56:10.990646457Z"
