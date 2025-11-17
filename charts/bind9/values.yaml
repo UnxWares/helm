@@ -110,7 +110,7 @@ bind:
 
   # This is for setting up the zones more information can be found here: https://www.isc.org/bind-9/documentation/configuration-guide/zones/
   zones:
-    sub-example-com.zone: |
+    # sub-example-com: |
       # $TTL 3D
       # @       IN      SOA     ns1.sub-example.com. hostmaster.sub-example.com. (
       #                         2020032501 ; Serial
