@@ -78,8 +78,8 @@ spec:
               subPath: named.conf
             {{- range $name, $_ := .Values.bind.zones }}
             - name: bind-config
-              mountPath: /etc/bind/{{ $name }}
-              subPath: {{ $name }}
+              mountPath: /etc/bind/{{ $name }}.zone
+              subPath: {{ $name }}.zone
             {{- end }}
 
             {{- if .Values.persistence.enabled }}
