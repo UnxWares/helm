@@ -1,0 +1,34 @@
+*************************************************************************
+Bind9 Helm Chart has been installed!
+*************************************************************************
+
+Release Name: {{ .Release.Name }}
+Namespace:    {{ .Release.Namespace }}
+
+Your Bind9 deployment is now running. You can check the pods with:
+
+  kubectl get pods -n {{ .Release.Namespace }}
+
+The service has been created:
+
+  kubectl get svc -n {{ .Release.Namespace }}
+
+Ports exposed by the service:
+  - DNS TCP: 53
+  - DNS UDP: 53
+  - RNDC TCP: 953
+
+To test DNS resolution from inside the cluster, run:
+
+  POD=$(kubectl get pod -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ .Chart.Name }} -o jsonpath="{.items[0].metadata.name}")
+  kubectl exec -n {{ .Release.Namespace }} $POD -- dig @127.0.0.1 infra.unxwares.com
+
+If persistence is enabled, your zone files are stored in:
+
+  /var/lib/bind (PVC: {{ include "bind9.fullname" . }}-pvc)
+
+To uninstall Bind9:
+
+  helm uninstall {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+*************************************************************************

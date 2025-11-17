@@ -1,0 +1,136 @@
+# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replicaCount: 1
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+image:
+  repository: internetsystemsconsortium/bind9
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "9.21"
+
+# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext: 
+  runAsUser: 0
+  runAsGroup: 0
+  fsGroup: 101
+  supplementalGroups:
+    - 6
+
+securityContext:
+  capabilities:
+    add:
+      - NET_BIND_SERVICE
+
+# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+service:
+  # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+  type: ClusterIP
+  # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+  ports:
+    dnsTcp: 53
+    dnsUdp: 53
+    rndc: 953
+    # If using a NodePort, you can set the port here
+    dnsTcpNodePort: 30053
+    dnsUdpNodePort: 30053
+    rndcNodePort: 30054
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+livenessProbe:
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - "dig @127.0.0.1 localhost"
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+readinessProbe:
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - "dig @127.0.0.1 localhost"
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+# General Bind9 configuration
+bind:
+  # This is for setting up the named.conf file more information can be found here: https://www.isc.org/bind-9/documentation/configuration-guide/named.conf/
+  namedConf: |
+    # options {
+    #   directory "/var/cache/bind";
+    #   listen-on-v6 { any; };
+    #   listen-on { any; };
+    #   forwarders {
+    #     9.9.9.9;
+    #     1.1.1.1;
+    #   };
+    # };
+
+  # This is for setting up the zones more information can be found here: https://www.isc.org/bind-9/documentation/configuration-guide/zones/
+  zones:
+    sub-example-com.zone: |
+      # $TTL 3D
+      # @       IN      SOA     ns1.sub-example.com. hostmaster.sub-example.com. (
+      #                         2020032501 ; Serial
+      #                         3H ; Refresh
+      #                         15 ; Retry
+      #                         1W ; Expire
+      #                         3H ; Negative Cache TTL
+      # )
+      # @       IN      NS      ns1.sub-example.com.
+      # @       IN      A       192.168.1.1
+      # www     IN      CNAME   sub-example.com.
+
+# Persistence configuration for /var/lib/bind
+persistence:
+  enabled: false
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  storageClass: ""
+
+# Node scheduling configuration
+nodeSelector: {}
+tolerations: []
+affinity: {}
