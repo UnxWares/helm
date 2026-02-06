@@ -85,6 +85,9 @@ spec:
             {{- if .Values.persistence.enabled }}
             - name: bind-data
               mountPath: /var/lib/bind
+            {{- else }}
+            - name: bind-data
+              mountPath: /var/lib/bind
             {{- end }}
 
       volumes:
@@ -96,6 +99,9 @@ spec:
         - name: bind-data
           persistentVolumeClaim:
             claimName: {{ include "bind9.fullname" . }}-pvc
+        {{- else }}
+        - name: bind-data
+          emptyDir: {}
         {{- end }}
 
       {{- with .Values.nodeSelector }}
