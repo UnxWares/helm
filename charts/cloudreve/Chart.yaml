@@ -1,6 +1,6 @@
 apiVersion: v2
 name: cloudreve
-version: 0.1.24
+version: 2026.2.1
 kubeVersion: ^1.8.0-0
 description: Self-hosted file management and sharing system, supports multiple storage providers.
 type: application
@@ -10,5 +10,7 @@ sources:
 maintainers:
   - email: david.gheghea@unxwares.com
     name: David Gheghea
+  - email: baptiste.gosselin@unxwares.com
+    name: Baptiste Gosselin
 icon: https://raw.githubusercontent.com/cloudreve/frontend/master/public/static/img/logo192.png
 appVersion: "3.8.0"

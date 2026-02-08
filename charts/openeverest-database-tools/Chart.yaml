@@ -2,7 +2,7 @@ apiVersion: v2
 name: openeverest-database-tools
 description: A various set of tools for OpenEverest
 type: application
-version: 2026.2.1
+version: 2026.2.2
 appVersion: "1.16.0"
 
 sources:
@@ -21,6 +21,9 @@ keywords:
 maintainers:
   - name: David Gheghea
     email: david.gheghea@unxwares.com
+    url: https://github.com/UnxWares
+  - name: Baptiste Gosselin
+    email: baptiste.gosselin@unxwares.com
     url: https://github.com/UnxWares
 
 annotations:

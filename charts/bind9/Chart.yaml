@@ -3,7 +3,7 @@ name: bind9
 description: A flexible and production-ready Helm chart for running ISC Bind9 DNS server on Kubernetes.
 type: application
 
-version: 2026.2.1
+version: 2026.2.2
 appVersion: "9.21"
 
 sources:
@@ -23,6 +23,9 @@ keywords:
 maintainers:
   - name: David Gheghea
     email: david.gheghea@unxwares.com
+    url: https://github.com/UnxWares
+  - name: Baptiste Gosselin
+    email: baptiste.gosselin@unxwares.com
     url: https://github.com/UnxWares
 
 annotations:
