@@ -10,6 +10,43 @@ entries:
       category: networking
     apiVersion: v2
     appVersion: "9.21"
+    created: "2026-02-08T13:59:46.066569693Z"
+    description: A flexible and production-ready Helm chart for running ISC Bind9
+      DNS server on Kubernetes.
+    digest: f853acb3c4a6e631ebbd54588f7a22c3504feb1fd364ec05fca2830b13bf0d12
+    keywords:
+    - dns
+    - bind
+    - bind9
+    - authoritative-dns
+    - kubernetes
+    - helm
+    - network
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: bind9
+    sources:
+    - https://github.com/isc-projects/bind9
+    - https://hub.docker.com/r/internetsystemsconsortium/bind9
+    - https://github.com/UnxWare/helm
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/bind9-2026.2.2/bind9-2026.2.2.tgz
+    version: 2026.2.2
+  - annotations:
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        [
+          { "name": "Upstream", "url": "https://www.isc.org/bind/" }
+        ]
+      category: networking
+    apiVersion: v2
+    appVersion: "9.21"
     created: "2026-02-06T16:22:44.718005483Z"
     description: A flexible and production-ready Helm chart for running ISC Bind9
       DNS server on Kubernetes.
@@ -138,6 +175,27 @@ entries:
     - https://github.com/UnxWares/helm/releases/download/bind9-2025.11.1/bind9-2025.11.1.tgz
     version: 2025.11.1
   cloudreve:
+  - apiVersion: v2
+    appVersion: 3.8.0
+    created: "2026-02-08T13:59:46.227747973Z"
+    description: Self-hosted file management and sharing system, supports multiple
+      storage providers.
+    digest: d15a1d8fd41c1247589ca44b37592c3df9006f761bef413b3394e1900ec29526
+    home: https://cloudreve.org/
+    icon: https://raw.githubusercontent.com/cloudreve/frontend/master/public/static/img/logo192.png
+    kubeVersion: ^1.8.0-0
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+    name: cloudreve
+    sources:
+    - https://github.com/cloudreve/Cloudreve
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/cloudreve-2026.2.1/cloudreve-2026.2.1.tgz
+    version: 2026.2.1
   - apiVersion: v2
     appVersion: 3.8.0
     created: "2025-11-11T14:04:17.534735715Z"
@@ -300,6 +358,37 @@ entries:
       category: networking
     apiVersion: v2
     appVersion: 1.16.0
+    created: "2026-02-08T13:59:46.358077064Z"
+    description: A various set of tools for OpenEverest
+    digest: e82dd9a2d1893146918eb800e25e5a3c19191a2a397fd454feb839217b1ca865
+    keywords:
+    - database
+    - initialization
+    - percona
+    - everest
+    - postgresql
+    - mysql
+    - mongodb
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: openeverest-database-tools
+    sources:
+    - https://openeverest.io
+    - https://github.com/UnxWares/helm
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.2.2/openeverest-database-tools-2026.2.2.tgz
+    version: 2026.2.2
+  - annotations:
+      artifacthub.io/license: MIT
+      category: networking
+    apiVersion: v2
+    appVersion: 1.16.0
     created: "2026-02-08T12:36:14.994714429Z"
     description: A various set of tools for OpenEverest
     digest: 6cff10c2fa0caa08e19ca6b980b1d8aa40f66c57c2eb645608cbd1d4d44bbfdc
@@ -323,4 +412,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.2.1/openeverest-database-tools-2026.2.1.tgz
     version: 2026.2.1
-generated: "2026-02-08T12:36:14.994745086Z"
+generated: "2026-02-08T13:59:46.358138156Z"
