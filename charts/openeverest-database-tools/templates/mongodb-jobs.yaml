@@ -1,0 +1,155 @@
+{{- range $index, $db := .Values.databases.mongodb }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $db.name }}
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    {{- include "openeverest-database-tools.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: mongodb-init
+    {{- with $db.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with $.Values.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- include "openeverest-database-tools.annotations" $ | nindent 4 }}
+    {{- with $db.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  backoffLimit: {{ $db.backoffLimit | default $.Values.global.backoffLimit }}
+  ttlSecondsAfterFinished: {{ $db.ttlSecondsAfterFinished | default $.Values.global.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: mongodb-init
+        job-name: {{ $db.name }}
+    spec:
+      restartPolicy: {{ $db.restartPolicy | default $.Values.global.restartPolicy }}
+      {{- with $.Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: init-mongodb
+          image: {{ $db.image | default $.Values.image.mongodb }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          {{- with $.Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: CLUSTER_NAME
+              value: {{ $db.clusterName | quote }}
+            - name: MONGO_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $db.credentialsSecret }}
+                  key: {{ $db.hostKey | default "host" }}
+            - name: MONGO_PORT
+              value: {{ $db.port | default "27017" | quote }}
+            - name: MONGO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $db.credentialsSecret }}
+                  key: {{ $db.userKey | default "user" }}
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $db.credentialsSecret }}
+                  key: {{ $db.passwordKey | default "password" }}
+            {{- if $db.authDatabase }}
+            - name: MONGO_AUTH_DB
+              value: {{ $db.authDatabase | quote }}
+            {{- end }}
+            {{- with $db.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          command:
+            - sh
+            - -ec
+            - |
+              set -e
+              
+              echo "=== MongoDB Database Initialization ==="
+              echo "Installing required tools..."
+              apk add --no-cache mongodb-tools kubectl busybox-extras
+              
+              echo "DNS resolution test for: $MONGO_HOST"
+              getent hosts "$MONGO_HOST" || echo "Warning: DNS resolution failed"
+              
+              echo "Waiting for DatabaseCluster '$CLUSTER_NAME' to reach state=ready..."
+              TIMEOUT=300
+              ELAPSED=0
+              until [ "$(kubectl get databasecluster "$CLUSTER_NAME" -n {{ $.Values.global.namespace }} \
+                -o jsonpath='{.status.status}' 2>/dev/null)" = "ready" ]; do
+                if [ $ELAPSED -ge $TIMEOUT ]; then
+                  echo "Error: Timeout waiting for DatabaseCluster to be ready"
+                  exit 1
+                fi
+                echo "Waiting... ($ELAPSED/$TIMEOUT seconds)"
+                sleep 5
+                ELAPSED=$((ELAPSED + 5))
+              done
+              
+              echo "DatabaseCluster is ready!"
+              
+              # Construct MongoDB connection string
+              {{- if $db.authDatabase }}
+              MONGO_URI="mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT}/admin?authSource={{ $db.authDatabase }}"
+              {{- else }}
+              MONGO_URI="mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT}/admin"
+              {{- end }}
+              
+              echo "Connection test..."
+              mongosh "$MONGO_URI" --quiet --eval "db.adminCommand('ping')" || {
+                echo "Error: Failed to connect to MongoDB"
+                exit 1
+              }
+              
+              {{- range $db.databases }}
+              echo "Ensuring database '{{ . }}' exists..."
+              mongosh "$MONGO_URI" --quiet --eval "
+                use {{ . }};
+                db.getCollectionNames();
+              "
+              echo "Database '{{ . }}' is accessible"
+              {{- end }}
+              
+              {{- if $db.collections }}
+              echo "Creating collections..."
+              {{- range $db.collections }}
+              echo "Creating collection '{{ .name }}' in database '{{ .database }}'..."
+              mongosh "$MONGO_URI" --quiet --eval "
+                use {{ .database }};
+                db.createCollection('{{ .name }}');
+              " || echo "Collection may already exist"
+              {{- end }}
+              {{- end }}
+              
+              {{- if $db.initScripts }}
+              echo "Running custom initialization scripts..."
+              {{- range $scriptIndex, $script := $db.initScripts }}
+              echo "Executing script {{ add1 $scriptIndex }}/{{ len $db.initScripts }}..."
+              mongosh "$MONGO_URI" --quiet --eval "{{ $script }}"
+              {{- end }}
+              echo "All custom scripts executed successfully"
+              {{- end }}
+              
+              echo "=== Database initialization complete ==="
+{{- end }}

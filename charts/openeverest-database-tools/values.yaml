@@ -1,0 +1,134 @@
+# Global settings
+global:
+  # Namespace where database clusters are located
+  namespace: everest-databases
+
+  # Additional annotations for all jobs
+  annotations: {}
+
+  # ArgoCD integration settings
+  argocd:
+    enabled: true
+    hook: Sync
+    syncOptions: Replace=true
+    hookDeletePolicy: HookSucceeded
+
+  # Job TTL after completion (seconds)
+  ttlSecondsAfterFinished: 180
+
+  # Job backoff limit for retries
+  backoffLimit: 5
+
+  # Default restart policy
+  restartPolicy: OnFailure
+
+# RBAC settings
+rbac:
+  # Create RBAC resources
+  create: true
+  # Service account to use
+  serviceAccountName: default
+
+# Database initialization jobs
+# Each database type can have multiple instances
+databases:
+  # PostgreSQL databases
+  postgresql: []
+    # Example configuration:
+    # - name: my-db-init
+    #   clusterName: my-dev-pg-cluster
+    #   credentialsSecret: my-dev-pg-cluster-credentials
+    #   databases:
+    #     - laravel-app
+    #   # Optional: custom SQL scripts to run
+    #   initScripts: []
+    #     - CREATE EXTENSION IF NOT EXISTS pg_trgm;
+    #     - CREATE EXTENSION IF NOT EXISTS pgcrypto;
+    #   # Optional: override global settings
+    #   ttlSecondsAfterFinished: 300
+    #   backoffLimit: 3
+    #   image: alpine:3.19
+    #   env:
+    #     - name: CUSTOM_VAR
+    #       value: custom_value
+    #   annotations: {}
+    #   labels: {}
+
+  # MySQL databases
+  mysql: []
+    # Example configuration:
+    # - name: wordpress-db-init
+    #   clusterName: wordpress-mysql-cluster
+    #   credentialsSecret: wordpress-mysql-cluster-credentials
+    #   databases:
+    #     - wordpress
+    #     - wordpress_cache
+    #   initScripts: []
+    #     - CREATE TABLE IF NOT EXISTS init_log (id INT AUTO_INCREMENT PRIMARY KEY, message VARCHAR(255));
+    #   ttlSecondsAfterFinished: 300
+    #   backoffLimit: 3
+    #   image: alpine:3.19
+    #   env: []
+    #   annotations: {}
+    #   labels: {}
+
+  # MongoDB databases
+  mongodb: []
+    # Example configuration:
+    # - name: app-mongo-init
+    #   clusterName: app-mongo-cluster
+    #   credentialsSecret: app-mongo-cluster-credentials
+    #   databases:
+    #     - appdb
+    #   # Optional collections to create
+    #   collections:
+    #     - name: users
+    #       database: appdb
+    #     - name: sessions
+    #       database: appdb
+    #   # Optional: MongoDB init scripts (JavaScript)
+    #   initScripts: []
+    #     - db.users.createIndex({ "email": 1 }, { unique: true });
+    #   ttlSecondsAfterFinished: 300
+    #   backoffLimit: 3
+    #   image: alpine:3.19
+    #   env: []
+    #   annotations: {}
+    #   labels: {}
+
+# Image settings (can be overridden per database)
+image:
+  postgresql: alpine:3.19
+  mysql: alpine:3.19
+  mongodb: alpine:3.19
+  pullPolicy: IfNotPresent
+
+# Additional annotations for all jobs
+annotations: {}
+
+# Additional labels for all jobs
+labels: {}
+
+# Resource limits for init jobs
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 50m
+  #   memory: 64Mi
+
+# Security context
+securityContext: {}
+  # runAsNonRoot: true
+  # runAsUser: 1000
+  # fsGroup: 1000
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}

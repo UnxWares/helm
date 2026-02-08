@@ -1,0 +1,134 @@
+{{- range $index, $db := .Values.databases.mysql }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $db.name }}
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    {{- include "openeverest-database-tools.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: mysql-init
+    {{- with $db.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with $.Values.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- include "openeverest-database-tools.annotations" $ | nindent 4 }}
+    {{- with $db.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  backoffLimit: {{ $db.backoffLimit | default $.Values.global.backoffLimit }}
+  ttlSecondsAfterFinished: {{ $db.ttlSecondsAfterFinished | default $.Values.global.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: mysql-init
+        job-name: {{ $db.name }}
+    spec:
+      restartPolicy: {{ $db.restartPolicy | default $.Values.global.restartPolicy }}
+      {{- with $.Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: init-mysql
+          image: {{ $db.image | default $.Values.image.mysql }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          {{- with $.Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: CLUSTER_NAME
+              value: {{ $db.clusterName | quote }}
+            - name: MYSQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $db.credentialsSecret }}
+                  key: {{ $db.hostKey | default "host" }}
+            - name: MYSQL_PORT
+              value: {{ $db.port | default "3306" | quote }}
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $db.credentialsSecret }}
+                  key: {{ $db.userKey | default "user" }}
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $db.credentialsSecret }}
+                  key: {{ $db.passwordKey | default "password" }}
+            {{- with $db.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          command:
+            - sh
+            - -ec
+            - |
+              set -e
+
+              echo "=== MySQL Database Initialization ==="
+              echo "Installing required tools..."
+              apk add --no-cache mysql-client kubectl busybox-extras
+
+              echo "DNS resolution test for: $MYSQL_HOST"
+              getent hosts "$MYSQL_HOST" || echo "Warning: DNS resolution failed"
+
+              echo "Waiting for DatabaseCluster '$CLUSTER_NAME' to reach state=ready..."
+              TIMEOUT=300
+              ELAPSED=0
+              until [ "$(kubectl get databasecluster "$CLUSTER_NAME" -n {{ $.Values.global.namespace }} \
+                -o jsonpath='{.status.status}' 2>/dev/null)" = "ready" ]; do
+                if [ $ELAPSED -ge $TIMEOUT ]; then
+                  echo "Error: Timeout waiting for DatabaseCluster to be ready"
+                  exit 1
+                fi
+                echo "Waiting... ($ELAPSED/$TIMEOUT seconds)"
+                sleep 5
+                ELAPSED=$((ELAPSED + 5))
+              done
+
+              echo "DatabaseCluster is ready!"
+              echo "Connection test..."
+              mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" \
+                -e "SELECT VERSION();" || {
+                echo "Error: Failed to connect to MySQL"
+                exit 1
+              }
+
+              {{- range $db.databases }}
+              echo "Ensuring database '{{ . }}' exists..."
+              mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" << 'EOSQL'
+              CREATE DATABASE IF NOT EXISTS `{{ . }}`;
+              EOSQL
+              echo "Database '{{ . }}' is ready"
+              {{- end }}
+
+              {{- if $db.initScripts }}
+              echo "Running custom initialization scripts..."
+              {{- range $scriptIndex, $script := $db.initScripts }}
+              echo "Executing script {{ add1 $scriptIndex }}/{{ len $db.initScripts }}..."
+              mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" << 'EOSQL'
+              {{ $script }}
+              EOSQL
+              {{- end }}
+              echo "All custom scripts executed successfully"
+              {{- end }}
+
+              echo "=== Database initialization complete ==="
+{{- end }}

@@ -1,0 +1,30 @@
+{{- if .Values.rbac.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "openeverest-database-tools.fullname" . }}-dbcluster-read
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "openeverest-database-tools.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["everest.percona.com"]
+    resources: ["databaseclusters"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "openeverest-database-tools.fullname" . }}-dbcluster-read
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "openeverest-database-tools.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "openeverest-database-tools.serviceAccountName" . }}
+    namespace: {{ .Values.global.namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "openeverest-database-tools.fullname" . }}-dbcluster-read
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

@@ -1,0 +1,28 @@
+apiVersion: v2
+name: openeverest-database-tools
+description: A various set of tools for OpenEverest
+type: application
+version: 2026.2.1
+appVersion: "1.16.0"
+
+sources:
+  - https://openeverest.io
+  - https://github.com/UnxWares/helm
+
+keywords:
+  - database
+  - initialization
+  - percona
+  - everest
+  - postgresql
+  - mysql
+  - mongodb
+
+maintainers:
+  - name: David Gheghea
+    email: david.gheghea@unxwares.com
+    url: https://github.com/UnxWares
+
+annotations:
+  category: networking
+  artifacthub.io/license: "MIT"
