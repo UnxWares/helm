@@ -294,4 +294,33 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/opencloud-0.2.3/opencloud-0.2.3.tgz
     version: 0.2.3
-generated: "2026-02-06T16:22:44.718032123Z"
+  openeverest-database-tools:
+  - annotations:
+      artifacthub.io/license: MIT
+      category: networking
+    apiVersion: v2
+    appVersion: 1.16.0
+    created: "2026-02-08T12:36:14.994714429Z"
+    description: A various set of tools for OpenEverest
+    digest: 6cff10c2fa0caa08e19ca6b980b1d8aa40f66c57c2eb645608cbd1d4d44bbfdc
+    keywords:
+    - database
+    - initialization
+    - percona
+    - everest
+    - postgresql
+    - mysql
+    - mongodb
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    name: openeverest-database-tools
+    sources:
+    - https://openeverest.io
+    - https://github.com/UnxWares/helm
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.2.1/openeverest-database-tools-2026.2.1.tgz
+    version: 2026.2.1
+generated: "2026-02-08T12:36:14.994745086Z"
