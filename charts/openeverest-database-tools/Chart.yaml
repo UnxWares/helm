@@ -2,7 +2,7 @@ apiVersion: v2
 name: openeverest-database-tools
 description: A various set of tools for OpenEverest
 type: application
-version: 2026.2.5
+version: 2026.2.6
 appVersion: "1.16.0"
 
 sources:

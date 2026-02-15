@@ -53,6 +53,8 @@ spec:
                 secretKeyRef:
                   name: {{ $db.adminCredentialsSecret }}
                   key: {{ $db.hostKey | default "pgbouncer-host" }}
+            - name: PGSSLMODE
+              value: require
             - name: PGPORT
               value: {{ $db.port | default "5432" | quote }}
             - name: PGUSER
