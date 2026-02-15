@@ -29,6 +29,22 @@ spec:
         job-name: {{ $db.name }}
     spec:
       restartPolicy: {{ $db.restartPolicy | default $.Values.global.restartPolicy }}
+      {{- with $.Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: init-mongodb
           image: {{ $db.image | default $.Values.image.mongodb }}
