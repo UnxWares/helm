@@ -69,10 +69,10 @@ Create the name of the service account to use
 {{- end }}
 
 {{- /* ArgoCD integration */}}
-{{- if .Values.argocd.enabled }}
-argocd.argoproj.io/hook: {{ .Values.argocd.hook | default "Sync" | quote }}
-argocd.argoproj.io/hook-delete-policy: {{ .Values.argocd.hookDeletePolicy | default "HookSucceeded" | quote }}
-argocd.argoproj.io/sync-options: {{ .Values.argocd.syncOptions | default "Replace=true" | quote }}
+{{- if .Values.global.argocd.enabled }}
+argocd.argoproj.io/hook: {{ .Values.global.argocd.hook | default "Sync" | quote }}
+argocd.argoproj.io/hook-delete-policy: {{ .Values.global.argocd.hookDeletePolicy | default "HookSucceeded" | quote }}
+argocd.argoproj.io/sync-options: {{ .Values.global.argocd.syncOptions | default "Replace=true" | quote }}
 {{- end }}
 
 {{- end -}}
