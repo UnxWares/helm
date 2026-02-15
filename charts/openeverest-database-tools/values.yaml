@@ -37,9 +37,16 @@ databases:
     # Example configuration:
     # - name: my-db-init
     #   clusterName: my-dev-pg-cluster
-    #   credentialsSecret: my-dev-pg-cluster-credentials
+    #   adminCredentialsSecret: my-dev-pg-cluster-credentials
     #   databases:
     #     - laravel-app
+    #   users:
+    #     - credentialsSecret: app-user-secret
+    #       databases:
+    #         - laravel-app
+    #       privileges:
+    #         - CONNECT
+    #         - CREATE
     #   # Optional: custom SQL scripts to run
     #   initScripts: []
     #     - CREATE EXTENSION IF NOT EXISTS pg_trgm;
@@ -59,10 +66,16 @@ databases:
     # Example configuration:
     # - name: wordpress-db-init
     #   clusterName: wordpress-mysql-cluster
-    #   credentialsSecret: wordpress-mysql-cluster-credentials
+    #   adminCredentialsSecret: wordpress-mysql-cluster-credentials
     #   databases:
     #     - wordpress
     #     - wordpress_cache
+    #   users:
+    #     - credentialsSecret: wordpress-user-secret
+    #       databases:
+    #         - wordpress
+    #       privileges:
+    #         - ALL
     #   initScripts: []
     #     - CREATE TABLE IF NOT EXISTS init_log (id INT AUTO_INCREMENT PRIMARY KEY, message VARCHAR(255));
     #   ttlSecondsAfterFinished: 300
@@ -77,9 +90,13 @@ databases:
     # Example configuration:
     # - name: app-mongo-init
     #   clusterName: app-mongo-cluster
-    #   credentialsSecret: app-mongo-cluster-credentials
+    #   adminCredentialsSecret: app-mongo-cluster-credentials
     #   databases:
     #     - appdb
+    #   users:
+    #     - credentialsSecret: mongo-user-secret
+    #       databases:
+    #         - appdb
     #   # Optional collections to create
     #   collections:
     #     - name: users

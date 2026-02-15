@@ -8,22 +8,6 @@ metadata:
   labels:
     {{- include "openeverest-database-tools.labels" $ | nindent 4 }}
     app.kubernetes.io/component: postgresql-init
-    {{- with $db.labels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
-    {{- with $.Values.labels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
-  annotations:
-    {{- include "openeverest-database-tools.annotations" $ | nindent 4 }}
-    {{- with $db.annotations }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
-    {{- if $.Values.global.argocd.enabled }}
-    argocd.argoproj.io/hook: {{ $.Values.global.argocd.hook | default "Sync" }}
-    argocd.argoproj.io/sync-options: {{ $.Values.global.argocd.syncOptions | default "Replace=true" }}
-    argocd.argoproj.io/hook-delete-policy: {{ $.Values.global.argocd.hookDeletePolicy | default "HookSucceeded" }}
-    {{- end }}
 spec:
   backoffLimit: {{ $db.backoffLimit | default $.Values.global.backoffLimit }}
   ttlSecondsAfterFinished: {{ $db.ttlSecondsAfterFinished | default $.Values.global.ttlSecondsAfterFinished }}
@@ -34,110 +18,131 @@ spec:
         job-name: {{ $db.name }}
     spec:
       restartPolicy: {{ $db.restartPolicy | default $.Values.global.restartPolicy }}
-      {{- with $.Values.securityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with $.Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with $.Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with $.Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       containers:
         - name: init-postgresql
           image: {{ $db.image | default $.Values.image.postgresql }}
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
-          {{- with $.Values.resources }}
-          resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
           env:
             - name: CLUSTER_NAME
               value: {{ $db.clusterName | quote }}
+
+            # Admin credentials
             - name: PGHOST
               valueFrom:
                 secretKeyRef:
-                  name: {{ $db.credentialsSecret }}
+                  name: {{ $db.adminCredentialsSecret }}
                   key: {{ $db.hostKey | default "pgbouncer-host" }}
             - name: PGPORT
               value: {{ $db.port | default "5432" | quote }}
             - name: PGUSER
               valueFrom:
                 secretKeyRef:
-                  name: {{ $db.credentialsSecret }}
+                  name: {{ $db.adminCredentialsSecret }}
                   key: {{ $db.userKey | default "user" }}
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $db.credentialsSecret }}
+                  name: {{ $db.adminCredentialsSecret }}
                   key: {{ $db.passwordKey | default "password" }}
-            {{- with $db.env }}
-            {{- toYaml . | nindent 12 }}
+
+            # App user secrets
+            {{- if $db.users }}
+            {{- range $index, $user := $db.users }}
+            - name: APP_USERNAME_{{ $index }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $user.credentialsSecret }}
+                  key: username
+            - name: APP_PASSWORD_{{ $index }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $user.credentialsSecret }}
+                  key: password
             {{- end }}
+            {{- end }}
+
           command:
             - sh
             - -ec
             - |
               set -e
 
-              echo "=== PostgreSQL Database Initialization ==="
-              echo "Installing required tools..."
+              echo "=== PostgreSQL Initialization ==="
               apk add --no-cache postgresql-client kubectl busybox-extras
 
-              echo "DNS resolution test for: $PGHOST"
-              getent hosts "$PGHOST" || echo "Warning: DNS resolution failed"
-
-              echo "Waiting for DatabaseCluster '$CLUSTER_NAME' to reach state=ready..."
+              echo "Waiting for DatabaseCluster '$CLUSTER_NAME'..."
               TIMEOUT=300
               ELAPSED=0
               until [ "$(kubectl get databasecluster "$CLUSTER_NAME" -n {{ $.Values.global.namespace }} \
                 -o jsonpath='{.status.status}' 2>/dev/null)" = "ready" ]; do
                 if [ $ELAPSED -ge $TIMEOUT ]; then
-                  echo "Error: Timeout waiting for DatabaseCluster to be ready"
+                  echo "Timeout waiting for cluster"
                   exit 1
                 fi
-                echo "Waiting... ($ELAPSED/$TIMEOUT seconds)"
                 sleep 5
                 ELAPSED=$((ELAPSED + 5))
               done
+              echo "Cluster ready."
 
-              echo "DatabaseCluster is ready!"
-              echo "Connection test..."
-              psql -v ON_ERROR_STOP=1 -c "SELECT version();" || {
-                echo "Error: Failed to connect to PostgreSQL"
-                exit 1
-              }
+              # Test connection
+              psql -v ON_ERROR_STOP=1 -c "SELECT 1;" >/dev/null
 
+              # -----------------------------
+              # Ensure Databases Exist
+              # -----------------------------
               {{- range $db.databases }}
               echo "Ensuring database '{{ . }}' exists..."
-              if psql -v ON_ERROR_STOP=1 -tAc \
-                "SELECT 1 FROM pg_database WHERE datname = '{{ . }}'" \
-                | grep -q 1; then
-                echo "Database '{{ . }}' already exists"
-              else
-                echo "Creating database '{{ . }}'..."
-                psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"{{ . }}\";"
-                echo "Database '{{ . }}' created successfully"
+              if ! psql -tAc "SELECT 1 FROM pg_database WHERE datname='{{ . }}'" | grep -q 1; then
+                psql -c "CREATE DATABASE \"{{ . }}\";"
               fi
               {{- end }}
 
+              # -----------------------------
+              # Revoke PUBLIC on all DBs
+              # -----------------------------
+              echo "Revoking PUBLIC CONNECT on all databases..."
+              for DB in $(psql -Atc "SELECT datname FROM pg_database WHERE datname NOT IN ('template0','template1')"); do
+                psql -c "REVOKE CONNECT ON DATABASE \"$DB\" FROM PUBLIC;"
+              done
+
+              # -----------------------------
+              # Ensure Users + Grants
+              # -----------------------------
+              {{- if $db.users }}
+              echo "Managing users..."
+              {{- range $index, $user := $db.users }}
+              USERNAME="$(printenv APP_USERNAME_{{ $index }})"
+              PASSWORD="$(printenv APP_PASSWORD_{{ $index }})"
+
+              echo "Ensuring role '$USERNAME' exists..."
+              if ! psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${USERNAME}'" | grep -q 1; then
+                psql -c "CREATE ROLE \"${USERNAME}\" LOGIN PASSWORD '${PASSWORD}';"
+              fi
+
+              # Grant CONNECT + harden schema for allowed DBs
+              {{- range $dbname := $user.databases }}
+              echo "Granting CONNECT on '{{ $dbname }}' to ${USERNAME}"
+              psql -c "GRANT CONNECT ON DATABASE \"{{ $dbname }}\" TO \"${USERNAME}\";"
+
+              echo "Hardening schema 'public' in '{{ $dbname }}'"
+              psql -d "{{ $dbname }}" -c "REVOKE ALL ON SCHEMA public FROM PUBLIC;"
+              psql -d "{{ $dbname }}" -c "GRANT ALL ON SCHEMA public TO \"${USERNAME}\";"
+              psql -d "{{ $dbname }}" -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO \"${USERNAME}\";"
+              {{- end }}
+              {{- end }}
+              {{- end }}
+
+              # -----------------------------
+              # Custom Scripts
+              # -----------------------------
               {{- if $db.initScripts }}
-              echo "Running custom initialization scripts..."
-              {{- range $scriptIndex, $script := $db.initScripts }}
-              echo "Executing script {{ add1 $scriptIndex }}/{{ len $db.initScripts }}..."
-              psql -v ON_ERROR_STOP=1 << 'EOSQL'
+              echo "Running custom scripts..."
+              {{- range $script := $db.initScripts }}
+              psql -v ON_ERROR_STOP=1 <<'EOSQL'
               {{ $script }}
               EOSQL
               {{- end }}
-              echo "All custom scripts executed successfully"
               {{- end }}
 
-              echo "=== Database initialization complete ==="
+              echo "=== PostgreSQL initialization complete ==="
 {{- end }}

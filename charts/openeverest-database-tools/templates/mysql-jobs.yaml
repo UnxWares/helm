@@ -7,128 +7,126 @@ metadata:
   namespace: {{ $.Values.global.namespace }}
   labels:
     {{- include "openeverest-database-tools.labels" $ | nindent 4 }}
-    app.kubernetes.io/component: mysql-init
-    {{- with $db.labels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
-    {{- with $.Values.labels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
-  annotations:
-    {{- include "openeverest-database-tools.annotations" $ | nindent 4 }}
-    {{- with $db.annotations }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
+    app.kubernetes.io/component: mariadb-init
 spec:
   backoffLimit: {{ $db.backoffLimit | default $.Values.global.backoffLimit }}
   ttlSecondsAfterFinished: {{ $db.ttlSecondsAfterFinished | default $.Values.global.ttlSecondsAfterFinished }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/component: mysql-init
+        app.kubernetes.io/component: mariadb-init
         job-name: {{ $db.name }}
     spec:
       restartPolicy: {{ $db.restartPolicy | default $.Values.global.restartPolicy }}
-      {{- with $.Values.securityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with $.Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with $.Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with $.Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       containers:
-        - name: init-mysql
+        - name: init-mariadb
           image: {{ $db.image | default $.Values.image.mysql }}
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
-          {{- with $.Values.resources }}
-          resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
           env:
             - name: CLUSTER_NAME
               value: {{ $db.clusterName | quote }}
+            # Admin credentials
             - name: MYSQL_HOST
               valueFrom:
                 secretKeyRef:
-                  name: {{ $db.credentialsSecret }}
+                  name: {{ $db.adminCredentialsSecret }}
                   key: {{ $db.hostKey | default "host" }}
             - name: MYSQL_PORT
               value: {{ $db.port | default "3306" | quote }}
             - name: MYSQL_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ $db.credentialsSecret }}
+                  name: {{ $db.adminCredentialsSecret }}
                   key: {{ $db.userKey | default "user" }}
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $db.credentialsSecret }}
+                  name: {{ $db.adminCredentialsSecret }}
                   key: {{ $db.passwordKey | default "password" }}
-            {{- with $db.env }}
-            {{- toYaml . | nindent 12 }}
+
+            # App user secrets
+            {{- if $db.users }}
+            {{- range $index, $user := $db.users }}
+            - name: APP_USERNAME_{{ $index }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $user.credentialsSecret }}
+                  key: username
+            - name: APP_PASSWORD_{{ $index }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $user.credentialsSecret }}
+                  key: password
             {{- end }}
+            {{- end }}
+
           command:
             - sh
             - -ec
             - |
               set -e
-
-              echo "=== MySQL Database Initialization ==="
-              echo "Installing required tools..."
+              echo "=== MariaDB Initialization ==="
               apk add --no-cache mysql-client kubectl busybox-extras
 
-              echo "DNS resolution test for: $MYSQL_HOST"
-              getent hosts "$MYSQL_HOST" || echo "Warning: DNS resolution failed"
-
-              echo "Waiting for DatabaseCluster '$CLUSTER_NAME' to reach state=ready..."
+              echo "Waiting for DatabaseCluster '$CLUSTER_NAME'..."
               TIMEOUT=300
               ELAPSED=0
               until [ "$(kubectl get databasecluster "$CLUSTER_NAME" -n {{ $.Values.global.namespace }} \
                 -o jsonpath='{.status.status}' 2>/dev/null)" = "ready" ]; do
                 if [ $ELAPSED -ge $TIMEOUT ]; then
-                  echo "Error: Timeout waiting for DatabaseCluster to be ready"
+                  echo "Timeout waiting for cluster"
                   exit 1
                 fi
-                echo "Waiting... ($ELAPSED/$TIMEOUT seconds)"
                 sleep 5
                 ELAPSED=$((ELAPSED + 5))
               done
+              echo "Cluster ready."
 
-              echo "DatabaseCluster is ready!"
-              echo "Connection test..."
-              mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" \
-                -e "SELECT VERSION();" || {
-                echo "Error: Failed to connect to MySQL"
-                exit 1
-              }
+              # Test connection
+              mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT 1;" >/dev/null
 
+              # -----------------------------
+              # Ensure Databases Exist
+              # -----------------------------
               {{- range $db.databases }}
               echo "Ensuring database '{{ . }}' exists..."
-              mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" << 'EOSQL'
-              CREATE DATABASE IF NOT EXISTS `{{ . }}`;
-              EOSQL
-              echo "Database '{{ . }}' is ready"
+              mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS \`{{ . }}\`;"
               {{- end }}
 
+              # -----------------------------
+              # Ensure Users + Grants
+              # -----------------------------
+              {{- if $db.users }}
+              echo "Managing users..."
+              {{- range $index, $user := $db.users }}
+              USERNAME="$(printenv APP_USERNAME_{{ $index }})"
+              PASSWORD="$(printenv APP_PASSWORD_{{ $index }})"
+
+              echo "Ensuring user '$USERNAME' exists..."
+              mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" <<EOSQL
+              CREATE USER IF NOT EXISTS '$USERNAME'@'%' IDENTIFIED BY '$PASSWORD';
+EOSQL
+
+              {{- range $dbname := $user.databases }}
+              echo "Granting privileges on '{{ $dbname }}' to $USERNAME"
+              mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" <<EOSQL
+              GRANT ALL PRIVILEGES ON \`{{ $dbname }}\`.* TO '$USERNAME'@'%';
+EOSQL
+              {{- end }}
+              {{- end }}
+              {{- end }}
+
+              # -----------------------------
+              # Custom Scripts
+              # -----------------------------
               {{- if $db.initScripts }}
-              echo "Running custom initialization scripts..."
-              {{- range $scriptIndex, $script := $db.initScripts }}
-              echo "Executing script {{ add1 $scriptIndex }}/{{ len $db.initScripts }}..."
-              mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" << 'EOSQL'
+              echo "Running custom scripts..."
+              {{- range $script := $db.initScripts }}
+              mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" <<'EOSQL'
               {{ $script }}
-              EOSQL
+EOSQL
               {{- end }}
-              echo "All custom scripts executed successfully"
               {{- end }}
 
-              echo "=== Database initialization complete ==="
+              echo "=== MariaDB initialization complete ==="
 {{- end }}
