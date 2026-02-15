@@ -121,14 +121,6 @@ spec:
               {{- end }}
 
               # -----------------------------
-              # Revoke PUBLIC on all DBs
-              # -----------------------------
-              echo "Revoking PUBLIC CONNECT on all databases..."
-              for DB in $(psql -Atc "SELECT datname FROM pg_database WHERE datname NOT IN ('template0','template1')"); do
-                psql -c "REVOKE CONNECT ON DATABASE \"$DB\" FROM PUBLIC;"
-              done
-
-              # -----------------------------
               # Ensure Users + Grants
               # -----------------------------
               {{- if $db.users }}
@@ -142,7 +134,7 @@ spec:
                 psql -c "CREATE ROLE \"${USERNAME}\" LOGIN PASSWORD '${PASSWORD}';"
               fi
 
-              # Grant CONNECT + harden schema for allowed DBs
+              # Grant CONNECT + harden
               {{- range $dbname := $user.databases }}
               echo "Granting CONNECT on '{{ $dbname }}' to ${USERNAME}"
               psql -c "GRANT CONNECT ON DATABASE \"{{ $dbname }}\" TO \"${USERNAME}\";"
