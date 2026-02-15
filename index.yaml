@@ -358,6 +358,37 @@ entries:
       category: networking
     apiVersion: v2
     appVersion: 1.16.0
+    created: "2026-02-15T19:46:58.091612035Z"
+    description: A various set of tools for OpenEverest
+    digest: a956ea36572dab626e487822f6bbf526226eb711abcf5ea48b3ea2e26ba74e12
+    keywords:
+    - database
+    - initialization
+    - percona
+    - everest
+    - postgresql
+    - mysql
+    - mongodb
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: openeverest-database-tools
+    sources:
+    - https://openeverest.io
+    - https://github.com/UnxWares/helm
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.2.6/openeverest-database-tools-2026.2.6.tgz
+    version: 2026.2.6
+  - annotations:
+      artifacthub.io/license: MIT
+      category: networking
+    apiVersion: v2
+    appVersion: 1.16.0
     created: "2026-02-15T19:06:34.686200745Z"
     description: A various set of tools for OpenEverest
     digest: 8fa8fb9e7eddc52bffbcbe5328c07c0f2f2810952aeaae261191c8802d6289bf
@@ -505,4 +536,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.2.1/openeverest-database-tools-2026.2.1.tgz
     version: 2026.2.1
-generated: "2026-02-15T19:06:34.686247442Z"
+generated: "2026-02-15T19:46:58.091688639Z"
