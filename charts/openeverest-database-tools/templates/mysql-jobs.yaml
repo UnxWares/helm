@@ -5,6 +5,11 @@ kind: Job
 metadata:
   name: {{ $db.name }}
   namespace: {{ $.Values.global.namespace }}
+  annotations:
+    {{- include "openeverest-database-tools.annotations" $ | nindent 4 }}
+    {{- with $db.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   labels:
     {{- include "openeverest-database-tools.labels" $ | nindent 4 }}
     app.kubernetes.io/component: mariadb-init
