@@ -62,7 +62,17 @@ Create the name of the service account to use
 {{- end }}
 
 {{- define "openeverest-database-tools.annotations" -}}
+
+{{- /* Global custom annotations */}}
 {{- with .Values.global.annotations }}
-{{ toYaml . | nindent 0 }}
-{{- end -}}
+{{ toYaml . }}
+{{- end }}
+
+{{- /* ArgoCD integration */}}
+{{- if .Values.argocd.enabled }}
+argocd.argoproj.io/hook: {{ .Values.argocd.hook | default "Sync" | quote }}
+argocd.argoproj.io/hook-delete-policy: {{ .Values.argocd.hookDeletePolicy | default "HookSucceeded" | quote }}
+argocd.argoproj.io/sync-options: {{ .Values.argocd.syncOptions | default "Replace=true" | quote }}
+{{- end }}
+
 {{- end -}}
