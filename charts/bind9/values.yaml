@@ -132,6 +132,7 @@ persistence:
   accessMode: ReadWriteOnce
   size: 1Gi
   storageClass: ""
+  emptyDirSizeLimit:
 
 # Node scheduling configuration
 nodeSelector: {}

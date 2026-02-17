@@ -108,7 +108,12 @@ spec:
             claimName: {{ include "bind9.fullname" . }}-pvc
         {{- else }}
         - name: bind-data
+          {{- if .Values.persistence.emptyDirSizeLimit }}
+          emptyDir:
+            sizeLimit: {{ .Values.persistence.emptyDirSizeLimit }}
+          {{- else }}
           emptyDir: {}
+          {{- end }}
         {{- end }}
 
       {{- with .Values.nodeSelector }}
