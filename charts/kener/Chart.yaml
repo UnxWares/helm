@@ -1,0 +1,25 @@
+apiVersion: v2
+name: kener
+description: A helm chart for Kener, status page
+type: application
+version: 2026.2.1
+appVersion: "3.2.19"
+
+sources:
+  - https://kener.ing
+  - https://github.com/rajnandan1/kener
+
+keywords:
+  - status
+  - page
+  - dashboard
+  - monitoring
+
+maintainers:
+  - name: David Gheghea
+    email: david.gheghea@unxwares.com
+    url: https://github.com/UnxWares
+
+annotations:
+  category: monitoring
+  artifacthub.io/license: "MIT"
