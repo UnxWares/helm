@@ -329,6 +329,32 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/cloudreve-0.1.0/cloudreve-0.1.0.tgz
     version: 0.1.0
+  kener:
+  - annotations:
+      artifacthub.io/license: MIT
+      category: monitoring
+    apiVersion: v2
+    appVersion: 3.2.19
+    created: "2026-02-17T12:59:41.47596997Z"
+    description: A helm chart for Kener, status page
+    digest: 6919c8ff00171fb9533c1ef88a34c8f859fcc8afae8bd087192c6f3dceb2f55b
+    keywords:
+    - status
+    - page
+    - dashboard
+    - monitoring
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    name: kener
+    sources:
+    - https://kener.ing
+    - https://github.com/rajnandan1/kener
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/kener-2026.2.1/kener-2026.2.1.tgz
+    version: 2026.2.1
   opencloud:
   - apiVersion: v2
     appVersion: latest
@@ -629,4 +655,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.2.1/openeverest-database-tools-2026.2.1.tgz
     version: 2026.2.1
-generated: "2026-02-15T20:44:36.36200195Z"
+generated: "2026-02-17T12:59:41.476036764Z"
