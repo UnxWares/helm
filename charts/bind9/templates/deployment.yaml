@@ -44,7 +44,12 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
 
           command: ["/usr/sbin/named"]
-          args: ["-f", "-g"]
+          args:
+          - "-f"
+          - "-g"
+          {{- with .Values.bind.args }}
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
 
           ports:
             - name: dns-tcp

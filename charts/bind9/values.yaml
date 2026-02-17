@@ -96,6 +96,9 @@ autoscaling:
 
 # General Bind9 configuration
 bind:
+  # Extra args to pass to named
+  args: []
+
   # This is for setting up the named.conf file more information can be found here: https://www.isc.org/bind-9/documentation/configuration-guide/named.conf/
   namedConf: |
     # options {
