@@ -335,6 +335,31 @@ entries:
       category: monitoring
     apiVersion: v2
     appVersion: 3.2.19
+    created: "2026-02-18T10:12:14.344716418Z"
+    description: A helm chart for Kener, status page
+    digest: f24eb93964c224719d978511a83c9ef9337165eb3b6db3b027cb81cb278dc49d
+    keywords:
+    - status
+    - page
+    - dashboard
+    - monitoring
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    name: kener
+    sources:
+    - https://kener.ing
+    - https://github.com/rajnandan1/kener
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/kener-2026.2.3/kener-2026.2.3.tgz
+    version: 2026.2.3
+  - annotations:
+      artifacthub.io/license: MIT
+      category: monitoring
+    apiVersion: v2
+    appVersion: 3.2.19
     created: "2026-02-17T13:07:09.790194217Z"
     description: A helm chart for Kener, status page
     digest: eaced48c16d440cbd7d337268fd471300dad8430001df227514ef9fceae310ca
@@ -680,4 +705,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.2.1/openeverest-database-tools-2026.2.1.tgz
     version: 2026.2.1
-generated: "2026-02-17T13:07:09.790252175Z"
+generated: "2026-02-18T10:12:14.344767874Z"
