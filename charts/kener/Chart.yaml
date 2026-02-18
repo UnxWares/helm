@@ -2,7 +2,7 @@ apiVersion: v2
 name: kener
 description: A helm chart for Kener, status page
 type: application
-version: 2026.2.2
+version: 2026.2.3
 appVersion: "3.2.19"
 
 sources:
