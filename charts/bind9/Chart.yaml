@@ -3,7 +3,7 @@ name: bind9
 description: A flexible and production-ready Helm chart for running ISC Bind9 DNS server on Kubernetes.
 type: application
 
-version: 2026.2.19
+version: 2026.2.20
 appVersion: "9.21"
 icon: https://www.aschnoebelen.fr/wp-content/uploads/2024/01/bind9.png
 
