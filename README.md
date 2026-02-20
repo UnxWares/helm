@@ -22,7 +22,7 @@ This repository contains Helm charts designed for production Kubernetes environm
 
 Database initialization and management tools for OpenEverest clusters.
 
-- **Chart Version:** 2026.2.9
+- **Chart Version:** 2026.2.11
 - **Description:** Automated database creation, initialization scripts, and ArgoCD integration for MySQL, PostgreSQL, and MongoDB
 - **Documentation:** [charts/openeverest-database-tools/README.md](charts/openeverest-database-tools/README.md)
 
@@ -38,7 +38,7 @@ Database initialization and management tools for OpenEverest clusters.
 
 Production-ready ISC Bind9 DNS server for Kubernetes.
 
-- **Chart Version:** 2026.2.18
+- **Chart Version:** 2026.2.21
 - **App Version:** 9.21
 - **Description:** Flexible and production-ready authoritative DNS server deployment
 - **Documentation:** [charts/bind9/README.md](charts/bind9/README.md)
@@ -55,7 +55,7 @@ Production-ready ISC Bind9 DNS server for Kubernetes.
 
 Self-hosted file management and sharing system.
 
-- **Chart Version:** 2026.2.1
+- **Chart Version:** 2026.2.4
 - **App Version:** 3.8.0
 - **Description:** Self-hosted file management system with multiple storage provider support
 - **Documentation:** [charts/cloudreve/README.md](charts/cloudreve/README.md)
@@ -72,7 +72,7 @@ Self-hosted file management and sharing system.
 
 Modern status page application.
 
-- **Chart Version:** 2026.2.3
+- **Chart Version:** 2026.2.5
 - **App Version:** 3.2.19
 - **Description:** Beautiful and responsive status page for monitoring your services
 - **Documentation:** [charts/kener/README.md](charts/kener/README.md)
