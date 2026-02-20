@@ -38,7 +38,7 @@ Database initialization and management tools for OpenEverest clusters.
 
 Production-ready ISC Bind9 DNS server for Kubernetes.
 
-- **Chart Version:** 2026.2.21
+- **Chart Version:** 2026.2.22
 - **App Version:** 9.21
 - **Description:** Flexible and production-ready authoritative DNS server deployment
 - **Documentation:** [charts/bind9/README.md](charts/bind9/README.md)
