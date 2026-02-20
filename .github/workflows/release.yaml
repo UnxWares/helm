@@ -43,7 +43,7 @@ jobs:
               if: github.ref == 'refs/heads/main'
               run: |
                   git checkout gh-pages
-                  cp artifacthub-repo.yml .
+                  git checkout main -- artifacthub-repo.yml
                   git add artifacthub-repo.yml
                   git commit -m "Update Artifact Hub repository metadata" || echo "No changes to commit"
                   git push origin gh-pages
