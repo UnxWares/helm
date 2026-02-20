@@ -10,6 +10,44 @@ entries:
       category: networking
     apiVersion: v2
     appVersion: "9.21"
+    created: "2026-02-20T15:51:29.982555551Z"
+    description: A flexible and production-ready Helm chart for running ISC Bind9
+      DNS server on Kubernetes.
+    digest: 3e85656702075ff5b6d5f02b6f051a26a96f78087c23883e9428ac82323084ce
+    icon: https://www.aschnoebelen.fr/wp-content/uploads/2024/01/bind9.png
+    keywords:
+    - dns
+    - bind
+    - bind9
+    - authoritative-dns
+    - kubernetes
+    - helm
+    - network
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: bind9
+    sources:
+    - https://github.com/isc-projects/bind9
+    - https://hub.docker.com/r/internetsystemsconsortium/bind9
+    - https://github.com/UnxWare/helm
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/bind9-2026.2.19/bind9-2026.2.19.tgz
+    version: 2026.2.19
+  - annotations:
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        [
+          { "name": "Upstream", "url": "https://www.isc.org/bind/" }
+        ]
+      category: networking
+    apiVersion: v2
+    appVersion: "9.21"
     created: "2026-02-20T14:24:08.061379892Z"
     description: A flexible and production-ready Helm chart for running ISC Bind9
       DNS server on Kubernetes.
@@ -214,6 +252,27 @@ entries:
   cloudreve:
   - apiVersion: v2
     appVersion: 3.8.0
+    created: "2026-02-20T15:51:30.235938089Z"
+    description: Self-hosted file management and sharing system, supports multiple
+      storage providers.
+    digest: 22310fcc847632626f860a8ddf81611acebc04f5879747fe1b5923c1da88c4f7
+    home: https://cloudreve.org/
+    icon: https://raw.githubusercontent.com/cloudreve/frontend/master/public/static/img/logo192.png
+    kubeVersion: ^1.8.0-0
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+    name: cloudreve
+    sources:
+    - https://github.com/cloudreve/Cloudreve
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/cloudreve-2026.2.2/cloudreve-2026.2.2.tgz
+    version: 2026.2.2
+  - apiVersion: v2
+    appVersion: 3.8.0
     created: "2026-02-08T13:59:46.227747973Z"
     description: Self-hosted file management and sharing system, supports multiple
       storage providers.
@@ -372,6 +431,32 @@ entries:
       category: monitoring
     apiVersion: v2
     appVersion: 3.2.19
+    created: "2026-02-20T15:51:30.489464443Z"
+    description: A helm chart for Kener, status page
+    digest: e1b4dd9efd331a35b57cd205f0a4e770217843df401f5e916a78ed40ae9dfc72
+    icon: https://kener.ing/logo.png
+    keywords:
+    - status
+    - page
+    - dashboard
+    - monitoring
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    name: kener
+    sources:
+    - https://kener.ing
+    - https://github.com/rajnandan1/kener
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/kener-2026.2.4/kener-2026.2.4.tgz
+    version: 2026.2.4
+  - annotations:
+      artifacthub.io/license: MIT
+      category: monitoring
+    apiVersion: v2
+    appVersion: 3.2.19
     created: "2026-02-18T10:12:14.344716418Z"
     description: A helm chart for Kener, status page
     digest: f24eb93964c224719d978511a83c9ef9337165eb3b6db3b027cb81cb278dc49d
@@ -466,6 +551,38 @@ entries:
     - https://github.com/UnxWares/helm/releases/download/opencloud-0.2.3/opencloud-0.2.3.tgz
     version: 0.2.3
   openeverest-database-tools:
+  - annotations:
+      artifacthub.io/license: MIT
+      category: networking
+    apiVersion: v2
+    appVersion: 1.16.0
+    created: "2026-02-20T15:51:30.748507638Z"
+    description: A various set of tools for OpenEverest
+    digest: 617cc8e9e279d6f1f3b570169b50b229c72787cd25f36fe187abb26c113ca3de
+    icon: https://openeverest.io/images/brandkit/logo-vertical-full-color-white-min.png
+    keywords:
+    - database
+    - initialization
+    - percona
+    - everest
+    - postgresql
+    - mysql
+    - mongodb
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: openeverest-database-tools
+    sources:
+    - https://openeverest.io
+    - https://github.com/UnxWares/helm
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.2.10/openeverest-database-tools-2026.2.10.tgz
+    version: 2026.2.10
   - annotations:
       artifacthub.io/license: MIT
       category: networking
@@ -742,4 +859,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.2.1/openeverest-database-tools-2026.2.1.tgz
     version: 2026.2.1
-generated: "2026-02-20T14:24:08.061457737Z"
+generated: "2026-02-20T15:51:30.748618034Z"
