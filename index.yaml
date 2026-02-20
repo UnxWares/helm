@@ -10,6 +10,44 @@ entries:
       category: networking
     apiVersion: v2
     appVersion: "9.21"
+    created: "2026-02-20T16:28:47.860365686Z"
+    description: A flexible and production-ready Helm chart for running ISC Bind9
+      DNS server on Kubernetes.
+    digest: 4e62de987dc2fb45994f068792bf2dacebb37c3fb4496c73b7f352fe53368b78
+    icon: https://www.aschnoebelen.fr/wp-content/uploads/2024/01/bind9.png
+    keywords:
+    - dns
+    - bind
+    - bind9
+    - authoritative-dns
+    - kubernetes
+    - helm
+    - network
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: bind9
+    sources:
+    - https://github.com/isc-projects/bind9
+    - https://hub.docker.com/r/internetsystemsconsortium/bind9
+    - https://github.com/UnxWares/helm
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/bind9-2026.2.22/bind9-2026.2.22.tgz
+    version: 2026.2.22
+  - annotations:
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        [
+          { "name": "Upstream", "url": "https://www.isc.org/bind/" }
+        ]
+      category: networking
+    apiVersion: v2
+    appVersion: "9.21"
     created: "2026-02-20T16:14:10.49006128Z"
     description: A flexible and production-ready Helm chart for running ISC Bind9
       DNS server on Kubernetes.
@@ -1035,4 +1073,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.2.1/openeverest-database-tools-2026.2.1.tgz
     version: 2026.2.1
-generated: "2026-02-20T16:14:11.043976307Z"
+generated: "2026-02-20T16:28:47.860473577Z"
