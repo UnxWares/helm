@@ -1,3 +1,4 @@
+{{- if .Values.service.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -11,7 +12,7 @@ spec:
       port: {{ .Values.service.ports.dnsTcp }}
       targetPort: dns-tcp
       protocol: TCP
-      {{- if .Values.service.ports.dnsTcpNodePort }}
+      {{- if and .Values.service.ports.dnsTcpNodePort (ne .Values.service.type "ClusterIP") }}
       nodePort: {{ .Values.service.ports.dnsTcpNodePort }}
       {{- end }}
 
@@ -19,7 +20,7 @@ spec:
       port: {{ .Values.service.ports.dnsUdp }}
       targetPort: dns-udp
       protocol: UDP
-      {{- if .Values.service.ports.dnsUdpNodePort }}
+      {{- if and .Values.service.ports.dnsUdpNodePort (ne .Values.service.type "ClusterIP") }}
       nodePort: {{ .Values.service.ports.dnsUdpNodePort }}
       {{- end }}
 
@@ -27,9 +28,10 @@ spec:
       port: {{ .Values.service.ports.rndc }}
       targetPort: rndc
       protocol: TCP
-      {{- if .Values.service.ports.rndcNodePort }}
+      {{- if and .Values.service.ports.rndcNodePort (ne .Values.service.type "ClusterIP") }}
       nodePort: {{ .Values.service.ports.rndcNodePort }}
       {{- end }}
 
   selector:
     {{- include "bind9.selectorLabels" . | nindent 4 }}
+{{- end }}

@@ -13,8 +13,10 @@ spec:
       {{- include "bind9.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        # force pod reload on config change
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
@@ -42,7 +44,12 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
 
           command: ["/usr/sbin/named"]
-          args: ["-f", "-g"]
+          args:
+          - "-f"
+          - "-g"
+          {{- with .Values.bind.args }}
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
 
           ports:
             - name: dns-tcp
@@ -101,7 +108,12 @@ spec:
             claimName: {{ include "bind9.fullname" . }}-pvc
         {{- else }}
         - name: bind-data
+          {{- if .Values.persistence.emptyDirSizeLimit }}
+          emptyDir:
+            sizeLimit: {{ .Values.persistence.emptyDirSizeLimit }}
+          {{- else }}
           emptyDir: {}
+          {{- end }}
         {{- end }}
 
       {{- with .Values.nodeSelector }}

@@ -34,7 +34,7 @@ podAnnotations: {}
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 podLabels: {}
 
-podSecurityContext: 
+podSecurityContext:
   runAsUser: 0
   runAsGroup: 0
   fsGroup: 101
@@ -48,6 +48,7 @@ securityContext:
 
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
+  enabled: true
   # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
   type: ClusterIP
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
@@ -96,6 +97,9 @@ autoscaling:
 
 # General Bind9 configuration
 bind:
+  # Extra args to pass to named
+  args: []
+
   # This is for setting up the named.conf file more information can be found here: https://www.isc.org/bind-9/documentation/configuration-guide/named.conf/
   namedConf: |
     # options {
@@ -129,6 +133,7 @@ persistence:
   accessMode: ReadWriteOnce
   size: 1Gi
   storageClass: ""
+  emptyDirSizeLimit:
 
 # Node scheduling configuration
 nodeSelector: {}
