@@ -22,7 +22,7 @@ This repository contains Helm charts designed for production Kubernetes environm
 
 Database initialization and management tools for OpenEverest clusters.
 
-- **Chart Version:** 2026.2.2
+- **Chart Version:** 2026.2.9
 - **Description:** Automated database creation, initialization scripts, and ArgoCD integration for MySQL, PostgreSQL, and MongoDB
 - **Documentation:** [charts/openeverest-database-tools/README.md](charts/openeverest-database-tools/README.md)
 
@@ -38,9 +38,10 @@ Database initialization and management tools for OpenEverest clusters.
 
 Production-ready ISC Bind9 DNS server for Kubernetes.
 
-- **Chart Version:** 2026.2.2
+- **Chart Version:** 2026.2.18
 - **App Version:** 9.21
 - **Description:** Flexible and production-ready authoritative DNS server deployment
+- **Documentation:** [charts/bind9/README.md](charts/bind9/README.md)
 - **Upstream:** [ISC Bind9](https://www.isc.org/bind/)
 
 **Key Features:**
@@ -57,6 +58,7 @@ Self-hosted file management and sharing system.
 - **Chart Version:** 2026.2.1
 - **App Version:** 3.8.0
 - **Description:** Self-hosted file management system with multiple storage provider support
+- **Documentation:** [charts/cloudreve/README.md](charts/cloudreve/README.md)
 - **Upstream:** [Cloudreve](https://cloudreve.org/)
 
 **Key Features:**
@@ -65,6 +67,23 @@ Self-hosted file management and sharing system.
 - User-friendly web interface
 - Share management
 - Cloud storage integration
+
+### Kener
+
+Modern status page application.
+
+- **Chart Version:** 2026.2.3
+- **App Version:** 3.2.19
+- **Description:** Beautiful and responsive status page for monitoring your services
+- **Documentation:** [charts/kener/README.md](charts/kener/README.md)
+- **Upstream:** [Kener](https://kener.ing)
+
+**Key Features:**
+
+- Modern status page interface
+- Database integration (PostgreSQL)
+- HTTPRoute and Ingress support
+- Customizable monitoring
 
 ## Installation
 
@@ -100,6 +119,56 @@ helm install my-release unxwares/openeverest-database-tools \
   --set rbac.create=true
 ```
 
+## Versioning
+
+All charts in this repository follow a **calendar-based versioning scheme**:
+
+```
+year.month.version_number
+```
+
+### Version Format
+
+- **Year**: 4-digit year (e.g., `2026`)
+- **Month**: Month number without leading zero (e.g., `3` for March, `12` for December)
+- **Version Number**: Sequential number starting from 1 for each month
+
+### Examples
+
+- `2026.3.1` - First version released in March 2026
+- `2026.3.2` - Second version released in March 2026 (even if released on March 28th)
+- `2026.4.1` - First version released in April 2026
+
+### Version Increments
+
+- Each new release in a month increments the version number
+- Version numbers reset to 1 at the beginning of each new month
+- The actual day of release within the month doesn't affect the version number
+
+This versioning scheme makes it easy to track when changes were made and ensures chronological ordering of releases.
+
+## Verified Publisher on Artifact Hub
+
+This repository is configured as a **Verified Publisher** on Artifact Hub, which provides users with confidence that the charts are maintained by the official UnxWares team.
+
+### How It Works
+
+The verification is done through the `artifacthub-repo.yml` file located at the root of this repository. This file contains:
+- **Repository ID**: The unique identifier from Artifact Hub
+- **Owners**: List of maintainers and their contact information
+
+The file is automatically deployed to GitHub Pages alongside the chart repository `index.yaml` during the release process.
+
+### Repository ID Configuration
+
+To maintain the verified status:
+1. Log in to [Artifact Hub Control Panel](https://artifacthub.io/control-panel)
+2. Navigate to the **Repositories** tab
+3. Find your repository ID (displayed on the repository card)
+4. Ensure the `repositoryID` field in `artifacthub-repo.yml` matches this ID
+
+The verified publisher badge will appear after the next repository synchronization (triggered when `index.yaml` changes).
+
 ## Chart Development
 
 ### Directory Structure
@@ -115,7 +184,13 @@ helm install my-release unxwares/openeverest-database-tools \
 │   ├── cloudreve/
 │   │   ├── Chart.yaml
 │   │   ├── values.yaml
-│   │   └── templates/
+│   │   ├── templates/
+│   │   └── README.md
+│   ├── kener/
+│   │   ├── Chart.yaml
+│   │   ├── values.yaml
+│   │   ├── templates/
+│   │   └── README.md
 │   └── openeverest-database-tools/
 │       ├── Chart.yaml
 │       ├── values.yaml

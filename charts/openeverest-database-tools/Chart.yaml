@@ -2,8 +2,9 @@ apiVersion: v2
 name: openeverest-database-tools
 description: A various set of tools for OpenEverest
 type: application
-version: 2026.2.9
+version: 2026.2.10
 appVersion: "1.16.0"
+icon: https://openeverest.io/images/brandkit/logo-vertical-full-color-white-min.png
 
 sources:
   - https://openeverest.io

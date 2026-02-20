@@ -37,4 +37,13 @@ jobs:
               with:
                   charts_dir: charts
               env:
-                  CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}" 
+                  CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+            - name: Deploy Artifact Hub metadata to GitHub Pages
+              if: github.ref == 'refs/heads/main'
+              run: |
+                  git checkout gh-pages
+                  cp artifacthub-repo.yml .
+                  git add artifacthub-repo.yml
+                  git commit -m "Update Artifact Hub repository metadata" || echo "No changes to commit"
+                  git push origin gh-pages

@@ -139,16 +139,49 @@ helm install test-release charts/<chart-name> -n test-namespace --create-namespa
 
 ### 3. Update Version
 
-If you're making changes that affect functionality, update the chart version in `Chart.yaml`:
+**IMPORTANT**: All charts in this repository follow a **calendar-based versioning scheme**.
 
-- **Patch version** (x.x.X): Bug fixes, documentation updates
-- **Minor version** (x.X.x): New features, backwards-compatible changes
-- **Major version** (X.x.x): Breaking changes
+#### Version Format
 
-```yaml
-# charts/<chart-name>/Chart.yaml
-version: 2026.2.2  # Increment appropriately
 ```
+year.month.version_number
+```
+
+- **Year**: 4-digit year (e.g., `2026`)
+- **Month**: Month number without leading zero (e.g., `3` for March, `12` for December)
+- **Version Number**: Sequential number starting from 1 for each month
+
+#### Examples
+
+- `2026.3.1` - First version released in March 2026
+- `2026.3.2` - Second version released in March 2026 (even if released on March 28th)
+- `2026.4.1` - First version released in April 2026
+
+#### How to Increment Versions
+
+1. **Same month as last release**: Increment the version number
+   - If last version was `2026.3.5`, next version is `2026.3.6`
+
+2. **New month**: Reset version number to 1
+   - If last version was `2026.3.5` in March, first April version is `2026.4.1`
+
+3. **Update Chart.yaml**:
+   ```yaml
+   # charts/<chart-name>/Chart.yaml
+   version: 2026.3.2  # Increment according to calendar versioning
+   ```
+
+#### When to Create a New Version
+
+Create a new version for:
+- Bug fixes
+- New features
+- Documentation updates (optional, use judgment)
+- Breaking changes
+- Security patches
+- Dependency updates
+
+**Note**: The version number sequence doesn't indicate the magnitude of changes - use commit messages and changelog to communicate breaking changes.
 
 ### 4. Update Documentation
 
@@ -292,11 +325,13 @@ Write clear, descriptive commit messages:
 git commit -m "feat(bind9): add support for zone transfer notifications"
 git commit -m "fix(openeverest-database-tools): correct ArgoCD sync wave annotation"
 git commit -m "docs(cloudreve): update storage configuration examples"
+git commit -m "chore(kener): bump version to 2026.3.2"
 
 # Use conventional commit format
 # <type>(<scope>): <subject>
 #
 # Types: feat, fix, docs, style, refactor, test, chore
+# Scope: chart name (bind9, cloudreve, kener, openeverest-database-tools)
 ```
 
 ### Push Your Changes
@@ -369,6 +404,41 @@ Maintainers will check for:
 - We aim to respond to PRs within 3-5 business days
 - Complex changes may require more time for review
 - Feel free to ping maintainers if you haven't heard back in a week
+
+## Verified Publisher Status
+
+This repository is configured as a **Verified Publisher** on Artifact Hub. To maintain this status:
+
+### What Is Verified Publisher?
+
+The "Verified Publisher" badge on Artifact Hub indicates that the repository publisher owns or has control over the repository. This helps users trust the authenticity of the charts.
+
+### Maintaining Verification
+
+1. **Do not modify** the `artifacthub-repo.yml` file unless you're updating maintainer information
+2. The `repositoryID` field must match the ID shown in the [Artifact Hub Control Panel](https://artifacthub.io/control-panel)
+3. The file is automatically deployed to GitHub Pages during releases
+
+### Troubleshooting Verification
+
+If the verified badge doesn't appear:
+
+1. **Check Repository ID**: Ensure `repositoryID` in `artifacthub-repo.yml` matches your Artifact Hub repository ID
+2. **Verify File Location**: The file must be served at `https://helm.unxwares.studio/artifacthub-repo.yml`
+3. **Trigger Re-scan**: Make a change to any chart to trigger a new release (updates `index.yaml`)
+4. **Wait for Processing**: Artifact Hub processes repositories periodically; verification may take a few minutes
+
+### Adding New Maintainers
+
+To add a new maintainer to the verified publisher list, update `artifacthub-repo.yml`:
+
+```yaml
+owners:
+  - name: New Maintainer Name
+    email: email@unxwares.com
+```
+
+Then create a pull request with the changes.
 
 ## Getting Help
 

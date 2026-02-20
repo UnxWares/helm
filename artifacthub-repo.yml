@@ -1,0 +1,18 @@
+# Artifact Hub repository metadata file
+# https://github.com/artifacthub/hub/blob/master/docs/metadata/artifacthub-repo.yml
+#
+# This file is used to verify the publisher identity on Artifact Hub.
+# The repositoryID must match the ID shown in your Artifact Hub control panel.
+
+# Repository ID from Artifact Hub Control Panel
+# Found at: https://artifacthub.io/control-panel > Repositories tab
+repositoryID: 8a55e7ea-bcdd-40e6-92d4-cd7532969888
+
+# Repository owners (GitHub usernames or organization)
+owners:
+  - name: UnxWares
+    email: opensource@unxwares.com
+  - name: David Gheghea
+    email: david.gheghea@unxwares.com
+  - name: Baptiste Gosselin
+    email: baptiste.gosselin@unxwares.com
