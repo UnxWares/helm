@@ -169,6 +169,40 @@ To maintain the verified status:
 
 The verified publisher badge will appear after the next repository synchronization (triggered when `index.yaml` changes).
 
+## Values Schema
+
+All charts include a **values schema** (`values.schema.json`) that:
+- ✅ Validates user-provided values
+- ✅ Provides rich documentation on Artifact Hub
+- ✅ Enables IDE autocompletion
+- ✅ Prevents configuration errors
+
+### Generating Schemas
+
+To regenerate schemas after modifying `values.yaml`:
+
+```bash
+# Run the automated script
+./generate-schemas.sh
+```
+
+Or manually for a specific chart:
+
+```bash
+# Install the plugin (first time only)
+helm plugin install https://github.com/karuppiah7890/helm-schema-gen.git
+
+# Generate schema
+helm schema-gen charts/bind9/values.yaml > charts/bind9/values.schema.json
+```
+
+### Schema Benefits
+
+Users installing your charts benefit from:
+- **Validation**: Helm validates values against the schema before installation
+- **Documentation**: Artifact Hub displays an interactive schema documentation
+- **Type Safety**: Catch configuration errors early in the deployment process
+
 ## Chart Development
 
 ### Directory Structure

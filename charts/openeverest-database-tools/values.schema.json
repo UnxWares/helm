@@ -1,0 +1,106 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "object",
+    "properties": {
+        "affinity": {
+            "type": "object"
+        },
+        "annotations": {
+            "type": "object"
+        },
+        "databases": {
+            "type": "object",
+            "properties": {
+                "mongodb": {
+                    "type": "array"
+                },
+                "mysql": {
+                    "type": "array"
+                },
+                "postgresql": {
+                    "type": "array"
+                }
+            }
+        },
+        "global": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "type": "object"
+                },
+                "argocd": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "hook": {
+                            "type": "string"
+                        },
+                        "hookDeletePolicy": {
+                            "type": "string"
+                        },
+                        "syncOptions": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "backoffLimit": {
+                    "type": "integer"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "restartPolicy": {
+                    "type": "string"
+                },
+                "ttlSecondsAfterFinished": {
+                    "type": "integer"
+                }
+            }
+        },
+        "image": {
+            "type": "object",
+            "properties": {
+                "mongodb": {
+                    "type": "string"
+                },
+                "mysql": {
+                    "type": "string"
+                },
+                "postgresql": {
+                    "type": "string"
+                },
+                "pullPolicy": {
+                    "type": "string"
+                }
+            }
+        },
+        "labels": {
+            "type": "object"
+        },
+        "nodeSelector": {
+            "type": "object"
+        },
+        "rbac": {
+            "type": "object",
+            "properties": {
+                "create": {
+                    "type": "boolean"
+                },
+                "serviceAccountName": {
+                    "type": "string"
+                }
+            }
+        },
+        "resources": {
+            "type": "object"
+        },
+        "securityContext": {
+            "type": "object"
+        },
+        "tolerations": {
+            "type": "array"
+        }
+    }
+}
