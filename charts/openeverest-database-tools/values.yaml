@@ -44,9 +44,6 @@ databases:
     #     - credentialsSecret: app-user-secret
     #       databases:
     #         - laravel-app
-    #       privileges:
-    #         - CONNECT
-    #         - CREATE
     #   # Optional: custom SQL scripts to run
     #   initScripts: []
     #     - CREATE EXTENSION IF NOT EXISTS pg_trgm;

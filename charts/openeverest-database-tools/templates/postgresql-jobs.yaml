@@ -136,10 +136,13 @@ spec:
 
               # Grant CONNECT + harden
               {{- range $dbname := $user.databases }}
+              echo "Setting owner of '{{ $dbname }}' to ${USERNAME}"
+              psql -c "ALTER DATABASE \"{{ $dbname }}\" OWNER TO \"${USERNAME}\";"
+
               echo "Granting CONNECT on '{{ $dbname }}' to ${USERNAME}"
               psql -c "GRANT CONNECT ON DATABASE \"{{ $dbname }}\" TO \"${USERNAME}\";"
 
-              echo "Hardening schema 'public' in '{{ $dbname }}'"
+              psql -d "{{ $dbname }}" -c "ALTER SCHEMA public OWNER TO \"${USERNAME}\";"
               psql -d "{{ $dbname }}" -c "REVOKE ALL ON SCHEMA public FROM PUBLIC;"
               psql -d "{{ $dbname }}" -c "GRANT ALL ON SCHEMA public TO \"${USERNAME}\";"
               psql -d "{{ $dbname }}" -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO \"${USERNAME}\";"
