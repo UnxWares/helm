@@ -581,6 +581,34 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/cloudreve-0.1.0/cloudreve-0.1.0.tgz
     version: 0.1.0
+  fossflow:
+  - annotations:
+      artifacthub.io/license: MIT
+      category: tools
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-02-23T23:42:18.906485935Z"
+    description: A helm chart for FossFlow, powerful, open-source Progressive Web
+      App (PWA) for creating beautiful isometric diagrams.
+    digest: 42e0762d4b259cd1883f0ab0803ed88035532016ace19274117b91fe6b210618
+    keywords:
+    - flow
+    - diagram
+    - pwa
+    - isometric
+    - open-source
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    name: fossflow
+    sources:
+    - https://stan-smith.github.io/FossFLOW/
+    - https://github.com/stan-smith/FossFLOW
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/fossflow-2026.2.1/fossflow-2026.2.1.tgz
+    version: 2026.2.1
   kener:
   - annotations:
       artifacthub.io/license: MIT
@@ -1105,4 +1133,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.2.1/openeverest-database-tools-2026.2.1.tgz
     version: 2026.2.1
-generated: "2026-02-21T16:13:55.42391905Z"
+generated: "2026-02-23T23:42:18.906590499Z"
