@@ -1,0 +1,26 @@
+apiVersion: v2
+name: fossflow
+description: A helm chart for FossFlow, powerful, open-source Progressive Web App (PWA) for creating beautiful isometric diagrams.
+type: application
+version: 2026.2.1
+appVersion: "latest"
+
+sources:
+  - https://stan-smith.github.io/FossFLOW/
+  - https://github.com/stan-smith/FossFLOW
+
+keywords:
+  - flow
+  - diagram
+  - pwa
+  - isometric
+  - open-source
+
+maintainers:
+  - name: David Gheghea
+    email: david.gheghea@unxwares.com
+    url: https://github.com/UnxWares
+
+annotations:
+  category: tools
+  artifacthub.io/license: "MIT"
