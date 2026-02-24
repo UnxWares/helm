@@ -84,12 +84,12 @@ frontend:
     # - name: data
     #   secret:
     #   persistentVolumeClaim:
-    #     claimName: fossflow-data
+    #     claimName: some-claim
 
   # Additional volumeMounts on the output Deployment definition.
   volumeMounts: []
     # - name: data
-    #   mountPath: "/data/diagrams"
+    #   mountPath: ""
     #   readOnly: false
 
   nodeSelector: {}
@@ -216,12 +216,12 @@ backend:
     # - name: data
     #   secret:
     #   persistentVolumeClaim:
-    #     claimName: fossflow-data
+    #     claimName: some-data
 
   # Additional volumeMounts on the output Deployment definition.
   volumeMounts: []
     # - name: data
-    #   mountPath: "/data/diagrams"
+    #   mountPath: "/some/path"
     #   readOnly: false
 
   nodeSelector: {}

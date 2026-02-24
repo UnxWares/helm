@@ -2,7 +2,7 @@ apiVersion: v2
 name: excalidash
 description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer for Excalidraw with live collaboration features
 type: application
-version: 2026.2.1
+version: 2026.2.2
 appVersion: "0.4.27"
 icon: https://github.com/ZimengXiong/ExcaliDash/blob/main/readme-assets/logoExcaliDash.png?raw=true
 
