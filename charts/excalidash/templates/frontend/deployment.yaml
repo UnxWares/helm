@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "excalidash.frontend.fullname" . }}
+  labels:
+    {{- include "excalidash.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  {{- if not .Values.frontend.autoscaling.enabled }}
+  replicas: {{ .Values.frontend.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "excalidash.frontend.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.frontend.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "excalidash.frontend.selectorLabels" . | nindent 8 }}
+        {{- with .Values.frontend.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- $ips := .Values.frontend.imagePullSecrets | default .Values.global.imagePullSecrets }}
+      {{- if $ips }}
+      imagePullSecrets:
+        {{- toYaml $ips | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "excalidash.serviceAccountName" . }}
+
+      {{- with .Values.frontend.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      containers:
+        - name: frontend
+          {{- with .Values.frontend.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.frontend.service.port }}
+              protocol: TCP
+
+          env:
+            - name: BACKEND_URL
+              value: "{{ include "excalidash.backend.fullname" . }}:{{ .Values.backend.service.port }}"
+
+            {{- with .Values.frontend.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+
+          {{- with .Values.frontend.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with .Values.frontend.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with .Values.frontend.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with .Values.frontend.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with .Values.frontend.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+      {{- with .Values.frontend.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- $ns := .Values.frontend.nodeSelector | default .Values.global.pod.nodeSelector }}
+      {{- if $ns }}
+      nodeSelector:
+        {{- toYaml $ns | nindent 8 }}
+      {{- end }}
+
+      {{- $aff := .Values.frontend.affinity | default .Values.global.pod.affinity }}
+      {{- if $aff }}
+      affinity:
+        {{- toYaml $aff | nindent 8 }}
+      {{- end }}
+
+      {{- $tol := .Values.frontend.tolerations | default .Values.global.pod.tolerations }}
+      {{- if $tol }}
+      tolerations:
+        {{- toYaml $tol | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "excalidash.backend.fullname" . }}
+  labels:
+    {{- include "excalidash.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  {{- if not .Values.backend.autoscaling.enabled }}
+  replicas: {{ .Values.backend.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "excalidash.backend.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.backend.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "excalidash.backend.selectorLabels" . | nindent 8 }}
+        {{- with .Values.backend.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- $ips := .Values.backend.imagePullSecrets | default .Values.global.imagePullSecrets }}
+      {{- if $ips }}
+      imagePullSecrets:
+        {{- toYaml $ips | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ include "excalidash.serviceAccountName" . }}
+
+      {{- with .Values.backend.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      containers:
+        - name: backend
+          {{- with .Values.backend.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.service.port }}
+              protocol: TCP
+
+          env:
+            - name: PORT
+              value: "{{ .Values.backend.service.port }}"
+            - name: NODE_ENV
+              value: "{{ .Values.backend.nodeEnv }}"
+
+            {{- if and .Values.backend.database.enabled (not .Values.backend.database.existingSecret) }}
+            - name: DATABASE_URL
+              value: "{{ .Values.backend.database.url }}"
+            {{- end }}
+
+            {{- with .Values.backend.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+
+          {{- if or .Values.backend.extraEnvFrom .Values.backend.database.existingSecret }}
+          envFrom:
+            {{- if .Values.backend.database.existingSecret }}
+            - secretRef:
+                name: {{ .Values.backend.database.existingSecret }}
+            {{- end }}
+            {{- with .Values.backend.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+
+          {{- with .Values.backend.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with .Values.backend.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with .Values.backend.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with .Values.backend.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+      {{- with .Values.backend.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- $ns := .Values.backend.nodeSelector | default .Values.global.pod.nodeSelector }}
+      {{- if $ns }}
+      nodeSelector:
+        {{- toYaml $ns | nindent 8 }}
+      {{- end }}
+
+      {{- $aff := .Values.backend.affinity | default .Values.global.pod.affinity }}
+      {{- if $aff }}
+      affinity:
+        {{- toYaml $aff | nindent 8 }}
+      {{- end }}
+
+      {{- $tol := .Values.backend.tolerations | default .Values.global.pod.tolerations }}
+      {{- if $tol }}
+      tolerations:
+        {{- toYaml $tol | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,27 @@
+apiVersion: v2
+name: excalidash
+description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer for Excalidraw with live collaboration features
+type: application
+version: 2026.2.1
+appVersion: "0.4.27"
+icon: https://github.com/ZimengXiong/ExcaliDash/blob/main/readme-assets/logoExcaliDash.png?raw=true
+
+sources:
+  - https://github.com/ZimengXiong/ExcaliDash
+
+keywords:
+  - excalidraw
+  - excali
+  - dashboard
+  - collaboration
+  - board
+  - live
+
+maintainers:
+  - name: David Gheghea
+    email: david.gheghea@unxwares.com
+    url: https://github.com/UnxWares
+
+annotations:
+  category: tools
+  artifacthub.io/license: "MIT"
