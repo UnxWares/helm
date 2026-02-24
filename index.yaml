@@ -581,6 +581,35 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/cloudreve-0.1.0/cloudreve-0.1.0.tgz
     version: 0.1.0
+  excalidash:
+  - annotations:
+      artifacthub.io/license: MIT
+      category: tools
+    apiVersion: v2
+    appVersion: 0.4.27
+    created: "2026-02-24T03:02:13.752036364Z"
+    description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer
+      for Excalidraw with live collaboration features
+    digest: 8519598be1e585584dd2d8a5cddc4453641ceb889cd42cf8175815d77d3e1b46
+    icon: https://github.com/ZimengXiong/ExcaliDash/blob/main/readme-assets/logoExcaliDash.png?raw=true
+    keywords:
+    - excalidraw
+    - excali
+    - dashboard
+    - collaboration
+    - board
+    - live
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    name: excalidash
+    sources:
+    - https://github.com/ZimengXiong/ExcaliDash
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/excalidash-2026.2.1/excalidash-2026.2.1.tgz
+    version: 2026.2.1
   fossflow:
   - annotations:
       artifacthub.io/license: MIT
@@ -1133,4 +1162,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.2.1/openeverest-database-tools-2026.2.1.tgz
     version: 2026.2.1
-generated: "2026-02-23T23:42:18.906590499Z"
+generated: "2026-02-24T03:02:13.752116333Z"
