@@ -587,6 +587,34 @@ entries:
       category: tools
     apiVersion: v2
     appVersion: 0.4.27
+    created: "2026-02-24T19:13:10.905633167Z"
+    description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer
+      for Excalidraw with live collaboration features
+    digest: 0352b26ef9c0d03c05b0a3c6d644bff4b367e8ac07e607a76cf563a3fd8d1c0d
+    icon: https://github.com/ZimengXiong/ExcaliDash/blob/main/readme-assets/logoExcaliDash.png?raw=true
+    keywords:
+    - excalidraw
+    - excali
+    - dashboard
+    - collaboration
+    - board
+    - live
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    name: excalidash
+    sources:
+    - https://github.com/ZimengXiong/ExcaliDash
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/excalidash-2026.2.2/excalidash-2026.2.2.tgz
+    version: 2026.2.2
+  - annotations:
+      artifacthub.io/license: MIT
+      category: tools
+    apiVersion: v2
+    appVersion: 0.4.27
     created: "2026-02-24T03:02:13.752036364Z"
     description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer
       for Excalidraw with live collaboration features
@@ -1162,4 +1190,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.2.1/openeverest-database-tools-2026.2.1.tgz
     version: 2026.2.1
-generated: "2026-02-24T03:02:13.752116333Z"
+generated: "2026-02-24T19:13:10.905729046Z"
