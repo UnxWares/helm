@@ -1,0 +1,30 @@
+apiVersion: v2
+name: taiga
+description: A helm chart for Taiga.io, A self-hosted dashboard and organizer for Excalidraw with live collaboration features
+type: application
+version: 2026.2.2
+appVersion: "0.4.27"
+icon: https://avatars.githubusercontent.com/u/6905422?s=200&v=4
+
+sources:
+  - https://taiga.io/
+  - https://github.com/taigaio/taiga-docker
+
+keywords:
+  - taiga
+  - kanban
+  - project
+  - management
+  - task
+  - board
+  - collaboration
+  - live
+
+maintainers:
+  - name: David Gheghea
+    email: david.gheghea@unxwares.com
+    url: https://github.com/UnxWares
+
+annotations:
+  category: tools
+  artifacthub.io/license: "MIT"

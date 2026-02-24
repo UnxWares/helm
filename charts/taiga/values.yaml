@@ -1,0 +1,232 @@
+global:
+  pod:
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+  imagePullSecrets: []
+
+frontend:
+  replicaCount: 1
+
+  image:
+    repository: taigaio/taiga-front
+    pullPolicy: IfNotPresent
+    tag: latest
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  extraEnv:
+    - name: TAIGA_URL
+      value: "https://taiga.example.com"
+    - name: TAIGA_WEBSOCKETS_URL
+      value: "wss://taiga.example.com"
+    - name: TAIGA_SUBPATH
+      value: ""
+
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+################################
+# Backend
+################################
+backend:
+  replicaCount: 1
+
+  image:
+    repository: taigaio/taiga-back
+    pullPolicy: IfNotPresent
+    tag: latest
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  database:
+    host: taiga-db
+    name: taiga
+    existingSecret: ""
+    secretKeys:
+      user: POSTGRES_USER
+      password: POSTGRES_PASSWORD
+
+  extraEnv:
+    - name: TAIGA_SECRET_KEY
+      value: "changeme"
+    - name: TAIGA_SITES_SCHEME
+      value: "https"
+    - name: TAIGA_SITES_DOMAIN
+      value: "taiga.example.com"
+    - name: TAIGA_SUBPATH
+      value: ""
+
+  volumes:
+    - name: static
+      persistentVolumeClaim:
+        claimName: taiga-static
+    - name: media
+      persistentVolumeClaim:
+        claimName: taiga-media
+
+  volumeMounts:
+    - name: static
+      mountPath: /taiga-back/static
+    - name: media
+      mountPath: /taiga-back/media
+
+################################
+# Async worker
+################################
+async:
+  replicaCount: 1
+
+  image:
+    repository: taigaio/taiga-back
+    tag: latest
+
+  command: ["/taiga-back/docker/async_entrypoint.sh"]
+
+  volumes:
+    - name: static
+      persistentVolumeClaim:
+        claimName: taiga-static
+    - name: media
+      persistentVolumeClaim:
+        claimName: taiga-media
+
+################################
+# Database
+################################
+database:
+  enabled: true
+
+  image:
+    repository: postgres
+    tag: "12.3"
+
+  auth:
+    database: taiga
+    existingSecret: ""
+    secretKeys:
+      user: POSTGRES_USER
+      password: POSTGRES_PASSWORD
+
+  persistence:
+    enabled: true
+    size: 10Gi
+
+################################
+# RabbitMQ (async)
+################################
+asyncRabbitmq:
+  replicaCount: 1
+
+  image:
+    repository: rabbitmq
+    tag: 3.8-management-alpine
+
+  auth:
+    existingSecret: ""
+    secretKeys:
+      user: RABBITMQ_USER
+      password: RABBITMQ_PASS
+      vhost: RABBITMQ_VHOST
+
+  persistence:
+    enabled: true
+    size: 5Gi
+
+################################
+# RabbitMQ (events)
+################################
+eventsRabbitmq:
+  replicaCount: 1
+
+  image:
+    repository: rabbitmq
+    tag: 3.8-management-alpine
+
+  auth:
+    existingSecret: ""
+    secretKeys:
+      user: RABBITMQ_USER
+      password: RABBITMQ_PASS
+      vhost: RABBITMQ_VHOST
+
+  persistence:
+    enabled: true
+    size: 5Gi
+
+################################
+# Events service
+################################
+events:
+  replicaCount: 1
+
+  image:
+    repository: taigaio/taiga-events
+    tag: latest
+
+################################
+# Protected attachments service
+################################
+protected:
+  replicaCount: 1
+
+  image:
+    repository: taigaio/taiga-protected
+    tag: latest
+
+################################
+# Gateway (nginx)
+################################
+gateway:
+  replicaCount: 1
+
+  image:
+    repository: nginx
+    tag: 1.19-alpine
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  volumes:
+    - name: static
+      persistentVolumeClaim:
+        claimName: taiga-static
+    - name: media
+      persistentVolumeClaim:
+        claimName: taiga-media
+
+  volumeMounts:
+    - name: static
+      mountPath: /taiga/static
+    - name: media
+      mountPath: /taiga/media
+
+################################
+# Ingress
+################################
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: taiga.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+################################
+# Service account
+################################
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""

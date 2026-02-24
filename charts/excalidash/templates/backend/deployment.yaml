@@ -58,9 +58,18 @@ spec:
             - name: NODE_ENV
               value: "{{ .Values.backend.nodeEnv }}"
 
-            {{- if and .Values.backend.database.enabled (not .Values.backend.database.existingSecret) }}
+            {{- if .Values.database.enabled }}
+
             - name: DATABASE_URL
-              value: "{{ .Values.backend.database.url }}"
+              {{- if .Values.database.existingSecret }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.existingSecret }}
+                  key: {{ .Values.database.secretKeys.url }}
+              {{- else }}
+              value: {{ .Values.database.url | quote }}
+              {{- end }}
+
             {{- end }}
 
             {{- with .Values.backend.extraEnv }}
