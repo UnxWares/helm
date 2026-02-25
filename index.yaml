@@ -587,6 +587,34 @@ entries:
       category: tools
     apiVersion: v2
     appVersion: 0.4.27
+    created: "2026-02-25T21:23:35.714795458Z"
+    description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer
+      for Excalidraw with live collaboration features
+    digest: 4c444ad56d7f9406955018bb6e2f36c0676eb61537387747134f06648e3cd313
+    icon: https://github.com/ZimengXiong/ExcaliDash/blob/main/readme-assets/logoExcaliDash.png?raw=true
+    keywords:
+    - excalidraw
+    - excali
+    - dashboard
+    - collaboration
+    - board
+    - live
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    name: excalidash
+    sources:
+    - https://github.com/ZimengXiong/ExcaliDash
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/excalidash-2026.2.5/excalidash-2026.2.5.tgz
+    version: 2026.2.5
+  - annotations:
+      artifacthub.io/license: MIT
+      category: tools
+    apiVersion: v2
+    appVersion: 0.4.27
     created: "2026-02-24T20:01:06.459785749Z"
     description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer
       for Excalidraw with live collaboration features
@@ -1278,4 +1306,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-02-24T20:01:06.459872307Z"
+generated: "2026-02-25T21:23:35.902700916Z"
