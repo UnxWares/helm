@@ -13,26 +13,100 @@ frontend:
     pullPolicy: IfNotPresent
     tag: latest
 
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+
+  url: "https://taiga.example.com"
+  websocketsUrl: "wss://taiga.example.com"
+  subPath: ""
+
   service:
     type: ClusterIP
     port: 80
 
   extraEnv:
-    - name: TAIGA_URL
-      value: "https://taiga.example.com"
-    - name: TAIGA_WEBSOCKETS_URL
-      value: "wss://taiga.example.com"
-    - name: TAIGA_SUBPATH
-      value: ""
+    # - name: SOME_ENV
+    #   value: "some-value"
+    # - name: TAIGA_URL
+    #   value: "https://taiga.example.com"
+    # - name: TAIGA_WEBSOCKETS_URL
+    #   value: "wss://taiga.example.com"
+    # - name: TAIGA_SUBPATH
+    #   value: ""
 
+  extraEnvFrom: []
+  # - secretRef:
+  #     name: my-secret
+  # - configMapRef:
+  #     name: my-config
+
+  # This is for setting Kubernetes Annotations to a Pod.
+  # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  podAnnotations: {}
+  # This is for setting Kubernetes Labels to a Pod.
+  # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+  podLabels: {}
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
   resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+
+  # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  # Additional volumes on the output Deployment definition.
+  volumes: []
+    # - name: data
+    #   secret:
+    #   persistentVolumeClaim:
+    #     claimName: some-data
+
+  # Additional volumeMounts on the output Deployment definition.
+  volumeMounts: []
+    # - name: data
+    #   mountPath: "/some/path"
+    #   readOnly: false
+
   nodeSelector: {}
+
   tolerations: []
+
   affinity: {}
 
-################################
-# Backend
-################################
 backend:
   replicaCount: 1
 
@@ -43,7 +117,7 @@ backend:
 
   service:
     type: ClusterIP
-    port: 8000
+    port: 80
 
   database:
     host: taiga-db

@@ -57,6 +57,8 @@ spec:
               value: "{{ .Values.backend.service.port }}"
             - name: NODE_ENV
               value: "{{ .Values.backend.nodeEnv }}"
+            - name: FRONTEND_URL
+              value: "{{ .Values.frontend.url }}"
 
             {{- if .Values.backend.database.enabled }}
 
