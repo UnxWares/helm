@@ -1,0 +1,27 @@
+apiVersion: v2
+name: laravel-generic
+description: A helm chart for generic Laravel apps
+type: application
+version: 2026.2.1
+appVersion: "12.x"
+icon: https://avatars.githubusercontent.com/u/958072?s=200&v=4
+
+sources:
+  - https://laravel.com
+  - https://github.com/laravel/
+
+keywords:
+  - laravel
+  - php
+  - framework
+  - web
+  - application
+
+maintainers:
+  - name: David Gheghea
+    email: david.gheghea@unxwares.com
+    url: https://github.com/UnxWares
+
+annotations:
+  category: monitoring
+  artifacthub.io/license: "MIT"

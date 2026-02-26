@@ -1,0 +1,387 @@
+replicaCount: 1
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+image:
+  # Should be provided by the user
+  repository:
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+laravel:
+  name: Laravel
+  env: production
+  key:
+    value: ""
+    # Using exisitingSecret will override key.value
+    # existingSecret: "existing-secret"
+    existingSecretKey: key
+  debug: false
+  url: "https://www.example.com"
+
+  locale:
+    default: "en"
+    fallback: "en"
+    faker: "en_US"
+
+  maintenance:
+    driver: file
+    # store: database
+
+  cli_server_workers: 4
+  bcrypt_rounds: 12
+
+  log:
+    channel: stack
+    stack: single
+    deprecations_channel: null
+    level: info
+
+  database:
+    enabled: true
+    connection: sqlite
+    host: 127.0.0.1
+    port: 5432
+    database: /app/database/db.sqlite
+    username: user
+    password: password
+
+    # If you want to pull values from an existing secret
+    # Using existingSecret will override database configuration
+    # existingSecret: "existing-secret"
+    secretKeys:
+      host: database-host
+      port: database-port
+      database: database-name
+      username: database-username
+      password: database-password
+
+  session:
+    driver: database
+    lifetime: 120
+    encrypt: false
+    path: /
+    domain: null
+
+  broadcast_connection: log
+  filesystem_disk: local
+  queue_connection: database
+
+  cache:
+    store: database
+    prefix: 
+
+  memcached:
+    host: 127.0.0.1
+
+  redis:
+    enabled: false
+    client: phpredis
+    host: 127.0.0.1
+    password: null
+    port: 6379
+
+    # If you want to pull values from an existing secret
+    # Using existingSecret will override redis configuration
+    # existingSecret: "existing-secret"
+    secretKeys:
+      host: redis-host
+      port: redis-port
+      password: redis-password
+
+  mail:
+    enabled: false
+    mailer: log
+    scheme: null
+    host: 127.0.0.1
+    port: 25
+    username: null
+    password: null
+
+    # If you want to pull values from an existing secret
+    # Using existingSecret will override mail configuration
+    # existingSecret: "existing-secret"
+    secretKeys:
+      host: mail-host
+      port: mail-port
+      username: mail-username
+      password: mail-password
+
+    from:
+      address: hello@example.com
+      name: "${APP_NAME}"
+
+  aws:
+    enabled: false
+    access_key_id: null
+    secret_access_key: null
+    region: us-east-1
+    bucket: null
+    use_path_style_endpoint: false
+
+    # If you want to pull values from an existing secret
+    # Using existingSecret will override aws configuration
+    # existingSecret: "existing-secret"
+    secretKeys:
+      access_key_id: aws-access-key-id
+      secret_access_key: aws-secret-access-key
+      region: aws-region
+      bucket: aws-bucket
+      use_path_style_endpoint: aws-use-path-style-endpoint
+
+  vite:
+    enabled: false
+    app_name: "${APP_NAME}"
+
+  extraEnv: []
+  # - name: APP_ENV
+  #   value: production
+
+  extraEnvFrom: []
+  # - secretRef:
+  #     name: my-secret
+  # - configMapRef:
+  #     name: my-config
+
+workload:
+  # For more information checkout: https://laravel.com/docs/12.x/deployment
+  runtime:
+    # This would determine how the application is run (frankenphp, fpm)
+    type: frankenphp
+
+    frankenphp:
+      port: 8000
+
+    fpm:
+      port: 9000
+
+  nginx:
+    enabled: false
+    replicaCount: 1
+    image:
+      repository: nginx
+      tag: 1.27
+    service:
+      type: ClusterIP
+      port: 80
+
+    resources: {}
+
+    config: |
+      server {
+          listen 80;
+          listen [::]:80;
+          server_name example.com;
+          root /srv/example.com/public;
+
+          add_header X-Frame-Options "SAMEORIGIN";
+          add_header X-Content-Type-Options "nosniff";
+
+          index index.php;
+
+          charset utf-8;
+
+          location / {
+              try_files $uri $uri/ /index.php?$query_string;
+          }
+
+          location = /favicon.ico { access_log off; log_not_found off; }
+          location = /robots.txt  { access_log off; log_not_found off; }
+
+          error_page 404 /index.php;
+
+          location ~ ^/index\.php(/|$) {
+              fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+              fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+              include fastcgi_params;
+              fastcgi_hide_header X-Powered-By;
+          }
+
+          location ~ /\.(?!well-known).* {
+              deny all;
+          }
+      }
+
+  queueWorker:
+    enabled: true
+    replicaCount: 1
+    command:
+      - php
+      - artisan
+      - queue:work
+      - --sleep=3
+      - --tries=3
+    resources: {}
+
+  scheduler:
+    enabled: true
+    schedule: "* * * * *"
+    command:
+      - php
+      - artisan
+      - schedule:run
+    resources: {}
+
+  migrations:
+    enabled: true
+    command:
+      - php
+      - artisan
+      - migrate
+      - --force
+    resources: {}
+
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 33 # 33 is the default www-data user
+  # runAsGroup: 33
+  # fsGroup: 3
+
+# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+httpRoute:
+  # HTTPRoute enabled.
+  enabled: false
+  # HTTPRoute annotations.
+  annotations: {}
+  # Which Gateways this Route is attached to.
+  parentRefs:
+  - name: gateway
+    sectionName: http
+    # namespace: default
+  # Hostnames matching HTTP header.
+  hostnames:
+  - chart-example.local
+  # List of rules and filters applied.
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /headers
+  #   filters:
+  #   - type: RequestHeaderModifier
+  #     requestHeaderModifier:
+  #       set:
+  #       - name: My-Overwrite-Header
+  #         value: this-is-the-only-value
+  #       remove:
+  #       - User-Agent
+  # - matches:
+  #   - path:
+  #       type: PathPrefix
+  #       value: /echo
+  #     headers:
+  #     - name: version
+  #       value: v2
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /up
+    port: http
+  initialDelaySeconds: 20
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+readinessProbe:
+  httpGet:
+    path: /up
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+startupProbe:
+  httpGet:
+    path: /up
+    port: http
+  failureThreshold: 30
+  periodSeconds: 5
+  timeoutSeconds: 5
+
+# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+volumes: []
+  # - name: laravel-storage
+  #   persistentVolumeClaim: # We highly recommend to use ReadWriteMany if available (the volumes would be attached to multiple containers depending on the values)
+  #     claimName: laravel-storage-pvc
+  # - name: laravel-database
+  #   persistentVolumeClaim:
+  #     claimName: laravel-database-pvc
+
+volumeMounts: []
+  # - name: laravel-storage
+  #   mountPath: /app/storage
+  # - name: laravel-database
+  #   mountPath: /app/database
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

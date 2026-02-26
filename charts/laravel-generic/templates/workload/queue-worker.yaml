@@ -1,0 +1,52 @@
+{{- if .Values.workload.queueWorker.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "laravel-generic.fullname" . }}-queue
+  labels:
+    {{- include "laravel-generic.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.workload.queueWorker.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "laravel-generic.fullname" . }}-queue
+  template:
+    metadata:
+      labels:
+        app: {{ include "laravel-generic.fullname" . }}-queue
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "laravel-generic.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: queue-worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            {{- range .Values.workload.queueWorker.command }}
+            - {{ . | quote }}
+            {{- end }}
+          env:
+            {{- include "laravel-generic.env" . | nindent 12 }}
+
+          {{ if .Values.laravel.extraEnvFrom }}
+          envFrom:
+            {{- toYaml .Values.laravel.extraEnvFrom | nindent 12 }}
+          {{ end }}
+          resources:
+            {{- toYaml .Values.workload.queueWorker.resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

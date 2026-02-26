@@ -1,0 +1,67 @@
+{{- if .Values.workload.migrations.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "laravel-generic.fullname" . }}-migrations
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+  labels:
+    {{- include "laravel-generic.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: {{ include "laravel-generic.fullname" . }}-migrations
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "laravel-generic.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: Never
+      {{- if eq .Values.laravel.database.connection "sqlite" }}
+      initContainers:
+        - name: init-sqlite
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p $(dirname "${DB_DATABASE}") && \
+              touch "${DB_DATABASE}"
+          env:
+            - name: DB_DATABASE
+              value: {{ .Values.laravel.database.database | quote }}
+          volumeMounts:
+            {{- toYaml .Values.volumeMounts | nindent 12 }}
+      {{- end }}
+      containers:
+        - name: migrate
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            {{- range .Values.workload.migrations.command }}
+            - {{ . | quote }}
+            {{- end }}
+          env:
+            {{- include "laravel-generic.env" . | nindent 12 }}
+          {{- if .Values.laravel.extraEnvFrom }}
+          envFrom:
+            {{- toYaml .Values.laravel.extraEnvFrom | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.workload.migrations.resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

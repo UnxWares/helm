@@ -1,0 +1,9 @@
+{{- if .Values.workload.nginx.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "laravel-generic.fullname" . }}-nginx-config
+data:
+  default.conf: |
+    {{ .Values.workload.nginx.config | indent 4 }}
+{{- end }}

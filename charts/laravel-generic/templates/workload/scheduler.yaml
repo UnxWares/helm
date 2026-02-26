@@ -1,0 +1,42 @@
+{{- if .Values.workload.scheduler.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "laravel-generic.fullname" . }}-scheduler
+  labels:
+    {{- include "laravel-generic.labels" . | nindent 4 }}
+spec:
+  schedule: "{{ .Values.workload.scheduler.schedule }}"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: {{ include "laravel-generic.serviceAccountName" . }}
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          containers:
+            - name: scheduler
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command:
+                {{- range .Values.workload.scheduler.command }}
+                - {{ . | quote }}
+                {{- end }}
+              env:
+                {{- include "laravel-generic.env" . | nindent 16 }}
+              {{ if .Values.laravel.extraEnvFrom }}
+              envFrom:
+                {{- toYaml .Values.laravel.extraEnvFrom | nindent 16 }}
+              {{ end }}
+              {{- with .Values.volumeMounts }}
+              volumeMounts:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+          restartPolicy: OnFailure
+          {{- with .Values.volumes }}
+          volumes:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+{{- end }}
