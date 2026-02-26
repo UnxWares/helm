@@ -878,6 +878,34 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/kener-2026.2.1/kener-2026.2.1.tgz
     version: 2026.2.1
+  laravel-generic:
+  - annotations:
+      artifacthub.io/license: MIT
+      category: monitoring
+    apiVersion: v2
+    appVersion: 12.x
+    created: "2026-02-26T23:41:36.901983167Z"
+    description: A helm chart for generic Laravel apps
+    digest: edff55a1cc6dc13593ca3390b23d09cdde6c07abe7a88660ea5c0d56d51f1f65
+    icon: https://avatars.githubusercontent.com/u/958072?s=200&v=4
+    keywords:
+    - laravel
+    - php
+    - framework
+    - web
+    - application
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    name: laravel-generic
+    sources:
+    - https://laravel.com
+    - https://github.com/laravel/
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/laravel-generic-2026.2.1/laravel-generic-2026.2.1.tgz
+    version: 2026.2.1
   opencloud:
   - apiVersion: v2
     appVersion: latest
@@ -1306,4 +1334,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-02-25T21:23:35.902700916Z"
+generated: "2026-02-26T23:41:36.902071874Z"
