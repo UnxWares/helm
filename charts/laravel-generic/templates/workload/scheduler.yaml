@@ -7,8 +7,11 @@ metadata:
     {{- include "laravel-generic.labels" . | nindent 4 }}
 spec:
   schedule: "{{ .Values.workload.scheduler.schedule }}"
+  successfulJobsHistoryLimit: {{ .Values.workload.scheduler.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.workload.scheduler.failedJobsHistoryLimit }}
   jobTemplate:
     spec:
+      ttlSecondsAfterFinished: {{ .Values.workload.scheduler.ttlSecondsAfterFinished }}
       template:
         spec:
           serviceAccountName: {{ include "laravel-generic.serviceAccountName" . }}

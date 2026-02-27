@@ -225,6 +225,10 @@ workload:
       - schedule:run
     resources: {}
 
+    ttlSecondsAfterFinished: 120
+    successfulJobsHistoryLimit: 1
+    failedJobsHistoryLimit: 1
+
   migrations:
     enabled: true
     command:
