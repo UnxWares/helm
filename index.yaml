@@ -884,6 +884,33 @@ entries:
       category: monitoring
     apiVersion: v2
     appVersion: 12.x
+    created: "2026-02-27T00:28:00.523603435Z"
+    description: A helm chart for generic Laravel apps
+    digest: 3ee63f2571b60cb9905e29cd052ff931bb3ed132a823259ea0c6a1cd917e710b
+    icon: https://avatars.githubusercontent.com/u/958072?s=200&v=4
+    keywords:
+    - laravel
+    - php
+    - framework
+    - web
+    - application
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    name: laravel-generic
+    sources:
+    - https://laravel.com
+    - https://github.com/laravel/
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/laravel-generic-2026.2.2/laravel-generic-2026.2.2.tgz
+    version: 2026.2.2
+  - annotations:
+      artifacthub.io/license: MIT
+      category: monitoring
+    apiVersion: v2
+    appVersion: 12.x
     created: "2026-02-26T23:41:36.901983167Z"
     description: A helm chart for generic Laravel apps
     digest: edff55a1cc6dc13593ca3390b23d09cdde6c07abe7a88660ea5c0d56d51f1f65
@@ -1334,4 +1361,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-02-26T23:41:36.902071874Z"
+generated: "2026-02-27T00:28:00.523695248Z"
