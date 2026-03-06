@@ -32,7 +32,7 @@
                     "type": "string"
                 },
                 "zones": {
-                    "type": "null"
+                    "type": "object"
                 }
             }
         },
@@ -91,7 +91,7 @@
                     "type": "string"
                 },
                 "emptyDirSizeLimit": {
-                    "type": "null"
+                    "type": "string"
                 },
                 "enabled": {
                     "type": "boolean"
