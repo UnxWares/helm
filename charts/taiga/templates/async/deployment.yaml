@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "taiga.fullname" . }}-async
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+    app.kubernetes.io/component: async
+spec:
+  {{- if not .Values.async.autoscaling.enabled }}
+  replicas: {{ .Values.async.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "taiga.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: async
+  template:
+    metadata:
+      {{- with .Values.async.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "taiga.labels" . | nindent 8 }}
+        app.kubernetes.io/component: async
+        {{- with .Values.async.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "taiga.serviceAccountName" . }}
+      {{- with (default .Values.global.podSecurityContext .Values.async.podSecurityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: async
+          {{- with (default .Values.global.securityContext .Values.async.securityContext) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if and .Values.global.oidc.enabled .Values.global.oidc.backend.overrideImage.name }}
+          image: "{{ .Values.global.oidc.backend.overrideImage.name }}:{{ .Values.global.oidc.backend.overrideImage.tag }}"
+          {{- else }}
+          image: "{{ .Values.async.image.repository }}:{{ .Values.async.image.tag }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.async.image.pullPolicy }}
+          {{- with .Values.async.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            {{- include "taiga.backendEnv" . | nindent 12 }}
+            {{- with .Values.async.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if or .Values.global.extraEnvFrom .Values.async.extraEnvFrom }}
+          envFrom:
+            {{- with .Values.global.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- with .Values.async.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with (default .Values.global.resources .Values.async.resources) }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- if .Values.global.persistence.static.enabled }}
+            - name: static
+              mountPath: /taiga-back/static
+            {{- end }}
+            {{- if .Values.global.persistence.media.enabled }}
+            - name: media
+              mountPath: /taiga-back/media
+            {{- end }}
+            {{- with .Values.async.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        {{- if .Values.global.persistence.static.enabled }}
+        - name: static
+          persistentVolumeClaim:
+            claimName: {{ if .Values.global.persistence.static.existingClaim }}{{ .Values.global.persistence.static.existingClaim }}{{ else }}{{ include "taiga.fullname" . }}-static{{ end }}
+        {{- end }}
+        {{- if .Values.global.persistence.media.enabled }}
+        - name: media
+          persistentVolumeClaim:
+            claimName: {{ if .Values.global.persistence.media.existingClaim }}{{ .Values.global.persistence.media.existingClaim }}{{ else }}{{ include "taiga.fullname" . }}-media{{ end }}
+        {{- end }}
+        {{- with .Values.async.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with (default .Values.global.pod.nodeSelector .Values.async.nodeSelector) }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.global.pod.affinity .Values.async.affinity) }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.global.pod.tolerations .Values.async.tolerations) }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

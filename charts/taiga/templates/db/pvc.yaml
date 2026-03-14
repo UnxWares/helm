@@ -1,0 +1,22 @@
+{{- if and .Values.db.enabled .Values.db.persistence.enabled (not .Values.db.persistence.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "taiga.fullname" . }}-db
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+    app.kubernetes.io/component: db
+  {{- with .Values.db.persistence.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    - {{ .Values.db.persistence.accessMode }}
+  {{- with .Values.db.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.db.persistence.size }}
+{{- end }}

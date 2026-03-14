@@ -1,0 +1,19 @@
+{{- if .Values.db.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "taiga.fullname" . }}-db
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+    app.kubernetes.io/component: db
+spec:
+  type: {{ .Values.db.service.type }}
+  ports:
+    - port: {{ .Values.db.service.port }}
+      targetPort: postgres
+      protocol: TCP
+      name: postgres
+  selector:
+    {{- include "taiga.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: db
+{{- end }}

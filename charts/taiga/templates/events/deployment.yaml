@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "taiga.fullname" . }}-events
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+    app.kubernetes.io/component: events
+spec:
+  replicas: {{ .Values.events.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "taiga.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: events
+  template:
+    metadata:
+      {{- with .Values.events.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "taiga.labels" . | nindent 8 }}
+        app.kubernetes.io/component: events
+        {{- with .Values.events.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "taiga.serviceAccountName" . }}
+      {{- with (default .Values.global.podSecurityContext .Values.events.podSecurityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: events
+          {{- with (default .Values.global.securityContext .Values.events.securityContext) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.events.image.repository }}:{{ .Values.events.image.tag }}"
+          imagePullPolicy: {{ .Values.events.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.events.service.port }}
+              protocol: TCP
+          env:
+            {{- include "taiga.eventsEnv" . | nindent 12 }}
+            {{- with .Values.events.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if or .Values.global.extraEnvFrom .Values.events.extraEnvFrom }}
+          envFrom:
+            {{- with .Values.global.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- with .Values.events.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with (default .Values.global.resources .Values.events.resources) }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with (default .Values.global.pod.nodeSelector .Values.events.nodeSelector) }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.global.pod.affinity .Values.events.affinity) }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.global.pod.tolerations .Values.events.tolerations) }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

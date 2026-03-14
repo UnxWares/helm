@@ -35,9 +35,9 @@ spec:
             {{- end }}
             backend:
               service:
-                name: {{ include "taiga.fullname" $ }}
+                name: {{ include "taiga.fullname" $ }}-gateway
                 port:
-                  number: {{ $.Values.service.port }}
+                  number: {{ $.Values.gateway.service.port }}
           {{- end }}
     {{- end }}
 {{- end }}

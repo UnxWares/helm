@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "taiga.fullname" . }}-protected
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+    app.kubernetes.io/component: protected
+spec:
+  replicas: {{ .Values.protected.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "taiga.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: protected
+  template:
+    metadata:
+      {{- with .Values.protected.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "taiga.labels" . | nindent 8 }}
+        app.kubernetes.io/component: protected
+        {{- with .Values.protected.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "taiga.serviceAccountName" . }}
+      {{- with (default .Values.global.podSecurityContext .Values.protected.podSecurityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: protected
+          {{- with (default .Values.global.securityContext .Values.protected.securityContext) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.protected.image.repository }}:{{ .Values.protected.image.tag }}"
+          imagePullPolicy: {{ .Values.protected.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.protected.service.port }}
+              protocol: TCP
+          env:
+            {{- include "taiga.protectedEnv" . | nindent 12 }}
+            {{- with .Values.protected.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if or .Values.global.extraEnvFrom .Values.protected.extraEnvFrom }}
+          envFrom:
+            {{- with .Values.global.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- with .Values.protected.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with (default .Values.global.resources .Values.protected.resources) }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with (default .Values.global.pod.nodeSelector .Values.protected.nodeSelector) }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.global.pod.affinity .Values.protected.affinity) }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.global.pod.tolerations .Values.protected.tolerations) }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

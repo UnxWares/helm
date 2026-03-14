@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "taiga.fullname" . }}-gateway
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway
+spec:
+  replicas: {{ .Values.gateway.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "taiga.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: gateway
+  template:
+    metadata:
+      {{- with .Values.gateway.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "taiga.labels" . | nindent 8 }}
+        app.kubernetes.io/component: gateway
+        {{- with .Values.gateway.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "taiga.serviceAccountName" . }}
+      {{- with (default .Values.global.podSecurityContext .Values.gateway.podSecurityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: gateway
+          {{- with (default .Values.global.securityContext .Values.gateway.securityContext) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.gateway.image.repository }}:{{ .Values.gateway.image.tag }}"
+          imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.gateway.service.port }}
+              protocol: TCP
+          {{- with .Values.gateway.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+            {{- with $.Values.global.defaultProbes.liveness }}
+            initialDelaySeconds: {{ .initialDelaySeconds }}
+            periodSeconds: {{ .periodSeconds }}
+            timeoutSeconds: {{ .timeoutSeconds }}
+            failureThreshold: {{ .failureThreshold }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.gateway.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+            {{- with $.Values.global.defaultProbes.readiness }}
+            initialDelaySeconds: {{ .initialDelaySeconds }}
+            periodSeconds: {{ .periodSeconds }}
+            timeoutSeconds: {{ .timeoutSeconds }}
+            failureThreshold: {{ .failureThreshold }}
+            {{- end }}
+          {{- end }}
+          {{- with (default .Values.global.resources .Values.gateway.resources) }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+            {{- if .Values.global.persistence.static.enabled }}
+            - name: static
+              mountPath: /taiga/static
+            {{- end }}
+            {{- if .Values.global.persistence.media.enabled }}
+            - name: media
+              mountPath: /taiga/media
+            {{- end }}
+            {{- with .Values.gateway.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: {{ if .Values.gateway.configMapName }}{{ .Values.gateway.configMapName }}{{ else }}{{ include "taiga.fullname" . }}-gateway{{ end }}
+        {{- if .Values.global.persistence.static.enabled }}
+        - name: static
+          persistentVolumeClaim:
+            claimName: {{ if .Values.global.persistence.static.existingClaim }}{{ .Values.global.persistence.static.existingClaim }}{{ else }}{{ include "taiga.fullname" . }}-static{{ end }}
+        {{- end }}
+        {{- if .Values.global.persistence.media.enabled }}
+        - name: media
+          persistentVolumeClaim:
+            claimName: {{ if .Values.global.persistence.media.existingClaim }}{{ .Values.global.persistence.media.existingClaim }}{{ else }}{{ include "taiga.fullname" . }}-media{{ end }}
+        {{- end }}
+        {{- with .Values.gateway.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with (default .Values.global.pod.nodeSelector .Values.gateway.nodeSelector) }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.global.pod.affinity .Values.gateway.affinity) }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.global.pod.tolerations .Values.gateway.tolerations) }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

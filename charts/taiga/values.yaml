@@ -3,74 +3,427 @@ global:
     nodeSelector: {}
     tolerations: []
     affinity: {}
+
   imagePullSecrets: []
+  # - name: my-registry-secret
+
+  scheme: "https"
+  domain: "taiga.example.com"
+  subPath: ""
+
+  websocketsScheme: "wss" # ws | wss
+
+  ## Prefer existingSecret in production.
+  secretKey: "changeme"
+
+  ## If set, this secret is mounted as envFrom on every relevant service.
+  ## It must expose all keys referenced in secretKeys below.
+  existingSecret: ""
+  # secretKeys:
+  #   secretKey:            SECRET_KEY
+  #   postgresUser:         POSTGRES_USER
+  #   postgresPassword:     POSTGRES_PASSWORD
+  #   rabbitmqUser:         RABBITMQ_USER
+  #   rabbitmqPass:         RABBITMQ_PASS
+  #   rabbitmqErlangCookie: RABBITMQ_ERLANG_COOKIE
+
+  telemetry:
+    enabled: true
+
+  persistence:
+    static:
+      enabled: false
+      existingClaim: ""
+      storageClass: ""
+      accessMode: ReadWriteMany
+      size: 1Gi
+      annotations: {}
+    media:
+      enabled: false
+      existingClaim: ""
+      storageClass: ""
+      accessMode: ReadWriteMany
+      size: 5Gi
+      annotations: {}
+
+  extraEnv: []
+  # - name: SOME_SETTING
+  #   value: "some-value"
+
+  extraEnvFrom: []
+  # - secretRef:
+  #     name: my-extra-secret
+
+  resources: {}
+  # limits:
+  #   cpu: 500m
+  #   memory: 512Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+  podSecurityContext: {}
+  securityContext: {}
+
+  defaultProbes:
+    liveness:
+      initialDelaySeconds: 10
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readiness:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 3
+
+  serviceAccount:
+    create: true
+    automount: true
+    annotations: {}
+    name: ""
+
+  ## OIDC Authentication Configuration
+  ## See: https://github.com/UnxWares/taiga-contrib-oidc-auth for more information
+  oidc:
+    enabled: false
+
+    issuer: ""
+    scopes: "openid profile email"
+
+    clientId: ""
+    clientSecret: ""
+    # Setting existingSecret will override clientId and clientSecret
+    existingSecret: ""
+    secretKeys:
+      clientId: "oidc-client-id"
+      clientSecret: "oidc-client-secret"
+
+    ## Optional, only set if provider doesn't support auto-discovery
+    endpoints:
+      authorization: ""
+      token: ""
+      userinfo: ""
+      jwks: ""
+
+    frontend:
+      overrideImage:
+        name: ghcr.io/unxwares/taiga-frontend
+        tag: latest-oidc
+      buttonText: "Login with SSO"
+      enableDefaultLogin: true
+
+    backend:
+      overrideImage:
+        name: ghcr.io/unxwares/taiga-backend
+        tag: latest-oidc
+      ## Enable if running behind reverse proxy with TLS termination
+      useXForwardedHost: false
+
+
+externalDatabase:
+  enabled: true
+  host: 127.0.0.1
+  port: 5432
+  database: postgres
+  username: user
+  password: password
+
+  ## If existingSecret is set, all inline values above are ignored.
+  ## The secret must expose the keys listed in secretKeys.
+  existingSecret: ""
+  secretKeys:
+    host:     database-host
+    port:     database-port
+    database: database-name
+    username: database-username
+    password: database-password
+
+
+db:
+  enabled: false
+
+  image:
+    repository: postgres
+    tag: "12.3"
+    pullPolicy: IfNotPresent
+
+  ## Credentials – ignored when global.existingSecret is set.
+  auth:
+    database: taiga
+    user: taiga
+    password: "changeme"
+    existingSecret: ""   # overrides auth.user / auth.password
+    secretKeys:
+      user:     POSTGRES_USER
+      password: POSTGRES_PASSWORD
+
+  persistence:
+    enabled: false
+    existingClaim: ""
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 8Gi
+    annotations: {}
+
+  service:
+    type: ClusterIP
+    port: 5432
+
+  healthcheck:
+    enabled: true
+    interval: 2s
+    timeout: 15s
+    retries: 5
+    startPeriod: 3s
+
+  resources: {}
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  podAnnotations: {}
+  podLabels: {}
+  podSecurityContext: {}
+  securityContext: {}
+
+
+backend:
+  replicaCount: 1
+
+  image:
+    ## NOTE: When global.oidc.enabled=true, use OIDC-compatible images
+    ## Example: ghcr.io/unxwares/taiga-back:latest-oidc
+    repository: taigaio/taiga-back
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  imagePullSecrets: []
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  email:
+    backend: "console"   # console | smtp
+    defaultFrom: "no-reply@taiga.example.com"
+    useTLS: false
+    useSSL: false
+    host: ""
+    port: 25
+    user: ""
+    password: ""
+    ## If existingSecret is set, email.user / email.password are ignored.
+    existingSecret: ""
+    secretKeys:
+      user:     EMAIL_HOST_USER
+      password: EMAIL_HOST_PASSWORD
+
+  extraVolumes: []
+  # - name: custom-config
+  #   configMap:
+  #     name: taiga-back-config
+  extraVolumeMounts: []
+  # - name: custom-config
+  #   mountPath: /taiga-back/settings/config.py
+  #   subPath: config.py
+
+  extraEnv: []
+  extraEnvFrom: []
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  resources: {}
+
+  podAnnotations: {}
+  podLabels: {}
+  podSecurityContext: {}
+  securityContext: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  livenessProbe:
+    httpGet:
+      path: /api/v1/
+      port: http
+  readinessProbe:
+    httpGet:
+      path: /api/v1/
+      port: http
+
+
+async:
+  replicaCount: 1
+
+  image:
+    repository: taigaio/taiga-back
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  command: ["/taiga-back/docker/async_entrypoint.sh"]
+
+  extraVolumes: []
+  extraVolumeMounts: []
+  extraEnv: []
+  extraEnvFrom: []
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+
+  resources: {}
+
+  podAnnotations: {}
+  podLabels: {}
+  podSecurityContext: {}
+  securityContext: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+
+asyncRabbitmq:
+  replicaCount: 1
+
+  image:
+    repository: rabbitmq
+    tag: 3.8-management-alpine
+    pullPolicy: IfNotPresent
+
+  auth:
+    user: taiga
+    password: "changeme"
+    vhost: taiga
+    erlangCookie: "changeme-erlang-cookie"
+    ## If existingSecret is set, all inline auth values are ignored.
+    existingSecret: ""
+    secretKeys:
+      user:         RABBITMQ_USER
+      password:     RABBITMQ_PASS
+      vhost:        RABBITMQ_VHOST
+      erlangCookie: RABBITMQ_ERLANG_COOKIE
+
+  persistence:
+    enabled: true
+    existingClaim: ""
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 5Gi
+    annotations: {}
+
+  service:
+    type: ClusterIP
+    port: 5672
+    managementPort: 15672
+
+  resources: {}
+
+  podAnnotations: {}
+  podLabels: {}
+  podSecurityContext: {}
+  securityContext: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+
+eventsRabbitmq:
+  replicaCount: 1
+
+  image:
+    repository: rabbitmq
+    tag: 3.8-management-alpine
+    pullPolicy: IfNotPresent
+
+  auth:
+    user: taiga
+    password: "changeme"
+    vhost: taiga
+    erlangCookie: "changeme-erlang-cookie"
+    ## If existingSecret is set, all inline auth values are ignored.
+    existingSecret: ""
+    secretKeys:
+      user:         RABBITMQ_USER
+      password:     RABBITMQ_PASS
+      vhost:        RABBITMQ_VHOST
+      erlangCookie: RABBITMQ_ERLANG_COOKIE
+
+  persistence:
+    enabled: true
+    existingClaim: ""
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 5Gi
+    annotations: {}
+
+  service:
+    type: ClusterIP
+    port: 5672
+    managementPort: 15672
+
+  resources: {}
+
+  podAnnotations: {}
+  podLabels: {}
+  podSecurityContext: {}
+  securityContext: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
 
 frontend:
   replicaCount: 1
 
   image:
+    ## NOTE: When global.oidc.enabled=true, use OIDC-compatible images
+    ## Example: ghcr.io/unxwares/taiga-front:latest-oidc
     repository: taigaio/taiga-front
-    pullPolicy: IfNotPresent
     tag: latest
+    pullPolicy: IfNotPresent
 
   imagePullSecrets: []
-  nameOverride: ""
-  fullnameOverride: ""
-
-  url: "https://taiga.example.com"
-  websocketsUrl: "wss://taiga.example.com"
-  subPath: ""
 
   service:
     type: ClusterIP
     port: 80
 
-  extraEnv:
-    # - name: SOME_ENV
-    #   value: "some-value"
-    # - name: TAIGA_URL
-    #   value: "https://taiga.example.com"
-    # - name: TAIGA_WEBSOCKETS_URL
-    #   value: "wss://taiga.example.com"
-    # - name: TAIGA_SUBPATH
-    #   value: ""
+  extraVolumes: []
+  # - name: conf
+  #   configMap:
+  #     name: taiga-front-conf
+  extraVolumeMounts: []
+  # - name: conf
+  #   mountPath: /usr/share/nginx/html/conf.json
+  #   subPath: conf.json
 
+  extraEnv: []
   extraEnvFrom: []
-  # - secretRef:
-  #     name: my-secret
-  # - configMapRef:
-  #     name: my-config
 
-  # This is for setting Kubernetes Annotations to a Pod.
-  # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-  podAnnotations: {}
-  # This is for setting Kubernetes Labels to a Pod.
-  # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
-  podLabels: {}
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
 
-  podSecurityContext: {}
-    # fsGroup: 2000
-
-  securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
   resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
 
-  # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+  podAnnotations: {}
+  podLabels: {}
+  podSecurityContext: {}
+  securityContext: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
   livenessProbe:
     httpGet:
       path: /
@@ -80,227 +433,114 @@ frontend:
       path: /
       port: http
 
-  # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
-  autoscaling:
-    enabled: false
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
 
-  # Additional volumes on the output Deployment definition.
-  volumes: []
-    # - name: data
-    #   secret:
-    #   persistentVolumeClaim:
-    #     claimName: some-data
-
-  # Additional volumeMounts on the output Deployment definition.
-  volumeMounts: []
-    # - name: data
-    #   mountPath: "/some/path"
-    #   readOnly: false
-
-  nodeSelector: {}
-
-  tolerations: []
-
-  affinity: {}
-
-backend:
-  replicaCount: 1
-
-  image:
-    repository: taigaio/taiga-back
-    pullPolicy: IfNotPresent
-    tag: latest
-
-  service:
-    type: ClusterIP
-    port: 80
-
-  database:
-    host: taiga-db
-    name: taiga
-    existingSecret: ""
-    secretKeys:
-      user: POSTGRES_USER
-      password: POSTGRES_PASSWORD
-
-  extraEnv:
-    - name: TAIGA_SECRET_KEY
-      value: "changeme"
-    - name: TAIGA_SITES_SCHEME
-      value: "https"
-    - name: TAIGA_SITES_DOMAIN
-      value: "taiga.example.com"
-    - name: TAIGA_SUBPATH
-      value: ""
-
-  volumes:
-    - name: static
-      persistentVolumeClaim:
-        claimName: taiga-static
-    - name: media
-      persistentVolumeClaim:
-        claimName: taiga-media
-
-  volumeMounts:
-    - name: static
-      mountPath: /taiga-back/static
-    - name: media
-      mountPath: /taiga-back/media
-
-################################
-# Async worker
-################################
-async:
-  replicaCount: 1
-
-  image:
-    repository: taigaio/taiga-back
-    tag: latest
-
-  command: ["/taiga-back/docker/async_entrypoint.sh"]
-
-  volumes:
-    - name: static
-      persistentVolumeClaim:
-        claimName: taiga-static
-    - name: media
-      persistentVolumeClaim:
-        claimName: taiga-media
-
-################################
-# Database
-################################
-database:
-  enabled: true
-
-  image:
-    repository: postgres
-    tag: "12.3"
-
-  auth:
-    database: taiga
-    existingSecret: ""
-    secretKeys:
-      user: POSTGRES_USER
-      password: POSTGRES_PASSWORD
-
-  persistence:
-    enabled: true
-    size: 10Gi
-
-################################
-# RabbitMQ (async)
-################################
-asyncRabbitmq:
-  replicaCount: 1
-
-  image:
-    repository: rabbitmq
-    tag: 3.8-management-alpine
-
-  auth:
-    existingSecret: ""
-    secretKeys:
-      user: RABBITMQ_USER
-      password: RABBITMQ_PASS
-      vhost: RABBITMQ_VHOST
-
-  persistence:
-    enabled: true
-    size: 5Gi
-
-################################
-# RabbitMQ (events)
-################################
-eventsRabbitmq:
-  replicaCount: 1
-
-  image:
-    repository: rabbitmq
-    tag: 3.8-management-alpine
-
-  auth:
-    existingSecret: ""
-    secretKeys:
-      user: RABBITMQ_USER
-      password: RABBITMQ_PASS
-      vhost: RABBITMQ_VHOST
-
-  persistence:
-    enabled: true
-    size: 5Gi
-
-################################
-# Events service
-################################
 events:
   replicaCount: 1
 
   image:
     repository: taigaio/taiga-events
     tag: latest
+    pullPolicy: IfNotPresent
 
-################################
-# Protected attachments service
-################################
+  service:
+    type: ClusterIP
+    port: 8888
+
+  extraEnv: []
+  extraEnvFrom: []
+
+  resources: {}
+
+  podAnnotations: {}
+  podLabels: {}
+  podSecurityContext: {}
+  securityContext: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
 protected:
   replicaCount: 1
 
   image:
     repository: taigaio/taiga-protected
     tag: latest
+    pullPolicy: IfNotPresent
 
-################################
-# Gateway (nginx)
-################################
+  ## MAX_AGE controls how long signed attachment URLs remain valid (seconds).
+  ## Default is 360 s (6 min). Increase for larger files on slow connections.
+  maxAge: 360
+
+  service:
+    type: ClusterIP
+    port: 8003
+
+  extraEnv: []
+  extraEnvFrom: []
+
+  resources: {}
+
+  podAnnotations: {}
+  podLabels: {}
+  podSecurityContext: {}
+  securityContext: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+
 gateway:
   replicaCount: 1
 
   image:
     repository: nginx
     tag: 1.19-alpine
+    pullPolicy: IfNotPresent
 
   service:
     type: ClusterIP
     port: 80
 
-  volumes:
-    - name: static
-      persistentVolumeClaim:
-        claimName: taiga-static
-    - name: media
-      persistentVolumeClaim:
-        claimName: taiga-media
+  ## Provide the name of a ConfigMap whose key "default.conf" contains a
+  ## custom nginx config, mirroring the ./taiga-gateway/taiga.conf bind-mount
+  ## in docker-compose. Leave empty to use the chart's built-in config.
+  configMapName: ""
 
-  volumeMounts:
-    - name: static
-      mountPath: /taiga/static
-    - name: media
-      mountPath: /taiga/media
+  extraVolumes: []
+  extraVolumeMounts: []
 
-################################
-# Ingress
-################################
+  resources: {}
+
+  podAnnotations: {}
+  podLabels: {}
+  podSecurityContext: {}
+  securityContext: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+
+
 ingress:
   enabled: false
   className: ""
   annotations: {}
+  # kubernetes.io/ingress.class: nginx
+  # cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: taiga.example.com
       paths:
         - path: /
           pathType: Prefix
   tls: []
-
-################################
-# Service account
-################################
-serviceAccount:
-  create: true
-  automount: true
-  annotations: {}
-  name: ""
+  # - secretName: taiga-tls
+  #   hosts:
+  #     - taiga.example.com

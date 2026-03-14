@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "taiga.fullname" . }}-events-rabbitmq
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+    app.kubernetes.io/component: events-rabbitmq
+spec:
+  serviceName: {{ include "taiga.fullname" . }}-events-rabbitmq
+  replicas: {{ .Values.eventsRabbitmq.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "taiga.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: events-rabbitmq
+  template:
+    metadata:
+      {{- with .Values.eventsRabbitmq.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "taiga.labels" . | nindent 8 }}
+        app.kubernetes.io/component: events-rabbitmq
+        {{- with .Values.eventsRabbitmq.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "taiga.serviceAccountName" . }}
+      {{- with (default .Values.global.podSecurityContext .Values.eventsRabbitmq.podSecurityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: rabbitmq
+          {{- with (default .Values.global.securityContext .Values.eventsRabbitmq.securityContext) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.eventsRabbitmq.image.repository }}:{{ .Values.eventsRabbitmq.image.tag }}"
+          imagePullPolicy: {{ .Values.eventsRabbitmq.image.pullPolicy }}
+          ports:
+            - name: amqp
+              containerPort: {{ .Values.eventsRabbitmq.service.port }}
+              protocol: TCP
+            - name: management
+              containerPort: {{ .Values.eventsRabbitmq.service.managementPort }}
+              protocol: TCP
+          env:
+            {{- if .Values.eventsRabbitmq.auth.existingSecret }}
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.eventsRabbitmq.auth.existingSecret }}
+                  key: {{ .Values.eventsRabbitmq.auth.secretKeys.user }}
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.eventsRabbitmq.auth.existingSecret }}
+                  key: {{ .Values.eventsRabbitmq.auth.secretKeys.password }}
+            - name: RABBITMQ_DEFAULT_VHOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.eventsRabbitmq.auth.existingSecret }}
+                  key: {{ .Values.eventsRabbitmq.auth.secretKeys.vhost }}
+            - name: RABBITMQ_ERLANG_COOKIE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.eventsRabbitmq.auth.existingSecret }}
+                  key: {{ .Values.eventsRabbitmq.auth.secretKeys.erlangCookie }}
+            {{- else if .Values.global.existingSecret }}
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.existingSecret }}
+                  key: RABBITMQ_USER
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.existingSecret }}
+                  key: RABBITMQ_PASS
+            - name: RABBITMQ_DEFAULT_VHOST
+              value: {{ .Values.eventsRabbitmq.auth.vhost | quote }}
+            - name: RABBITMQ_ERLANG_COOKIE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.existingSecret }}
+                  key: RABBITMQ_ERLANG_COOKIE
+            {{- else }}
+            - name: RABBITMQ_DEFAULT_USER
+              value: {{ .Values.eventsRabbitmq.auth.user | quote }}
+            - name: RABBITMQ_DEFAULT_PASS
+              value: {{ .Values.eventsRabbitmq.auth.password | quote }}
+            - name: RABBITMQ_DEFAULT_VHOST
+              value: {{ .Values.eventsRabbitmq.auth.vhost | quote }}
+            - name: RABBITMQ_ERLANG_COOKIE
+              value: {{ .Values.eventsRabbitmq.auth.erlangCookie | quote }}
+            {{- end }}
+          {{- with (default .Values.global.resources .Values.eventsRabbitmq.resources) }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/rabbitmq
+      {{- with (default .Values.global.pod.nodeSelector .Values.eventsRabbitmq.nodeSelector) }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.global.pod.affinity .Values.eventsRabbitmq.affinity) }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.global.pod.tolerations .Values.eventsRabbitmq.tolerations) }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if .Values.eventsRabbitmq.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        {{- with .Values.eventsRabbitmq.persistence.annotations }}
+        annotations:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      spec:
+        accessModes:
+          - {{ .Values.eventsRabbitmq.persistence.accessMode }}
+        {{- with .Values.eventsRabbitmq.persistence.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.eventsRabbitmq.persistence.size }}
+  {{- else }}
+      volumes:
+        - name: data
+          emptyDir: {}
+  {{- end }}

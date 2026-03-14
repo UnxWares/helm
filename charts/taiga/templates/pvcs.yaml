@@ -1,0 +1,43 @@
+{{- if and .Values.global.persistence.static.enabled (not .Values.global.persistence.static.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "taiga.fullname" . }}-static
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+  {{- with .Values.global.persistence.static.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    - {{ .Values.global.persistence.static.accessMode }}
+  {{- with .Values.global.persistence.static.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.global.persistence.static.size }}
+---
+{{- end }}
+{{- if and .Values.global.persistence.media.enabled (not .Values.global.persistence.media.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "taiga.fullname" . }}-media
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+  {{- with .Values.global.persistence.media.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    - {{ .Values.global.persistence.media.accessMode }}
+  {{- with .Values.global.persistence.media.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.global.persistence.media.size }}
+{{- end }}
