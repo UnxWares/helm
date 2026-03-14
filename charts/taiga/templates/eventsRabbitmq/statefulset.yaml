@@ -106,6 +106,16 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/rabbitmq
+      {{- if and .Values.eventsRabbitmq.persistence.enabled .Values.eventsRabbitmq.persistence.existingClaim }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.eventsRabbitmq.persistence.existingClaim }}
+      {{- else if not .Values.eventsRabbitmq.persistence.enabled }}
+      volumes:
+        - name: data
+          emptyDir: {}
+      {{- end }}
       {{- with (default .Values.global.pod.nodeSelector .Values.eventsRabbitmq.nodeSelector) }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -118,7 +128,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-  {{- if .Values.eventsRabbitmq.persistence.enabled }}
+  {{- if and .Values.eventsRabbitmq.persistence.enabled (not .Values.eventsRabbitmq.persistence.existingClaim) }}
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -135,8 +145,4 @@ spec:
         resources:
           requests:
             storage: {{ .Values.eventsRabbitmq.persistence.size }}
-  {{- else }}
-      volumes:
-        - name: data
-          emptyDir: {}
   {{- end }}
