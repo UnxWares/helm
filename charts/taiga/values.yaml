@@ -103,14 +103,14 @@ global:
 
     frontend:
       overrideImage:
-        name: ghcr.io/unxwares/taiga-frontend
+        name: ghcr.io/unxwares/taiga-front
         tag: latest-oidc
       buttonText: "Login with SSO"
       enableDefaultLogin: true
 
     backend:
       overrideImage:
-        name: ghcr.io/unxwares/taiga-backend
+        name: ghcr.io/unxwares/taiga-back
         tag: latest-oidc
       ## Enable if running behind reverse proxy with TLS termination
       useXForwardedHost: false
