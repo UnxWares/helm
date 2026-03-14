@@ -19,8 +19,8 @@ global:
   ## If set, this secret is mounted as envFrom on every relevant service.
   ## It must expose all keys referenced in secretKeys below.
   existingSecret: ""
-  # secretKeys:
-  #   secretKey:            SECRET_KEY
+  secretKeys:
+    secretKey: SECRET_KEY
 
   telemetry:
     enabled: true

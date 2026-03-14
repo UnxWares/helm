@@ -101,7 +101,7 @@ Backend environment variables
   valueFrom:
     secretKeyRef:
       name: {{ .Values.global.existingSecret }}
-      key: SECRET_KEY
+      key: {{ .Values.global.secretKeys.secretKey }}
 {{- else }}
 - name: TAIGA_SECRET_KEY
   value: {{ .Values.global.secretKey | quote }}
@@ -350,7 +350,7 @@ Events environment variables
   valueFrom:
     secretKeyRef:
       name: {{ .Values.global.existingSecret }}
-      key: SECRET_KEY
+      key: {{ .Values.global.secretKeys.secretKey }}
 {{- else }}
 - name: TAIGA_SECRET_KEY
   value: {{ .Values.global.secretKey | quote }}
@@ -412,7 +412,7 @@ Protected environment variables
   valueFrom:
     secretKeyRef:
       name: {{ .Values.global.existingSecret }}
-      key: SECRET_KEY
+      key: {{ .Values.global.secretKeys.secretKey }}
 {{- else }}
 - name: SECRET_KEY
   value: {{ .Values.global.secretKey | quote }}
