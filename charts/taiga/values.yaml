@@ -21,11 +21,6 @@ global:
   existingSecret: ""
   # secretKeys:
   #   secretKey:            SECRET_KEY
-  #   postgresUser:         POSTGRES_USER
-  #   postgresPassword:     POSTGRES_PASSWORD
-  #   rabbitmqUser:         RABBITMQ_USER
-  #   rabbitmqPass:         RABBITMQ_PASS
-  #   rabbitmqErlangCookie: RABBITMQ_ERLANG_COOKIE
 
   telemetry:
     enabled: true
