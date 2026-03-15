@@ -1335,6 +1335,37 @@ entries:
       category: tools
     apiVersion: v2
     appVersion: 6.9.0
+    created: "2026-03-15T12:45:02.88001788Z"
+    description: A helm chart for Taiga.io, an open-source project management platform
+      for agile teams
+    digest: 722989305cdc6625f2748f1c7e6ddef99e2d86dcadb0f7506d563ff1029986b3
+    icon: https://avatars.githubusercontent.com/u/6905422?s=200&v=4
+    keywords:
+    - taiga
+    - kanban
+    - project
+    - management
+    - task
+    - board
+    - collaboration
+    - live
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    name: taiga
+    sources:
+    - https://taiga.io/
+    - https://github.com/taigaio/taiga-docker
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/taiga-2026.3.6/taiga-2026.3.6.tgz
+    version: 2026.3.6
+  - annotations:
+      artifacthub.io/license: MIT
+      category: tools
+    apiVersion: v2
+    appVersion: 6.9.0
     created: "2026-03-14T21:50:33.723703973Z"
     description: A helm chart for Taiga.io, an open-source project management platform
       for agile teams
@@ -1547,4 +1578,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-03-14T21:50:33.723835368Z"
+generated: "2026-03-15T12:45:02.880232472Z"
