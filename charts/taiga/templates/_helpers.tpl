@@ -212,9 +212,9 @@ Backend environment variables
 - name: DEFAULT_FROM_EMAIL
   value: {{ .Values.backend.email.defaultFrom | quote }}
 - name: EMAIL_USE_TLS
-  value: {{ .Values.backend.email.useTLS | quote }}
+  value: {{ .Values.backend.email.useTLS }}
 - name: EMAIL_USE_SSL
-  value: {{ .Values.backend.email.useSSL | quote }}
+  value: {{ .Values.backend.email.useSSL }}
 - name: EMAIL_HOST
   value: {{ .Values.backend.email.host | quote }}
 - name: EMAIL_PORT
