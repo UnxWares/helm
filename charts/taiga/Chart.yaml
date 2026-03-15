@@ -2,7 +2,7 @@ apiVersion: v2
 name: taiga
 description: A helm chart for Taiga.io, an open-source project management platform for agile teams
 type: application
-version: 2026.3.7
+version: 2026.3.8
 appVersion: "6.9.0"
 icon: https://avatars.githubusercontent.com/u/6905422?s=200&v=4
 

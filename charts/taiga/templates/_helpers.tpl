@@ -211,10 +211,14 @@ Backend environment variables
   value: {{ printf "django.core.mail.backends.%s.EmailBackend" .Values.backend.email.backend | quote }}
 - name: DEFAULT_FROM_EMAIL
   value: {{ .Values.backend.email.defaultFrom | quote }}
+{{- if .Values.backend.email.useTLS }}
 - name: EMAIL_USE_TLS
-  value: {{ .Values.backend.email.useTLS | quote }}
+  value: "True"
+{{- end }}
+{{- if .Values.backend.email.useSSL }}
 - name: EMAIL_USE_SSL
-  value: {{ .Values.backend.email.useSSL | quote }}
+  value: "True"
+{{- end }}
 - name: EMAIL_HOST
   value: {{ .Values.backend.email.host | quote }}
 - name: EMAIL_PORT
