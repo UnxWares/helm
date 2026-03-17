@@ -99,6 +99,7 @@ autoscaling:
 metrics:
   enabled: false
 
+  # list of statistics to collect
   statsGroups:
   - server
   - tasks
@@ -106,9 +107,7 @@ metrics:
 
   image:
     repository: prometheuscommunity/bind-exporter
-    # This sets the pull policy for images.
     pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
     tag: v0.8.0
 
   securityContext:
