@@ -45,10 +45,10 @@ spec:
 
           command: ["/usr/sbin/named"]
           args:
-          - "-f"
-          - "-g"
+            - "-f"
+            - "-g"
           {{- with .Values.bind.args }}
-            {{- toYaml . | nindent 10 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
 
           ports:
