@@ -60,6 +60,7 @@ service:
     dnsTcpNodePort: 30053
     dnsUdpNodePort: 30053
     rndcNodePort: 30054
+    metrics: 9119
 
 resources: {}
   # limits:
@@ -94,6 +95,53 @@ autoscaling:
   minReplicas: 1
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
+
+metrics:
+  enabled: false
+
+  # list of statistics to collect
+  statsGroups:
+  - server
+  - tasks
+  - view
+
+  image:
+    repository: prometheuscommunity/bind-exporter
+    pullPolicy: IfNotPresent
+    tag: v0.8.0
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    livenessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /
+        port: metrics
+        scheme: HTTP
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 1
+    readinessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /
+        port: metrics
+        scheme: HTTP
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 1
+
+    resources: {}
+
+  serviceMonitor:
+    # Toggle the ServiceMonitor true if you have Prometheus Operator installed and configured
+    enabled: true
+    endpoints:
+    - port: metrics
+      scheme: http
 
 # General Bind9 configuration
 bind:

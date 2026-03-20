@@ -32,6 +32,16 @@ spec:
       nodePort: {{ .Values.service.ports.rndcNodePort }}
       {{- end }}
 
+    {{- if .Values.metrics.enabled }}
+    - name: metrics
+      port: {{ .Values.service.ports.metrics }}
+      targetPort: metrics
+      protocol: TCP
+      {{- if and .Values.service.ports.rndcNodePort (ne .Values.service.type "ClusterIP") }}
+      nodePort: {{ .Values.service.ports.rndcNodePort }}
+      {{- end }}
+    {{- end }}
+
   selector:
     {{- include "bind9.selectorLabels" . | nindent 4 }}
 {{- end }}

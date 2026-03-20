@@ -7,6 +7,11 @@ metadata:
 
 data:
   named.conf: |
+    {{- if .Values.metrics.enabled }}
+    statistics-channels {
+      inet 127.0.0.1 port 8053 allow { 127.0.0.1; };
+    };
+    {{- end }}
     {{- .Values.bind.namedConf | nindent 4 }}
 
   {{- range $name, $zone := .Values.bind.zones }}

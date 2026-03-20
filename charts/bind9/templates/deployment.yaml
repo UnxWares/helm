@@ -45,10 +45,10 @@ spec:
 
           command: ["/usr/sbin/named"]
           args:
-          - "-f"
-          - "-g"
+            - "-f"
+            - "-g"
           {{- with .Values.bind.args }}
-            {{- toYaml . | nindent 10 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
 
           ports:
@@ -96,7 +96,35 @@ spec:
             - name: bind-data
               mountPath: /var/lib/bind
             {{- end }}
-
+        {{- if .Values.metrics.enabled }}
+        - name: {{ .Chart.Name }}-exporter
+          {{- with .Values.metrics.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.metrics.image.repository }}:{{ .Values.metrics.image.tag }}"
+          imagePullPolicy: {{ .Values.metrics.image.pullPolicy }}
+          args:
+            - --bind.stats-url=http://127.0.0.1:8053/
+            - --bind.stats-groups={{ .Values.metrics.statsGroups | join "," }}
+            - --web.listen-address=:{{ .Values.service.ports.metrics }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.service.ports.metrics }}
+              protocol: TCP
+          {{- with .Values.metrics.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.metrics.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.metrics.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- end }}
       volumes:
         - name: bind-config
           configMap:
