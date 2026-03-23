@@ -10,6 +10,44 @@ entries:
       category: networking
     apiVersion: v2
     appVersion: "9.21"
+    created: "2026-03-23T14:04:41.790442814Z"
+    description: A flexible and production-ready Helm chart for running ISC Bind9
+      DNS server on Kubernetes.
+    digest: e32a811e713feef4beb1b259601064577c83abfcdea1280638a303fd5dd21f78
+    icon: https://www.aschnoebelen.fr/wp-content/uploads/2024/01/bind9.png
+    keywords:
+    - dns
+    - bind
+    - bind9
+    - authoritative-dns
+    - kubernetes
+    - helm
+    - network
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: bind9
+    sources:
+    - https://github.com/isc-projects/bind9
+    - https://hub.docker.com/r/internetsystemsconsortium/bind9
+    - https://github.com/UnxWares/helm
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/bind9-2026.3.22/bind9-2026.3.22.tgz
+    version: 2026.3.22
+  - annotations:
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        [
+          { "name": "Upstream", "url": "https://www.isc.org/bind/" }
+        ]
+      category: networking
+    apiVersion: v2
+    appVersion: "9.21"
     created: "2026-03-20T15:54:09.745844416Z"
     description: A flexible and production-ready Helm chart for running ISC Bind9
       DNS server on Kubernetes.
@@ -1716,4 +1754,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-03-20T15:54:09.745978767Z"
+generated: "2026-03-23T14:04:41.790640975Z"
