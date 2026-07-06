@@ -48,6 +48,7 @@ securityContext:
 
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
+  annotations: {}
   enabled: true
   # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
   type: ClusterIP
@@ -57,9 +58,9 @@ service:
     dnsUdp: 53
     rndc: 953
     # If using a NodePort, you can set the port here
-    dnsTcpNodePort: 30053
-    dnsUdpNodePort: 30053
-    rndcNodePort: 30054
+    dnsTcpNodePort: null
+    dnsUdpNodePort: null
+    rndcNodePort: null
     metrics: 9119
 
 resources: {}
@@ -162,7 +163,7 @@ bind:
     # };
 
   # This is for setting up the zones more information can be found here: https://www.isc.org/bind-9/documentation/configuration-guide/zones/
-  zones:
+  zones: {}
     # sub-example-com: |
       # $TTL 3D
       # @       IN      SOA     ns1.sub-example.com. hostmaster.sub-example.com. (
@@ -182,7 +183,20 @@ persistence:
   accessMode: ReadWriteOnce
   size: 1Gi
   storageClass: ""
-  emptyDirSizeLimit:
+  emptyDirSizeLimit: ""
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+  # - name: custom-config
+  #   configMap:
+  #     name: custom-config
+
+# Additional volumeMounts on the Bind9 container.
+volumeMounts: []
+  # - name: custom-config
+  #   mountPath: /etc/bind/custom.conf
+  #   subPath: custom.conf
+  #   readOnly: true
 
 # Node scheduling configuration
 nodeSelector: {}

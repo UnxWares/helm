@@ -96,6 +96,9 @@ spec:
             - name: bind-data
               mountPath: /var/lib/bind
             {{- end }}
+            {{- with .Values.volumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
         {{- if .Values.metrics.enabled }}
         - name: {{ .Chart.Name }}-exporter
           {{- with .Values.metrics.securityContext }}
@@ -142,6 +145,9 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+        {{- end }}
+        {{- with .Values.volumes }}
+          {{- toYaml . | nindent 8 }}
         {{- end }}
 
       {{- with .Values.nodeSelector }}
