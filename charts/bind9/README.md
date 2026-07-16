@@ -96,6 +96,21 @@ persistence:
   storageClass: "standard"
 ```
 
+### With Additional Volumes
+
+```yaml
+volumes:
+  - name: custom-config
+    configMap:
+      name: custom-config
+
+volumeMounts:
+  - name: custom-config
+    mountPath: /etc/bind/custom.conf
+    subPath: custom.conf
+    readOnly: true
+```
+
 ### NodePort Service for External Access
 
 ```yaml
@@ -121,6 +136,15 @@ service:
 | `nameOverride`        | Override chart name                | `""`    |
 | `fullnameOverride`    | Override full chart name           | `""`    |
 
+### Pod Configuration
+
+| Parameter              | Description                    | Default |
+| ---------------------- | ------------------------------ | ------- |
+| `podAnnotations`       | Pod annotations                | `{}`    |
+| `podLabels`            | Pod labels                     | `{}`    |
+| `podSecurityContext`   | Pod security context           | See `values.yaml` |
+| `securityContext`      | Bind9 container security context | See `values.yaml` |
+
 ### Service Account
 
 | Parameter                        | Description                      | Default |
@@ -135,13 +159,31 @@ service:
 | Parameter                   | Description                  | Default     |
 | --------------------------- | ---------------------------- | ----------- |
 | `service.enabled`           | Enable service creation      | `true`      |
+| `service.annotations`       | Service annotations          | `{}`        |
 | `service.type`              | Service type                 | `ClusterIP` |
 | `service.ports.dnsTcp`      | DNS TCP port                 | `53`        |
 | `service.ports.dnsUdp`      | DNS UDP port                 | `53`        |
 | `service.ports.rndc`        | RNDC control port            | `953`       |
-| `service.ports.dnsTcpNodePort` | NodePort for DNS TCP      | `30053`     |
-| `service.ports.dnsUdpNodePort` | NodePort for DNS UDP      | `30053`     |
-| `service.ports.rndcNodePort`   | NodePort for RNDC         | `30054`     |
+| `service.ports.metrics`     | Metrics port                 | `9119`      |
+| `service.ports.dnsTcpNodePort` | NodePort for DNS TCP      | `null`      |
+| `service.ports.dnsUdpNodePort` | NodePort for DNS UDP      | `null`      |
+| `service.ports.rndcNodePort`   | NodePort for RNDC         | `null`      |
+
+### Metrics
+
+| Parameter                               | Description                    | Default |
+| --------------------------------------- | ------------------------------ | ------- |
+| `metrics.enabled`                       | Enable Bind exporter sidecar   | `false` |
+| `metrics.statsGroups`                   | Statistics groups to collect   | `[server,tasks,view]` |
+| `metrics.image.repository`              | Exporter image repository      | `prometheuscommunity/bind-exporter` |
+| `metrics.image.tag`                     | Exporter image tag             | `v0.8.0` |
+| `metrics.image.pullPolicy`              | Exporter image pull policy     | `IfNotPresent` |
+| `metrics.securityContext`               | Exporter security context      | See `values.yaml` |
+| `metrics.livenessProbe`                 | Exporter liveness probe        | See `values.yaml` |
+| `metrics.readinessProbe`                | Exporter readiness probe       | See `values.yaml` |
+| `metrics.resources`                     | Exporter resource requests and limits | `{}` |
+| `metrics.serviceMonitor.enabled`        | Enable ServiceMonitor          | `true` |
+| `metrics.serviceMonitor.endpoints`      | ServiceMonitor endpoints       | See `values.yaml` |
 
 ### Bind9 Configuration
 
@@ -160,6 +202,13 @@ service:
 | `persistence.size`             | Persistent volume size        | `1Gi`             |
 | `persistence.storageClass`     | Storage class                 | `""`              |
 | `persistence.emptyDirSizeLimit`| EmptyDir size limit           | `""`              |
+
+### Volumes and Storage
+
+| Parameter       | Description                              | Default |
+| --------------- | ---------------------------------------- | ------- |
+| `volumes`       | Additional volumes on the pod            | `[]`    |
+| `volumeMounts`  | Additional mounts on the Bind9 container | `[]`    |
 
 ### Resources
 
