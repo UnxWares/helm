@@ -1,0 +1,3 @@
+storage:
+  enabled: false
+replicaCount: 2

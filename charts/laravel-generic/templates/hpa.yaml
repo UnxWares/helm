@@ -5,6 +5,7 @@ metadata:
   name: {{ include "laravel-generic.fullname" . }}
   labels:
     {{- include "laravel-generic.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

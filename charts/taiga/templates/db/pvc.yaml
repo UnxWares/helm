@@ -6,10 +6,11 @@ metadata:
   labels:
     {{- include "taiga.labels" . | nindent 4 }}
     app.kubernetes.io/component: db
-  {{- with .Values.db.persistence.annotations }}
   annotations:
+    helm.sh/resource-policy: keep
+    {{- with .Values.db.persistence.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
 spec:
   accessModes:
     - {{ .Values.db.persistence.accessMode }}

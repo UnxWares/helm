@@ -1,57 +1,131 @@
+{{- include "laravel-generic.validate" . }}
+{{- $fpm := include "laravel-generic.fpm" . }}
+{{- $sqlite := include "laravel-generic.sqlite" . }}
+{{- $persistence := .Values.persistence.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "laravel-generic.fullname" . }}
   labels:
     {{- include "laravel-generic.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  {{- if include "laravel-generic.singleNodeVolume" . }}
+  # A ReadWriteOnce volume cannot be attached to the old and the new pod on different nodes.
+  strategy:
+    type: Recreate
+  {{- else if .Values.updateStrategy }}
+  strategy:
+    {{- toYaml .Values.updateStrategy | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
-      {{- include "laravel-generic.selectorLabels" . | nindent 6 }}
+      {{- include "laravel-generic.componentSelectorLabels" (dict "ctx" . "component" "web") | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      labels:
-        {{- include "laravel-generic.labels" . | nindent 8 }}
-        {{- with .Values.podLabels }}
+        checksum/secret: {{ include "laravel-generic.secretChecksum" . }}
+        {{- if $fpm }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-nginx.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+      labels:
+        {{- include "laravel-generic.podLabels" (dict "ctx" . "component" "web") | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
+      {{- include "laravel-generic.podCommon" (dict "ctx" . "serviceAccount" true) | trim | nindent 6 }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "laravel-generic.serviceAccountName" . }}
-      {{- with .Values.podSecurityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      containers:
-        - name: {{ .Chart.Name }}
-          {{- with .Values.securityContext }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- $prepare := include "laravel-generic.prepareContainer" (dict "ctx" . "public" $fpm "persistence" $persistence) }}
+      {{- if or $prepare $sqlite .Values.initContainers }}
+      initContainers:
+        {{- with $prepare }}
+        {{- . | nindent 8 }}
+        {{- end }}
+        {{- if $sqlite }}
+        # SQLite: create the database file, then migrate before the single web pod starts.
+        - name: {{ ternary "migrate" "sqlite-init" .Values.workload.migrations.enabled }}
+          image: {{ include "laravel-generic.image" .Values.image | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with (include "laravel-generic.securityContext" (dict "ctx" .)) }}
           securityContext:
+            {{- . | nindent 12 }}
+          {{- end }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              mkdir -p "$(dirname "$DB_DATABASE")"
+              [ -e "$DB_DATABASE" ] || touch "$DB_DATABASE"
+              if [ "$#" -gt 0 ]; then exec "$@"; fi
+            - sqlite-init
+            {{- if .Values.workload.migrations.enabled }}
+            {{- toYaml .Values.workload.migrations.command | nindent 12 }}
+            {{- end }}
+          env:
+            {{- include "laravel-generic.env" (dict "ctx" . "secretName" (include "laravel-generic.secretName" .)) | nindent 12 }}
+          {{- with (include "laravel-generic.envFrom" .) }}
+          {{- . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.workload.migrations.resources }}
+          resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          volumeMounts:
+            {{- include "laravel-generic.appVolumeMounts" (dict "ctx" . "persistence" $persistence) | nindent 12 }}
+        {{- end }}
+        {{- with .Values.initContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: app
+          image: {{ include "laravel-generic.image" .Values.image | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: {{ .Values.service.port }}
-              protocol: TCP
+          {{- with (include "laravel-generic.securityContext" (dict "ctx" . "web" true)) }}
+          securityContext:
+            {{- . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
-            {{- include "laravel-generic.env" . | nindent 12 }}
-
-          {{ if .Values.laravel.extraEnvFrom }}
-          envFrom:
-            {{- toYaml .Values.laravel.extraEnvFrom | nindent 12 }}
-          {{ end }}
-
+            {{- include "laravel-generic.env" (dict "ctx" . "secretName" (include "laravel-generic.secretName" .) "web" true) | nindent 12 }}
+          {{- with (include "laravel-generic.envFrom" .) }}
+          {{- . | nindent 10 }}
+          {{- end }}
+          ports:
+            {{- if $fpm }}
+            - name: fastcgi
+              containerPort: {{ .Values.workload.runtime.fpm.port }}
+              protocol: TCP
+            {{- else }}
+            - name: http
+              containerPort: {{ .Values.workload.runtime.frankenphp.port }}
+              protocol: TCP
+            {{- end }}
+          {{- if $fpm }}
+          {{- with .Values.workload.runtime.fpm.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.workload.runtime.fpm.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- else }}
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
@@ -64,27 +138,83 @@ spec:
           startupProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- end }}
+          {{- with .Values.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.volumeMounts }}
           volumeMounts:
+            {{- include "laravel-generic.appVolumeMounts" (dict "ctx" . "persistence" $persistence "caddy" (not $fpm)) | nindent 12 }}
+        {{- if $fpm }}
+        {{- $nginx := .Values.workload.nginx }}
+        - name: nginx
+          image: {{ include "laravel-generic.image" $nginx.image | quote }}
+          imagePullPolicy: {{ $nginx.image.pullPolicy }}
+          {{- with $nginx.securityContext }}
+          securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-      {{- with .Values.volumes }}
+          ports:
+            - name: http
+              containerPort: {{ $nginx.port }}
+              protocol: TCP
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $nginx.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $nginx.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+            - name: nginx-tmp
+              mountPath: /tmp
+            # Same path as in the application container: SCRIPT_FILENAME is valid in both.
+            - name: public
+              mountPath: {{ include "laravel-generic.publicPath" . }}
+              readOnly: true
+            {{- /* Serve files of the "public" disk (public/storage symlink -> storage/app/public) from the persistent volume. */}}
+            {{- if $persistence }}
+            {{- $target := include "laravel-generic.path" (dict "ctx" . "path" "storage/app/public") }}
+            {{- $best := "" }}
+            {{- range $path, $sub := (include "laravel-generic.persistentMounts" . | fromYaml) }}
+            {{- if and (hasPrefix (printf "%s/" $path) $target) (gt (len $path) (len $best)) }}
+            {{- $best = $path }}
+            {{- end }}
+            {{- end }}
+            {{- if $best }}
+            - name: data
+              mountPath: {{ $target }}
+              subPath: {{ printf "%s%s" (include "laravel-generic.subPath" $best) (trimPrefix $best $target) }}
+              readOnly: true
+            {{- end }}
+            {{- end }}
+            {{- with $nginx.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+        {{- end }}
+        {{- with .Values.sidecars }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       volumes:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- include "laravel-generic.appVolumes" (dict "ctx" . "persistence" $persistence "caddy" (not $fpm) "nginx" $fpm) | nindent 8 }}

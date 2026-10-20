@@ -1,1 +1,23 @@
-Congratulations!
+ExcaliDash {{ .Values.frontend.image.tag | default .Chart.AppVersion }} is deployed.
+
+URL: {{ .Values.frontend.url }}
+{{- if not (or .Values.ingress.enabled .Values.httpRoute.enabled) }}
+
+No Ingress/HTTPRoute is enabled. To try it locally:
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "excalidash.frontend.fullname" . }} 8080:{{ .Values.frontend.service.port }}
+and open http://127.0.0.1:8080 (set frontend.url accordingly).
+{{- end }}
+{{- if eq .Values.backend.auth.mode "local" }}
+
+First admin: the setup code is printed in the backend logs (valid 15 minutes):
+  kubectl --namespace {{ .Release.Namespace }} logs deploy/{{ include "excalidash.backend.fullname" . }} | grep -i setup
+{{- end }}
+{{- if not .Values.backend.persistence.enabled }}
+
+WARNING: backend.persistence is disabled, drawings are lost when the backend restarts.
+{{- end }}
+{{- if not .Values.backend.secrets.existingSecret }}
+
+NOTE: JWT/CSRF secrets and the API key pepper are generated and kept in the {{ include "excalidash.secretName" . }} secret.
+With GitOps tools that render offline (Argo CD...), set backend.secrets.existingSecret.
+{{- end }}

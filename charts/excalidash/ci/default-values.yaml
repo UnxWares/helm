@@ -1,0 +1,7 @@
+frontend:
+  url: http://localhost:8080
+backend:
+  persistence:
+    size: 1Gi
+networkPolicy:
+  enabled: true

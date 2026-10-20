@@ -1,0 +1,1518 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "async": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "type": "object"
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "maxReplicas": {
+                            "type": "integer"
+                        },
+                        "minReplicas": {
+                            "type": "integer"
+                        },
+                        "targetCPUUtilizationPercentage": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "command": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "extraEnv": {
+                    "type": "array"
+                },
+                "extraEnvFrom": {
+                    "type": "array"
+                },
+                "extraVolumeMounts": {
+                    "type": "array"
+                },
+                "extraVolumes": {
+                    "type": "array"
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "pullPolicy": {
+                            "description": "Image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "Async (celery) image repository.",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Image tag.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "podAnnotations": {
+                    "type": "object"
+                },
+                "podLabels": {
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "Pod security context.",
+                    "type": "object"
+                },
+                "replicaCount": {
+                    "description": "Celery worker replicas.",
+                    "type": "integer"
+                },
+                "resources": {
+                    "description": "Resources.",
+                    "type": "object"
+                },
+                "securityContext": {
+                    "description": "Container security context (same entrypoint model as the backend).",
+                    "type": "object"
+                },
+                "tolerations": {
+                    "type": "array"
+                }
+            }
+        },
+        "asyncRabbitmq": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "type": "object"
+                },
+                "auth": {
+                    "type": "object",
+                    "properties": {
+                        "erlangCookie": {
+                            "description": "Deprecated: RabbitMQ 4 ignores the RABBITMQ_ERLANG_COOKIE variable; a cookie is generated in the data volume.",
+                            "type": "string"
+                        },
+                        "existingSecret": {
+                            "description": "Existing secret with the broker credentials.",
+                            "type": "string"
+                        },
+                        "password": {
+                            "description": "Broker password. Leave empty to generate one (kept across upgrades).",
+                            "type": "string"
+                        },
+                        "secretKeys": {
+                            "type": "object",
+                            "properties": {
+                                "erlangCookie": {
+                                    "type": "string"
+                                },
+                                "password": {
+                                    "type": "string"
+                                },
+                                "user": {
+                                    "type": "string"
+                                },
+                                "vhost": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "user": {
+                            "description": "Broker user.",
+                            "type": "string"
+                        },
+                        "vhost": {
+                            "description": "Virtual host.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "pullPolicy": {
+                            "description": "Image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "RabbitMQ image.",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Image tag.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "persistence": {
+                    "type": "object",
+                    "properties": {
+                        "accessMode": {
+                            "description": "Access mode.",
+                            "type": "string"
+                        },
+                        "annotations": {
+                            "description": "PVC annotations.",
+                            "type": "object"
+                        },
+                        "enabled": {
+                            "description": "Persist the broker data.",
+                            "type": "boolean"
+                        },
+                        "existingClaim": {
+                            "description": "Use an existing PVC.",
+                            "type": "string"
+                        },
+                        "size": {
+                            "description": "Volume size.",
+                            "type": "string"
+                        },
+                        "storageClass": {
+                            "description": "Storage class.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "podAnnotations": {
+                    "type": "object"
+                },
+                "podLabels": {
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "Pod security context (rabbitmq alpine image user: uid 100, gid 101).",
+                    "type": "object"
+                },
+                "replicaCount": {
+                    "description": "Async broker replicas (keep 1: the chart does not configure a RabbitMQ cluster).",
+                    "type": "integer"
+                },
+                "resources": {
+                    "description": "Resources.",
+                    "type": "object"
+                },
+                "securityContext": {
+                    "description": "Container security context.",
+                    "type": "object"
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "managementPort": {
+                            "type": "integer"
+                        },
+                        "port": {
+                            "type": "integer"
+                        },
+                        "type": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "tolerations": {
+                    "type": "array"
+                }
+            }
+        },
+        "backend": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "type": "object"
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "maxReplicas": {
+                            "type": "integer"
+                        },
+                        "minReplicas": {
+                            "type": "integer"
+                        },
+                        "targetCPUUtilizationPercentage": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "email": {
+                    "type": "object",
+                    "properties": {
+                        "backend": {
+                            "description": "Django email backend (`console` or `smtp`).",
+                            "type": "string",
+                            "enum": [
+                                "console",
+                                "smtp"
+                            ]
+                        },
+                        "defaultFrom": {
+                            "description": "Sender address.",
+                            "type": "string"
+                        },
+                        "existingSecret": {
+                            "description": "Existing secret with the SMTP credentials.",
+                            "type": "string"
+                        },
+                        "host": {
+                            "description": "SMTP host.",
+                            "type": "string"
+                        },
+                        "password": {
+                            "description": "SMTP password (stored in the chart secret).",
+                            "type": "string"
+                        },
+                        "port": {
+                            "description": "SMTP port.",
+                            "type": "integer"
+                        },
+                        "secretKeys": {
+                            "type": "object",
+                            "properties": {
+                                "password": {
+                                    "type": "string"
+                                },
+                                "user": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "useSSL": {
+                            "description": "Use implicit TLS.",
+                            "type": "boolean"
+                        },
+                        "useTLS": {
+                            "description": "Use STARTTLS.",
+                            "type": "boolean"
+                        },
+                        "user": {
+                            "description": "SMTP user.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "extraEnv": {
+                    "type": "array"
+                },
+                "extraEnvFrom": {
+                    "type": "array"
+                },
+                "extraVolumeMounts": {
+                    "description": "Extra volume mounts.",
+                    "type": "array"
+                },
+                "extraVolumes": {
+                    "description": "Extra volumes.",
+                    "type": "array"
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "pullPolicy": {
+                            "description": "Image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "Backend image repository.",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Image tag.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "imagePullSecrets": {
+                    "description": "Image pull secrets (defaults to global.imagePullSecrets).",
+                    "type": "array"
+                },
+                "livenessProbe": {
+                    "type": "object"
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "podAnnotations": {
+                    "type": "object"
+                },
+                "podLabels": {
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "Pod security context.",
+                    "type": "object"
+                },
+                "readinessProbe": {
+                    "type": "object"
+                },
+                "replicaCount": {
+                    "description": "Backend replicas.",
+                    "type": "integer"
+                },
+                "resources": {
+                    "description": "Resources.",
+                    "type": "object"
+                },
+                "securityContext": {
+                    "description": "Container security context. The image entrypoint runs migrations and `chown` as root, then switches to the `taiga` user (uid 999) with gosu: only the capabilities needed for that are kept.",
+                    "type": "object"
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "port": {
+                            "type": "integer"
+                        },
+                        "type": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "startupProbe": {
+                    "description": "Startup probe (the first start runs the database migrations).",
+                    "type": "object"
+                },
+                "tolerations": {
+                    "type": "array"
+                }
+            }
+        },
+        "db": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "type": "object"
+                },
+                "auth": {
+                    "type": "object",
+                    "properties": {
+                        "database": {
+                            "description": "Database name.",
+                            "type": "string"
+                        },
+                        "existingSecret": {
+                            "description": "Existing secret holding the user and password (overrides auth.user / auth.password).",
+                            "type": "string"
+                        },
+                        "password": {
+                            "description": "Database password. Leave empty to generate one (kept across upgrades).",
+                            "type": "string"
+                        },
+                        "secretKeys": {
+                            "type": "object",
+                            "properties": {
+                                "password": {
+                                    "type": "string"
+                                },
+                                "user": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "user": {
+                            "description": "Database user.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "enabled": {
+                    "description": "Deploy a bundled PostgreSQL (single pod, for small instances; prefer an operator-managed database in production).",
+                    "type": "boolean"
+                },
+                "healthcheck": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "description": "Enable the pg_isready probes.",
+                            "type": "boolean"
+                        },
+                        "interval": {
+                            "type": "string"
+                        },
+                        "retries": {
+                            "type": "integer"
+                        },
+                        "startPeriod": {
+                            "type": "string"
+                        },
+                        "timeout": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "pullPolicy": {
+                            "description": "Image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "PostgreSQL image.",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Image tag.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "persistence": {
+                    "type": "object",
+                    "properties": {
+                        "accessMode": {
+                            "description": "Access mode.",
+                            "type": "string"
+                        },
+                        "annotations": {
+                            "description": "PVC annotations.",
+                            "type": "object"
+                        },
+                        "enabled": {
+                            "description": "Persist the bundled database.",
+                            "type": "boolean"
+                        },
+                        "existingClaim": {
+                            "description": "Use an existing PVC.",
+                            "type": "string"
+                        },
+                        "size": {
+                            "description": "Volume size.",
+                            "type": "string"
+                        },
+                        "storageClass": {
+                            "description": "Storage class.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "podAnnotations": {
+                    "type": "object"
+                },
+                "podLabels": {
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "Pod security context (postgres alpine image user: uid/gid 70).",
+                    "type": "object"
+                },
+                "resources": {
+                    "description": "Resources.",
+                    "type": "object"
+                },
+                "securityContext": {
+                    "description": "Container security context.",
+                    "type": "object"
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "port": {
+                            "description": "Service port.",
+                            "type": "integer"
+                        },
+                        "type": {
+                            "description": "Service type.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "tolerations": {
+                    "type": "array"
+                }
+            }
+        },
+        "events": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "type": "object"
+                },
+                "extraEnv": {
+                    "type": "array"
+                },
+                "extraEnvFrom": {
+                    "type": "array"
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "pullPolicy": {
+                            "description": "Image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "Events image repository.",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Image tag.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "livenessProbe": {
+                    "description": "Liveness probe (health endpoint on port 3023).",
+                    "type": "object"
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "podAnnotations": {
+                    "type": "object"
+                },
+                "podLabels": {
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "Pod security context.",
+                    "type": "object"
+                },
+                "readinessProbe": {
+                    "description": "Readiness probe.",
+                    "type": "object"
+                },
+                "replicaCount": {
+                    "description": "Events (websockets) replicas.",
+                    "type": "integer"
+                },
+                "resources": {
+                    "description": "Resources.",
+                    "type": "object"
+                },
+                "securityContext": {
+                    "description": "Container security context. The entrypoint renders .env and chowns as root, then switches to uid 99 with su-exec.",
+                    "type": "object"
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "port": {
+                            "type": "integer"
+                        },
+                        "type": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "tolerations": {
+                    "type": "array"
+                }
+            }
+        },
+        "eventsRabbitmq": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "type": "object"
+                },
+                "auth": {
+                    "type": "object",
+                    "properties": {
+                        "erlangCookie": {
+                            "description": "Deprecated: RabbitMQ 4 ignores the RABBITMQ_ERLANG_COOKIE variable; a cookie is generated in the data volume.",
+                            "type": "string"
+                        },
+                        "existingSecret": {
+                            "description": "Existing secret with the broker credentials.",
+                            "type": "string"
+                        },
+                        "password": {
+                            "description": "Broker password. Leave empty to generate one (kept across upgrades).",
+                            "type": "string"
+                        },
+                        "secretKeys": {
+                            "type": "object",
+                            "properties": {
+                                "erlangCookie": {
+                                    "type": "string"
+                                },
+                                "password": {
+                                    "type": "string"
+                                },
+                                "user": {
+                                    "type": "string"
+                                },
+                                "vhost": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "user": {
+                            "description": "Broker user.",
+                            "type": "string"
+                        },
+                        "vhost": {
+                            "description": "Virtual host. taiga-events hard-codes `taiga`: do not change it.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "pullPolicy": {
+                            "description": "Image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "RabbitMQ image.",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Image tag.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "persistence": {
+                    "type": "object",
+                    "properties": {
+                        "accessMode": {
+                            "description": "Access mode.",
+                            "type": "string"
+                        },
+                        "annotations": {
+                            "description": "PVC annotations.",
+                            "type": "object"
+                        },
+                        "enabled": {
+                            "description": "Persist the broker data.",
+                            "type": "boolean"
+                        },
+                        "existingClaim": {
+                            "description": "Use an existing PVC.",
+                            "type": "string"
+                        },
+                        "size": {
+                            "description": "Volume size.",
+                            "type": "string"
+                        },
+                        "storageClass": {
+                            "description": "Storage class.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "podAnnotations": {
+                    "type": "object"
+                },
+                "podLabels": {
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "Pod security context (rabbitmq alpine image user: uid 100, gid 101).",
+                    "type": "object"
+                },
+                "replicaCount": {
+                    "description": "Events broker replicas (keep 1).",
+                    "type": "integer"
+                },
+                "resources": {
+                    "description": "Resources.",
+                    "type": "object"
+                },
+                "securityContext": {
+                    "description": "Container security context.",
+                    "type": "object"
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "managementPort": {
+                            "type": "integer"
+                        },
+                        "port": {
+                            "type": "integer"
+                        },
+                        "type": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "tolerations": {
+                    "type": "array"
+                }
+            }
+        },
+        "externalDatabase": {
+            "type": "object",
+            "properties": {
+                "database": {
+                    "description": "Database name.",
+                    "type": "string"
+                },
+                "enabled": {
+                    "description": "Use an external PostgreSQL database (set `db.enabled` and disable this to use the bundled one).",
+                    "type": "boolean"
+                },
+                "existingSecret": {
+                    "description": "Existing secret holding the connection settings.",
+                    "type": "string"
+                },
+                "host": {
+                    "description": "Database host.",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "Database password (stored in the chart secret). Required unless `existingSecret` is set.",
+                    "type": "string"
+                },
+                "port": {
+                    "description": "Database port.",
+                    "type": "integer"
+                },
+                "secretKeys": {
+                    "type": "object",
+                    "properties": {
+                        "database": {
+                            "type": "string"
+                        },
+                        "host": {
+                            "type": "string"
+                        },
+                        "password": {
+                            "type": "string"
+                        },
+                        "port": {
+                            "type": "string"
+                        },
+                        "username": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "sslmode": {
+                    "description": "libpq sslmode (`disable`, `require`, `verify-full`...).",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "Database user.",
+                    "type": "string"
+                }
+            }
+        },
+        "frontend": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "type": "object"
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "maxReplicas": {
+                            "type": "integer"
+                        },
+                        "minReplicas": {
+                            "type": "integer"
+                        },
+                        "targetCPUUtilizationPercentage": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "extraEnv": {
+                    "type": "array"
+                },
+                "extraEnvFrom": {
+                    "type": "array"
+                },
+                "extraVolumeMounts": {
+                    "type": "array"
+                },
+                "extraVolumes": {
+                    "type": "array"
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "pullPolicy": {
+                            "description": "Image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "Frontend image repository.",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Image tag.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "imagePullSecrets": {
+                    "description": "Image pull secrets (defaults to global.imagePullSecrets).",
+                    "type": "array"
+                },
+                "livenessProbe": {
+                    "type": "object"
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "podAnnotations": {
+                    "type": "object"
+                },
+                "podLabels": {
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "Pod security context.",
+                    "type": "object"
+                },
+                "readinessProbe": {
+                    "type": "object"
+                },
+                "replicaCount": {
+                    "description": "Frontend replicas.",
+                    "type": "integer"
+                },
+                "resources": {
+                    "description": "Resources.",
+                    "type": "object"
+                },
+                "securityContext": {
+                    "description": "Container security context. The image (nginx as root) rewrites conf.json at startup and binds port 80.",
+                    "type": "object"
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "port": {
+                            "type": "integer"
+                        },
+                        "type": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "tolerations": {
+                    "type": "array"
+                }
+            }
+        },
+        "gateway": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "type": "object"
+                },
+                "clientMaxBodySize": {
+                    "description": "Maximum upload size.",
+                    "type": "string"
+                },
+                "configMapName": {
+                    "description": "Existing ConfigMap with a custom `default.conf`.",
+                    "type": "string"
+                },
+                "extraVolumeMounts": {
+                    "type": "array"
+                },
+                "extraVolumes": {
+                    "type": "array"
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "pullPolicy": {
+                            "description": "Image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "Gateway image (unprivileged nginx, listens on 8080).",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Image tag (nginx stable branch).",
+                            "type": "string"
+                        }
+                    }
+                },
+                "livenessProbe": {
+                    "type": "object"
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "podAnnotations": {
+                    "type": "object"
+                },
+                "podLabels": {
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "Pod security context (nginx-unprivileged runs as uid 101).",
+                    "type": "object"
+                },
+                "readinessProbe": {
+                    "type": "object"
+                },
+                "replicaCount": {
+                    "description": "Gateway (nginx reverse proxy) replicas.",
+                    "type": "integer"
+                },
+                "resources": {
+                    "description": "Resources.",
+                    "type": "object"
+                },
+                "securityContext": {
+                    "description": "Container security context.",
+                    "type": "object"
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "port": {
+                            "type": "integer"
+                        },
+                        "type": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "tolerations": {
+                    "type": "array"
+                }
+            }
+        },
+        "global": {
+            "type": "object",
+            "properties": {
+                "defaultProbes": {
+                    "type": "object",
+                    "properties": {
+                        "liveness": {
+                            "type": "object",
+                            "properties": {
+                                "failureThreshold": {
+                                    "type": "integer"
+                                },
+                                "initialDelaySeconds": {
+                                    "type": "integer"
+                                },
+                                "periodSeconds": {
+                                    "type": "integer"
+                                },
+                                "timeoutSeconds": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "readiness": {
+                            "type": "object",
+                            "properties": {
+                                "failureThreshold": {
+                                    "type": "integer"
+                                },
+                                "initialDelaySeconds": {
+                                    "type": "integer"
+                                },
+                                "periodSeconds": {
+                                    "type": "integer"
+                                },
+                                "timeoutSeconds": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                },
+                "domain": {
+                    "description": "Public domain of Taiga.",
+                    "type": "string"
+                },
+                "existingSecret": {
+                    "description": "Existing secret used for every service. It must expose all the keys referenced in `secretKeys` (plus POSTGRES_USER/POSTGRES_PASSWORD and RABBITMQ_USER/RABBITMQ_PASS when the bundled services use it).",
+                    "type": "string"
+                },
+                "extraEnv": {
+                    "description": "Extra environment variables for every Taiga service.",
+                    "type": "array"
+                },
+                "extraEnvFrom": {
+                    "description": "Extra envFrom sources for every Taiga service.",
+                    "type": "array"
+                },
+                "imagePullSecrets": {
+                    "description": "Image pull secrets for every pod.",
+                    "type": "array"
+                },
+                "oidc": {
+                    "type": "object",
+                    "properties": {
+                        "backend": {
+                            "type": "object",
+                            "properties": {
+                                "overrideImage": {
+                                    "type": "object",
+                                    "properties": {
+                                        "digest": {
+                                            "description": "Image digest (pinned: the `latest-oidc` tag moves).",
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "description": "OIDC-enabled backend image (also used by async).",
+                                            "type": "string"
+                                        },
+                                        "tag": {
+                                            "description": "Image tag.",
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "useXForwardedHost": {
+                                    "description": "Enable if running behind reverse proxy with TLS termination.",
+                                    "type": "boolean"
+                                }
+                            }
+                        },
+                        "clientId": {
+                            "description": "OIDC client ID.",
+                            "type": "string"
+                        },
+                        "clientSecret": {
+                            "description": "OIDC client secret (stored in the chart secret; ignored with `existingSecret`).",
+                            "type": "string"
+                        },
+                        "enabled": {
+                            "description": "Enable OIDC login (uses the UnxWares OIDC-enabled front/back images below).",
+                            "type": "boolean"
+                        },
+                        "endpoints": {
+                            "type": "object",
+                            "properties": {
+                                "authorization": {
+                                    "type": "string"
+                                },
+                                "jwks": {
+                                    "type": "string"
+                                },
+                                "token": {
+                                    "type": "string"
+                                },
+                                "userinfo": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "existingSecret": {
+                            "description": "Existing secret with the client ID and secret.",
+                            "type": "string"
+                        },
+                        "frontend": {
+                            "type": "object",
+                            "properties": {
+                                "buttonText": {
+                                    "description": "Text of the SSO button.",
+                                    "type": "string"
+                                },
+                                "enableDefaultLogin": {
+                                    "description": "Keep the username/password login form.",
+                                    "type": "boolean"
+                                },
+                                "overrideImage": {
+                                    "type": "object",
+                                    "properties": {
+                                        "digest": {
+                                            "description": "Image digest (pinned: the `latest-oidc` tag moves).",
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "description": "OIDC-enabled frontend image.",
+                                            "type": "string"
+                                        },
+                                        "tag": {
+                                            "description": "Image tag.",
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "issuer": {
+                            "description": "OIDC issuer URL.",
+                            "type": "string"
+                        },
+                        "scopes": {
+                            "description": "OIDC scopes.",
+                            "type": "string"
+                        },
+                        "secretKeys": {
+                            "type": "object",
+                            "properties": {
+                                "clientId": {
+                                    "type": "string"
+                                },
+                                "clientSecret": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "persistence": {
+                    "type": "object",
+                    "properties": {
+                        "media": {
+                            "type": "object",
+                            "properties": {
+                                "accessMode": {
+                                    "description": "Access mode. With ReadWriteOnce, backend, async and gateway are scheduled on the same node (pod affinity added by the chart); use ReadWriteMany to spread them. An existing claim keeps its original mode.",
+                                    "type": "string",
+                                    "enum": [
+                                        "ReadWriteOnce",
+                                        "ReadWriteMany"
+                                    ]
+                                },
+                                "annotations": {
+                                    "description": "PVC annotations.",
+                                    "type": "object"
+                                },
+                                "enabled": {
+                                    "description": "Persist uploaded attachments and exports, shared by backend, async and gateway. Without it, attachments cannot be downloaded and are lost when the backend pod restarts.",
+                                    "type": "boolean"
+                                },
+                                "existingClaim": {
+                                    "description": "Use an existing PVC.",
+                                    "type": "string"
+                                },
+                                "size": {
+                                    "description": "Volume size.",
+                                    "type": "string"
+                                },
+                                "storageClass": {
+                                    "description": "Storage class.",
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "pod": {
+                    "type": "object",
+                    "properties": {
+                        "affinity": {
+                            "description": "Default affinity for every pod.",
+                            "type": "object"
+                        },
+                        "nodeSelector": {
+                            "description": "Default node selector for every pod.",
+                            "type": "object"
+                        },
+                        "tolerations": {
+                            "description": "Default tolerations for every pod.",
+                            "type": "array"
+                        }
+                    }
+                },
+                "podSecurityContext": {
+                    "description": "Default pod security context (used when a component does not set its own).",
+                    "type": "object"
+                },
+                "resources": {
+                    "description": "Default resources (used when a component does not set its own).",
+                    "type": "object"
+                },
+                "scheme": {
+                    "description": "Public URL scheme (`http` or `https`).",
+                    "type": "string",
+                    "enum": [
+                        "http",
+                        "https"
+                    ]
+                },
+                "secretKey": {
+                    "description": "Django secret key shared by back, async, events and protected. Leave empty to generate one (kept across upgrades).",
+                    "type": "string"
+                },
+                "secretKeys": {
+                    "type": "object",
+                    "properties": {
+                        "secretKey": {
+                            "description": "Key of the Django secret key in `existingSecret`.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "securityContext": {
+                    "description": "Default container security context (used when a component does not set its own).",
+                    "type": "object"
+                },
+                "serviceAccount": {
+                    "type": "object",
+                    "properties": {
+                        "annotations": {
+                            "description": "Service account annotations.",
+                            "type": "object"
+                        },
+                        "automount": {
+                            "description": "Taiga never talks to the Kubernetes API: the token is not mounted.",
+                            "type": "boolean"
+                        },
+                        "create": {
+                            "description": "Create a dedicated service account.",
+                            "type": "boolean"
+                        },
+                        "name": {
+                            "description": "Service account name (generated when empty).",
+                            "type": "string"
+                        }
+                    }
+                },
+                "subPath": {
+                    "description": "Sub-path when Taiga is not served at the root of the domain.",
+                    "type": "string"
+                },
+                "telemetry": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "description": "Send anonymous usage telemetry to Taiga.",
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "websocketsScheme": {
+                    "description": "Websocket scheme (`ws` or `wss`).",
+                    "type": "string",
+                    "enum": [
+                        "ws",
+                        "wss"
+                    ]
+                }
+            }
+        },
+        "httpRoute": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "HTTPRoute annotations.",
+                    "type": "object"
+                },
+                "enabled": {
+                    "description": "Expose Taiga through a Gateway API HTTPRoute (to the gateway service).",
+                    "type": "boolean"
+                },
+                "hostnames": {
+                    "description": "Hostnames (defaults to global.domain when empty).",
+                    "type": "array"
+                },
+                "parentRefs": {
+                    "description": "Gateways this route is attached to.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "sectionName": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "ingress": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "Ingress annotations (websockets must be allowed on /events; raise the body size for uploads).",
+                    "type": "object"
+                },
+                "className": {
+                    "description": "Ingress class name.",
+                    "type": "string"
+                },
+                "enabled": {
+                    "description": "Expose Taiga through an Ingress (to the gateway).",
+                    "type": "boolean"
+                },
+                "hosts": {
+                    "description": "Ingress hosts.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "host": {
+                                "type": "string"
+                            },
+                            "paths": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "path": {
+                                            "type": "string"
+                                        },
+                                        "pathType": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "tls": {
+                    "description": "Ingress TLS.",
+                    "type": "array"
+                }
+            }
+        },
+        "protected": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "type": "object"
+                },
+                "extraEnv": {
+                    "type": "array"
+                },
+                "extraEnvFrom": {
+                    "type": "array"
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "pullPolicy": {
+                            "description": "Image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "Protected image repository.",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Image tag.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "livenessProbe": {
+                    "description": "Liveness probe.",
+                    "type": "object"
+                },
+                "maxAge": {
+                    "description": "Validity of signed attachment URLs (seconds).",
+                    "type": "integer"
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "podAnnotations": {
+                    "type": "object"
+                },
+                "podLabels": {
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "Pod security context.",
+                    "type": "object"
+                },
+                "readinessProbe": {
+                    "description": "Readiness probe.",
+                    "type": "object"
+                },
+                "replicaCount": {
+                    "description": "Protected (signed attachment URLs) replicas.",
+                    "type": "integer"
+                },
+                "resources": {
+                    "description": "Resources.",
+                    "type": "object"
+                },
+                "securityContext": {
+                    "description": "Container security context (same entrypoint model as the backend: chown as root, then gosu to uid 999).",
+                    "type": "object"
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "port": {
+                            "type": "integer"
+                        },
+                        "type": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "tolerations": {
+                    "type": "array"
+                }
+            }
+        }
+    }
+}

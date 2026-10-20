@@ -8,13 +8,18 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  {{- if and .Values.persistence.enabled (eq .Values.persistence.accessMode "ReadWriteOnce") }}
+  # A ReadWriteOnce volume cannot be attached to the old and the new pod at the same time.
+  strategy:
+    type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       {{- include "bind9.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
-        # force pod reload on config change
+        # force pod reload on config change
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
@@ -30,6 +35,10 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "bind9.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
       {{- with .Values.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -40,12 +49,15 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: {{ include "bind9.image" (dict "image" .Values.image "default" .Chart.AppVersion) | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-
+          workingDir: /var/cache/bind
           command: ["/usr/sbin/named"]
           args:
-            - "-f"
+            # Bind port 53 as root, then run as the unprivileged bind user (uid 53).
+            - "-u"
+            - "bind"
+            # Foreground, logs to stderr.
             - "-g"
           {{- with .Values.bind.args }}
             {{- toYaml . | nindent 12 }}
@@ -61,10 +73,6 @@ spec:
             - name: rndc
               containerPort: 953
               protocol: TCP
-
-          env:
-            - name: BIND9_USER
-              value: "bind"
 
           {{- with .Values.livenessProbe }}
           livenessProbe:
@@ -83,19 +91,21 @@ spec:
             - name: bind-config
               mountPath: /etc/bind/named.conf
               subPath: named.conf
+              readOnly: true
             {{- range $name, $_ := .Values.bind.zones }}
             - name: bind-config
               mountPath: /etc/bind/{{ $name }}.zone
               subPath: {{ $name }}.zone
+              readOnly: true
             {{- end }}
-
-            {{- if .Values.persistence.enabled }}
             - name: bind-data
               mountPath: /var/lib/bind
-            {{- else }}
-            - name: bind-data
-              mountPath: /var/lib/bind
-            {{- end }}
+            - name: bind-cache
+              mountPath: /var/cache/bind
+            - name: bind-run
+              mountPath: /run/named
+            - name: tmp
+              mountPath: /tmp
             {{- with .Values.volumeMounts }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -105,7 +115,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: "{{ .Values.metrics.image.repository }}:{{ .Values.metrics.image.tag }}"
+          image: {{ include "bind9.image" (dict "image" .Values.metrics.image "default" .Values.metrics.image.tag) | quote }}
           imagePullPolicy: {{ .Values.metrics.image.pullPolicy }}
           args:
             - --bind.stats-url=http://127.0.0.1:8053/
@@ -136,7 +146,7 @@ spec:
         {{- if .Values.persistence.enabled }}
         - name: bind-data
           persistentVolumeClaim:
-            claimName: {{ include "bind9.fullname" . }}-pvc
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-pvc" (include "bind9.fullname" .)) }}
         {{- else }}
         - name: bind-data
           {{- if .Values.persistence.emptyDirSizeLimit }}
@@ -146,6 +156,16 @@ spec:
           emptyDir: {}
           {{- end }}
         {{- end }}
+        # named working directory (managed keys, cache dumps) and pid file
+        - name: bind-cache
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: bind-run
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi
         {{- with .Values.volumes }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -160,5 +180,9 @@ spec:
       {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}

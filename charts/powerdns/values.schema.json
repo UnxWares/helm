@@ -1,0 +1,792 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "affinity": {
+            "description": "Affinity rules.",
+            "type": "object"
+        },
+        "api": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Enable the REST API (used by ExternalDNS, PowerDNS-Admin, cert-manager webhooks...). Requires `webserver.enabled`.",
+                    "type": "boolean"
+                },
+                "existingSecret": {
+                    "description": "Existing secret holding the API key.",
+                    "type": "string"
+                },
+                "existingSecretKey": {
+                    "description": "Key of the API key in `existingSecret`.",
+                    "type": "string"
+                },
+                "key": {
+                    "description": "API key. Leave empty to generate one (kept across upgrades). Set it explicitly, or use `existingSecret`, with GitOps tools that render templates offline.",
+                    "type": "string"
+                }
+            }
+        },
+        "apiService": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "Service annotations.",
+                    "type": "object"
+                },
+                "port": {
+                    "description": "API/webserver service port.",
+                    "type": "integer"
+                },
+                "type": {
+                    "description": "API/webserver service type. Keep it internal; expose it through an authenticated ingress if needed.",
+                    "type": "string",
+                    "enum": [
+                        "ClusterIP",
+                        "NodePort",
+                        "LoadBalancer"
+                    ]
+                }
+            }
+        },
+        "autoscaling": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Enable the HorizontalPodAutoscaler (gpgsql/gmysql backends only).",
+                    "type": "boolean"
+                },
+                "maxReplicas": {
+                    "type": "integer"
+                },
+                "minReplicas": {
+                    "type": "integer"
+                },
+                "targetCPUUtilizationPercentage": {
+                    "type": "integer"
+                }
+            }
+        },
+        "backend": {
+            "type": "object",
+            "properties": {
+                "dnssec": {
+                    "description": "Store DNSSEC keys and metadata in the database (`\u003cbackend\u003e-dnssec=yes`).",
+                    "type": "boolean"
+                },
+                "gmysql": {
+                    "type": "object",
+                    "properties": {
+                        "dbname": {
+                            "description": "Database name.",
+                            "type": "string"
+                        },
+                        "existingSecret": {
+                            "description": "Existing secret holding the database password.",
+                            "type": "string"
+                        },
+                        "existingSecretPasswordKey": {
+                            "description": "Key of the password in `existingSecret`.",
+                            "type": "string"
+                        },
+                        "host": {
+                            "description": "MySQL/MariaDB host.",
+                            "type": "string"
+                        },
+                        "password": {
+                            "description": "Database password (ignored when `existingSecret` is set).",
+                            "type": "string"
+                        },
+                        "port": {
+                            "description": "MySQL/MariaDB port.",
+                            "type": "integer"
+                        },
+                        "user": {
+                            "description": "Database user.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "gpgsql": {
+                    "type": "object",
+                    "properties": {
+                        "dbname": {
+                            "description": "Database name.",
+                            "type": "string"
+                        },
+                        "existingSecret": {
+                            "description": "Existing secret holding the database password.",
+                            "type": "string"
+                        },
+                        "existingSecretPasswordKey": {
+                            "description": "Key of the password in `existingSecret`.",
+                            "type": "string"
+                        },
+                        "extraConnectionParameters": {
+                            "description": "Extra libpq connection parameters, e.g. `sslmode=verify-full sslrootcert=/etc/ssl/db/ca.crt`.",
+                            "type": "string"
+                        },
+                        "host": {
+                            "description": "PostgreSQL host.",
+                            "type": "string"
+                        },
+                        "password": {
+                            "description": "Database password (ignored when `existingSecret` is set).",
+                            "type": "string"
+                        },
+                        "port": {
+                            "description": "PostgreSQL port.",
+                            "type": "integer"
+                        },
+                        "user": {
+                            "description": "Database user.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "gsqlite3": {
+                    "type": "object",
+                    "properties": {
+                        "database": {
+                            "description": "Path of the SQLite database inside the container.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "schemaInit": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "description": "Run the schema init container.",
+                            "type": "boolean"
+                        },
+                        "mysqlImage": {
+                            "description": "Client image used for gmysql.",
+                            "type": "string"
+                        },
+                        "postgresImage": {
+                            "description": "Client image used for gpgsql.",
+                            "type": "string"
+                        },
+                        "resources": {
+                            "description": "Resources of the schema init containers.",
+                            "type": "object"
+                        },
+                        "timeoutSeconds": {
+                            "description": "Seconds to wait for the database to accept connections.",
+                            "type": "integer"
+                        }
+                    }
+                },
+                "type": {
+                    "description": "Database backend: `gsqlite3` (single replica, PVC), `gpgsql` or `gmysql` (external database, can scale out).",
+                    "type": "string",
+                    "enum": [
+                        "gsqlite3",
+                        "gpgsql",
+                        "gmysql"
+                    ]
+                }
+            }
+        },
+        "commonLabels": {
+            "description": "Labels added to every resource.",
+            "type": "object"
+        },
+        "config": {
+            "description": "Extra pdns.conf settings as `setting: value` (see https://doc.powerdns.com/authoritative/settings.html).",
+            "type": "object",
+            "properties": {
+                "loglevel": {
+                    "type": "integer"
+                },
+                "version-string": {
+                    "type": "string"
+                }
+            }
+        },
+        "dns": {
+            "type": "object",
+            "properties": {
+                "containerPort": {
+                    "description": "Port PowerDNS listens on inside the pod. A non privileged port lets the server run without any capability; the Service exposes it on 53.",
+                    "type": "integer"
+                },
+                "listenAddresses": {
+                    "description": "Addresses to bind. Drop `[::]` on clusters where pods have IPv6 disabled.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "extraConfig": {
+            "description": "Raw lines appended to pdns.conf.",
+            "type": "string"
+        },
+        "extraEnv": {
+            "description": "Extra environment variables of the server container.",
+            "type": "array"
+        },
+        "extraVolumeMounts": {
+            "description": "Extra volume mounts of the server container.",
+            "type": "array"
+        },
+        "extraVolumes": {
+            "description": "Extra volumes.",
+            "type": "array"
+        },
+        "fullnameOverride": {
+            "description": "Override the full resource names.",
+            "type": "string"
+        },
+        "image": {
+            "type": "object",
+            "properties": {
+                "digest": {
+                    "description": "Image digest (`sha256:...`). When set, it takes precedence over the tag.",
+                    "type": "string"
+                },
+                "pullPolicy": {
+                    "description": "Image pull policy.",
+                    "type": "string",
+                    "enum": [
+                        "Always",
+                        "IfNotPresent",
+                        "Never"
+                    ]
+                },
+                "repository": {
+                    "description": "Authoritative server image repository.",
+                    "type": "string"
+                },
+                "tag": {
+                    "description": "Image tag (defaults to the chart appVersion).",
+                    "type": "string"
+                }
+            }
+        },
+        "imagePullSecrets": {
+            "description": "Secrets for pulling images from a private registry.",
+            "type": "array"
+        },
+        "livenessProbe": {
+            "description": "Liveness probe.",
+            "type": "object"
+        },
+        "metrics": {
+            "type": "object",
+            "properties": {
+                "serviceMonitor": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "description": "Create a Prometheus Operator ServiceMonitor scraping `/metrics` on the webserver (rendered only when the CRD exists).",
+                            "type": "boolean"
+                        },
+                        "interval": {
+                            "description": "Scrape interval.",
+                            "type": "string"
+                        },
+                        "labels": {
+                            "description": "Extra ServiceMonitor labels (e.g. `release: kube-prometheus-stack`).",
+                            "type": "object"
+                        },
+                        "scrapeTimeout": {
+                            "description": "Scrape timeout.",
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "nameOverride": {
+            "description": "Override the chart name.",
+            "type": "string"
+        },
+        "networkPolicy": {
+            "type": "object",
+            "properties": {
+                "apiAllowedFrom": {
+                    "description": "Peers allowed to reach the API/webserver (in addition to the recursor and same-release pods).",
+                    "type": "array"
+                },
+                "enabled": {
+                    "description": "Create NetworkPolicies: DNS stays open, the API/webserver only accepts the peers below.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "nodeSelector": {
+            "description": "Node selector.",
+            "type": "object"
+        },
+        "persistence": {
+            "type": "object",
+            "properties": {
+                "accessModes": {
+                    "description": "Access modes.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "annotations": {
+                    "description": "PVC annotations.",
+                    "type": "object"
+                },
+                "enabled": {
+                    "description": "Persist the SQLite database (gsqlite3 backend only). Without it the database lives in an emptyDir.",
+                    "type": "boolean"
+                },
+                "existingClaim": {
+                    "description": "Use an existing PVC.",
+                    "type": "string"
+                },
+                "size": {
+                    "description": "Volume size.",
+                    "type": "string"
+                },
+                "storageClass": {
+                    "description": "Storage class (empty uses the cluster default).",
+                    "type": "string"
+                }
+            }
+        },
+        "podAnnotations": {
+            "description": "Pod annotations.",
+            "type": "object"
+        },
+        "podDisruptionBudget": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Create a PodDisruptionBudget (useful with 2+ replicas).",
+                    "type": "boolean"
+                },
+                "maxUnavailable": {
+                    "description": "Maximum unavailable pods (used instead of minAvailable when set).",
+                    "type": [
+                        "integer",
+                        "string",
+                        "null"
+                    ]
+                },
+                "minAvailable": {
+                    "description": "Minimum available pods.",
+                    "type": "integer"
+                }
+            }
+        },
+        "podLabels": {
+            "description": "Pod labels.",
+            "type": "object"
+        },
+        "podSecurityContext": {
+            "description": "Pod security context.",
+            "type": "object"
+        },
+        "priorityClassName": {
+            "description": "Priority class of the pods.",
+            "type": "string"
+        },
+        "readinessProbe": {
+            "description": "Readiness probe.",
+            "type": "object"
+        },
+        "recursor": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "description": "Affinity rules.",
+                    "type": "object"
+                },
+                "allowFrom": {
+                    "description": "Clients allowed to query the recursor. Never leave a recursor open to the Internet.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "authoritativeZones": {
+                    "description": "Zones the recursor sends to the authoritative server of this release (resolved through its Service IP).",
+                    "type": "array"
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "description": "Enable the recursor HorizontalPodAutoscaler.",
+                            "type": "boolean"
+                        },
+                        "maxReplicas": {
+                            "type": "integer"
+                        },
+                        "minReplicas": {
+                            "type": "integer"
+                        },
+                        "targetCPUUtilizationPercentage": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "config": {
+                    "description": "Extra recursor settings merged into recursor.yml (YAML settings, see https://doc.powerdns.com/recursor/yamlsettings.html).",
+                    "type": "object"
+                },
+                "containerPort": {
+                    "description": "Port the recursor listens on inside the pod (exposed on 53 by its service).",
+                    "type": "integer"
+                },
+                "dnssecValidation": {
+                    "description": "DNSSEC validation mode (`off`, `process-no-validate`, `process`, `log-fail`, `validate`).",
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "process-no-validate",
+                        "process",
+                        "log-fail",
+                        "validate"
+                    ]
+                },
+                "enabled": {
+                    "description": "Deploy a PowerDNS Recursor next to the authoritative server.",
+                    "type": "boolean"
+                },
+                "extraEnv": {
+                    "description": "Extra environment variables.",
+                    "type": "array"
+                },
+                "extraVolumeMounts": {
+                    "description": "Extra volume mounts.",
+                    "type": "array"
+                },
+                "extraVolumes": {
+                    "description": "Extra volumes.",
+                    "type": "array"
+                },
+                "forwardZones": {
+                    "description": "Other forward zones (`zone` + `forwarders` IP:port list).",
+                    "type": "array"
+                },
+                "forwardZonesRecurse": {
+                    "description": "Forward everything else to these resolvers instead of recursing from the root (e.g. `[\"9.9.9.9:53\"]`).",
+                    "type": "array"
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "digest": {
+                            "description": "Image digest (takes precedence over the tag).",
+                            "type": "string"
+                        },
+                        "pullPolicy": {
+                            "description": "Image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "Recursor image repository.",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Recursor image tag.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "listenAddresses": {
+                    "description": "Addresses to bind (the port is `recursor.containerPort`).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "livenessProbe": {
+                    "description": "Liveness probe.",
+                    "type": "object"
+                },
+                "metrics": {
+                    "type": "object",
+                    "properties": {
+                        "serviceMonitor": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "description": "Create a ServiceMonitor for the recursor.",
+                                    "type": "boolean"
+                                },
+                                "interval": {
+                                    "type": "string"
+                                },
+                                "labels": {
+                                    "type": "object"
+                                },
+                                "scrapeTimeout": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "nodeSelector": {
+                    "description": "Node selector.",
+                    "type": "object"
+                },
+                "podAnnotations": {
+                    "description": "Pod annotations.",
+                    "type": "object"
+                },
+                "podDisruptionBudget": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "description": "Create a PodDisruptionBudget for the recursor.",
+                            "type": "boolean"
+                        },
+                        "maxUnavailable": {
+                            "type": [
+                                "integer",
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "minAvailable": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "podLabels": {
+                    "description": "Pod labels.",
+                    "type": "object"
+                },
+                "readinessProbe": {
+                    "description": "Readiness probe.",
+                    "type": "object"
+                },
+                "replicaCount": {
+                    "description": "Recursor replicas.",
+                    "type": "integer"
+                },
+                "resources": {
+                    "description": "Resources.",
+                    "type": "object"
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "annotations": {
+                            "description": "Service annotations.",
+                            "type": "object"
+                        },
+                        "clusterIP": {
+                            "description": "Static cluster IP.",
+                            "type": "string"
+                        },
+                        "externalTrafficPolicy": {
+                            "description": "External traffic policy.",
+                            "type": "string"
+                        },
+                        "loadBalancerIP": {
+                            "description": "Load balancer IP.",
+                            "type": "string"
+                        },
+                        "loadBalancerSourceRanges": {
+                            "description": "Source ranges allowed by the load balancer.",
+                            "type": "array"
+                        },
+                        "port": {
+                            "description": "Recursor DNS port.",
+                            "type": "integer"
+                        },
+                        "type": {
+                            "description": "Recursor service type.",
+                            "type": "string",
+                            "enum": [
+                                "ClusterIP",
+                                "NodePort",
+                                "LoadBalancer"
+                            ]
+                        }
+                    }
+                },
+                "tolerations": {
+                    "description": "Tolerations.",
+                    "type": "array"
+                },
+                "topologySpreadConstraints": {
+                    "description": "Topology spread constraints.",
+                    "type": "array"
+                },
+                "webserver": {
+                    "type": "object",
+                    "properties": {
+                        "allowFrom": {
+                            "description": "Networks allowed to reach the recursor webserver.",
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "enabled": {
+                            "description": "Enable the recursor webserver (API + `/metrics`).",
+                            "type": "boolean"
+                        },
+                        "port": {
+                            "description": "Webserver port.",
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "replicaCount": {
+            "description": "Number of authoritative server replicas. Must stay at 1 with the gsqlite3 backend.",
+            "type": "integer"
+        },
+        "resources": {
+            "description": "Resource requests and limits.",
+            "type": "object"
+        },
+        "securityContext": {
+            "description": "Container security context.",
+            "type": "object"
+        },
+        "service": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "Service annotations (e.g. MetalLB or cloud load balancer settings).",
+                    "type": "object"
+                },
+                "clusterIP": {
+                    "description": "Static cluster IP (lets other resolvers forward to a stable address).",
+                    "type": "string"
+                },
+                "externalTrafficPolicy": {
+                    "description": "`Local` preserves client source IPs (needed for allow-axfr-ips / ACLs).",
+                    "type": "string"
+                },
+                "ipFamilies": {
+                    "description": "IP families.",
+                    "type": "array"
+                },
+                "ipFamilyPolicy": {
+                    "description": "IP family policy (`SingleStack`, `PreferDualStack`, `RequireDualStack`).",
+                    "type": "string"
+                },
+                "loadBalancerIP": {
+                    "description": "Load balancer IP, when supported by the provider.",
+                    "type": "string"
+                },
+                "loadBalancerSourceRanges": {
+                    "description": "Source ranges allowed by the load balancer.",
+                    "type": "array"
+                },
+                "nodePorts": {
+                    "type": "object",
+                    "properties": {
+                        "tcp": {
+                            "description": "NodePort for DNS over TCP.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "udp": {
+                            "description": "NodePort for DNS over UDP.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "port": {
+                    "description": "DNS port exposed by the service.",
+                    "type": "integer"
+                },
+                "type": {
+                    "description": "DNS service type. Use `LoadBalancer` to serve DNS outside the cluster.",
+                    "type": "string",
+                    "enum": [
+                        "ClusterIP",
+                        "NodePort",
+                        "LoadBalancer"
+                    ]
+                }
+            }
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "Service account annotations.",
+                    "type": "object"
+                },
+                "automount": {
+                    "description": "PowerDNS never talks to the Kubernetes API: the token is not mounted.",
+                    "type": "boolean"
+                },
+                "create": {
+                    "description": "Create a dedicated service account.",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "Service account name (generated when empty).",
+                    "type": "string"
+                }
+            }
+        },
+        "startupProbe": {
+            "description": "Startup probe.",
+            "type": "object"
+        },
+        "tests": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "description": "Image used by `helm test` (defaults to the authoritative server image, which ships Python).",
+                    "type": "string"
+                }
+            }
+        },
+        "tolerations": {
+            "description": "Tolerations.",
+            "type": "array"
+        },
+        "topologySpreadConstraints": {
+            "description": "Topology spread constraints.",
+            "type": "array"
+        },
+        "updateStrategy": {
+            "description": "Deployment update strategy. With gsqlite3 and persistence the chart forces `Recreate`.",
+            "type": "object"
+        },
+        "webserver": {
+            "type": "object",
+            "properties": {
+                "allowFrom": {
+                    "description": "Networks allowed to reach the webserver. Narrow it to your pod CIDR; the API also requires the key.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "enabled": {
+                    "description": "Enable the built-in webserver (needed by the API and by the Prometheus `/metrics` endpoint).",
+                    "type": "boolean"
+                },
+                "port": {
+                    "description": "Webserver port.",
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

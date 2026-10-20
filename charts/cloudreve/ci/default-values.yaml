@@ -1,0 +1,3 @@
+# SQLite in the data volume.
+persistence:
+  size: 1Gi

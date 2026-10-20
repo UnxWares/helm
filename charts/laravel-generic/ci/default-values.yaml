@@ -1,0 +1,7 @@
+# Render/lint only: the chart needs your own application image, so it is excluded from ct install.
+# FrankenPHP runtime, SQLite on the persistent volume, scheduler CronJob, NetworkPolicy.
+image:
+  repository: docker.io/dunglas/frankenphp
+  tag: 1-php8.4-alpine
+networkPolicy:
+  enabled: true

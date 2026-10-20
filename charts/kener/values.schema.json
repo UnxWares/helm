@@ -1,71 +1,217 @@
 {
-    "$schema": "http://json-schema.org/schema#",
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "affinity": {
+            "description": "Affinity rules.",
             "type": "object"
         },
         "autoscaling": {
             "type": "object",
             "properties": {
                 "enabled": {
+                    "description": "Enable the HorizontalPodAutoscaler (PostgreSQL/MySQL only, not tested upstream).",
                     "type": "boolean"
                 },
                 "maxReplicas": {
+                    "description": "Maximum replicas.",
                     "type": "integer"
                 },
                 "minReplicas": {
+                    "description": "Minimum replicas.",
                     "type": "integer"
                 },
                 "targetCPUUtilizationPercentage": {
+                    "description": "Target CPU utilization.",
                     "type": "integer"
+                },
+                "targetMemoryUtilizationPercentage": {
+                    "description": "Target memory utilization.",
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
                 }
             }
+        },
+        "commonLabels": {
+            "description": "Labels added to every resource.",
+            "type": "object"
         },
         "database": {
             "type": "object",
             "properties": {
-                "enabled": {
-                    "type": "boolean"
+                "existingSecret": {
+                    "description": "Existing secret holding the database URL (`postgresql://` or `mysql://`). Takes precedence over `database.url`.",
+                    "type": "string"
                 },
-                "secretKeys": {
+                "existingSecretKey": {
+                    "description": "Key of the URL in `existingSecret`.",
+                    "type": "string"
+                },
+                "keepAlive": {
+                    "description": "`DATABASE_KEEPALIVE`: TCP keepalive on database connections. Null keeps the Kener default (`true`).",
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                },
+                "pool": {
                     "type": "object",
                     "properties": {
-                        "url": {
-                            "type": "string"
+                        "acquireTimeoutMs": {
+                            "description": "`DATABASE_ACQUIRE_TIMEOUT_MS` (Kener default 15000).",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "createTimeoutMs": {
+                            "description": "`DATABASE_CREATE_TIMEOUT_MS` (Kener default 15000).",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "idleTimeoutMs": {
+                            "description": "`DATABASE_IDLE_TIMEOUT_MS` (Kener default 30000).",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "max": {
+                            "description": "`DATABASE_POOL_MAX`: connections serving web requests, per replica (Kener default 10). Keep `replicas x (max + workerMax)` below the database `max_connections`.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "min": {
+                            "description": "`DATABASE_POOL_MIN` (PostgreSQL/MySQL). Null keeps the Kener default (0).",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "workerMax": {
+                            "description": "`DATABASE_WORKER_POOL_MAX`: connections of the background jobs, per replica (Kener default 5).",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
                         }
                     }
                 },
                 "url": {
+                    "description": "External database URL: `postgresql://user:password@host:5432/kener` or `mysql://user:password@host:3306/kener` (stored in a Secret; percent-encode reserved characters of the password). Empty uses SQLite in `/app/database`.",
                     "type": "string"
                 }
             }
         },
+        "email": {
+            "type": "object",
+            "properties": {
+                "resend": {
+                    "type": "object",
+                    "properties": {
+                        "apiKey": {
+                            "description": "Resend API key (`RESEND_API_KEY`, stored in a Secret; ignored when `existingSecret` is set).",
+                            "type": "string"
+                        },
+                        "existingSecret": {
+                            "description": "Existing secret holding the Resend API key.",
+                            "type": "string"
+                        },
+                        "existingSecretKey": {
+                            "description": "Key of the API key in `existingSecret`.",
+                            "type": "string"
+                        },
+                        "senderEmail": {
+                            "description": "Sender address (`RESEND_SENDER_EMAIL`), required with Resend.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "smtp": {
+                    "type": "object",
+                    "properties": {
+                        "existingSecret": {
+                            "description": "Existing secret holding the SMTP password.",
+                            "type": "string"
+                        },
+                        "existingSecretPasswordKey": {
+                            "description": "Key of the password in `existingSecret`.",
+                            "type": "string"
+                        },
+                        "fromEmail": {
+                            "description": "Sender address (`SMTP_FROM_EMAIL`), e.g. `Status \u003cstatus@example.com\u003e`.",
+                            "type": "string"
+                        },
+                        "host": {
+                            "description": "SMTP host (`SMTP_HOST`). Kener uses SMTP from the environment only when host, port, user, sender and password are all set.",
+                            "type": "string"
+                        },
+                        "password": {
+                            "description": "SMTP password (`SMTP_PASS`, stored in a Secret; ignored when `existingSecret` is set).",
+                            "type": "string"
+                        },
+                        "port": {
+                            "description": "SMTP port (`SMTP_PORT`).",
+                            "type": "integer"
+                        },
+                        "secure": {
+                            "description": "Implicit TLS (`SMTP_SECURE=1`, usually port 465). Keep `false` for STARTTLS on port 587.",
+                            "type": "boolean"
+                        },
+                        "user": {
+                            "description": "SMTP user (`SMTP_USER`).",
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "extraEnv": {
+            "description": "Extra environment variables of the Kener container. Kener substitutes `$NAME` variables in monitors and triggers: pass their secrets here with `valueFrom.secretKeyRef`. Never drop `--experimental-strip-types` if you set `NODE_OPTIONS`.",
             "type": "array"
         },
         "extraEnvFrom": {
+            "description": "Extra `envFrom` sources of the Kener container.",
+            "type": "array"
+        },
+        "extraVolumeMounts": {
+            "description": "Extra volume mounts of the Kener container. Do not mount `/app/database`: use `persistence.existingClaim`.",
+            "type": "array"
+        },
+        "extraVolumes": {
+            "description": "Extra volumes.",
             "type": "array"
         },
         "fullnameOverride": {
+            "description": "Override the full resource names.",
             "type": "string"
         },
         "httpRoute": {
             "type": "object",
             "properties": {
                 "annotations": {
+                    "description": "HTTPRoute annotations.",
                     "type": "object"
                 },
                 "enabled": {
+                    "description": "Create a Gateway API HTTPRoute.",
                     "type": "boolean"
                 },
                 "hostnames": {
+                    "description": "Hostnames.",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "parentRefs": {
+                    "description": "Gateways this route attaches to.",
                     "type": "array",
                     "items": {
                         "type": "object",
@@ -80,6 +226,7 @@
                     }
                 },
                 "rules": {
+                    "description": "Rules (`matches`, `filters`); each one is sent to the Kener service. With `kener.basePath`, match that path instead of `/`.",
                     "type": "array",
                     "items": {
                         "type": "object",
@@ -111,33 +258,58 @@
         "image": {
             "type": "object",
             "properties": {
-                "pullPolicy": {
+                "digest": {
+                    "description": "Image digest (`sha256:...`). When set, it takes precedence over the tag.",
                     "type": "string"
                 },
+                "pullPolicy": {
+                    "description": "Image pull policy.",
+                    "type": "string",
+                    "enum": [
+                        "Always",
+                        "IfNotPresent",
+                        "Never"
+                    ]
+                },
                 "repository": {
+                    "description": "Kener image repository.",
                     "type": "string"
                 },
                 "tag": {
+                    "description": "Image tag. Empty builds it from the chart appVersion, `kener.basePath` and `image.variant` (`4.1.7-alpine`, `4.1.7`, `4.1.7-status-alpine`...).",
                     "type": "string"
+                },
+                "variant": {
+                    "description": "Base of the published image when `image.tag` is empty: `alpine` (node:24-alpine, far fewer known CVEs) or `debian` (node:24-slim, the upstream default).",
+                    "type": "string",
+                    "enum": [
+                        "alpine",
+                        "debian"
+                    ]
                 }
             }
         },
         "imagePullSecrets": {
+            "description": "Secrets for pulling images from a private registry.",
             "type": "array"
         },
         "ingress": {
             "type": "object",
             "properties": {
                 "annotations": {
+                    "description": "Ingress annotations.",
                     "type": "object"
                 },
                 "className": {
+                    "description": "Ingress class name.",
                     "type": "string"
                 },
                 "enabled": {
+                    "description": "Create an Ingress.",
                     "type": "boolean"
                 },
                 "hosts": {
+                    "description": "Hosts and paths. With `kener.basePath`, route that path (e.g. `/status`).",
                     "type": "array",
                     "items": {
                         "type": "object",
@@ -163,6 +335,7 @@
                     }
                 },
                 "tls": {
+                    "description": "TLS settings.",
                     "type": "array"
                 }
             }
@@ -170,111 +343,353 @@
         "kener": {
             "type": "object",
             "properties": {
-                "key": {
+                "basePath": {
+                    "description": "Serve Kener under a sub path (`KENER_BASE_PATH`). The base path is compiled into the image: published images exist for `\"\"` and `/status` (the `-status` tags, picked automatically). Any other path needs your own image in `image.tag`.",
                     "type": "string"
                 },
+                "bodySizeLimit": {
+                    "description": "Maximum request body size (`BODY_SIZE_LIMIT`), raise it to upload larger images.",
+                    "type": "string"
+                },
+                "existingSecret": {
+                    "description": "Existing secret holding the secret key.",
+                    "type": "string"
+                },
+                "existingSecretKey": {
+                    "description": "Key of the secret key in `existingSecret`.",
+                    "type": "string"
+                },
+                "forceLocalLogin": {
+                    "description": "Re-enable the email/password login when it is disabled in the OpenID Connect settings (`KENER_FORCE_LOCAL_LOGIN`). Emergency use only: turn it off once the identity provider works again.",
+                    "type": "boolean"
+                },
                 "nodeEnv": {
+                    "description": "`NODE_ENV` of the Kener process.",
                     "type": "string"
                 },
                 "origin": {
+                    "description": "Public URL of Kener (`ORIGIN`): scheme + host + optional port, no path, no trailing slash (e.g. `https://status.example.com`). It must match the URL in the browser or every form (login included) is rejected; `https://` also turns on secure cookies. The default only suits `kubectl port-forward`.",
+                    "type": "string"
+                },
+                "secretKey": {
+                    "description": "Secret key (`KENER_SECRET_KEY`, 32+ characters) signing sessions and hashing API keys. Leave empty to generate one (kept across upgrades). Set it, or use `existingSecret`, with GitOps tools that render templates offline: changing it logs everybody out and invalidates every API key.",
                     "type": "string"
                 }
             }
         },
         "livenessProbe": {
+            "description": "Liveness probe (`enabled: false` removes it). Without a handler, the chart adds `httpGet \u003cbasePath\u003e/healthcheck` (always 200 while the server answers). Generous on purpose: large SQLite migrations block the process at the first start of a new version.",
+            "type": "object"
+        },
+        "nameOverride": {
+            "description": "Override the chart name.",
+            "type": "string"
+        },
+        "networkPolicy": {
             "type": "object",
             "properties": {
-                "failureThreshold": {
-                    "type": "integer"
+                "enabled": {
+                    "description": "Create NetworkPolicies: Kener only accepts traffic on its HTTP port, and the bundled Valkey only accepts Kener pods (no egress at all).",
+                    "type": "boolean"
                 },
-                "httpGet": {
-                    "type": "object",
-                    "properties": {
-                        "path": {
-                            "type": "string"
-                        },
-                        "port": {
-                            "type": "string"
-                        }
+                "ingressFrom": {
+                    "description": "Peers allowed to reach Kener (e.g. your ingress controller). Empty allows any source on the HTTP port; pods of this release are always allowed.",
+                    "type": "array"
+                }
+            }
+        },
+        "nodeSelector": {
+            "description": "Node selector.",
+            "type": "object"
+        },
+        "persistence": {
+            "type": "object",
+            "properties": {
+                "accessModes": {
+                    "description": "Access modes.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 },
-                "initialDelaySeconds": {
-                    "type": "integer"
+                "annotations": {
+                    "description": "PVC annotations.",
+                    "type": "object"
                 },
-                "periodSeconds": {
-                    "type": "integer"
+                "enabled": {
+                    "description": "Persist the SQLite database (`/app/database`). Without it the database lives in an emptyDir and is lost with the pod. Unused with an external database.",
+                    "type": "boolean"
                 },
-                "successThreshold": {
-                    "type": "integer"
+                "existingClaim": {
+                    "description": "Use an existing PVC (e.g. the one you mounted on `/app/database` with the previous chart).",
+                    "type": "string"
                 },
-                "timeoutSeconds": {
+                "size": {
+                    "description": "Volume size.",
+                    "type": "string"
+                },
+                "storageClass": {
+                    "description": "Storage class (empty uses the cluster default).",
+                    "type": "string"
+                }
+            }
+        },
+        "pingMonitors": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Make ICMP ping monitors work with all capabilities dropped: sets the safe sysctl `net.ipv4.ping_group_range` so `ping` can use unprivileged ICMP sockets, and keeps `NET_RAW` in the capability bounding set only, so the image's `ping` (which carries a `cap_net_raw` file capability) can still be executed. The process never holds `NET_RAW` (non-root, no privilege escalation), but the pod then matches the Pod Security Standard `baseline` instead of `restricted`.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "podAnnotations": {
+            "description": "Pod annotations.",
+            "type": "object"
+        },
+        "podDisruptionBudget": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Create a PodDisruptionBudget for Kener (useful with 2+ replicas).",
+                    "type": "boolean"
+                },
+                "maxUnavailable": {
+                    "description": "Maximum unavailable pods (used instead of minAvailable when set).",
+                    "type": [
+                        "integer",
+                        "string",
+                        "null"
+                    ]
+                },
+                "minAvailable": {
+                    "description": "Minimum available pods.",
                     "type": "integer"
                 }
             }
         },
-        "nameOverride": {
-            "type": "string"
-        },
-        "nodeSelector": {
-            "type": "object"
-        },
-        "podAnnotations": {
-            "type": "object"
-        },
         "podLabels": {
+            "description": "Pod labels.",
             "type": "object"
         },
         "podSecurityContext": {
+            "description": "Pod security context. The image user is `node` (uid/gid 1000).",
             "type": "object"
         },
-        "readinessProbe": {
+        "priorityClassName": {
+            "description": "Priority class of the Kener pods.",
+            "type": "string"
+        },
+        "proxy": {
             "type": "object",
             "properties": {
-                "failureThreshold": {
-                    "type": "integer"
+                "httpProxy": {
+                    "description": "`HTTP_PROXY` (stored in a Secret: it may carry credentials, percent-encoded).",
+                    "type": "string"
                 },
-                "httpGet": {
+                "httpsProxy": {
+                    "description": "`HTTPS_PROXY` (stored in a Secret).",
+                    "type": "string"
+                },
+                "noProxy": {
+                    "description": "`NO_PROXY`: hosts, `host:port`, `.suffix` (no CIDR). Add the in-cluster services your monitors reach directly.",
+                    "type": "string"
+                }
+            }
+        },
+        "readinessProbe": {
+            "description": "Readiness probe (`enabled: false` removes it). Without a handler, the chart adds `httpGet \u003cbasePath\u003e/healthcheck?strict=1` (503 while the database or Redis is unreachable).",
+            "type": "object"
+        },
+        "redis": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "description": "Affinity rules.",
+                    "type": "object"
+                },
+                "auth": {
                     "type": "object",
                     "properties": {
-                        "path": {
+                        "existingSecret": {
+                            "description": "Existing secret holding the Valkey password (same character rules).",
                             "type": "string"
                         },
-                        "port": {
+                        "existingSecretPasswordKey": {
+                            "description": "Key of the password in `existingSecret`.",
+                            "type": "string"
+                        },
+                        "password": {
+                            "description": "Password of the bundled Valkey. Leave empty to generate one (kept across upgrades). It is embedded in `REDIS_URL`, so only `A-Z a-z 0-9 . _ ~ -` are allowed.",
                             "type": "string"
                         }
                     }
                 },
-                "initialDelaySeconds": {
-                    "type": "integer"
+                "enabled": {
+                    "description": "Deploy a bundled single-instance Valkey (Redis compatible). Set to `false` and fill `redis.external` to use your own Redis 6+ / Valkey.",
+                    "type": "boolean"
                 },
-                "periodSeconds": {
-                    "type": "integer"
+                "external": {
+                    "type": "object",
+                    "properties": {
+                        "existingSecret": {
+                            "description": "Existing secret holding the full Redis URL. Takes precedence over `redis.external.url`.",
+                            "type": "string"
+                        },
+                        "existingSecretKey": {
+                            "description": "Key of the URL in `existingSecret`.",
+                            "type": "string"
+                        },
+                        "url": {
+                            "description": "URL of your own Redis when `redis.enabled` is false: `redis://[user:password@]host:6379[/db]`, or `rediss://` for TLS (stored in a Secret).",
+                            "type": "string"
+                        }
+                    }
                 },
-                "successThreshold": {
-                    "type": "integer"
+                "extraConfig": {
+                    "description": "Raw lines appended to valkey.conf (e.g. `maxmemory 200mb`). Keep `maxmemory-policy noeviction`: BullMQ needs it.",
+                    "type": "string"
                 },
-                "timeoutSeconds": {
-                    "type": "integer"
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "digest": {
+                            "description": "Image digest (takes precedence over the tag).",
+                            "type": "string"
+                        },
+                        "pullPolicy": {
+                            "description": "Image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "Valkey image repository.",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Valkey image tag.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "livenessProbe": {
+                    "description": "Valkey liveness probe.",
+                    "type": "object"
+                },
+                "nodeSelector": {
+                    "description": "Node selector.",
+                    "type": "object"
+                },
+                "persistence": {
+                    "type": "object",
+                    "properties": {
+                        "accessModes": {
+                            "description": "Access modes.",
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "annotations": {
+                            "description": "PVC annotations.",
+                            "type": "object"
+                        },
+                        "enabled": {
+                            "description": "Keep Valkey data (AOF) on a PVC. Kener rebuilds its schedules from the database at startup, so an emptyDir is enough unless queued notifications must survive a Valkey restart.",
+                            "type": "boolean"
+                        },
+                        "existingClaim": {
+                            "description": "Use an existing PVC.",
+                            "type": "string"
+                        },
+                        "size": {
+                            "description": "Volume size.",
+                            "type": "string"
+                        },
+                        "storageClass": {
+                            "description": "Storage class (empty uses the cluster default).",
+                            "type": "string"
+                        }
+                    }
+                },
+                "podAnnotations": {
+                    "description": "Pod annotations.",
+                    "type": "object"
+                },
+                "podLabels": {
+                    "description": "Pod labels.",
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "Valkey pod security context. The image user is `valkey` (uid 999, gid 1000).",
+                    "type": "object"
+                },
+                "priorityClassName": {
+                    "description": "Priority class of the Valkey pod.",
+                    "type": "string"
+                },
+                "readinessProbe": {
+                    "description": "Valkey readiness probe (`valkey-cli ping`, authenticated through `VALKEYCLI_AUTH`).",
+                    "type": "object"
+                },
+                "resources": {
+                    "description": "Valkey resources.",
+                    "type": "object"
+                },
+                "securityContext": {
+                    "description": "Valkey container security context.",
+                    "type": "object"
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "port": {
+                            "description": "Valkey service port.",
+                            "type": "integer"
+                        }
+                    }
+                },
+                "tolerations": {
+                    "description": "Tolerations.",
+                    "type": "array"
                 }
             }
         },
         "replicaCount": {
+            "description": "Number of Kener replicas. Must stay at 1 with SQLite. PostgreSQL/MySQL with a shared Redis can run more (not tested upstream).",
             "type": "integer"
         },
         "resources": {
+            "description": "Resource requests and limits (Kener recommends 1 vCPU / 1 GiB for real workloads).",
             "type": "object"
         },
         "securityContext": {
+            "description": "Container security context.",
             "type": "object"
         },
         "service": {
             "type": "object",
             "properties": {
+                "annotations": {
+                    "description": "Service annotations.",
+                    "type": "object"
+                },
                 "port": {
+                    "description": "Service port (the container always listens on 3000).",
                     "type": "integer"
                 },
                 "type": {
-                    "type": "string"
+                    "description": "Service type.",
+                    "type": "string",
+                    "enum": [
+                        "ClusterIP",
+                        "NodePort",
+                        "LoadBalancer"
+                    ]
                 }
             }
         },
@@ -282,52 +697,47 @@
             "type": "object",
             "properties": {
                 "annotations": {
+                    "description": "Service account annotations.",
                     "type": "object"
                 },
                 "automount": {
+                    "description": "Kener never talks to the Kubernetes API: the token is not mounted.",
                     "type": "boolean"
                 },
                 "create": {
+                    "description": "Create a dedicated service account.",
                     "type": "boolean"
                 },
                 "name": {
+                    "description": "Service account name (generated when empty).",
                     "type": "string"
                 }
             }
         },
         "startupProbe": {
+            "description": "Startup probe (`enabled: false` removes it). Without a handler, the chart adds `httpGet \u003cbasePath\u003e/healthcheck`.",
+            "type": "object"
+        },
+        "tests": {
             "type": "object",
             "properties": {
-                "failureThreshold": {
-                    "type": "integer"
-                },
-                "httpGet": {
-                    "type": "object",
-                    "properties": {
-                        "path": {
-                            "type": "string"
-                        },
-                        "port": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "periodSeconds": {
-                    "type": "integer"
-                },
-                "timeoutSeconds": {
-                    "type": "integer"
+                "image": {
+                    "description": "Image used by `helm test` (defaults to the Kener image, which ships curl).",
+                    "type": "string"
                 }
             }
         },
         "tolerations": {
+            "description": "Tolerations.",
             "type": "array"
         },
-        "volumeMounts": {
+        "topologySpreadConstraints": {
+            "description": "Topology spread constraints.",
             "type": "array"
         },
-        "volumes": {
-            "type": "array"
+        "updateStrategy": {
+            "description": "Deployment update strategy. With SQLite and persistence the chart forces `Recreate`.",
+            "type": "object"
         }
     }
 }

@@ -1,0 +1,32 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "bind9.fullname" . }}
+  labels:
+    {{- include "bind9.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "bind9.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    # DNS is a public service: access control is done by named (allow-query, allow-transfer...).
+    - ports:
+        - port: dns-udp
+          protocol: UDP
+        - port: dns-tcp
+          protocol: TCP
+    {{- with .Values.networkPolicy.adminAllowedFrom }}
+    - ports:
+        - port: rndc
+          protocol: TCP
+        {{- if $.Values.metrics.enabled }}
+        - port: metrics
+          protocol: TCP
+        {{- end }}
+      from:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+{{- end }}

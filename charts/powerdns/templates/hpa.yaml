@@ -2,14 +2,15 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "cloudreve.fullname" . }}
+  name: {{ include "powerdns.fullname" . }}
   labels:
-    {{- include "cloudreve.labels" . | nindent 4 }}
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: authoritative
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "cloudreve.fullname" . }}
+    name: {{ include "powerdns.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
   metrics:

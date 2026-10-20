@@ -1,0 +1,290 @@
+{{- $sqlite := eq .Values.backend.type "gsqlite3" }}
+{{- $db := include "powerdns.sqlBackend" . | fromYaml }}
+{{- $templated := or .Values.api.enabled $db }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "powerdns.fullname" . }}
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: authoritative
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- if and $sqlite .Values.persistence.enabled }}
+  # A ReadWriteOnce volume cannot be attached to the old and the new pod at the same time.
+  strategy:
+    type: Recreate
+  {{- else if .Values.updateStrategy }}
+  strategy:
+    {{- toYaml .Values.updateStrategy | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "powerdns.auth.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ list .Values.api.key $db.password | toJson | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "powerdns.auth.selectorLabels" . | nindent 8 }}
+        {{- with .Values.commonLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "powerdns.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        {{- if $sqlite }}
+        - name: sqlite-init
+          image: {{ include "powerdns.image" (dict "image" .Values.image "default" .Chart.AppVersion) | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              if [ -s "$DB" ]; then
+                echo "SQLite database $DB already exists"
+              else
+                echo "Creating SQLite database $DB"
+                sqlite3 "$DB" < /usr/local/share/doc/pdns/schema.sqlite3.sql
+              fi
+          env:
+            - name: DB
+              value: {{ .Values.backend.gsqlite3.database | quote }}
+          {{- with .Values.backend.schemaInit.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ dir .Values.backend.gsqlite3.database }}
+        {{- else if .Values.backend.schemaInit.enabled }}
+        - name: copy-schema
+          image: {{ include "powerdns.image" (dict "image" .Values.image "default" .Chart.AppVersion) | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - cp
+            - /usr/local/share/doc/pdns/schema.{{ trimPrefix "g" .Values.backend.type }}.sql
+            - /schema/schema.sql
+          {{- with .Values.backend.schemaInit.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: schema
+              mountPath: /schema
+        - name: schema-init
+          {{- if eq .Values.backend.type "gpgsql" }}
+          image: {{ .Values.backend.schemaInit.postgresImage | quote }}
+          {{- else }}
+          image: {{ .Values.backend.schemaInit.mysqlImage | quote }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              deadline=$(( $(date +%s) + TIMEOUT ))
+              {{- if eq .Values.backend.type "gpgsql" }}
+              export PGPASSWORD="$PDNS_DB_PASSWORD"
+              conninfo="host=$DB_HOST port=$DB_PORT dbname=$DB_NAME user=$DB_USER $DB_EXTRA"
+              until pg_isready -q -d "$conninfo"; do
+                [ "$(date +%s)" -lt "$deadline" ] || { echo "Timed out waiting for PostgreSQL"; exit 1; }
+                echo "Waiting for PostgreSQL at $DB_HOST:$DB_PORT..."; sleep 3
+              done
+              if [ "$(psql -d "$conninfo" -tAc "SELECT to_regclass('domains') IS NOT NULL")" = "t" ]; then
+                echo "PowerDNS schema already present"
+              else
+                echo "Creating PowerDNS schema"
+                psql -d "$conninfo" -v ON_ERROR_STOP=1 --single-transaction -f /schema/schema.sql
+              fi
+              {{- else }}
+              printf '[client]\nhost=%s\nport=%s\nuser=%s\npassword="%s"\n' \
+                "$DB_HOST" "$DB_PORT" "$DB_USER" "$PDNS_DB_PASSWORD" > /tmp/client.cnf
+              until mysqladmin --defaults-extra-file=/tmp/client.cnf ping --silent; do
+                [ "$(date +%s)" -lt "$deadline" ] || { echo "Timed out waiting for MySQL"; exit 1; }
+                echo "Waiting for MySQL at $DB_HOST:$DB_PORT..."; sleep 3
+              done
+              tables=$(mysql --defaults-extra-file=/tmp/client.cnf -N -B -e \
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='domains'")
+              if [ "$tables" = "1" ]; then
+                echo "PowerDNS schema already present"
+              else
+                echo "Creating PowerDNS schema"
+                mysql --defaults-extra-file=/tmp/client.cnf "$DB_NAME" < /schema/schema.sql
+              fi
+              {{- end }}
+          env:
+            - name: TIMEOUT
+              value: {{ .Values.backend.schemaInit.timeoutSeconds | quote }}
+            - name: DB_HOST
+              value: {{ $db.host | quote }}
+            - name: DB_PORT
+              value: {{ $db.port | quote }}
+            - name: DB_NAME
+              value: {{ $db.dbname | quote }}
+            - name: DB_USER
+              value: {{ $db.user | quote }}
+            {{- if eq .Values.backend.type "gpgsql" }}
+            - name: DB_EXTRA
+              value: {{ $db.extraConnectionParameters | default "" | quote }}
+            {{- end }}
+            {{- include "powerdns.secretEnv" . | nindent 12 }}
+          {{- with .Values.backend.schemaInit.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: schema
+              mountPath: /schema
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+        {{- end }}
+      containers:
+        - name: pdns
+          image: {{ include "powerdns.image" (dict "image" .Values.image "default" .Chart.AppVersion) | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            {{- if $templated }}
+            # Rendered by the image entrypoint from /etc/powerdns/templates.d into /etc/powerdns/pdns.d
+            - name: TEMPLATE_FILES
+              value: secrets
+            {{- include "powerdns.secretEnv" . | nindent 12 }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: dns-udp
+              containerPort: {{ .Values.dns.containerPort }}
+              protocol: UDP
+            - name: dns-tcp
+              containerPort: {{ .Values.dns.containerPort }}
+              protocol: TCP
+            {{- if .Values.webserver.enabled }}
+            - name: http
+              containerPort: {{ .Values.webserver.port }}
+              protocol: TCP
+            {{- end }}
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/powerdns/pdns.conf
+              subPath: pdns.conf
+              readOnly: true
+            - name: config
+              mountPath: /etc/powerdns/templates.d/secrets.j2
+              subPath: secrets.j2
+              readOnly: true
+            - name: pdns-d
+              mountPath: /etc/powerdns/pdns.d
+            - name: run
+              mountPath: /run/pdns
+            - name: tmp
+              mountPath: /tmp
+            {{- if $sqlite }}
+            - name: data
+              mountPath: {{ dir .Values.backend.gsqlite3.database }}
+            {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "powerdns.fullname" . }}
+        # Holds the rendered secrets.conf: memory-backed so secrets never touch the node disk.
+        - name: pdns-d
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        - name: run
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi
+        {{- if $sqlite }}
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (include "powerdns.fullname" .) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- else if .Values.backend.schemaInit.enabled }}
+        - name: schema
+          emptyDir:
+            sizeLimit: 1Mi
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

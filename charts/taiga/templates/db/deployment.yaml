@@ -32,6 +32,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "taiga.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.global.serviceAccount.automount }}
       {{- with (default .Values.global.podSecurityContext .Values.db.podSecurityContext) }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -46,60 +47,31 @@ spec:
           imagePullPolicy: {{ .Values.db.image.pullPolicy }}
           ports:
             - name: postgres
-              containerPort: {{ .Values.db.service.port }}
+              containerPort: 5432
               protocol: TCP
           env:
             - name: POSTGRES_DB
               value: {{ .Values.db.auth.database | quote }}
-            {{- if .Values.db.auth.existingSecret }}
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.db.auth.existingSecret }}
-                  key: {{ .Values.db.auth.secretKeys.user }}
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.db.auth.existingSecret }}
-                  key: {{ .Values.db.auth.secretKeys.password }}
-            {{- else if .Values.global.existingSecret }}
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.existingSecret }}
-                  key: POSTGRES_USER
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.existingSecret }}
-                  key: POSTGRES_PASSWORD
-            {{- else }}
-            - name: POSTGRES_USER
-              value: {{ .Values.db.auth.user | quote }}
-            - name: POSTGRES_PASSWORD
-              value: {{ .Values.db.auth.password | quote }}
-            {{- end }}
+            {{- include "taiga.dbCredentialsEnv" . | nindent 12 }}
+            # A sub-directory: the volume root may contain lost+found.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           {{- if .Values.db.healthcheck.enabled }}
+          {{- $hc := .Values.db.healthcheck }}
           livenessProbe:
             exec:
-              command:
-                - /bin/sh
-                - -c
-                - exec pg_isready -U {{ .Values.db.auth.user | quote }} -d {{ .Values.db.auth.database | quote }}
-            initialDelaySeconds: {{ .Values.db.healthcheck.startPeriod | replace "s" "" | int }}
-            periodSeconds: {{ .Values.db.healthcheck.interval | replace "s" "" | int }}
-            timeoutSeconds: {{ .Values.db.healthcheck.timeout | replace "s" "" | int }}
-            failureThreshold: {{ .Values.db.healthcheck.retries }}
+              command: ["/bin/sh", "-c", "exec pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -h 127.0.0.1"]
+            initialDelaySeconds: {{ $hc.startPeriod | replace "s" "" | int }}
+            periodSeconds: {{ $hc.interval | replace "s" "" | int }}
+            timeoutSeconds: {{ $hc.timeout | replace "s" "" | int }}
+            failureThreshold: {{ $hc.retries }}
           readinessProbe:
             exec:
-              command:
-                - /bin/sh
-                - -c
-                - exec pg_isready -U {{ .Values.db.auth.user | quote }} -d {{ .Values.db.auth.database | quote }}
-            initialDelaySeconds: {{ .Values.db.healthcheck.startPeriod | replace "s" "" | int }}
-            periodSeconds: {{ .Values.db.healthcheck.interval | replace "s" "" | int }}
-            timeoutSeconds: {{ .Values.db.healthcheck.timeout | replace "s" "" | int }}
-            failureThreshold: {{ .Values.db.healthcheck.retries }}
+              command: ["/bin/sh", "-c", "exec pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -h 127.0.0.1"]
+            initialDelaySeconds: {{ $hc.startPeriod | replace "s" "" | int }}
+            periodSeconds: {{ $hc.interval | replace "s" "" | int }}
+            timeoutSeconds: {{ $hc.timeout | replace "s" "" | int }}
+            failureThreshold: {{ $hc.retries }}
           {{- end }}
           {{- with (default .Values.global.resources .Values.db.resources) }}
           resources:
@@ -108,7 +80,17 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+            - name: run
+              mountPath: /var/run/postgresql
+            - name: tmp
+              mountPath: /tmp
       volumes:
+        - name: run
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
         - name: data
           {{- if .Values.db.persistence.enabled }}
           persistentVolumeClaim:

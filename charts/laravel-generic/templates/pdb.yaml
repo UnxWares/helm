@@ -1,0 +1,18 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "laravel-generic.fullname" . }}
+  labels:
+    {{- include "laravel-generic.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  {{- if not (kindIs "invalid" .Values.podDisruptionBudget.maxUnavailable) }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "laravel-generic.componentSelectorLabels" (dict "ctx" . "component" "web") | nindent 6 }}
+{{- end }}

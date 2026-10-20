@@ -1,0 +1,575 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "backend": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "description": "Affinity (defaults to global.pod.affinity).",
+                    "type": "object"
+                },
+                "auth": {
+                    "type": "object",
+                    "properties": {
+                        "mode": {
+                            "description": "Authentication mode: `local`, `hybrid` (local + OIDC), `oidc_enforced` or `disabled`.",
+                            "type": "string",
+                            "enum": [
+                                "local",
+                                "hybrid",
+                                "oidc_enforced",
+                                "disabled"
+                            ]
+                        },
+                        "oidc": {
+                            "type": "object",
+                            "properties": {
+                                "clientId": {
+                                    "description": "OIDC client ID.",
+                                    "type": "string"
+                                },
+                                "clientSecret": {
+                                    "description": "OIDC client secret (stored in the chart secret; ignored with `existingSecret`).",
+                                    "type": "string"
+                                },
+                                "existingSecret": {
+                                    "description": "Existing secret holding the client secret.",
+                                    "type": "string"
+                                },
+                                "existingSecretKey": {
+                                    "description": "Key of the client secret in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "issuerUrl": {
+                                    "description": "OIDC issuer URL.",
+                                    "type": "string"
+                                },
+                                "providerName": {
+                                    "description": "Name shown on the login button.",
+                                    "type": "string"
+                                },
+                                "redirectUri": {
+                                    "description": "Redirect URI (defaults to `\u003cfrontend.url\u003e/api/auth/oidc/callback`).",
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "description": "Not supported (single backend replica); kept for compatibility, must stay false.",
+                            "type": "boolean"
+                        },
+                        "maxReplicas": {
+                            "type": "integer"
+                        },
+                        "minReplicas": {
+                            "type": "integer"
+                        },
+                        "targetCPUUtilizationPercentage": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "database": {
+                    "type": "object",
+                    "properties": {
+                        "existingSecret": {
+                            "description": "Existing secret holding the database URL (overrides `url`).",
+                            "type": "string"
+                        },
+                        "provider": {
+                            "description": "Database provider: `sqlite` (stored in the persistent volume) or `postgresql`.",
+                            "type": "string",
+                            "enum": [
+                                "sqlite",
+                                "postgresql"
+                            ]
+                        },
+                        "secretKeys": {
+                            "type": "object",
+                            "properties": {
+                                "url": {
+                                    "description": "Key of the URL in `existingSecret`.",
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "url": {
+                            "description": "Database URL. For sqlite keep a path under /app/prisma; for postgresql use a postgresql:// URL (stored in the chart secret).",
+                            "type": "string"
+                        }
+                    }
+                },
+                "extraEnv": {
+                    "description": "Extra environment variables (SMTP, S3 storage, backups, rate limits...). See the ExcaliDash docs.",
+                    "type": "array"
+                },
+                "extraEnvFrom": {
+                    "description": "Extra envFrom sources (e.g. a secret with SMTP or S3 credentials).",
+                    "type": "array"
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "digest": {
+                            "description": "Image digest (takes precedence over the tag).",
+                            "type": "string"
+                        },
+                        "pullPolicy": {
+                            "description": "Image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "Backend image repository.",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Image tag (defaults to the chart appVersion).",
+                            "type": "string"
+                        }
+                    }
+                },
+                "imagePullSecrets": {
+                    "description": "Image pull secrets (defaults to global.imagePullSecrets).",
+                    "type": "array"
+                },
+                "livenessProbe": {
+                    "description": "Liveness probe (`/health` checks the database).",
+                    "type": "object"
+                },
+                "nodeEnv": {
+                    "description": "NODE_ENV.",
+                    "type": "string"
+                },
+                "nodeSelector": {
+                    "description": "Node selector (defaults to global.pod.nodeSelector).",
+                    "type": "object"
+                },
+                "persistence": {
+                    "type": "object",
+                    "properties": {
+                        "accessModes": {
+                            "description": "Access modes.",
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "annotations": {
+                            "description": "PVC annotations.",
+                            "type": "object"
+                        },
+                        "enabled": {
+                            "description": "Persist /app/prisma (SQLite database, migrations lock). Without it, data is lost when the pod restarts.",
+                            "type": "boolean"
+                        },
+                        "existingClaim": {
+                            "description": "Use an existing PVC.",
+                            "type": "string"
+                        },
+                        "size": {
+                            "description": "Volume size.",
+                            "type": "string"
+                        },
+                        "storageClass": {
+                            "description": "Storage class (empty uses the cluster default).",
+                            "type": "string"
+                        }
+                    }
+                },
+                "podAnnotations": {
+                    "description": "Pod annotations.",
+                    "type": "object"
+                },
+                "podLabels": {
+                    "description": "Pod labels.",
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "Pod security context (the image runs as `nodejs`, uid 1001).",
+                    "type": "object"
+                },
+                "readinessProbe": {
+                    "description": "Readiness probe.",
+                    "type": "object"
+                },
+                "replicaCount": {
+                    "description": "Backend replicas. Socket.IO keeps its state in memory: the chart only supports 1.",
+                    "type": "integer"
+                },
+                "resources": {
+                    "description": "Resources.",
+                    "type": "object"
+                },
+                "secrets": {
+                    "type": "object",
+                    "properties": {
+                        "apiKeyHashPepper": {
+                            "description": "Pepper used to hash API keys. Never change it once API keys exist.",
+                            "type": "string"
+                        },
+                        "csrfSecret": {
+                            "description": "CSRF secret.",
+                            "type": "string"
+                        },
+                        "existingSecret": {
+                            "description": "Existing secret with the keys `jwt-secret`, `csrf-secret` and `api-key-hash-pepper` (overrides the values above).",
+                            "type": "string"
+                        },
+                        "jwtSecret": {
+                            "description": "JWT signing secret (32+ characters).",
+                            "type": "string"
+                        }
+                    }
+                },
+                "securityContext": {
+                    "description": "Container security context. The entrypoint regenerates files under /app at every start, so the root filesystem stays writable.",
+                    "type": "object"
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "port": {
+                            "description": "Backend port (also used for the PORT environment variable).",
+                            "type": "integer"
+                        },
+                        "type": {
+                            "description": "Backend service type.",
+                            "type": "string",
+                            "enum": [
+                                "ClusterIP",
+                                "NodePort",
+                                "LoadBalancer"
+                            ]
+                        }
+                    }
+                },
+                "startupProbe": {
+                    "description": "Startup probe (database migrations run at startup, with a 120 s lock timeout).",
+                    "type": "object"
+                },
+                "tolerations": {
+                    "description": "Tolerations (defaults to global.pod.tolerations).",
+                    "type": "array"
+                },
+                "trustProxy": {
+                    "description": "Trust X-Forwarded-* headers. Only enable it when a trusted proxy (your ingress) sanitizes them.",
+                    "type": "string"
+                },
+                "volumeMounts": {
+                    "description": "Additional volume mounts.",
+                    "type": "array"
+                },
+                "volumes": {
+                    "description": "Additional volumes.",
+                    "type": "array"
+                }
+            }
+        },
+        "frontend": {
+            "type": "object",
+            "properties": {
+                "affinity": {
+                    "description": "Affinity (defaults to global.pod.affinity).",
+                    "type": "object"
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "description": "Enable the frontend HorizontalPodAutoscaler.",
+                            "type": "boolean"
+                        },
+                        "maxReplicas": {
+                            "type": "integer"
+                        },
+                        "minReplicas": {
+                            "type": "integer"
+                        },
+                        "targetCPUUtilizationPercentage": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "extraEnv": {
+                    "description": "Extra environment variables.",
+                    "type": "array"
+                },
+                "extraEnvFrom": {
+                    "description": "Extra envFrom sources.",
+                    "type": "array"
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "digest": {
+                            "description": "Image digest (takes precedence over the tag).",
+                            "type": "string"
+                        },
+                        "pullPolicy": {
+                            "description": "Image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "Frontend image repository. Keep the frontend and backend tags identical.",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Image tag (defaults to the chart appVersion).",
+                            "type": "string"
+                        }
+                    }
+                },
+                "imagePullSecrets": {
+                    "description": "Image pull secrets (defaults to global.imagePullSecrets).",
+                    "type": "array"
+                },
+                "livenessProbe": {
+                    "description": "Liveness probe.",
+                    "type": "object"
+                },
+                "nodeSelector": {
+                    "description": "Node selector (defaults to global.pod.nodeSelector).",
+                    "type": "object"
+                },
+                "podAnnotations": {
+                    "description": "Pod annotations.",
+                    "type": "object"
+                },
+                "podLabels": {
+                    "description": "Pod labels.",
+                    "type": "object"
+                },
+                "podSecurityContext": {
+                    "description": "Pod security context. The image (nginx-unprivileged, uid 101) also listens on port 80, which needs the `net.ipv4.ip_unprivileged_port_start` sysctl (in the Kubernetes \"safe\" set) when running without capabilities.",
+                    "type": "object"
+                },
+                "readinessProbe": {
+                    "description": "Readiness probe.",
+                    "type": "object"
+                },
+                "replicaCount": {
+                    "description": "Frontend replicas (stateless nginx, can scale).",
+                    "type": "integer"
+                },
+                "resources": {
+                    "description": "Resources.",
+                    "type": "object"
+                },
+                "securityContext": {
+                    "description": "Container security context.",
+                    "type": "object"
+                },
+                "service": {
+                    "type": "object",
+                    "properties": {
+                        "port": {
+                            "description": "Frontend service port (the container listens on 8080).",
+                            "type": "integer"
+                        },
+                        "type": {
+                            "description": "Frontend service type.",
+                            "type": "string",
+                            "enum": [
+                                "ClusterIP",
+                                "NodePort",
+                                "LoadBalancer"
+                            ]
+                        }
+                    }
+                },
+                "tolerations": {
+                    "description": "Tolerations (defaults to global.pod.tolerations).",
+                    "type": "array"
+                },
+                "url": {
+                    "description": "Public URL of ExcaliDash (used by the backend for redirects, cookies and OIDC). An https URL makes the backend redirect plain HTTP requests.",
+                    "type": "string"
+                },
+                "volumeMounts": {
+                    "description": "Additional volume mounts.",
+                    "type": "array"
+                },
+                "volumes": {
+                    "description": "Additional volumes.",
+                    "type": "array"
+                }
+            }
+        },
+        "fullnameOverride": {
+            "description": "Override the full resource names.",
+            "type": "string"
+        },
+        "global": {
+            "type": "object",
+            "properties": {
+                "imagePullSecrets": {
+                    "description": "Default image pull secrets for every pod.",
+                    "type": "array"
+                },
+                "pod": {
+                    "type": "object",
+                    "properties": {
+                        "affinity": {
+                            "description": "Default affinity for every pod.",
+                            "type": "object"
+                        },
+                        "nodeSelector": {
+                            "description": "Default node selector for every pod.",
+                            "type": "object"
+                        },
+                        "tolerations": {
+                            "description": "Default tolerations for every pod.",
+                            "type": "array"
+                        }
+                    }
+                }
+            }
+        },
+        "httpRoute": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "HTTPRoute annotations.",
+                    "type": "object"
+                },
+                "enabled": {
+                    "description": "Expose ExcaliDash through a Gateway API HTTPRoute.",
+                    "type": "boolean"
+                },
+                "hostnames": {
+                    "description": "Hostnames.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "parentRefs": {
+                    "description": "Gateways this route is attached to.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "sectionName": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "rules": {
+                    "description": "Rules (every rule is sent to the frontend service).",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "matches": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "path": {
+                                            "type": "object",
+                                            "properties": {
+                                                "type": {
+                                                    "type": "string"
+                                                },
+                                                "value": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "ingress": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "Ingress annotations (WebSockets must be allowed for live collaboration).",
+                    "type": "object"
+                },
+                "className": {
+                    "description": "Ingress class name.",
+                    "type": "string"
+                },
+                "enabled": {
+                    "description": "Expose ExcaliDash through an Ingress (everything goes to the frontend, which proxies /api and /socket.io).",
+                    "type": "boolean"
+                },
+                "hosts": {
+                    "description": "Ingress hosts.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "host": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "tls": {
+                    "description": "Ingress TLS.",
+                    "type": "array"
+                }
+            }
+        },
+        "nameOverride": {
+            "description": "Override the chart name.",
+            "type": "string"
+        },
+        "networkPolicy": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Create NetworkPolicies: the backend only accepts traffic from the frontend.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "Service account annotations.",
+                    "type": "object"
+                },
+                "automount": {
+                    "description": "ExcaliDash never talks to the Kubernetes API: the token is not mounted.",
+                    "type": "boolean"
+                },
+                "create": {
+                    "description": "Create a dedicated service account.",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "Service account name (generated when empty).",
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

@@ -1,13 +1,16 @@
-{{- if .Values.metrics.serviceMonitor.enabled }}
+{{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled .Values.service.enabled (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1/ServiceMonitor") }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ include "bind9.fullname" . }}
   labels:
     {{- include "bind9.labels" . | nindent 4 }}
+    {{- with .Values.metrics.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   endpoints:
-    {{ .Values.metrics.serviceMonitor.endpoints | toYaml | nindent 4 }}
+    {{- .Values.metrics.serviceMonitor.endpoints | toYaml | nindent 4 }}
   namespaceSelector:
     matchNames:
     - {{ .Release.Namespace }}

@@ -1,391 +1,655 @@
+# -- Override the chart name.
+nameOverride: ""
+# -- Override the full resource names.
+fullnameOverride: ""
+# -- Labels added to every resource.
+commonLabels: {}
+
+# -- Secrets for pulling images from a private registry.
+imagePullSecrets: []
+# - name: my-registry-secret
+
+## Your Laravel application image (built by you: FrankenPHP or PHP-FPM based).
+image:
+  # -- Application image repository, fully qualified (e.g. `registry.example.com/acme/shop`). Required.
+  repository: ""
+  # -- Application image tag. Required unless `digest` is set (the chart appVersion is the Laravel version, not a tag of your image).
+  tag: ""
+  # -- Image digest (`sha256:...`). When set, it takes precedence over the tag.
+  digest: ""
+  # -- Image pull policy.
+  pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
+
+# -- Number of web replicas. Must stay at 1 with SQLite or a ReadWriteOnce persistent volume.
 replicaCount: 1
 
-# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
-image:
-  # Should be provided by the user
-  repository:
-  pullPolicy: IfNotPresent
-  tag: ""
+# -- Web Deployment update strategy. The chart forces `Recreate` with a ReadWriteOnce persistent volume.
+updateStrategy: {}
+# type: RollingUpdate
 
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+# -- Directory of the Laravel application in the image (its WORKDIR): `/app` for FrankenPHP images, usually `/var/www/html` for the official PHP-FPM images.
+appPath: /app
+# -- Public directory served over HTTP, relative to `appPath` or absolute (empty: `<appPath>/public`). With the nginx sidecar it is copied from the image and served at the same path.
+publicPath: ""
+# -- Directories Laravel writes to, relative to `appPath` or absolute. They are emptyDir volumes so the root filesystem can stay read-only; a path also listed in `persistence.paths` lives on the persistent volume instead.
+writablePaths:
+  - storage/framework
+  - storage/logs
+  - storage/app
+  - bootstrap/cache
+# -- Copy what the image ships in each writable path before Laravel starts (keeps the `bootstrap/cache/*.php` files and the directory skeleton built into the image). Needs `/bin/sh` and `cp` in the image.
+seedWritablePaths: true
+# -- Size limit of the emptyDir volumes (`/tmp`, writable paths, public files copy, Caddy state). Empty: no limit.
+emptyDirSizeLimit: 1Gi
+# -- Resources of the `prepare` init container (seeds the writable paths, copies the public files for nginx).
+prepareResources:  # @schema skipProperties:true
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    memory: 128Mi
 
+## Laravel configuration, rendered as environment variables (https://laravel.com/docs/12.x/configuration).
+## Empty values are not rendered: Laravel then uses the default of its config files.
 laravel:
+  # -- APP_NAME.
   name: Laravel
+  # -- APP_ENV.
   env: production
   key:
+    # -- APP_KEY (`base64:...`). Leave empty to generate one, kept across upgrades. Set it explicitly, or use `existingSecret`, with GitOps tools that render templates offline.
     value: ""
-    # Using exisitingSecret will override key.value
-    # existingSecret: "existing-secret"
+    # -- Existing secret holding APP_KEY (takes precedence over `value`).
+    existingSecret: ""
+    # -- Key of APP_KEY in `existingSecret`.
     existingSecretKey: key
+  # -- APP_DEBUG. Never enable it in production.
   debug: false
-  url: "https://www.example.com"
+  # -- APP_URL (empty: derived from the first Ingress host, else Laravel's default).
+  url: ""
 
   locale:
+    # -- APP_LOCALE.
     default: "en"
+    # -- APP_FALLBACK_LOCALE.
     fallback: "en"
+    # -- APP_FAKER_LOCALE.
     faker: "en_US"
 
   maintenance:
+    # -- APP_MAINTENANCE_DRIVER. Use `cache` with a shared store (database, redis) so `php artisan down` reaches every pod.
     driver: file
-    # store: database
+    # -- APP_MAINTENANCE_STORE (cache store of the `cache` driver).
+    store: ""
 
+  # -- PHP_CLI_SERVER_WORKERS (only used by `php artisan serve`).
   cli_server_workers: 4
+  # -- BCRYPT_ROUNDS.
   bcrypt_rounds: 12
 
   log:
-    channel: stack
+    # -- LOG_CHANNEL. `stderr` sends the logs to `kubectl logs`; file channels write to the ephemeral `storage/logs`.
+    channel: stderr
+    # -- LOG_STACK (channels of the `stack` channel).
     stack: single
-    deprecations_channel: null
+    # -- LOG_DEPRECATIONS_CHANNEL.
+    deprecations_channel: ""  # @schema type:[string, null]
+    # -- LOG_LEVEL.
     level: info
 
   database:
+    # -- Render the DB_* variables.
     enabled: true
+    # -- DB_CONNECTION: `sqlite` (single web replica, file on the persistent volume), `pgsql`, `mysql`, `mariadb`, `sqlsrv`.
     connection: sqlite
-    host: 127.0.0.1
-    port: 5432
-    database: /app/database/db.sqlite
-    username: user
-    password: password
-
-    # If you want to pull values from an existing secret
-    # Using existingSecret will override database configuration
-    # existingSecret: "existing-secret"
+    # -- DB_HOST (required unless SQLite).
+    host: ""
+    # -- DB_PORT (empty: the default port of the connection).
+    port: ""  # @schema type:[integer, string, null]
+    # -- DB_DATABASE: database name, or the SQLite file path relative to `appPath` or absolute (empty: `storage/database/database.sqlite`). The SQLite file needs its own directory: it is mounted from the persistent volume.
+    database: ""
+    # -- DB_USERNAME.
+    username: ""
+    # -- DB_PASSWORD, stored in the chart secret (required unless SQLite or `existingSecret`).
+    password: ""
+    # -- Existing secret holding the connection settings. Each `secretKeys` entry read from it overrides the plain value; set an entry to `""` to keep the plain value (e.g. a secret holding only the password).
+    existingSecret: ""
     secretKeys:
+      # -- Key of DB_HOST in `existingSecret`.
       host: database-host
+      # -- Key of DB_PORT in `existingSecret`.
       port: database-port
+      # -- Key of DB_DATABASE in `existingSecret`.
       database: database-name
+      # -- Key of DB_USERNAME in `existingSecret`.
       username: database-username
+      # -- Key of DB_PASSWORD in `existingSecret`.
       password: database-password
 
   session:
+    # -- SESSION_DRIVER. Use a shared store (database, redis) with several web replicas.
     driver: database
+    # -- SESSION_LIFETIME (minutes).
     lifetime: 120
+    # -- SESSION_ENCRYPT.
     encrypt: false
+    # -- SESSION_PATH.
     path: /
-    domain: null
+    # -- SESSION_DOMAIN.
+    domain: ""  # @schema type:[string, null]
 
+  # -- BROADCAST_CONNECTION.
   broadcast_connection: log
+  # -- FILESYSTEM_DISK. Use `s3` (see `aws`) to scale out without a ReadWriteMany volume.
   filesystem_disk: local
+  # -- QUEUE_CONNECTION.
   queue_connection: database
 
   cache:
+    # -- CACHE_STORE.
     store: database
-    prefix: 
+    # -- CACHE_PREFIX.
+    prefix: ""  # @schema type:[string, null]
 
   memcached:
-    host: 127.0.0.1
+    # -- MEMCACHED_HOST.
+    host: ""  # @schema type:[string, null]
 
   redis:
+    # -- Render the REDIS_* variables.
     enabled: false
+    # -- REDIS_CLIENT.
     client: phpredis
+    # -- REDIS_HOST.
     host: 127.0.0.1
-    password: null
-    port: 6379
-
-    # If you want to pull values from an existing secret
-    # Using existingSecret will override redis configuration
-    # existingSecret: "existing-secret"
+    # -- REDIS_PASSWORD, stored in the chart secret.
+    password: ""  # @schema type:[string, null]
+    # -- REDIS_PORT.
+    port: 6379  # @schema type:[integer, string, null]
+    # -- Existing secret holding the Redis settings (each `secretKeys` entry overrides the plain value, `""` keeps it).
+    existingSecret: ""
     secretKeys:
+      # -- Key of REDIS_HOST in `existingSecret`.
       host: redis-host
+      # -- Key of REDIS_PORT in `existingSecret`.
       port: redis-port
+      # -- Key of REDIS_PASSWORD in `existingSecret`.
       password: redis-password
 
   mail:
+    # -- Render the MAIL_* variables.
     enabled: false
+    # -- MAIL_MAILER.
     mailer: log
-    scheme: null
+    # -- MAIL_SCHEME (`smtp` or `smtps`).
+    scheme: ""  # @schema type:[string, null]
+    # -- MAIL_HOST.
     host: 127.0.0.1
-    port: 25
-    username: null
-    password: null
-
-    # If you want to pull values from an existing secret
-    # Using existingSecret will override mail configuration
-    # existingSecret: "existing-secret"
+    # -- MAIL_PORT.
+    port: 25  # @schema type:[integer, string, null]
+    # -- MAIL_USERNAME.
+    username: ""  # @schema type:[string, null]
+    # -- MAIL_PASSWORD, stored in the chart secret.
+    password: ""  # @schema type:[string, null]
+    # -- Existing secret holding the mail settings (each `secretKeys` entry overrides the plain value, `""` keeps it).
+    existingSecret: ""
     secretKeys:
+      # -- Key of MAIL_HOST in `existingSecret`.
       host: mail-host
+      # -- Key of MAIL_PORT in `existingSecret`.
       port: mail-port
+      # -- Key of MAIL_USERNAME in `existingSecret`.
       username: mail-username
+      # -- Key of MAIL_PASSWORD in `existingSecret`.
       password: mail-password
-
     from:
+      # -- MAIL_FROM_ADDRESS.
       address: hello@example.com
-      name: "${APP_NAME}"
+      # -- MAIL_FROM_NAME. `$(APP_NAME)` is expanded by Kubernetes.
+      name: "$(APP_NAME)"
 
   aws:
+    # -- Render the AWS_* variables (S3 filesystem disk).
     enabled: false
-    access_key_id: null
-    secret_access_key: null
+    # -- AWS_ACCESS_KEY_ID, stored in the chart secret.
+    access_key_id: ""  # @schema type:[string, null]
+    # -- AWS_SECRET_ACCESS_KEY, stored in the chart secret.
+    secret_access_key: ""  # @schema type:[string, null]
+    # -- AWS_DEFAULT_REGION.
     region: us-east-1
-    bucket: null
+    # -- AWS_BUCKET.
+    bucket: ""  # @schema type:[string, null]
+    # -- AWS_ENDPOINT (S3 compatible storage: MinIO, Garage, Ceph RGW...).
+    endpoint: ""
+    # -- AWS_URL (public URL of the bucket).
+    url: ""
+    # -- AWS_USE_PATH_STYLE_ENDPOINT.
     use_path_style_endpoint: false
-
-    # If you want to pull values from an existing secret
-    # Using existingSecret will override aws configuration
-    # existingSecret: "existing-secret"
+    # -- Existing secret holding the AWS settings (each `secretKeys` entry overrides the plain value, `""` keeps it).
+    existingSecret: ""
     secretKeys:
+      # -- Key of AWS_ACCESS_KEY_ID in `existingSecret`.
       access_key_id: aws-access-key-id
+      # -- Key of AWS_SECRET_ACCESS_KEY in `existingSecret`.
       secret_access_key: aws-secret-access-key
+      # -- Key of AWS_DEFAULT_REGION in `existingSecret`.
       region: aws-region
+      # -- Key of AWS_BUCKET in `existingSecret`.
       bucket: aws-bucket
+      # -- Key of AWS_USE_PATH_STYLE_ENDPOINT in `existingSecret`.
       use_path_style_endpoint: aws-use-path-style-endpoint
 
   vite:
+    # -- Render VITE_APP_NAME (only useful to server-side code: Vite variables are compiled at build time).
     enabled: false
-    app_name: "${APP_NAME}"
+    # -- VITE_APP_NAME.
+    app_name: "$(APP_NAME)"
 
+  # -- Secret environment variables (`NAME: value`), stored in the chart secret and injected with secretKeyRef.
+  secretEnv: {}
+  # STRIPE_SECRET: sk_live_xxx
+
+  # -- Extra environment variables of every Laravel container (rendered last: they override the chart variables).
   extraEnv: []
-  # - name: APP_ENV
-  #   value: production
+  # - name: TRUSTED_PROXIES
+  #   value: "*"
 
+  # -- Extra envFrom sources of every Laravel container.
   extraEnvFrom: []
   # - secretRef:
   #     name: my-secret
-  # - configMapRef:
-  #     name: my-config
 
 workload:
-  # For more information checkout: https://laravel.com/docs/12.x/deployment
+  # See https://laravel.com/docs/12.x/deployment
   runtime:
-    # This would determine how the application is run (frankenphp, fpm)
-    type: frankenphp
+    # -- How the web pods serve HTTP: `frankenphp` (the image serves HTTP itself) or `fpm` (PHP-FPM + nginx sidecar).
+    type: frankenphp  # @schema enum:[frankenphp, fpm]
 
     frankenphp:
+      # -- Port FrankenPHP listens on (unprivileged).
       port: 8000
+      # -- SERVER_NAME given to the stock FrankenPHP Caddyfile (empty: `:<port>`, plain HTTP on that port).
+      serverName: ""
+      # -- Keep NET_BIND_SERVICE in the bounding set: the official FrankenPHP binary carries it as a file capability and cannot be executed without it. Set false if your image strips it (`setcap -r /usr/local/bin/frankenphp`).
+      keepNetBindService: true
 
     fpm:
+      # -- Port PHP-FPM listens on (FastCGI). The nginx sidecar reaches it on 127.0.0.1.
       port: 9000
+      # -- Liveness probe of the PHP-FPM container (the HTTP probes run on the nginx sidecar).
+      livenessProbe:  # @schema skipProperties:true
+        tcpSocket:
+          port: fastcgi
+        periodSeconds: 10
+        timeoutSeconds: 3
+        failureThreshold: 3
+      # -- Readiness probe of the PHP-FPM container.
+      readinessProbe:  # @schema skipProperties:true
+        tcpSocket:
+          port: fastcgi
+        periodSeconds: 5
+        timeoutSeconds: 3
+        failureThreshold: 3
 
+  # nginx sidecar, used with the `fpm` runtime: serves the public files and passes PHP requests to PHP-FPM.
   nginx:
-    enabled: false
-    replicaCount: 1
     image:
-      repository: nginx
-      tag: 1.27
-    service:
-      type: ClusterIP
-      port: 80
-
-    resources: {}
-
-    config: |
-      server {
-          listen 80;
-          listen [::]:80;
-          server_name example.com;
-          root /srv/example.com/public;
-
-          add_header X-Frame-Options "SAMEORIGIN";
-          add_header X-Content-Type-Options "nosniff";
-
-          index index.php;
-
-          charset utf-8;
-
-          location / {
-              try_files $uri $uri/ /index.php?$query_string;
-          }
-
-          location = /favicon.ico { access_log off; log_not_found off; }
-          location = /robots.txt  { access_log off; log_not_found off; }
-
-          error_page 404 /index.php;
-
-          location ~ ^/index\.php(/|$) {
-              fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
-              fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-              include fastcgi_params;
-              fastcgi_hide_header X-Powered-By;
-          }
-
-          location ~ /\.(?!well-known).* {
-              deny all;
-          }
-      }
+      # -- nginx image repository (must run unprivileged).
+      repository: docker.io/nginxinc/nginx-unprivileged
+      # -- nginx image tag.
+      tag: "1.30.6-alpine"
+      # -- Image digest (takes precedence over the tag).
+      digest: ""
+      # -- Image pull policy.
+      pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
+    # -- Port nginx listens on.
+    port: 8080
+    # -- nginx worker processes (`auto` starts one per node CPU).
+    workerProcesses: 2  # @schema type:[integer, string]
+    # -- Maximum request body size (uploads).
+    clientMaxBodySize: 16m
+    # -- Also listen on IPv6 (dual-stack clusters). nginx fails to start in pods without IPv6.
+    ipv6: false
+    # -- Replace the default `server { }` block (it must listen on `port`, use `root` = the public path and pass PHP to `127.0.0.1:<fpm port>`).
+    config: ""
+    # -- Security context of the nginx container.
+    securityContext:  # @schema skipProperties:true
+      runAsNonRoot: true
+      runAsUser: 101
+      runAsGroup: 101
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+    # -- Resources of the nginx container.
+    resources:  # @schema skipProperties:true
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
+    # -- Lifecycle hooks of the nginx container (the sleep lets endpoints drain before nginx stops).
+    lifecycle:  # @schema skipProperties:true
+      preStop:
+        exec:
+          command: ["sh", "-c", "sleep 5"]
+    # -- Extra volume mounts of the nginx container.
+    extraVolumeMounts: []
 
   queueWorker:
+    # -- Run queue workers (`php artisan queue:work`).
     enabled: true
+    # -- Number of queue worker pods.
     replicaCount: 1
+    # -- Queue worker command.
     command:
       - php
       - artisan
       - queue:work
       - --sleep=3
       - --tries=3
-    resources: {}
+    # -- Seconds a worker gets to finish its current job on shutdown (keep it above the job timeout).
+    terminationGracePeriodSeconds: 60
+    # -- Resources of the queue workers.
+    resources:  # @schema skipProperties:true
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
+    # -- Liveness probe of the queue workers.
+    livenessProbe: {}
+    # -- Node selector (empty: the top-level `nodeSelector`).
+    nodeSelector: {}
+    # -- Tolerations (empty: the top-level `tolerations`).
+    tolerations: []
+    # -- Affinity (empty: the top-level `affinity`).
+    affinity: {}
 
   scheduler:
+    # -- Run the Laravel scheduler.
     enabled: true
+    # -- `cronjob`: a CronJob runs `schedule:run` every minute. `deployment`: one long-running pod runs `schedule:work` (no pod per minute).
+    mode: cronjob  # @schema enum:[cronjob, deployment]
+    # -- Cron schedule of the CronJob.
     schedule: "* * * * *"
+    # -- Command of the CronJob.
     command:
       - php
       - artisan
       - schedule:run
-    resources: {}
-
+    # -- Command of the `deployment` mode.
+    workCommand:
+      - php
+      - artisan
+      - schedule:work
+    # -- CronJob concurrency policy. `Forbid` skips a minute while the previous run is still going (use `runInBackground()` for long tasks).
+    concurrencyPolicy: Forbid  # @schema enum:[Allow, Forbid, Replace]
+    # -- Seconds after its schedule a missed run may still start.
+    startingDeadlineSeconds: 60
+    # -- Retries of a failed run (a retry would run in a later minute).
+    backoffLimit: 0
+    # -- Seconds a finished Job is kept.
     ttlSecondsAfterFinished: 120
+    # -- Successful Jobs kept.
     successfulJobsHistoryLimit: 1
+    # -- Failed Jobs kept.
     failedJobsHistoryLimit: 1
+    # -- Resources of the scheduler.
+    resources:  # @schema skipProperties:true
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
+    # -- Node selector (empty: the top-level `nodeSelector`).
+    nodeSelector: {}
+    # -- Tolerations (empty: the top-level `tolerations`).
+    tolerations: []
+    # -- Affinity (empty: the top-level `affinity`).
+    affinity: {}
 
   migrations:
+    # -- Run the database migrations: a pre-install/pre-upgrade Job, or with SQLite an init container of the web pod.
     enabled: true
+    # -- Migration command.
     command:
       - php
       - artisan
       - migrate
       - --force
-    resources: {}
+    # -- Retries of the migration Job.
+    backoffLimit: 1
+    # -- Maximum duration of the migration Job, in seconds (also raise `helm --timeout`).
+    activeDeadlineSeconds: 600
+    # -- Resources of the migrations.
+    resources:  # @schema skipProperties:true
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
+    # -- Node selector (empty: the top-level `nodeSelector`).
+    nodeSelector: {}
+    # -- Tolerations (empty: the top-level `tolerations`).
+    tolerations: []
+    # -- Affinity (empty: the top-level `affinity`).
+    affinity: {}
 
+persistence:
+  # -- Store `paths` (and the SQLite database) on a PersistentVolumeClaim shared by the web, queue and scheduler pods.
+  enabled: true
+  # -- Use an existing PVC.
+  existingClaim: ""
+  # -- Storage class (empty uses the cluster default).
+  storageClass: ""
+  # -- Access modes. With `ReadWriteOnce` the web Deployment runs a single replica (`Recreate`) and the queue/scheduler pods are scheduled on its node; `ReadWriteMany` lifts both limits.
+  accessModes:
+    - ReadWriteOnce
+  # -- Volume size.
+  size: 5Gi
+  # -- PVC annotations.
+  annotations: {}
+  # -- Directories stored on the volume, relative to `appPath` or absolute (each one in its own sub-directory of the volume).
+  paths:
+    - storage/app
 
 serviceAccount:
-  # Specifies whether a service account should be created
+  # -- Create a dedicated service account.
   create: true
-  # Automatically mount a ServiceAccount's API credentials?
-  automount: true
-  # Annotations to add to the service account
-  annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
+  # -- Service account name (generated when empty).
   name: ""
+  # -- Service account annotations (cloud workload identity...).
+  annotations: {}
+  # -- Mount the service account token. Laravel does not talk to the Kubernetes API.
+  automount: false
 
-# This is for setting Kubernetes Annotations to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+# -- Pod annotations (every pod).
 podAnnotations: {}
-# This is for setting Kubernetes Labels to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+# -- Pod labels (every pod).
 podLabels: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+# -- Pod security context. 33 is `www-data` in the Debian based PHP images (82 in the Alpine ones): files only need to be readable by this user, writable paths are volumes.
+podSecurityContext:  # @schema skipProperties:true
+  runAsNonRoot: true
+  runAsUser: 33
+  runAsGroup: 33
+  fsGroup: 33
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 33 # 33 is the default www-data user
-  # runAsGroup: 33
-  # fsGroup: 3
+# -- Security context of the Laravel containers.
+securityContext:  # @schema skipProperties:true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
 
-# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
-  type: ClusterIP
+  # -- Service type.
+  type: ClusterIP  # @schema enum:[ClusterIP, NodePort, LoadBalancer]
+  # -- Service port (mapped to the HTTP port of the web pods).
   port: 80
+  # -- Service annotations.
+  annotations: {}
 
 ingress:
+  # -- Create an Ingress.
   enabled: false
+  # -- Ingress class name.
   className: ""
+  # -- Ingress annotations.
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
+  # cert-manager.io/cluster-issuer: letsencrypt
+  # -- Ingress hosts.
   hosts:
     - host: chart-example.local
       paths:
         - path: /
-          pathType: ImplementationSpecific
+          pathType: Prefix
+  # -- Ingress TLS.
   tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  # - secretName: chart-example-tls
+  #   hosts:
+  #     - chart-example.local
 
 httpRoute:
-  # HTTPRoute enabled.
+  # -- Create a Gateway API HTTPRoute.
   enabled: false
-  # HTTPRoute annotations.
+  # -- HTTPRoute annotations.
   annotations: {}
-  # Which Gateways this Route is attached to.
+  # -- Gateways the route attaches to.
   parentRefs:
-  - name: gateway
-    sectionName: http
-    # namespace: default
-  # Hostnames matching HTTP header.
+    - name: gateway
+      sectionName: http
+      # namespace: default
+  # -- Hostnames matched by the route.
   hostnames:
-  - chart-example.local
-  # List of rules and filters applied.
+    - chart-example.local
+  # -- Routing rules (each one is sent to the Service).
   rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /headers
-  #   filters:
-  #   - type: RequestHeaderModifier
-  #     requestHeaderModifier:
-  #       set:
-  #       - name: My-Overwrite-Header
-  #         value: this-is-the-only-value
-  #       remove:
-  #       - User-Agent
-  # - matches:
-  #   - path:
-  #       type: PathPrefix
-  #       value: /echo
-  #     headers:
-  #     - name: version
-  #       value: v2
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
 
-resources: {}
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+# -- Resources of the web container (FrankenPHP or PHP-FPM).
+resources:  # @schema skipProperties:true
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 1Gi
 
-livenessProbe:
+# -- Command of the web container (empty: the image entrypoint), e.g. `["php", "artisan", "octane:frankenphp", "--port=8000"]`.
+command: []
+# -- Arguments of the web container.
+args: []
+
+# -- Liveness probe of the HTTP container (FrankenPHP, or nginx with `fpm`). `/up` is the health route of Laravel 11+.
+livenessProbe:  # @schema skipProperties:true
   httpGet:
     path: /up
     port: http
-  initialDelaySeconds: 20
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3
-  successThreshold: 1
-
-readinessProbe:
+# -- Readiness probe of the HTTP container.
+readinessProbe:  # @schema skipProperties:true
   httpGet:
     path: /up
     port: http
-  initialDelaySeconds: 10
   periodSeconds: 5
   timeoutSeconds: 5
   failureThreshold: 3
-  successThreshold: 1
-
-startupProbe:
+# -- Startup probe of the HTTP container.
+startupProbe:  # @schema skipProperties:true
   httpGet:
     path: /up
     port: http
-  failureThreshold: 30
   periodSeconds: 5
   timeoutSeconds: 5
+  failureThreshold: 30
 
-# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+# -- Lifecycle hooks of the web container (the sleep lets endpoints drain before the server stops).
+lifecycle:  # @schema skipProperties:true
+  preStop:
+    exec:
+      command: ["sh", "-c", "sleep 5"]
+# -- Grace period of the web pods.
+terminationGracePeriodSeconds: 30
+
+# -- Extra init containers of the web pods (run after the chart ones).
+initContainers: []
+# -- Extra containers of the web pods.
+sidecars: []
+
+# -- Extra volumes of every Laravel pod.
+extraVolumes: []
+# - name: ca
+#   configMap:
+#     name: db-ca
+# -- Extra volume mounts of every Laravel container.
+extraVolumeMounts: []
+# - name: ca
+#   mountPath: /etc/ssl/db
+#   readOnly: true
+
 autoscaling:
+  # -- Enable the web HorizontalPodAutoscaler (not with SQLite or a ReadWriteOnce volume).
   enabled: false
-  minReplicas: 1
-  maxReplicas: 100
+  # -- Minimum replicas.
+  minReplicas: 2
+  # -- Maximum replicas.
+  maxReplicas: 10
+  # -- Target CPU utilization.
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
-volumes: []
-  # - name: laravel-storage
-  #   persistentVolumeClaim: # We highly recommend to use ReadWriteMany if available (the volumes would be attached to multiple containers depending on the values)
-  #     claimName: laravel-storage-pvc
-  # - name: laravel-database
-  #   persistentVolumeClaim:
-  #     claimName: laravel-database-pvc
+podDisruptionBudget:
+  # -- Create a PodDisruptionBudget for the web pods (useful with 2+ replicas).
+  enabled: false
+  # -- Minimum available pods.
+  minAvailable: 1
+  # -- Maximum unavailable pods (used instead of minAvailable when set).
+  maxUnavailable: null  # @schema type:[integer, string, null]
 
-volumeMounts: []
-  # - name: laravel-storage
-  #   mountPath: /app/storage
-  # - name: laravel-database
-  #   mountPath: /app/database
+networkPolicy:
+  # -- Create NetworkPolicies: the web pods only accept HTTP, the other pods accept nothing.
+  enabled: false
+  # -- Peers allowed to reach the web pods (e.g. the ingress controller namespace). Empty: any source. Pods of the release are always allowed.
+  allowedFrom: []
+  # - namespaceSelector:
+  #     matchLabels:
+  #       kubernetes.io/metadata.name: ingress-nginx
+  egress:
+    # -- Restrict egress of every pod to DNS, the release pods and `rules`.
+    enabled: false
+    # -- Allowed egress rules (database, Redis, SMTP, S3, external APIs...).
+    rules: []
+    # - to:
+    #     - ipBlock:
+    #         cidr: 10.0.0.0/8
+    #   ports:
+    #     - port: 5432
+    #       protocol: TCP
 
+# -- Priority class of the pods.
+priorityClassName: ""
+# -- Node selector.
 nodeSelector: {}
-
+# -- Tolerations.
 tolerations: []
-
+# -- Affinity rules.
 affinity: {}
+# -- Topology spread constraints of the web pods.
+topologySpreadConstraints: []
+
+tests:
+  # -- Image used by `helm test` (needs `wget`; defaults to the nginx image).
+  image: ""
+  # -- Path requested by `helm test`.
+  path: /up

@@ -1,0 +1,31 @@
+# Values written for the 2026.2.x releases: they must still render (legacy keys, Argo CD disabled).
+global:
+  argocd:
+    enabled: false
+  ttlSecondsAfterFinished: null
+  activeDeadlineSeconds: 1800
+rbac:
+  create: true
+  serviceAccountName: default
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+labels:
+  team: platform
+databases:
+  postgresql:
+    - name: my-db-init
+      clusterName: my-dev-pg-cluster
+      credentialsSecret: my-dev-pg-cluster-credentials
+      databases:
+        - laravel-app
+      ttlSecondsAfterFinished: 300
+      backoffLimit: 3
+      env:
+        - name: CUSTOM_VAR
+          value: custom_value
+      annotations:
+        example.com/owner: platform
+      labels:
+        app: laravel

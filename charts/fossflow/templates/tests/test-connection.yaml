@@ -4,12 +4,29 @@ metadata:
   name: "{{ include "fossflow.fullname" . }}-test-connection"
   labels:
     {{- include "fossflow.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
   annotations:
-    "helm.sh/hook": test
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
 spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    seccompProfile:
+      type: RuntimeDefault
   containers:
     - name: wget
-      image: busybox
-      command: ['wget']
-      args: ['{{ include "fossflow.fullname" . }}:{{ .Values.service.port }}']
-  restartPolicy: Never
+      image: {{ include "fossflow.image" . | quote }}
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+      command:
+        - wget
+        - -qO-
+        - http://{{ include "fossflow.fullname" . }}:{{ .Values.service.port }}{{ ternary "/api/storage/status" "/" .Values.storage.enabled }}

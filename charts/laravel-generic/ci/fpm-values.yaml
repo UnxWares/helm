@@ -1,0 +1,75 @@
+# Render/lint only: PHP-FPM + nginx sidecar, external PostgreSQL + Redis + S3, scaled out.
+image:
+  repository: docker.io/library/php
+  tag: 8.4-fpm-alpine
+appPath: /var/www/html
+workload:
+  runtime:
+    type: fpm
+  scheduler:
+    mode: deployment
+replicaCount: 2
+persistence:
+  enabled: false
+laravel:
+  url: https://shop.example.com
+  database:
+    connection: pgsql
+    host: shop-db-rw.databases.svc
+    database: shop
+    username: shop
+    existingSecret: shop-db-app
+    secretKeys:
+      host: ""
+      port: ""
+      database: ""
+      username: ""
+      password: password
+  session:
+    driver: redis
+  cache:
+    store: redis
+  queue_connection: redis
+  redis:
+    enabled: true
+    host: shop-redis.databases.svc
+    password: ci-redis-password
+  aws:
+    enabled: true
+    access_key_id: ci-access-key
+    secret_access_key: ci-secret-key
+    bucket: shop
+    endpoint: https://s3.example.com
+    use_path_style_endpoint: true
+  filesystem_disk: s3
+  secretEnv:
+    STRIPE_SECRET: ci-stripe-secret
+  extraEnv:
+    - name: TRUSTED_PROXIES
+      value: "*"
+podDisruptionBudget:
+  enabled: true
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: shop.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: shop-tls
+      hosts:
+        - shop.example.com
+networkPolicy:
+  enabled: true
+  allowedFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+  egress:
+    enabled: true
+    rules:
+      - to:
+          - ipBlock:
+              cidr: 10.0.0.0/8

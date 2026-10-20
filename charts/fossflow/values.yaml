@@ -1,160 +1,174 @@
+# -- Number of replicas. With server storage on a ReadWriteOnce volume, keep 1.
 replicaCount: 1
 
 image:
-  repository: stnsmith/fossflow
-  # This sets the pull policy for images.
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  # -- FossFLOW image. `abrar74774/fossflow` is built by the maintained continuation of FossFLOW (github.com/Abrar74774/FossFLOW).
+  repository: docker.io/abrar74774/fossflow
+  # -- Image pull policy.
+  pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
+  # -- Image tag. Upstream only publishes `master-<commit>` tags: `master-2b3cee3` is release v1.0.5.
+  tag: "master-2b3cee3"
+  # -- Image digest (`sha256:...`). When set, it takes precedence over the tag.
+  digest: ""
 
+# -- Secrets for pulling images from a private registry.
 imagePullSecrets: []
+# -- Override the chart name.
 nameOverride: ""
+# -- Override the full resource names.
 fullnameOverride: ""
 
-extraEnv: []
-# - name: ENABLE_SERVER_STORAGE
-#   value: "false"
+storage:
+  # -- Save diagrams on the server (Node.js backend + volume). When false, diagrams only live in the browser.
+  enabled: true
+  # -- User and group the Node.js backend drops to (`PUID`/`PGID`). nginx keeps its own `nginx` user.
+  uid: 1000
+  gid: 1000
 
+# -- Extra environment variables. HTTP_AUTH_USER/HTTP_AUTH_PASSWORD are broken in the upstream image (OpenSSL 3 has no bcrypt): protect FossFLOW at the ingress level instead.
+extraEnv: []
+# - name: DIAGRAM_LIST_CACHE_TTL_MS
+#   value: "5000"
+
+# -- Extra envFrom sources.
 extraEnvFrom: []
-# - secretRef:
-#     name: my-secret
-# - configMapRef:
-#     name: my-config
 
 serviceAccount:
-  # Specifies whether a service account should be created.
+  # -- Create a dedicated service account.
   create: true
-  # Automatically mount a ServiceAccount's API credentials?
-  automount: true
-  # Annotations to add to the service account.
+  # -- FossFLOW never talks to the Kubernetes API: the token is not mounted.
+  automount: false
+  # -- Service account annotations.
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template.
+  # -- Service account name (generated when empty).
   name: ""
 
-# This is for setting Kubernetes Annotations to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+# -- Pod annotations.
 podAnnotations: {}
-# This is for setting Kubernetes Labels to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+# -- Pod labels.
 podLabels: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+# -- Pod security context.
+podSecurityContext:  # @schema skipProperties:true
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+# -- Container security context. The image entrypoint must start as root (nginx binds port 80 and rewrites its config,
+# the backend is started through su-exec): every capability is dropped except the five it needs.
+securityContext:  # @schema skipProperties:true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+    add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE
 
-# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+# -- The image entrypoint does not forward SIGTERM: keep the grace period short.
+terminationGracePeriodSeconds: 10
+
 service:
-  type: ClusterIP
+  # -- Service type.
+  type: ClusterIP  # @schema enum:[ClusterIP, NodePort, LoadBalancer]
+  # -- Service port (the container listens on 80).
   port: 80
 
-# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
+  # -- Expose FossFLOW through an Ingress.
   enabled: false
+  # -- Ingress class name.
   className: ""
+  # -- Ingress annotations (add authentication here, e.g. oauth2-proxy or basic auth).
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
+  # -- Ingress hosts.
   hosts:
     - host: chart-example.local
       paths:
         - path: /
-          pathType: ImplementationSpecific
+          pathType: Prefix
+  # -- Ingress TLS.
   tls: []
     # - secretName: chart-example-tls
     #   hosts:
     #     - chart-example.local
 
-# -- Expose the service via gateway-api HTTPRoute
-# Requires Gateway API resources and suitable controller installed within the cluster
-# (see: https://gateway-api.sigs.k8s.io/guides/)
 httpRoute:
-  # HTTPRoute enabled.
+  # -- Expose FossFLOW through a Gateway API HTTPRoute.
   enabled: false
-  # HTTPRoute annotations.
+  # -- HTTPRoute annotations.
   annotations: {}
-  # Which Gateways this Route is attached to.
+  # -- Gateways this route is attached to.
   parentRefs:
-  - name: gateway
-    sectionName: http
-    # namespace: default
-  # Hostnames matching HTTP header.
+    - name: gateway
+      sectionName: http
+      # namespace: default
+  # -- Hostnames.
   hostnames:
-  - chart-example.local
-  # List of rules and filters applied.
+    - chart-example.local
+  # -- Rules (every rule is sent to the FossFLOW service).
   rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /headers
-  #   filters:
-  #   - type: RequestHeaderModifier
-  #     requestHeaderModifier:
-  #       set:
-  #       - name: My-Overwrite-Header
-  #         value: this-is-the-only-value
-  #       remove:
-  #       - User-Agent
-  # - matches:
-  #   - path:
-  #       type: PathPrefix
-  #       value: /echo
-  #     headers:
-  #     - name: version
-  #       value: v2
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
 
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+# -- Resources.
+resources:  # @schema skipProperties:true
+  requests:
+    cpu: 20m
+    memory: 96Mi
+  limits:
+    memory: 512Mi
 
-# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
-livenessProbe:
+# -- Liveness probe (same `/api/storage/status` substitution as the readiness probe).
+livenessProbe:  # @schema skipProperties:true
   httpGet:
     path: /
     port: http
-readinessProbe:
+  periodSeconds: 20
+# -- Readiness probe. With `storage.enabled` and the default path `/`, the chart probes `/api/storage/status` instead, so a dead backend makes the pod unready.
+readinessProbe:  # @schema skipProperties:true
   httpGet:
     path: /
     port: http
+  periodSeconds: 10
 
-# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
+  # -- Enable the HorizontalPodAutoscaler (only without server storage, or with a ReadWriteMany volume).
   enabled: false
   minReplicas: 1
-  maxReplicas: 100
+  maxReplicas: 5
   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
 
-# Additional volumes on the output Deployment definition.
+persistence:
+  # -- Persist the diagrams (/data/diagrams) when `storage.enabled`.
+  enabled: true
+  # -- Use an existing PVC.
+  existingClaim: ""
+  # -- Storage class (empty uses the cluster default).
+  storageClass: ""
+  # -- Access modes.
+  accessModes:
+    - ReadWriteOnce
+  # -- Volume size.
+  size: 1Gi
+  # -- PVC annotations.
+  annotations: {}
+
+# -- Additional volumes on the output Deployment definition.
 volumes: []
-  # - name: data
-  #   secret:
-  #   persistentVolumeClaim:
-  #     claimName: fossflow-data
-
-# Additional volumeMounts on the output Deployment definition.
+# -- Additional volumeMounts on the output Deployment definition.
 volumeMounts: []
-  # - name: data 
-  #   mountPath: "/data/diagrams"
-  #   readOnly: false
 
+# -- Node selector.
 nodeSelector: {}
-
+# -- Tolerations.
 tolerations: []
-
+# -- Affinity rules.
 affinity: {}

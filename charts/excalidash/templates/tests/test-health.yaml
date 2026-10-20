@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "excalidash.fullname" . }}-test-health
+  labels:
+    {{- include "excalidash.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 101
+    runAsGroup: 101
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: health
+      image: {{ include "excalidash.image" (dict "image" .Values.frontend.image "default" .Chart.AppVersion) | quote }}
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+      # The backend health check goes through the frontend proxy, like the browser does.
+      command:
+        - wget
+        - -qO-
+        - http://{{ include "excalidash.frontend.fullname" . }}:{{ .Values.frontend.service.port }}/api/health

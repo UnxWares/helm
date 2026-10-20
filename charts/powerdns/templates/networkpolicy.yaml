@@ -1,0 +1,70 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "powerdns.fullname" . }}
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: authoritative
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "powerdns.auth.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    # DNS is a public service: queries are filtered by PowerDNS itself.
+    - ports:
+        - port: dns-udp
+          protocol: UDP
+        - port: dns-tcp
+          protocol: TCP
+    {{- if .Values.webserver.enabled }}
+    # API / metrics: only pods of this release and the explicitly allowed peers.
+    - ports:
+        - port: http
+          protocol: TCP
+      from:
+        - podSelector:
+            matchLabels:
+              {{- include "powerdns.selectorLabels" . | nindent 14 }}
+        {{- with .Values.networkPolicy.apiAllowedFrom }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    {{- end }}
+{{- if .Values.recursor.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "powerdns.recursor.fullname" . }}
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: recursor
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "powerdns.recursor.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    # Queries are filtered by recursor.allowFrom.
+    - ports:
+        - port: dns-udp
+          protocol: UDP
+        - port: dns-tcp
+          protocol: TCP
+    {{- if .Values.recursor.webserver.enabled }}
+    - ports:
+        - port: http
+          protocol: TCP
+      from:
+        - podSelector:
+            matchLabels:
+              {{- include "powerdns.selectorLabels" . | nindent 14 }}
+        {{- with .Values.networkPolicy.apiAllowedFrom }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}

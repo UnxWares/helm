@@ -5,6 +5,7 @@ metadata:
   name: {{ include "laravel-generic.fullname" . }}
   labels:
     {{- include "laravel-generic.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -30,14 +31,12 @@ spec:
         paths:
           {{- range .paths }}
           - path: {{ .path }}
-            {{- with .pathType }}
-            pathType: {{ . }}
-            {{- end }}
+            pathType: {{ .pathType | default "Prefix" }}
             backend:
               service:
                 name: {{ include "laravel-generic.fullname" $ }}
                 port:
-                  number: {{ $.Values.service.port }}
+                  name: http
           {{- end }}
     {{- end }}
 {{- end }}

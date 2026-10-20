@@ -1,0 +1,64 @@
+# FossFLOW Helm Chart
+
+{{ template "chart.badgesSection" . }}
+
+[FossFLOW](https://github.com/Abrar74774/FossFLOW) is an open-source Progressive Web App for drawing beautiful
+isometric infrastructure diagrams.
+
+## Features
+
+- Pinned, verifiable image built from the public [Abrar74774/FossFLOW](https://github.com/Abrar74774/FossFLOW) repository
+- Optional **server storage** (Node.js backend) persisted in a PVC; or browser-only mode that scales horizontally
+- Backend dropped to uid 1000, every capability dropped except the five the image entrypoint needs, seccomp `RuntimeDefault`
+- Ingress or Gateway API HTTPRoute, probes on the storage backend, `helm test`
+
+## Installation
+
+```bash
+helm repo add unxwares https://helm.unxwares.studio
+helm repo update
+helm install fossflow unxwares/fossflow --namespace fossflow --create-namespace
+```
+
+Charts are signed: see [verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures).
+
+## Authentication
+
+FossFLOW has no user management. The image's `HTTP_AUTH_USER`/`HTTP_AUTH_PASSWORD` basic auth does not work in
+v1.0.5 (its entrypoint calls `openssl passwd -bcrypt`, which OpenSSL 3 removed), so protect FossFLOW at the ingress:
+
+```yaml
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: fossflow-basic-auth   # htpasswd file in key "auth"
+    nginx.ingress.kubernetes.io/auth-realm: FossFLOW
+  hosts:
+    - host: diagrams.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+```
+
+or put it behind an SSO proxy (oauth2-proxy, Authentik outpost...).
+
+## Upgrading
+
+### To 2026.10.1
+
+- **Image change**: `stnsmith/fossflow:latest` → `abrar74774/fossflow:master-2b3cee3` (FossFLOW v1.0.5). The original
+  `stan-smith/FossFLOW` repository no longer exists and the latest `stnsmith/fossflow` images are built from a private
+  repository whose source cannot be verified. To keep the old image anyway, set `image.repository` and pin a digest.
+- Server storage is now enabled and persisted by default (`storage.enabled`, `persistence.*`). Diagrams previously stored
+  inside the container were lost at each restart.
+- The container port is always 80; `service.port` only changes the Service port.
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+## License
+
+The chart is released under the MIT license. FossFLOW is licensed under the MIT license.

@@ -9,9 +9,10 @@ metadata:
 data:
   default.conf: |
     server {
-        listen 80 default_server;
+        listen 8080 default_server;
+        listen [::]:8080 default_server;
 
-        client_max_body_size 100M;
+        client_max_body_size {{ .Values.gateway.clientMaxBodySize }};
         charset utf-8;
 
         # Frontend
@@ -49,7 +50,7 @@ data:
             alias /taiga/static/;
         }
 
-        # Media files
+        # Media files (served via X-Accel-Redirect from taiga-protected)
         location /_protected/ {
             internal;
             alias /taiga/media/;

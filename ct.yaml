@@ -1,0 +1,9 @@
+# chart-testing configuration
+# https://github.com/helm/chart-testing/blob/main/doc/ct_lint-and-install.md
+target-branch: main
+chart-dirs:
+  - charts
+# Chart maintainers are listed by real name, not by GitHub handle.
+validate-maintainers: false
+check-version-increment: true
+helm-extra-args: --timeout 600s

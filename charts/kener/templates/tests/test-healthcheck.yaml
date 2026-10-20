@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "kener.fullname" . }}-test-healthcheck
+  labels:
+    {{- /* Not the Kener selector labels: the Service must never pick this pod. */}}
+    helm.sh/chart: {{ include "kener.chart" . }}
+    app.kubernetes.io/name: {{ include "kener.name" . }}-test
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: test
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  enableServiceLinks: false
+  {{- with .Values.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.podSecurityContext }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  containers:
+    - name: healthcheck
+      image: {{ .Values.tests.image | default (include "kener.kenerImage" .) | quote }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # Strict mode answers 503 unless Kener reaches both its database and Redis.
+      command:
+        - curl
+        - --fail
+        - --silent
+        - --show-error
+        - --max-time
+        - "10"
+        - --retry
+        - "6"
+        - --retry-delay
+        - "5"
+        - --retry-all-errors
+        - http://{{ include "kener.fullname" . }}:{{ .Values.service.port }}{{ include "kener.basePath" . }}/healthcheck?strict=1
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          memory: 64Mi

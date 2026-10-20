@@ -1,0 +1,125 @@
+# PowerDNS Helm Chart
+
+{{ template "chart.badgesSection" . }}
+
+[PowerDNS Authoritative Server](https://doc.powerdns.com/authoritative/) with its REST API, packaged for
+Kubernetes by UnxWares, with an optional [PowerDNS Recursor](https://doc.powerdns.com/recursor/).
+
+## Features
+
+- **Authoritative DNS** with DNSSEC, on SQLite (single replica + PVC), PostgreSQL or MySQL/MariaDB (scale out).
+- **Automatic schema creation**: the schema shipped in the PowerDNS image is applied when the database is empty (idempotent init container).
+- **REST API** for [ExternalDNS](https://kubernetes-sigs.github.io/external-dns/), PowerDNS-Admin, cert-manager webhooks... The API key is generated and kept across upgrades, or read from your own Secret.
+- **Optional Recursor** that forwards your zones to the authoritative server and resolves everything else (DNSSEC validation on).
+- **Hardened by default**: non-root (uid 953), read-only root filesystem, every capability dropped, seccomp `RuntimeDefault`, no service account token. DNS listens on an unprivileged port inside the pod and the Service exposes it on 53.
+- **Secrets never land in ConfigMaps**: they are injected as environment variables and rendered at startup into a memory-backed volume.
+- **Prometheus** `/metrics` with optional ServiceMonitors, **NetworkPolicy** isolating the API, PodDisruptionBudget, HPA (SQL backends), topology spread.
+
+## Installation
+
+```bash
+helm repo add unxwares https://helm.unxwares.studio
+helm repo update
+helm install dns unxwares/powerdns --namespace dns --create-namespace
+```
+
+Charts are signed: see [verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures)
+and add `--verify --keyring <keyring>` to `helm install`.
+
+## Examples
+
+### Expose DNS outside the cluster
+
+```yaml
+service:
+  type: LoadBalancer
+  externalTrafficPolicy: Local   # keep client IPs (ACLs, AXFR)
+config:
+  default-soa-content: ns1.example.com. hostmaster.@ 0 10800 3600 604800 3600
+```
+
+### PostgreSQL backend with 3 replicas
+
+```yaml
+backend:
+  type: gpgsql
+  gpgsql:
+    host: pdns-db-rw.databases.svc
+    dbname: pdns
+    user: pdns
+    existingSecret: pdns-db        # key: password
+    extraConnectionParameters: "sslmode=require"
+replicaCount: 3
+podDisruptionBudget:
+  enabled: true
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: powerdns
+        app.kubernetes.io/component: authoritative
+```
+
+### ExternalDNS
+
+```yaml
+# ExternalDNS values
+provider:
+  name: pdns
+extraArgs:
+  - --pdns-server=http://dns-powerdns-api.dns.svc:8081
+env:
+  - name: EXTERNAL_DNS_PDNS_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: dns-powerdns
+        key: api-key
+```
+
+Allow ExternalDNS through the NetworkPolicy:
+
+```yaml
+networkPolicy:
+  enabled: true
+  apiAllowedFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: external-dns
+```
+
+### Recursor for the cluster
+
+```yaml
+recursor:
+  enabled: true
+  authoritativeZones:
+    - example.com
+    - 10.in-addr.arpa
+  # forwardZonesRecurse: ["9.9.9.9:53"]   # use an upstream resolver instead of the root servers
+```
+
+### Managing zones
+
+Zones created through the API are served immediately. With `pdnsutil`, ask the server to refresh its zone cache:
+
+```bash
+kubectl exec -n dns deploy/dns-powerdns -c pdns -- \
+  sh -c 'pdnsutil zone create example.com ns1.example.com && pdns_control rediscover'
+```
+
+## Notes
+
+- **GitOps**: when the API key is generated, tools that render templates offline (Argo CD...) cannot read it back and would rotate it on every sync. Set `api.key` or `api.existingSecret`.
+- **gsqlite3** supports a single replica; the chart refuses `replicaCount > 1` or the HPA with it.
+- **IPv6**: remove `[::]` from `dns.listenAddresses` (and `::` from `recursor.listenAddresses`) if your pods have IPv6 disabled.
+- `webserver.allowFrom` and `recursor.allowFrom` default to private ranges; add your pod CIDR if it uses another range (e.g. `100.64.0.0/10`).
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+## License
+
+The chart is released under the MIT license. PowerDNS is licensed under the GPL-2.0.

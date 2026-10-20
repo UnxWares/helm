@@ -3,6 +3,8 @@
 #
 # This file is used to verify the publisher identity on Artifact Hub.
 # The repositoryID must match the ID shown in your Artifact Hub control panel.
+# It is published next to index.yaml (https://helm.unxwares.studio/artifacthub-repo.yml)
+# by the release workflow.
 
 # Repository ID from Artifact Hub Control Panel
 # Found at: https://artifacthub.io/control-panel > Repositories tab
@@ -16,3 +18,9 @@ owners:
     email: david.gheghea@unxwares.com
   - name: Baptiste Gosselin
     email: baptiste.gosselin@unxwares.com
+
+# Packages still present in index.yaml that must not be listed on Artifact Hub.
+# opencloud: copy of the upstream OpenCloud community chart, removed from this
+# repository in 2025-11. Use the official chart: https://github.com/opencloud-eu/helm
+ignore:
+  - name: opencloud

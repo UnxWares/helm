@@ -1,14 +1,16 @@
 {
-    "$schema": "http://json-schema.org/schema#",
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "affinity": {
+            "description": "Affinity rules.",
             "type": "object"
         },
         "autoscaling": {
             "type": "object",
             "properties": {
                 "enabled": {
+                    "description": "Enable the HorizontalPodAutoscaler (static zones only: no persistence).",
                     "type": "boolean"
                 },
                 "maxReplicas": {
@@ -26,197 +28,330 @@
             "type": "object",
             "properties": {
                 "args": {
+                    "description": "Extra arguments passed to named (after `-u bind -g`).",
                     "type": "array"
                 },
                 "namedConf": {
+                    "description": "named.conf content. The default is a minimal authoritative-only server: add your zones (see `bind.zones`). Keep `directory \"/var/cache/bind\";`: it is the only writable working directory. https://bind9.readthedocs.io/en/stable/reference.html",
                     "type": "string"
                 },
                 "zones": {
+                    "description": "Zone files, mounted as `/etc/bind/\u003ckey\u003e.zone`.",
                     "type": "object"
                 }
             }
         },
         "fullnameOverride": {
+            "description": "Override the full resource names.",
             "type": "string"
         },
         "image": {
             "type": "object",
             "properties": {
-                "pullPolicy": {
+                "digest": {
+                    "description": "Image digest (`sha256:...`). When set, it takes precedence over the tag.",
                     "type": "string"
                 },
+                "pullPolicy": {
+                    "description": "Image pull policy.",
+                    "type": "string",
+                    "enum": [
+                        "Always",
+                        "IfNotPresent",
+                        "Never"
+                    ]
+                },
                 "repository": {
+                    "description": "Bind9 image repository (ISC official image).",
                     "type": "string"
                 },
                 "tag": {
+                    "description": "Image tag (defaults to the chart appVersion, the current ISC stable branch). `9.21` is ISC's development branch.",
                     "type": "string"
                 }
             }
         },
         "imagePullSecrets": {
+            "description": "Secrets for pulling images from a private registry.",
             "type": "array"
         },
         "livenessProbe": {
+            "description": "Liveness probe (dig exits 0 as soon as the server answers, whatever the answer).",
+            "type": "object"
+        },
+        "metrics": {
             "type": "object",
             "properties": {
-                "exec": {
+                "enabled": {
+                    "description": "Run the Prometheus bind_exporter sidecar (reads the statistics channel on 127.0.0.1:8053).",
+                    "type": "boolean"
+                },
+                "image": {
                     "type": "object",
                     "properties": {
-                        "command": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                        "digest": {
+                            "description": "Exporter image digest (takes precedence over the tag).",
+                            "type": "string"
+                        },
+                        "pullPolicy": {
+                            "description": "Exporter image pull policy.",
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "repository": {
+                            "description": "Exporter image repository.",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Exporter image tag.",
+                            "type": "string"
                         }
                     }
                 },
-                "initialDelaySeconds": {
-                    "type": "integer"
+                "livenessProbe": {
+                    "description": "Exporter liveness probe.",
+                    "type": "object"
                 },
-                "periodSeconds": {
-                    "type": "integer"
+                "readinessProbe": {
+                    "description": "Exporter readiness probe.",
+                    "type": "object"
+                },
+                "resources": {
+                    "description": "Exporter resources.",
+                    "type": "object"
+                },
+                "securityContext": {
+                    "description": "Exporter security context (the image runs as `nobody`).",
+                    "type": "object"
+                },
+                "serviceMonitor": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "description": "Create a Prometheus Operator ServiceMonitor (requires `metrics.enabled`; rendered only when the CRD exists).",
+                            "type": "boolean"
+                        },
+                        "endpoints": {
+                            "description": "ServiceMonitor endpoints.",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "port": {
+                                        "type": "string"
+                                    },
+                                    "scheme": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "labels": {
+                            "description": "Extra ServiceMonitor labels (e.g. `release: kube-prometheus-stack`).",
+                            "type": "object"
+                        }
+                    }
+                },
+                "statsGroups": {
+                    "description": "Statistics groups to collect (`tasks` is deprecated since bind_exporter 0.8.0).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
         "nameOverride": {
+            "description": "Override the chart name.",
             "type": "string"
         },
+        "networkPolicy": {
+            "type": "object",
+            "properties": {
+                "adminAllowedFrom": {
+                    "description": "Peers allowed to reach rndc and metrics (e.g. your Prometheus namespace).",
+                    "type": "array"
+                },
+                "enabled": {
+                    "description": "Create a NetworkPolicy: DNS stays open, rndc and metrics only accept the peers below.",
+                    "type": "boolean"
+                }
+            }
+        },
         "nodeSelector": {
+            "description": "Node selector.",
             "type": "object"
         },
         "persistence": {
             "type": "object",
             "properties": {
                 "accessMode": {
+                    "description": "Access mode.",
                     "type": "string"
                 },
                 "emptyDirSizeLimit": {
+                    "description": "Size limit of the emptyDir used when persistence is disabled.",
                     "type": "string"
                 },
                 "enabled": {
+                    "description": "Persist /var/lib/bind in a PVC. Without it an emptyDir is used.",
                     "type": "boolean"
                 },
+                "existingClaim": {
+                    "description": "Use an existing PVC.",
+                    "type": "string"
+                },
                 "size": {
+                    "description": "Volume size.",
                     "type": "string"
                 },
                 "storageClass": {
+                    "description": "Storage class (empty uses the cluster default).",
                     "type": "string"
                 }
             }
         },
         "podAnnotations": {
+            "description": "Pod annotations.",
             "type": "object"
         },
+        "podDisruptionBudget": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Create a PodDisruptionBudget (useful with 2+ replicas).",
+                    "type": "boolean"
+                },
+                "maxUnavailable": {
+                    "description": "Maximum unavailable pods (used instead of minAvailable when set).",
+                    "type": [
+                        "integer",
+                        "string",
+                        "null"
+                    ]
+                },
+                "minAvailable": {
+                    "description": "Minimum available pods.",
+                    "type": "integer"
+                }
+            }
+        },
         "podLabels": {
+            "description": "Pod labels.",
             "type": "object"
         },
         "podSecurityContext": {
-            "type": "object",
-            "properties": {
-                "fsGroup": {
-                    "type": "integer"
-                },
-                "runAsGroup": {
-                    "type": "integer"
-                },
-                "runAsUser": {
-                    "type": "integer"
-                },
-                "supplementalGroups": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
+            "description": "Pod security context. named starts as root only to bind port 53, then switches to the `bind` user (uid 53) with `-u bind`.",
+            "type": "object"
+        },
+        "priorityClassName": {
+            "description": "Priority class of the pods.",
+            "type": "string"
         },
         "readinessProbe": {
-            "type": "object",
-            "properties": {
-                "exec": {
-                    "type": "object",
-                    "properties": {
-                        "command": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                },
-                "initialDelaySeconds": {
-                    "type": "integer"
-                },
-                "periodSeconds": {
-                    "type": "integer"
-                }
-            }
+            "description": "Readiness probe.",
+            "type": "object"
         },
         "replicaCount": {
+            "description": "Number of Bind9 replicas. With `persistence.enabled` and a ReadWriteOnce volume, keep 1.",
             "type": "integer"
         },
         "resources": {
+            "description": "Bind9 container resources.",
             "type": "object"
         },
         "securityContext": {
-            "type": "object",
-            "properties": {
-                "capabilities": {
-                    "type": "object",
-                    "properties": {
-                        "add": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
+            "description": "Bind9 container security context: every capability is dropped except the three named needs to bind port 53 and switch user.",
+            "type": "object"
         },
         "service": {
             "type": "object",
             "properties": {
+                "annotations": {
+                    "description": "Service annotations (e.g. MetalLB or cloud load balancer settings).",
+                    "type": "object"
+                },
                 "enabled": {
+                    "description": "Create the DNS service.",
                     "type": "boolean"
                 },
-                "annotations": {
-                    "type": "object"
+                "exposeRndc": {
+                    "description": "Expose the rndc control port through the service. Off by default: rndc is an administrative channel.",
+                    "type": "boolean"
+                },
+                "externalTrafficPolicy": {
+                    "description": "`Local` preserves client source IPs (needed by ACLs such as allow-transfer).",
+                    "type": "string"
+                },
+                "loadBalancerIP": {
+                    "description": "Load balancer IP, when supported by the provider.",
+                    "type": "string"
+                },
+                "loadBalancerSourceRanges": {
+                    "description": "Source ranges allowed by the load balancer.",
+                    "type": "array"
                 },
                 "ports": {
                     "type": "object",
                     "properties": {
                         "dnsTcp": {
+                            "description": "DNS TCP port.",
                             "type": "integer"
                         },
                         "dnsTcpNodePort": {
-                            "type": ["integer", "null"],
-                            "default": null,
-                            "minimum": 1,
-                            "maximum": 65535
+                            "description": "NodePort for DNS over TCP.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
                         },
                         "dnsUdp": {
+                            "description": "DNS UDP port.",
                             "type": "integer"
                         },
                         "dnsUdpNodePort": {
-                            "type": ["integer", "null"],
-                            "default": null,
-                            "minimum": 1,
-                            "maximum": 65535
+                            "description": "NodePort for DNS over UDP.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "metrics": {
+                            "description": "Prometheus exporter port.",
+                            "type": "integer"
+                        },
+                        "metricsNodePort": {
+                            "description": "NodePort for the metrics port.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
                         },
                         "rndc": {
+                            "description": "rndc port (only exposed with `service.exposeRndc`).",
                             "type": "integer"
                         },
                         "rndcNodePort": {
-                            "type": ["integer", "null"],
-                            "default": null,
-                            "minimum": 1,
-                            "maximum": 65535
+                            "description": "NodePort for rndc.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
                         }
                     }
                 },
                 "type": {
-                    "type": "string"
+                    "description": "Service type.",
+                    "type": "string",
+                    "enum": [
+                        "ClusterIP",
+                        "NodePort",
+                        "LoadBalancer"
+                    ]
                 }
             }
         },
@@ -224,26 +359,37 @@
             "type": "object",
             "properties": {
                 "annotations": {
+                    "description": "Service account annotations.",
                     "type": "object"
                 },
                 "automount": {
+                    "description": "Bind9 never talks to the Kubernetes API: the token is not mounted.",
                     "type": "boolean"
                 },
                 "create": {
+                    "description": "Create a dedicated service account.",
                     "type": "boolean"
                 },
                 "name": {
+                    "description": "Service account name (generated when empty).",
                     "type": "string"
                 }
             }
         },
         "tolerations": {
+            "description": "Tolerations.",
+            "type": "array"
+        },
+        "topologySpreadConstraints": {
+            "description": "Topology spread constraints.",
             "type": "array"
         },
         "volumeMounts": {
+            "description": "Additional volumeMounts on the Bind9 container.",
             "type": "array"
         },
         "volumes": {
+            "description": "Additional volumes on the pod.",
             "type": "array"
         }
     }

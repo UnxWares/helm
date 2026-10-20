@@ -1,0 +1,59 @@
+# One Job per engine so that lint and kubeconform cover every template.
+# Not installed by chart-testing: the chart needs the OpenEverest operator and its DatabaseClusters.
+databases:
+  postgresql:
+    - name: app-pg-init
+      clusterName: app-pg
+      adminCredentialsSecret: everest-secrets-app-pg
+      databases:
+        - laravel-app
+      users:
+        - credentialsSecret: laravel-app-db
+          databases:
+            - laravel-app
+      initScriptsDatabase: laravel-app
+      initScripts:
+        - CREATE EXTENSION IF NOT EXISTS pg_trgm;
+  mysql:
+    - name: app-mysql-init
+      clusterName: app-mysql
+      adminCredentialsSecret: everest-secrets-app-mysql
+      host: app-mysql-haproxy
+      adminUser: root
+      passwordKey: root
+      databases:
+        - wordpress
+      users:
+        - credentialsSecret: wordpress-db
+          databases:
+            - wordpress
+          privileges:
+            - SELECT
+            - INSERT
+            - UPDATE
+            - DELETE
+            - CREATE
+            - ALTER
+            - INDEX
+            - DROP
+      initScripts:
+        - CREATE TABLE IF NOT EXISTS wordpress.init_log (id INT AUTO_INCREMENT PRIMARY KEY, message VARCHAR(255));
+  mongodb:
+    - name: app-mongo-init
+      clusterName: app-mongo
+      adminCredentialsSecret: everest-secrets-app-mongo
+      host: app-mongo-rs0
+      userKey: MONGODB_USER_ADMIN_USER
+      passwordKey: MONGODB_USER_ADMIN_PASSWORD
+      uriOptions: replicaSet=rs0
+      databases:
+        - appdb
+      users:
+        - credentialsSecret: appdb-user
+          databases:
+            - appdb
+      collections:
+        - name: users
+          database: appdb
+      initScripts:
+        - 'db.users.createIndex({ email: 1 }, { unique: true });'

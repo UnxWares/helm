@@ -1,3 +1,5 @@
+{{- include "fossflow.validate" . }}
+{{- $probePath := ternary "/api/storage/status" "/" .Values.storage.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,6 +9,10 @@ metadata:
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- if and .Values.storage.enabled .Values.persistence.enabled (has "ReadWriteOnce" .Values.persistence.accessModes) }}
+  strategy:
+    type: Recreate
   {{- end }}
   selector:
     matchLabels:
@@ -18,7 +24,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "fossflow.labels" . | nindent 8 }}
+        {{- include "fossflow.selectorLabels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -28,6 +34,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "fossflow.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- with .Values.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -38,14 +46,24 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: {{ include "fossflow.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: 80
               protocol: TCP
 
           env:
+            - name: ENABLE_SERVER_STORAGE
+              value: {{ .Values.storage.enabled | quote }}
+            {{- if .Values.storage.enabled }}
+            - name: STORAGE_PATH
+              value: /data/diagrams
+            - name: PUID
+              value: {{ .Values.storage.uid | quote }}
+            - name: PGID
+              value: {{ .Values.storage.gid | quote }}
+            {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -56,25 +74,46 @@ spec:
           {{- end }}
 
           {{- with .Values.livenessProbe }}
+          {{- $probe := deepCopy . }}
+          {{- if and $probe.httpGet (eq ($probe.httpGet.path | default "/") "/") }}
+          {{- $_ := set $probe.httpGet "path" $probePath }}
+          {{- end }}
           livenessProbe:
-            {{- toYaml . | nindent 12 }}
+            {{- toYaml $probe | nindent 12 }}
           {{- end }}
           {{- with .Values.readinessProbe }}
+          {{- $probe := deepCopy . }}
+          {{- if and $probe.httpGet (eq ($probe.httpGet.path | default "/") "/") }}
+          {{- $_ := set $probe.httpGet "path" $probePath }}
+          {{- end }}
           readinessProbe:
-            {{- toYaml . | nindent 12 }}
+            {{- toYaml $probe | nindent 12 }}
           {{- end }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.volumeMounts }}
           volumeMounts:
+            {{- if .Values.storage.enabled }}
+            - name: data
+              mountPath: /data/diagrams
+            {{- end }}
+            {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
-          {{- end }}
-      {{- with .Values.volumes }}
+            {{- end }}
       volumes:
+        {{- if .Values.storage.enabled }}
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (include "fossflow.fullname" .) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- end }}
+        {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

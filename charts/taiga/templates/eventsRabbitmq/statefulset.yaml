@@ -1,3 +1,4 @@
+{{- $rmq := .Values.eventsRabbitmq }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -7,21 +8,23 @@ metadata:
     app.kubernetes.io/component: events-rabbitmq
 spec:
   serviceName: {{ include "taiga.fullname" . }}-events-rabbitmq
-  replicas: {{ .Values.eventsRabbitmq.replicaCount }}
+  replicas: {{ $rmq.replicaCount }}
   selector:
     matchLabels:
       {{- include "taiga.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: events-rabbitmq
   template:
     metadata:
-      {{- with .Values.eventsRabbitmq.podAnnotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/rabbitmq-configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with $rmq.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "taiga.labels" . | nindent 8 }}
         app.kubernetes.io/component: events-rabbitmq
-        {{- with .Values.eventsRabbitmq.podLabels }}
+        {{- with $rmq.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
@@ -30,119 +33,112 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "taiga.serviceAccountName" . }}
-      {{- with (default .Values.global.podSecurityContext .Values.eventsRabbitmq.podSecurityContext) }}
+      automountServiceAccountToken: {{ .Values.global.serviceAccount.automount }}
+      {{- with (default .Values.global.podSecurityContext $rmq.podSecurityContext) }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: rabbitmq
-          {{- with (default .Values.global.securityContext .Values.eventsRabbitmq.securityContext) }}
+          {{- with (default .Values.global.securityContext $rmq.securityContext) }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: "{{ .Values.eventsRabbitmq.image.repository }}:{{ .Values.eventsRabbitmq.image.tag }}"
-          imagePullPolicy: {{ .Values.eventsRabbitmq.image.pullPolicy }}
+          image: "{{ $rmq.image.repository }}:{{ $rmq.image.tag }}"
+          imagePullPolicy: {{ $rmq.image.pullPolicy }}
           ports:
             - name: amqp
-              containerPort: {{ .Values.eventsRabbitmq.service.port }}
+              containerPort: 5672
               protocol: TCP
             - name: management
-              containerPort: {{ .Values.eventsRabbitmq.service.managementPort }}
+              containerPort: 15672
               protocol: TCP
           env:
-            {{- if .Values.eventsRabbitmq.auth.existingSecret }}
             - name: RABBITMQ_DEFAULT_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.eventsRabbitmq.auth.existingSecret }}
-                  key: {{ .Values.eventsRabbitmq.auth.secretKeys.user }}
+              {{- if $rmq.auth.existingSecret }}
+              {{- include "taiga.secretRef" (dict "ctx" $ "existing" $rmq.auth.existingSecret "existingKey" $rmq.auth.secretKeys.user) | nindent 14 }}
+              {{- else if .Values.global.existingSecret }}
+              {{- include "taiga.secretRef" (dict "ctx" $ "globalKey" "RABBITMQ_USER") | nindent 14 }}
+              {{- else }}
+              value: {{ $rmq.auth.user | quote }}
+              {{- end }}
             - name: RABBITMQ_DEFAULT_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.eventsRabbitmq.auth.existingSecret }}
-                  key: {{ .Values.eventsRabbitmq.auth.secretKeys.password }}
+              {{- include "taiga.secretRef" (dict "ctx" $ "existing" $rmq.auth.existingSecret "existingKey" $rmq.auth.secretKeys.password "globalKey" "RABBITMQ_PASS" "chartKey" "events-rabbitmq-password") | nindent 14 }}
             - name: RABBITMQ_DEFAULT_VHOST
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.eventsRabbitmq.auth.existingSecret }}
-                  key: {{ .Values.eventsRabbitmq.auth.secretKeys.vhost }}
-            - name: RABBITMQ_ERLANG_COOKIE
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.eventsRabbitmq.auth.existingSecret }}
-                  key: {{ .Values.eventsRabbitmq.auth.secretKeys.erlangCookie }}
-            {{- else if .Values.global.existingSecret }}
-            - name: RABBITMQ_DEFAULT_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.existingSecret }}
-                  key: RABBITMQ_USER
-            - name: RABBITMQ_DEFAULT_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.existingSecret }}
-                  key: RABBITMQ_PASS
-            - name: RABBITMQ_DEFAULT_VHOST
-              value: {{ .Values.eventsRabbitmq.auth.vhost | quote }}
-            - name: RABBITMQ_ERLANG_COOKIE
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.existingSecret }}
-                  key: RABBITMQ_ERLANG_COOKIE
-            {{- else }}
-            - name: RABBITMQ_DEFAULT_USER
-              value: {{ .Values.eventsRabbitmq.auth.user | quote }}
-            - name: RABBITMQ_DEFAULT_PASS
-              value: {{ .Values.eventsRabbitmq.auth.password | quote }}
-            - name: RABBITMQ_DEFAULT_VHOST
-              value: {{ .Values.eventsRabbitmq.auth.vhost | quote }}
-            - name: RABBITMQ_ERLANG_COOKIE
-              value: {{ .Values.eventsRabbitmq.auth.erlangCookie | quote }}
-            {{- end }}
-          {{- with (default .Values.global.resources .Values.eventsRabbitmq.resources) }}
+              {{- if $rmq.auth.existingSecret }}
+              {{- include "taiga.secretRef" (dict "ctx" $ "existing" $rmq.auth.existingSecret "existingKey" $rmq.auth.secretKeys.vhost) | nindent 14 }}
+              {{- else }}
+              value: {{ $rmq.auth.vhost | quote }}
+              {{- end }}
+          livenessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 15
+          readinessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 15
+          {{- with (default .Values.global.resources $rmq.resources) }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
+            # RabbitMQ 4 cannot start on 3.x data: use a dedicated sub-directory (the old data stays untouched).
             - name: data
               mountPath: /var/lib/rabbitmq
-      {{- if and .Values.eventsRabbitmq.persistence.enabled .Values.eventsRabbitmq.persistence.existingClaim }}
+              subPath: rabbitmq-4
+            - name: config
+              mountPath: /etc/rabbitmq/conf.d/20-taiga.conf
+              subPath: 20-taiga.conf
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
       volumes:
+        - name: config
+          configMap:
+            name: {{ include "taiga.fullname" . }}-rabbitmq
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+        {{- if and $rmq.persistence.enabled $rmq.persistence.existingClaim }}
         - name: data
           persistentVolumeClaim:
-            claimName: {{ .Values.eventsRabbitmq.persistence.existingClaim }}
-      {{- else if not .Values.eventsRabbitmq.persistence.enabled }}
-      volumes:
+            claimName: {{ $rmq.persistence.existingClaim }}
+        {{- else if not $rmq.persistence.enabled }}
         - name: data
           emptyDir: {}
-      {{- end }}
-      {{- with (default .Values.global.pod.nodeSelector .Values.eventsRabbitmq.nodeSelector) }}
+        {{- end }}
+      {{- with (default .Values.global.pod.nodeSelector $rmq.nodeSelector) }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (default .Values.global.pod.affinity .Values.eventsRabbitmq.affinity) }}
+      {{- with (default .Values.global.pod.affinity $rmq.affinity) }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (default .Values.global.pod.tolerations .Values.eventsRabbitmq.tolerations) }}
+      {{- with (default .Values.global.pod.tolerations $rmq.tolerations) }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-  {{- if and .Values.eventsRabbitmq.persistence.enabled (not .Values.eventsRabbitmq.persistence.existingClaim) }}
+  {{- if and $rmq.persistence.enabled (not $rmq.persistence.existingClaim) }}
   volumeClaimTemplates:
     - metadata:
         name: data
-        {{- with .Values.eventsRabbitmq.persistence.annotations }}
+        {{- with $rmq.persistence.annotations }}
         annotations:
           {{- toYaml . | nindent 10 }}
         {{- end }}
       spec:
         accessModes:
-          - {{ .Values.eventsRabbitmq.persistence.accessMode }}
-        {{- with .Values.eventsRabbitmq.persistence.storageClass }}
+          - {{ $rmq.persistence.accessMode }}
+        {{- with $rmq.persistence.storageClass }}
         storageClassName: {{ . }}
         {{- end }}
         resources:
           requests:
-            storage: {{ .Values.eventsRabbitmq.persistence.size }}
+            storage: {{ $rmq.persistence.size }}
   {{- end }}

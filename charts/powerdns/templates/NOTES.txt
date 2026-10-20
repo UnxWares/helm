@@ -1,0 +1,33 @@
+PowerDNS Authoritative Server {{ .Chart.AppVersion }} is deployed ({{ .Values.backend.type }} backend).
+
+DNS service: {{ include "powerdns.fullname" . }}.{{ .Release.Namespace }}.svc ({{ .Values.service.type }}, port {{ .Values.service.port }}/udp+tcp)
+{{- if eq .Values.service.type "LoadBalancer" }}
+  kubectl get svc -n {{ .Release.Namespace }} {{ include "powerdns.fullname" . }} -w
+{{- end }}
+{{- if .Values.api.enabled }}
+
+REST API: http://{{ include "powerdns.fullname" . }}-api.{{ .Release.Namespace }}.svc:{{ .Values.apiService.port }}/api/v1
+API key:
+{{- if .Values.api.existingSecret }}
+  kubectl get secret -n {{ .Release.Namespace }} {{ .Values.api.existingSecret }} -o jsonpath='{.data.{{ .Values.api.existingSecretKey }}}' | base64 -d
+{{- else }}
+  kubectl get secret -n {{ .Release.Namespace }} {{ include "powerdns.secretName" . }} -o jsonpath='{.data.api-key}' | base64 -d
+{{- end }}
+
+Create a first zone (through the API, or with pdnsutil + rediscover so the zone cache picks it up):
+  kubectl exec -n {{ .Release.Namespace }} deploy/{{ include "powerdns.fullname" . }} -c pdns -- \
+    sh -c 'pdnsutil zone create example.com ns1.example.com && pdns_control rediscover'
+{{- end }}
+{{- if .Values.recursor.enabled }}
+
+Recursor: {{ include "powerdns.recursor.fullname" . }}.{{ .Release.Namespace }}.svc ({{ .Values.recursor.service.type }}, port {{ .Values.recursor.service.port }})
+{{- end }}
+{{- if and (eq .Values.backend.type "gsqlite3") (not .Values.persistence.enabled) }}
+
+WARNING: persistence is disabled, zones are lost when the pod restarts.
+{{- end }}
+{{- if and .Values.api.enabled (not .Values.api.key) (not .Values.api.existingSecret) }}
+
+NOTE: the API key was generated. With GitOps tools that render offline (Argo CD, Flux with
+post-renderers...), set api.key or api.existingSecret so it does not change on every sync.
+{{- end }}

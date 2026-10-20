@@ -1,0 +1,5 @@
+# SQLite on a PVC + bundled Valkey, NetworkPolicies on, alpine image.
+kener:
+  origin: http://localhost
+networkPolicy:
+  enabled: true

@@ -1,10 +1,12 @@
-{{- if .Values.persistence.enabled }}
+{{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ include "bind9.fullname" . }}-pvc
   labels:
     {{- include "bind9.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
 spec:
   accessModes:
     - {{ .Values.persistence.accessMode | quote }}
@@ -14,4 +16,4 @@ spec:
   {{- with .Values.persistence.storageClass }}
   storageClassName: {{ . }}
   {{- end }}
-{{- end}}
+{{- end }}
