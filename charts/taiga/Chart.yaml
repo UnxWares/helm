@@ -75,6 +75,8 @@ annotations:
       description: Media volume enabled by default and mounted by backend, async and gateway, so attachments and exports can be downloaded (pods co-located when the volume is ReadWriteOnce).
     - kind: fixed
       description: Duplicate probe keys when overriding probes; protected now honours the sub-path.
+    - kind: fixed
+      description: taiga-events connects to RabbitMQ 4 (its client asked for a frame_max below the 8192 minimum) and honours the events broker vhost.
     - kind: changed
       description: Bundled PostgreSQL persistence enabled by default; RabbitMQ 4 data uses a new sub-path and the deprecated transient non-exclusive queues Celery needs are allowed.
     - kind: changed

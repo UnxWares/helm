@@ -481,6 +481,17 @@ Events environment variables (taiga-events builds amqp://RABBITMQ_USER:RABBITMQ_
   {{- end }}
 - name: RABBITMQ_PASS
   {{- include "taiga.secretRef" (dict "ctx" . "existing" $auth.existingSecret "existingKey" $auth.secretKeys.password "globalKey" "RABBITMQ_PASS" "chartKey" "events-rabbitmq-password") | nindent 2 }}
+- name: RABBITMQ_VHOST
+  {{- if $auth.existingSecret }}
+  {{- include "taiga.secretRef" (dict "ctx" . "existing" $auth.existingSecret "existingKey" $auth.secretKeys.vhost) | nindent 2 }}
+  {{- else }}
+  value: {{ $auth.vhost | quote }}
+  {{- end }}
+# The image builds its URL with amqplib's default frame_max (4096), which RabbitMQ 4.1+ refuses (minimum 8192).
+# dotenv does not override variables that are already set, so this URL wins; the trailing "#" turns the
+# "?heartbeat=60" the code appends into a URL fragment.
+- name: RABBITMQ_URL
+  value: "amqp://$(RABBITMQ_USER):$(RABBITMQ_PASS)@{{ include "taiga.fullname" . }}-events-rabbitmq:5672/$(RABBITMQ_VHOST)?frameMax=131072&heartbeat=60#"
 
 {{- with .Values.global.extraEnv }}
 {{ toYaml . }}

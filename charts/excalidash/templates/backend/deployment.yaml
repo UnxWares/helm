@@ -139,8 +139,6 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /app/prisma
-            - name: uploads
-              mountPath: /app/uploads
             - name: tmp
               mountPath: /tmp
             {{- with $b.volumeMounts }}
@@ -155,9 +153,6 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
-        - name: uploads
-          emptyDir:
-            sizeLimit: 1Gi
         - name: tmp
           emptyDir:
             sizeLimit: 1Gi
