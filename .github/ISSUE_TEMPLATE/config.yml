@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/UnxWares/helm/security/advisories/new
+    about: Please report security issues privately (or email security@unxwares.com).
+  - name: Questions
+    url: mailto:opensource@unxwares.com
+    about: General questions about the charts.

@@ -1,0 +1,168 @@
+name: Lint and Test Charts
+
+on:
+    pull_request:
+        branches:
+            - main
+    workflow_dispatch:
+
+concurrency:
+    group: lint-test-${{ github.ref }}
+    cancel-in-progress: true
+
+permissions:
+    contents: read
+
+env:
+    KUBECONFORM_VERSION: v0.8.0
+    AH_VERSION: 1.23.0
+    HELM_DOCS_VERSION: 1.14.2
+    HELM_DOCS_SHA256: a8cf72ada34fad93285ba2a452b38bdc5bd52cc9a571236244ec31022928d6cc
+    SCHEMA_VERSION: 2.6.0
+    SCHEMA_SHA256: c3447c1be91b987678e70996451b6cf2169b9f44fea8fe670dc0f340281f11e8
+
+jobs:
+    lint:
+        name: Lint (helm ${{ matrix.helm }})
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                helm: [v3.22.1, v4.3.1]
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Install Helm
+              uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+              with:
+                  version: ${{ matrix.helm }}
+
+            - name: helm lint --strict
+              run: |
+                  status=0
+                  for chart in charts/*/; do
+                      helm lint --strict "$chart" || status=1
+                      for values in "$chart"ci/*-values.yaml; do
+                          [ -e "$values" ] || continue
+                          helm lint --strict "$chart" -f "$values" || status=1
+                      done
+                  done
+                  exit $status
+
+            - name: Install kubeconform
+              run: |
+                  cd "$RUNNER_TEMP"
+                  curl -fsSLO "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+                  curl -fsSLO "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/CHECKSUMS"
+                  grep ' kubeconform-linux-amd64.tar.gz$' CHECKSUMS | sha256sum -c -
+                  tar xzf kubeconform-linux-amd64.tar.gz kubeconform
+                  echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+            - name: Validate rendered manifests (kubeconform)
+              run: .github/scripts/kubeconform.sh 1.31.0 1.34.0
+
+    chart-testing:
+        name: chart-testing lint + install
+        runs-on: ubuntu-latest
+        needs: lint
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Install Helm
+              uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+              with:
+                  version: v3.22.1
+
+            - name: Set up Python
+              uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+              with:
+                  python-version: "3.13"
+
+            - name: Set up chart-testing
+              uses: helm/chart-testing-action@720270857a28afd41e2426521a7801db09e9b510 # v2.9.0
+              with:
+                  version: v3.15.0
+
+            - name: List changed charts
+              id: list-changed
+              run: |
+                  changed=$(ct list-changed --config ct.yaml)
+                  if [ -n "$changed" ]; then
+                      echo "changed=true" >> "$GITHUB_OUTPUT"
+                  fi
+
+            - name: ct lint
+              if: steps.list-changed.outputs.changed == 'true'
+              run: ct lint --config ct.yaml
+
+            - name: Create kind cluster
+              if: steps.list-changed.outputs.changed == 'true'
+              uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+
+            # Linted above but not installed, they need external prerequisites:
+            # laravel-generic needs the user's application image,
+            # openeverest-database-tools needs the OpenEverest operator and its DatabaseClusters.
+            - name: ct install
+              if: steps.list-changed.outputs.changed == 'true'
+              run: ct install --config ct.yaml --excluded-charts laravel-generic,openeverest-database-tools
+
+    artifacthub:
+        name: Artifact Hub metadata
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Install ah
+              run: |
+                  cd "$RUNNER_TEMP"
+                  curl -fsSLO "https://github.com/artifacthub/hub/releases/download/v${AH_VERSION}/ah_${AH_VERSION}_linux_amd64.tar.gz"
+                  curl -fsSLO "https://github.com/artifacthub/hub/releases/download/v${AH_VERSION}/ah_${AH_VERSION}_checksums.txt"
+                  grep " ah_${AH_VERSION}_linux_amd64.tar.gz$" "ah_${AH_VERSION}_checksums.txt" | sha256sum -c -
+                  tar xzf "ah_${AH_VERSION}_linux_amd64.tar.gz" ah
+                  echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+            - name: ah lint
+              run: ah lint --kind helm --path charts
+
+    docs:
+        name: Generated schemas and READMEs
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Install helm-docs and helm-values-schema-json
+              run: |
+                  cd "$RUNNER_TEMP"
+                  curl -fsSLO "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz"
+                  echo "${HELM_DOCS_SHA256}  helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz" | sha256sum -c -
+                  tar xzf "helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz" helm-docs
+                  curl -fsSLO "https://github.com/losisin/helm-values-schema-json/releases/download/v${SCHEMA_VERSION}/helm-values-schema-json_${SCHEMA_VERSION}_linux_amd64.tgz"
+                  echo "${SCHEMA_SHA256}  helm-values-schema-json_${SCHEMA_VERSION}_linux_amd64.tgz" | sha256sum -c -
+                  tar xzf "helm-values-schema-json_${SCHEMA_VERSION}_linux_amd64.tgz" schema
+                  echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+            - name: Regenerate
+              run: SCHEMA=schema ./generate-schemas.sh
+
+            - name: Check for differences
+              run: |
+                  if [ -n "$(git status --porcelain charts)" ]; then
+                      git status --short charts
+                      git diff charts
+                      echo "::error::values.schema.json or README.md is out of date: run ./generate-schemas.sh and commit the result"
+                      exit 1
+                  fi
