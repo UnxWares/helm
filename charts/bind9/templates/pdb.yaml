@@ -1,0 +1,17 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "bind9.fullname" . }}
+  labels:
+    {{- include "bind9.labels" . | nindent 4 }}
+spec:
+  {{- if not (kindIs "invalid" .Values.podDisruptionBudget.maxUnavailable) }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "bind9.selectorLabels" . | nindent 6 }}
+{{- end }}

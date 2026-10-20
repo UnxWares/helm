@@ -1,0 +1,193 @@
+# Bind9 Helm Chart
+
+{{ template "chart.badgesSection" . }}
+
+A flexible and production-ready Helm chart for running the [ISC BIND 9](https://www.isc.org/bind/) DNS server on Kubernetes,
+with the official `internetsystemsconsortium/bind9` image.
+
+## Features
+
+- Authoritative or recursive DNS, configured with your own `named.conf` and zone files
+- **Hardened**: named binds port 53 then runs as the `bind` user (uid 53) with only `NET_BIND_SERVICE`; read-only root filesystem, seccomp `RuntimeDefault`, no service account token
+- Optional persistence for `/var/lib/bind` (dynamic zones, journals, DNSSEC keys)
+- Prometheus metrics through the `bind_exporter` sidecar and an optional ServiceMonitor
+- NodePort / LoadBalancer exposure, PodDisruptionBudget, NetworkPolicy, topology spread, HPA
+- `helm test` checks that the server answers over UDP and TCP
+
+## Installation
+
+```bash
+helm repo add unxwares https://helm.unxwares.studio
+helm repo update
+helm install my-dns unxwares/bind9 --namespace dns-system --create-namespace
+```
+
+Charts are signed: see [verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures).
+
+## Configuration examples
+
+Zone files from `bind.zones` are mounted as `/etc/bind/<key>.zone`. Keep `directory "/var/cache/bind";` in the options:
+it is the only writable working directory.
+
+### Authoritative DNS server with zones
+
+```yaml
+bind:
+  namedConf: |
+    options {
+      directory "/var/cache/bind";
+      listen-on { any; };
+      listen-on-v6 { any; };
+      recursion no;
+      allow-transfer { none; };
+      version none;
+    };
+
+    zone "example.com" {
+      type primary;
+      file "/etc/bind/example-com.zone";
+    };
+
+  zones:
+    example-com: |
+      $TTL 3600
+      @       IN      SOA     ns1.example.com. admin.example.com. (
+                              2026102001 ; Serial
+                              3600       ; Refresh
+                              900        ; Retry
+                              604800     ; Expire
+                              86400 )    ; Minimum TTL
+
+      @       IN      NS      ns1.example.com.
+      @       IN      A       192.0.2.1
+      ns1     IN      A       192.0.2.1
+      www     IN      A       192.0.2.10
+      mail    IN      A       192.0.2.20
+      @       IN      MX  10  mail.example.com.
+```
+
+### Forwarding resolver for internal clients
+
+```yaml
+bind:
+  namedConf: |
+    options {
+      directory "/var/cache/bind";
+      listen-on { any; };
+      recursion yes;
+      allow-recursion { 10.0.0.0/8; 172.16.0.0/12; 192.168.0.0/16; };
+      forwarders {
+        9.9.9.9;
+        149.112.112.112;
+      };
+      version none;
+    };
+```
+
+Never open recursion to the Internet.
+
+### Public authoritative server behind a load balancer
+
+```yaml
+replicaCount: 3
+service:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+podDisruptionBudget:
+  enabled: true
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: bind9
+```
+
+### With persistence (dynamic zones, DNSSEC keys)
+
+```yaml
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 5Gi
+  storageClass: "standard"
+```
+
+### With additional volumes
+
+```yaml
+volumes:
+  - name: custom-config
+    configMap:
+      name: custom-config
+
+volumeMounts:
+  - name: custom-config
+    mountPath: /etc/bind/custom.conf
+    subPath: custom.conf
+    readOnly: true
+```
+
+### NodePort service for external access
+
+```yaml
+service:
+  type: NodePort
+  ports:
+    dnsTcpNodePort: 30053
+    dnsUdpNodePort: 30053
+```
+
+### Metrics
+
+```yaml
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
+```
+
+## Upgrading
+
+### To 2026.10.1
+
+- **Image**: the default tag is now `9.20`, ISC's current stable (ESV) branch. `9.21` is the development branch;
+  set `image.tag: "9.21"` to keep it.
+- **Privileges**: named now runs as `bind` (uid 53) after binding port 53. Files in an existing `/var/lib/bind` volume
+  are made group-accessible through `fsGroup: 53`. If you set custom `podSecurityContext`/`securityContext` values,
+  compare them with the new defaults.
+- **Working directory**: named runs from `/var/cache/bind` (emptyDir). Make sure your `options` use
+  `directory "/var/cache/bind";` and that writable files (journals, keys) live under `/var/lib/bind`.
+- **rndc** is no longer exposed by the Service: set `service.exposeRndc: true` if you need it.
+- **ServiceMonitor** now requires `metrics.enabled: true` and is skipped when the Prometheus Operator CRD is absent.
+  `metrics.serviceMonitor.enabled` now defaults to `false`.
+
+## Troubleshooting
+
+```bash
+# Check the configuration and a zone file
+kubectl exec -n dns-system deploy/my-dns-bind9 -c bind9 -- named-checkconf /etc/bind/named.conf
+kubectl exec -n dns-system deploy/my-dns-bind9 -c bind9 -- named-checkzone example.com /etc/bind/example-com.zone
+
+# Query the server
+kubectl exec -n dns-system deploy/my-dns-bind9 -c bind9 -- dig @127.0.0.1 www.example.com
+```
+
+- **`the working directory is not writable`**: add `directory "/var/cache/bind";` to `options`.
+- **`permission denied` on files under /var/lib/bind**: the files must be readable/writable by uid or gid 53.
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+## Credits
+
+See [CREDITS.md](CREDITS.md). Thanks to Pierre Gindraud ([@Turgon37](https://github.com/Turgon37)) and
+Kostiantyn Astakhov ([@kastakhov](https://github.com/kastakhov)) for their contributions.
+
+## License
+
+The chart is released under the MIT license. BIND 9 is licensed under the MPL-2.0.

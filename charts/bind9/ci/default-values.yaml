@@ -1,0 +1,27 @@
+metrics:
+  enabled: true
+podDisruptionBudget:
+  enabled: false
+networkPolicy:
+  enabled: true
+bind:
+  namedConf: |
+    options {
+      directory "/var/cache/bind";
+      listen-on { any; };
+      listen-on-v6 { any; };
+      recursion no;
+      allow-transfer { none; };
+      version none;
+    };
+    zone "example.test" {
+      type primary;
+      file "/etc/bind/example-test.zone";
+    };
+  zones:
+    example-test: |
+      $TTL 3600
+      @   IN SOA ns1.example.test. hostmaster.example.test. ( 2026102001 3H 15 1W 3H )
+      @   IN NS  ns1.example.test.
+      ns1 IN A   192.0.2.1
+      www IN A   192.0.2.10

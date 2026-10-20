@@ -1,123 +1,174 @@
-# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+# -- Number of Bind9 replicas. With `persistence.enabled` and a ReadWriteOnce volume, keep 1.
 replicaCount: 1
 
-# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
-  repository: internetsystemsconsortium/bind9
-  # This sets the pull policy for images.
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "9.21"
+  # -- Bind9 image repository (ISC official image).
+  repository: docker.io/internetsystemsconsortium/bind9
+  # -- Image pull policy.
+  pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
+  # -- Image tag (defaults to the chart appVersion, the current ISC stable branch). `9.21` is ISC's development branch.
+  tag: ""
+  # -- Image digest (`sha256:...`). When set, it takes precedence over the tag.
+  digest: ""
 
-# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+# -- Secrets for pulling images from a private registry.
 imagePullSecrets: []
-# This is to override the chart name.
+# -- Override the chart name.
 nameOverride: ""
+# -- Override the full resource names.
 fullnameOverride: ""
 
-# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
 serviceAccount:
-  # Specifies whether a service account should be created
+  # -- Create a dedicated service account.
   create: true
-  # Automatically mount a ServiceAccount's API credentials?
-  automount: true
-  # Annotations to add to the service account
+  # -- Bind9 never talks to the Kubernetes API: the token is not mounted.
+  automount: false
+  # -- Service account annotations.
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
+  # -- Service account name (generated when empty).
   name: ""
 
-# This is for setting Kubernetes Annotations to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+# -- Pod annotations.
 podAnnotations: {}
-# This is for setting Kubernetes Labels to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+# -- Pod labels.
 podLabels: {}
 
-podSecurityContext:
-  runAsUser: 0
-  runAsGroup: 0
-  fsGroup: 101
-  supplementalGroups:
-    - 6
+# -- Pod security context. named starts as root only to bind port 53, then switches to the `bind` user (uid 53) with `-u bind`.
+podSecurityContext:  # @schema skipProperties:true
+  fsGroup: 53
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
 
-securityContext:
+# -- Bind9 container security context: every capability is dropped except the three named needs to bind port 53 and switch user.
+securityContext:  # @schema skipProperties:true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
   capabilities:
+    drop:
+      - ALL
     add:
       - NET_BIND_SERVICE
+      - SETUID
+      - SETGID
 
-# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
-  annotations: {}
+  # -- Create the DNS service.
   enabled: true
-  # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
-  type: ClusterIP
-  # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+  # -- Service annotations (e.g. MetalLB or cloud load balancer settings).
+  annotations: {}
+  # -- Service type.
+  type: ClusterIP  # @schema enum:[ClusterIP, NodePort, LoadBalancer]
+  # -- Load balancer IP, when supported by the provider.
+  loadBalancerIP: ""
+  # -- Source ranges allowed by the load balancer.
+  loadBalancerSourceRanges: []
+  # -- `Local` preserves client source IPs (needed by ACLs such as allow-transfer).
+  externalTrafficPolicy: ""
+  # -- Expose the rndc control port through the service. Off by default: rndc is an administrative channel.
+  exposeRndc: false
   ports:
+    # -- DNS TCP port.
     dnsTcp: 53
+    # -- DNS UDP port.
     dnsUdp: 53
+    # -- rndc port (only exposed with `service.exposeRndc`).
     rndc: 953
-    # If using a NodePort, you can set the port here
-    dnsTcpNodePort: null
-    dnsUdpNodePort: null
-    rndcNodePort: null
+    # -- Prometheus exporter port.
     metrics: 9119
+    # -- NodePort for DNS over TCP.
+    dnsTcpNodePort: null  # @schema type:[integer, null]
+    # -- NodePort for DNS over UDP.
+    dnsUdpNodePort: null  # @schema type:[integer, null]
+    # -- NodePort for rndc.
+    rndcNodePort: null  # @schema type:[integer, null]
+    # -- NodePort for the metrics port.
+    metricsNodePort: null  # @schema type:[integer, null]
 
-resources: {}
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+# -- Bind9 container resources.
+resources:  # @schema skipProperties:true
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 512Mi
 
-# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
-livenessProbe:
+# -- Liveness probe (dig exits 0 as soon as the server answers, whatever the answer).
+livenessProbe:  # @schema skipProperties:true
   exec:
     command:
-      - /bin/sh
-      - -c
-      - "dig @127.0.0.1 localhost"
+      - dig
+      - +time=2
+      - +tries=1
+      - "@127.0.0.1"
+      - version.bind
+      - txt
+      - chaos
   initialDelaySeconds: 10
-  periodSeconds: 10
-
-readinessProbe:
+  periodSeconds: 15
+  timeoutSeconds: 5
+# -- Readiness probe.
+readinessProbe:  # @schema skipProperties:true
   exec:
     command:
-      - /bin/sh
-      - -c
-      - "dig @127.0.0.1 localhost"
-  initialDelaySeconds: 10
+      - dig
+      - +time=2
+      - +tries=1
+      - "@127.0.0.1"
+      - version.bind
+      - txt
+      - chaos
+  initialDelaySeconds: 5
   periodSeconds: 10
+  timeoutSeconds: 5
 
-# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
+  # -- Enable the HorizontalPodAutoscaler (static zones only: no persistence).
   enabled: false
   minReplicas: 1
-  maxReplicas: 100
+  maxReplicas: 10
   targetCPUUtilizationPercentage: 80
 
+podDisruptionBudget:
+  # -- Create a PodDisruptionBudget (useful with 2+ replicas).
+  enabled: false
+  # -- Minimum available pods.
+  minAvailable: 1
+  # -- Maximum unavailable pods (used instead of minAvailable when set).
+  maxUnavailable: null  # @schema type:[integer, string, null]
+
 metrics:
+  # -- Run the Prometheus bind_exporter sidecar (reads the statistics channel on 127.0.0.1:8053).
   enabled: false
 
-  # list of statistics to collect
+  # -- Statistics groups to collect (`tasks` is deprecated since bind_exporter 0.8.0).
   statsGroups:
-  - server
-  - tasks
-  - view
+    - server
+    - view
 
   image:
-    repository: prometheuscommunity/bind-exporter
-    pullPolicy: IfNotPresent
+    # -- Exporter image repository.
+    repository: docker.io/prometheuscommunity/bind-exporter
+    # -- Exporter image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
+    # -- Exporter image tag.
     tag: v0.8.0
+    # -- Exporter image digest (takes precedence over the tag).
+    digest: ""
 
-  securityContext:
+  # -- Exporter security context (the image runs as `nobody`).
+  securityContext:  # @schema skipProperties:true
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
     allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
     capabilities:
       drop:
         - ALL
 
-  livenessProbe:
+  # -- Exporter liveness probe.
+  livenessProbe:  # @schema skipProperties:true
     failureThreshold: 3
     httpGet:
       path: /
@@ -126,7 +177,8 @@ metrics:
     periodSeconds: 10
     successThreshold: 1
     timeoutSeconds: 1
-  readinessProbe:
+  # -- Exporter readiness probe.
+  readinessProbe:  # @schema skipProperties:true
     failureThreshold: 3
     httpGet:
       path: /
@@ -136,69 +188,104 @@ metrics:
     successThreshold: 1
     timeoutSeconds: 1
 
-  resources: {}
+  # -- Exporter resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
 
   serviceMonitor:
-    # Toggle the ServiceMonitor true if you have Prometheus Operator installed and configured
-    enabled: true
+    # -- Create a Prometheus Operator ServiceMonitor (requires `metrics.enabled`; rendered only when the CRD exists).
+    enabled: false
+    # -- Extra ServiceMonitor labels (e.g. `release: kube-prometheus-stack`).
+    labels: {}
+    # -- ServiceMonitor endpoints.
     endpoints:
-    - port: metrics
-      scheme: http
+      - port: metrics
+        scheme: http
 
 # General Bind9 configuration
 bind:
-  # Extra args to pass to named
+  # -- Extra arguments passed to named (after `-u bind -g`).
   args: []
 
-  # This is for setting up the named.conf file more information can be found here: https://www.isc.org/bind-9/documentation/configuration-guide/named.conf/
+  # -- named.conf content. The default is a minimal authoritative-only server: add your zones (see `bind.zones`).
+  # Keep `directory "/var/cache/bind";`: it is the only writable working directory.
+  # https://bind9.readthedocs.io/en/stable/reference.html
   namedConf: |
-    # options {
-    #   directory "/var/cache/bind";
-    #   listen-on-v6 { any; };
-    #   listen-on { any; };
-    #   forwarders {
-    #     9.9.9.9;
-    #     1.1.1.1;
-    #   };
+    options {
+      directory "/var/cache/bind";
+      listen-on { any; };
+      listen-on-v6 { any; };
+      // Authoritative only: no recursion, no zone transfers unless allowed per zone.
+      recursion no;
+      allow-transfer { none; };
+      // Do not reveal the version in CH TXT version.bind queries.
+      version none;
+    };
+    # zone "example.com" {
+    #   type primary;
+    #   file "/etc/bind/example-com.zone";
     # };
 
-  # This is for setting up the zones more information can be found here: https://www.isc.org/bind-9/documentation/configuration-guide/zones/
+  # -- Zone files, mounted as `/etc/bind/<key>.zone`.
   zones: {}
-    # sub-example-com: |
-      # $TTL 3D
-      # @       IN      SOA     ns1.sub-example.com. hostmaster.sub-example.com. (
-      #                         2020032501 ; Serial
-      #                         3H ; Refresh
-      #                         15 ; Retry
-      #                         1W ; Expire
-      #                         3H ; Negative Cache TTL
-      # )
-      # @       IN      NS      ns1.sub-example.com.
-      # @       IN      A       192.168.1.1
-      # www     IN      CNAME   sub-example.com.
+    # example-com: |
+    #   $TTL 3D
+    #   @       IN      SOA     ns1.example.com. hostmaster.example.com. (
+    #                           2026102001 ; Serial
+    #                           3H ; Refresh
+    #                           15 ; Retry
+    #                           1W ; Expire
+    #                           3H ; Negative Cache TTL
+    #   )
+    #   @       IN      NS      ns1.example.com.
+    #   ns1     IN      A       192.0.2.1
+    #   www     IN      CNAME   example.com.
 
-# Persistence configuration for /var/lib/bind
+# Persistence for /var/lib/bind (dynamic zones, journals, DNSSEC keys)
 persistence:
+  # -- Persist /var/lib/bind in a PVC. Without it an emptyDir is used.
   enabled: false
+  # -- Use an existing PVC.
+  existingClaim: ""
+  # -- Access mode.
   accessMode: ReadWriteOnce
+  # -- Volume size.
   size: 1Gi
+  # -- Storage class (empty uses the cluster default).
   storageClass: ""
+  # -- Size limit of the emptyDir used when persistence is disabled.
   emptyDirSizeLimit: ""
 
-# Additional volumes on the output Deployment definition.
+# -- Additional volumes on the pod.
 volumes: []
   # - name: custom-config
   #   configMap:
   #     name: custom-config
 
-# Additional volumeMounts on the Bind9 container.
+# -- Additional volumeMounts on the Bind9 container.
 volumeMounts: []
   # - name: custom-config
   #   mountPath: /etc/bind/custom.conf
   #   subPath: custom.conf
   #   readOnly: true
 
-# Node scheduling configuration
+networkPolicy:
+  # -- Create a NetworkPolicy: DNS stays open, rndc and metrics only accept the peers below.
+  enabled: false
+  # -- Peers allowed to reach rndc and metrics (e.g. your Prometheus namespace).
+  adminAllowedFrom: []
+
+# -- Priority class of the pods.
+priorityClassName: ""
+# -- Node selector.
 nodeSelector: {}
+# -- Tolerations.
 tolerations: []
+# -- Affinity rules.
 affinity: {}
+# -- Topology spread constraints.
+topologySpreadConstraints: []

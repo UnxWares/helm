@@ -1,34 +1,25 @@
-*************************************************************************
-Bind9 Helm Chart has been installed!
-*************************************************************************
+Bind9 {{ .Values.image.tag | default .Chart.AppVersion }} is deployed.
 
 Release Name: {{ .Release.Name }}
 Namespace:    {{ .Release.Namespace }}
 
-Your Bind9 deployment is now running. You can check the pods with:
+{{- if .Values.service.enabled }}
 
-  kubectl get pods -n {{ .Release.Namespace }}
+DNS service: {{ include "bind9.fullname" . }}.{{ .Release.Namespace }}.svc ({{ .Values.service.type }}, ports {{ .Values.service.ports.dnsUdp }}/udp and {{ .Values.service.ports.dnsTcp }}/tcp)
+{{- if .Values.service.exposeRndc }}
+rndc:        port {{ .Values.service.ports.rndc }}/tcp (protect it with a key and allow-list in `controls`)
+{{- end }}
+{{- end }}
 
-The service has been created:
+Query the server from inside the pod:
 
-  kubectl get svc -n {{ .Release.Namespace }}
+  kubectl exec -n {{ .Release.Namespace }} deploy/{{ include "bind9.fullname" . }} -c {{ .Chart.Name }} -- dig @127.0.0.1 <name>
 
-Ports exposed by the service:
-  - DNS TCP: 53
-  - DNS UDP: 53
-  - RNDC TCP: 953
+named runs as the unprivileged `bind` user (uid 53) once port 53 is bound.
+{{- if .Values.persistence.enabled }}
+Dynamic zones and journals are stored in /var/lib/bind (PVC: {{ .Values.persistence.existingClaim | default (printf "%s-pvc" (include "bind9.fullname" .)) }}).
+{{- end }}
+{{- if and .Values.metrics.serviceMonitor.enabled (not .Values.metrics.enabled) }}
 
-To test DNS resolution from inside the cluster, run:
-
-  POD=$(kubectl get pod -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ .Chart.Name }} -o jsonpath="{.items[0].metadata.name}")
-  kubectl exec -n {{ .Release.Namespace }} $POD -- dig @127.0.0.1 infra.unxwares.com
-
-If persistence is enabled, your zone files are stored in:
-
-  /var/lib/bind (PVC: {{ include "bind9.fullname" . }}-pvc)
-
-To uninstall Bind9:
-
-  helm uninstall {{ .Release.Name }} -n {{ .Release.Namespace }}
-
-*************************************************************************
+NOTE: metrics.serviceMonitor.enabled has no effect while metrics.enabled is false.
+{{- end }}

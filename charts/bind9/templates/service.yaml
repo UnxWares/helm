@@ -1,4 +1,5 @@
 {{- if .Values.service.enabled }}
+{{- $nodePorts := has .Values.service.type (list "NodePort" "LoadBalancer") }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -11,12 +12,24 @@ metadata:
 {{- end }}
 spec:
   type: {{ .Values.service.type }}
+  {{- if eq .Values.service.type "LoadBalancer" }}
+  {{- with .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  {{- with .Values.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  {{- if and .Values.service.externalTrafficPolicy $nodePorts }}
+  externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
+  {{- end }}
   ports:
     - name: dns-tcp
       port: {{ .Values.service.ports.dnsTcp }}
       targetPort: dns-tcp
       protocol: TCP
-      {{- if and .Values.service.ports.dnsTcpNodePort (ne .Values.service.type "ClusterIP") }}
+      {{- if and .Values.service.ports.dnsTcpNodePort $nodePorts }}
       nodePort: {{ .Values.service.ports.dnsTcpNodePort }}
       {{- end }}
 
@@ -24,25 +37,27 @@ spec:
       port: {{ .Values.service.ports.dnsUdp }}
       targetPort: dns-udp
       protocol: UDP
-      {{- if and .Values.service.ports.dnsUdpNodePort (ne .Values.service.type "ClusterIP") }}
+      {{- if and .Values.service.ports.dnsUdpNodePort $nodePorts }}
       nodePort: {{ .Values.service.ports.dnsUdpNodePort }}
       {{- end }}
 
+    {{- if .Values.service.exposeRndc }}
     - name: rndc
       port: {{ .Values.service.ports.rndc }}
       targetPort: rndc
       protocol: TCP
-      {{- if and .Values.service.ports.rndcNodePort (ne .Values.service.type "ClusterIP") }}
+      {{- if and .Values.service.ports.rndcNodePort $nodePorts }}
       nodePort: {{ .Values.service.ports.rndcNodePort }}
       {{- end }}
+    {{- end }}
 
     {{- if .Values.metrics.enabled }}
     - name: metrics
       port: {{ .Values.service.ports.metrics }}
       targetPort: metrics
       protocol: TCP
-      {{- if and .Values.service.ports.rndcNodePort (ne .Values.service.type "ClusterIP") }}
-      nodePort: {{ .Values.service.ports.rndcNodePort }}
+      {{- if and .Values.service.ports.metricsNodePort $nodePorts }}
+      nodePort: {{ .Values.service.ports.metricsNodePort }}
       {{- end }}
     {{- end }}
 

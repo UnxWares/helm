@@ -1,92 +1,110 @@
 # Bind9 Helm Chart
 
-A flexible and production-ready Helm chart for deploying ISC Bind9 DNS server on Kubernetes.
+![Version: 2026.10.1](https://img.shields.io/badge/Version-2026.10.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 9.20](https://img.shields.io/badge/AppVersion-9.20-informational?style=flat-square)
 
-## Overview
-
-This Helm chart provides a complete deployment solution for running ISC Bind9, one of the most widely used DNS servers, on Kubernetes. It supports authoritative DNS, zone management, and includes comprehensive configuration options for production deployments.
+A flexible and production-ready Helm chart for running the [ISC BIND 9](https://www.isc.org/bind/) DNS server on Kubernetes,
+with the official `internetsystemsconsortium/bind9` image.
 
 ## Features
 
-- **Production-Ready DNS Server**: Full-featured ISC Bind9 deployment
-- **Zone Management**: Easy configuration of DNS zones through Helm values
-- **Persistence Support**: Optional persistent storage for zone files and configuration
-- **Security Hardening**: Proper security contexts and capabilities
-- **Health Checks**: Built-in liveness and readiness probes
-- **Flexible Service Configuration**: Support for ClusterIP, NodePort, and LoadBalancer
-- **Auto-scaling**: Optional horizontal pod autoscaling
-- **Kubernetes-Native**: Full integration with Kubernetes features
+- Authoritative or recursive DNS, configured with your own `named.conf` and zone files
+- **Hardened**: named binds port 53 then runs as the `bind` user (uid 53) with only `NET_BIND_SERVICE`; read-only root filesystem, seccomp `RuntimeDefault`, no service account token
+- Optional persistence for `/var/lib/bind` (dynamic zones, journals, DNSSEC keys)
+- Prometheus metrics through the `bind_exporter` sidecar and an optional ServiceMonitor
+- NodePort / LoadBalancer exposure, PodDisruptionBudget, NetworkPolicy, topology spread, HPA
+- `helm test` checks that the server answers over UDP and TCP
 
 ## Installation
-
-### Add the Helm Repository
 
 ```bash
 helm repo add unxwares https://helm.unxwares.studio
 helm repo update
+helm install my-dns unxwares/bind9 --namespace dns-system --create-namespace
 ```
 
-### Install the Chart
+Charts are signed: see [verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures).
 
-```bash
-helm install my-dns unxwares/bind9 \
-  --namespace dns-system \
-  --create-namespace
-```
+## Configuration examples
 
-## Configuration
+Zone files from `bind.zones` are mounted as `/etc/bind/<key>.zone`. Keep `directory "/var/cache/bind";` in the options:
+it is the only writable working directory.
 
-### Basic DNS Forwarder Example
+### Authoritative DNS server with zones
 
 ```yaml
 bind:
   namedConf: |
     options {
       directory "/var/cache/bind";
+      listen-on { any; };
       listen-on-v6 { any; };
-      listen-on { any; };
-      forwarders {
-        9.9.9.9;
-        1.1.1.1;
-      };
-      allow-recursion { any; };
-    };
-```
-
-### Authoritative DNS Server with Zones
-
-```yaml
-bind:
-  namedConf: |
-    options {
-      directory "/var/cache/bind";
-      listen-on { any; };
+      recursion no;
+      allow-transfer { none; };
+      version none;
     };
 
     zone "example.com" {
-      type master;
-      file "/etc/bind/zones/example-com";
+      type primary;
+      file "/etc/bind/example-com.zone";
     };
 
   zones:
     example-com: |
       $TTL 3600
       @       IN      SOA     ns1.example.com. admin.example.com. (
-                              2024020101 ; Serial
+                              2026102001 ; Serial
                               3600       ; Refresh
                               900        ; Retry
                               604800     ; Expire
                               86400 )    ; Minimum TTL
 
       @       IN      NS      ns1.example.com.
-      @       IN      A       192.168.1.1
-      ns1     IN      A       192.168.1.1
-      www     IN      A       192.168.1.10
-      mail    IN      A       192.168.1.20
+      @       IN      A       192.0.2.1
+      ns1     IN      A       192.0.2.1
+      www     IN      A       192.0.2.10
+      mail    IN      A       192.0.2.20
       @       IN      MX  10  mail.example.com.
 ```
 
-### With Persistence
+### Forwarding resolver for internal clients
+
+```yaml
+bind:
+  namedConf: |
+    options {
+      directory "/var/cache/bind";
+      listen-on { any; };
+      recursion yes;
+      allow-recursion { 10.0.0.0/8; 172.16.0.0/12; 192.168.0.0/16; };
+      forwarders {
+        9.9.9.9;
+        149.112.112.112;
+      };
+      version none;
+    };
+```
+
+Never open recursion to the Internet.
+
+### Public authoritative server behind a load balancer
+
+```yaml
+replicaCount: 3
+service:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+podDisruptionBudget:
+  enabled: true
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: bind9
+```
+
+### With persistence (dynamic zones, DNSSEC keys)
 
 ```yaml
 persistence:
@@ -96,7 +114,7 @@ persistence:
   storageClass: "standard"
 ```
 
-### With Additional Volumes
+### With additional volumes
 
 ```yaml
 volumes:
@@ -111,7 +129,7 @@ volumeMounts:
     readOnly: true
 ```
 
-### NodePort Service for External Access
+### NodePort service for external access
 
 ```yaml
 service:
@@ -119,326 +137,134 @@ service:
   ports:
     dnsTcpNodePort: 30053
     dnsUdpNodePort: 30053
-    rndcNodePort: 30054
 ```
-
-## Configuration Options
-
-### Global Settings
-
-| Parameter             | Description                        | Default |
-| --------------------- | ---------------------------------- | ------- |
-| `replicaCount`        | Number of replicas                 | `1`     |
-| `image.repository`    | Container image repository         | `internetsystemsconsortium/bind9` |
-| `image.tag`           | Container image tag                | `9.21`  |
-| `image.pullPolicy`    | Image pull policy                  | `IfNotPresent` |
-| `imagePullSecrets`    | Image pull secrets                 | `[]`    |
-| `nameOverride`        | Override chart name                | `""`    |
-| `fullnameOverride`    | Override full chart name           | `""`    |
-
-### Pod Configuration
-
-| Parameter              | Description                    | Default |
-| ---------------------- | ------------------------------ | ------- |
-| `podAnnotations`       | Pod annotations                | `{}`    |
-| `podLabels`            | Pod labels                     | `{}`    |
-| `podSecurityContext`   | Pod security context           | See `values.yaml` |
-| `securityContext`      | Bind9 container security context | See `values.yaml` |
-
-### Service Account
-
-| Parameter                        | Description                      | Default |
-| -------------------------------- | -------------------------------- | ------- |
-| `serviceAccount.create`          | Create service account           | `true`  |
-| `serviceAccount.automount`       | Auto-mount API credentials       | `true`  |
-| `serviceAccount.annotations`     | Service account annotations      | `{}`    |
-| `serviceAccount.name`            | Service account name             | `""`    |
-
-### Service Configuration
-
-| Parameter                   | Description                  | Default     |
-| --------------------------- | ---------------------------- | ----------- |
-| `service.enabled`           | Enable service creation      | `true`      |
-| `service.annotations`       | Service annotations          | `{}`        |
-| `service.type`              | Service type                 | `ClusterIP` |
-| `service.ports.dnsTcp`      | DNS TCP port                 | `53`        |
-| `service.ports.dnsUdp`      | DNS UDP port                 | `53`        |
-| `service.ports.rndc`        | RNDC control port            | `953`       |
-| `service.ports.metrics`     | Metrics port                 | `9119`      |
-| `service.ports.dnsTcpNodePort` | NodePort for DNS TCP      | `null`      |
-| `service.ports.dnsUdpNodePort` | NodePort for DNS UDP      | `null`      |
-| `service.ports.rndcNodePort`   | NodePort for RNDC         | `null`      |
 
 ### Metrics
 
-| Parameter                               | Description                    | Default |
-| --------------------------------------- | ------------------------------ | ------- |
-| `metrics.enabled`                       | Enable Bind exporter sidecar   | `false` |
-| `metrics.statsGroups`                   | Statistics groups to collect   | `[server,tasks,view]` |
-| `metrics.image.repository`              | Exporter image repository      | `prometheuscommunity/bind-exporter` |
-| `metrics.image.tag`                     | Exporter image tag             | `v0.8.0` |
-| `metrics.image.pullPolicy`              | Exporter image pull policy     | `IfNotPresent` |
-| `metrics.securityContext`               | Exporter security context      | See `values.yaml` |
-| `metrics.livenessProbe`                 | Exporter liveness probe        | See `values.yaml` |
-| `metrics.readinessProbe`                | Exporter readiness probe       | See `values.yaml` |
-| `metrics.resources`                     | Exporter resource requests and limits | `{}` |
-| `metrics.serviceMonitor.enabled`        | Enable ServiceMonitor          | `true` |
-| `metrics.serviceMonitor.endpoints`      | ServiceMonitor endpoints       | See `values.yaml` |
-
-### Bind9 Configuration
-
-| Parameter          | Description                          | Default |
-| ------------------ | ------------------------------------ | ------- |
-| `bind.args`        | Additional arguments for named       | `[]`    |
-| `bind.namedConf`   | Content of named.conf file           | `""`    |
-| `bind.zones`       | DNS zone files (key-value pairs)     | `{}`    |
-
-### Persistence
-
-| Parameter                      | Description                   | Default           |
-| ------------------------------ | ----------------------------- | ----------------- |
-| `persistence.enabled`          | Enable persistence            | `false`           |
-| `persistence.accessMode`       | Access mode                   | `ReadWriteOnce`   |
-| `persistence.size`             | Persistent volume size        | `1Gi`             |
-| `persistence.storageClass`     | Storage class                 | `""`              |
-| `persistence.emptyDirSizeLimit`| EmptyDir size limit           | `""`              |
-
-### Volumes and Storage
-
-| Parameter       | Description                              | Default |
-| --------------- | ---------------------------------------- | ------- |
-| `volumes`       | Additional volumes on the pod            | `[]`    |
-| `volumeMounts`  | Additional mounts on the Bind9 container | `[]`    |
-
-### Resources
-
-| Parameter                  | Description              | Default |
-| -------------------------- | ------------------------ | ------- |
-| `resources.limits.cpu`     | CPU limit                | `""`    |
-| `resources.limits.memory`  | Memory limit             | `""`    |
-| `resources.requests.cpu`   | CPU request              | `""`    |
-| `resources.requests.memory`| Memory request           | `""`    |
-
-### Health Probes
-
-| Parameter                             | Description                     | Default    |
-| ------------------------------------- | ------------------------------- | ---------- |
-| `livenessProbe.initialDelaySeconds`   | Liveness probe initial delay    | `10`       |
-| `livenessProbe.periodSeconds`         | Liveness probe period           | `10`       |
-| `readinessProbe.initialDelaySeconds`  | Readiness probe initial delay   | `10`       |
-| `readinessProbe.periodSeconds`        | Readiness probe period          | `10`       |
-
-### Autoscaling
-
-| Parameter                                   | Description                        | Default |
-| ------------------------------------------- | ---------------------------------- | ------- |
-| `autoscaling.enabled`                       | Enable autoscaling                 | `false` |
-| `autoscaling.minReplicas`                   | Minimum replicas                   | `1`     |
-| `autoscaling.maxReplicas`                   | Maximum replicas                   | `100`   |
-| `autoscaling.targetCPUUtilizationPercentage`| Target CPU utilization            | `80`    |
-
-### Node Scheduling
-
-| Parameter       | Description         | Default |
-| --------------- | ------------------- | ------- |
-| `nodeSelector`  | Node selector       | `{}`    |
-| `tolerations`   | Pod tolerations     | `[]`    |
-| `affinity`      | Pod affinity        | `{}`    |
-
-## Examples
-
-### Internal DNS Server for Kubernetes Cluster
-
 ```yaml
-replicaCount: 2
-
-service:
-  type: ClusterIP
-
-bind:
-  namedConf: |
-    options {
-      directory "/var/cache/bind";
-      listen-on { any; };
-      allow-recursion { 10.0.0.0/8; };
-      forwarders {
-        8.8.8.8;
-        8.8.4.4;
-      };
-    };
-
-    zone "cluster.local" {
-      type master;
-      file "/etc/bind/zones/cluster-local";
-    };
-
-  zones:
-    cluster-local: |
-      $TTL 300
-      @       IN      SOA     ns1.cluster.local. admin.cluster.local. (
-                              2024020101
-                              3600
-                              900
-                              604800
-                              300 )
-
-      @       IN      NS      ns1.cluster.local.
-      ns1     IN      A       10.0.1.10
-
-persistence:
+metrics:
   enabled: true
-  size: 2Gi
-
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 100m
-    memory: 128Mi
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
 ```
 
-### Public Authoritative DNS Server
+## Upgrading
 
-```yaml
-replicaCount: 3
+### To 2026.10.1
 
-service:
-  type: LoadBalancer
-  annotations:
-    service.beta.kubernetes.io/aws-load-balancer-type: nlb
-
-bind:
-  namedConf: |
-    options {
-      directory "/var/cache/bind";
-      listen-on { any; };
-      recursion no;
-    };
-
-    zone "example.com" {
-      type master;
-      file "/etc/bind/zones/example-com";
-    };
-
-  zones:
-    example-com: |
-      $TTL 3600
-      @       IN      SOA     ns1.example.com. admin.example.com. (
-                              2024020101
-                              3600
-                              900
-                              604800
-                              86400 )
-
-      @       IN      NS      ns1.example.com.
-      @       IN      NS      ns2.example.com.
-      ns1     IN      A       198.51.100.10
-      ns2     IN      A       198.51.100.11
-      @       IN      A       198.51.100.20
-      www     IN      A       198.51.100.20
-
-persistence:
-  enabled: true
-  size: 10Gi
-  storageClass: fast-ssd
-
-affinity:
-  podAntiAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-    - labelSelector:
-        matchExpressions:
-        - key: app.kubernetes.io/name
-          operator: In
-          values:
-          - bind9
-      topologyKey: kubernetes.io/hostname
-```
+- **Image**: the default tag is now `9.20`, ISC's current stable (ESV) branch. `9.21` is the development branch;
+  set `image.tag: "9.21"` to keep it.
+- **Privileges**: named now runs as `bind` (uid 53) after binding port 53. Files in an existing `/var/lib/bind` volume
+  are made group-accessible through `fsGroup: 53`. If you set custom `podSecurityContext`/`securityContext` values,
+  compare them with the new defaults.
+- **Working directory**: named runs from `/var/cache/bind` (emptyDir). Make sure your `options` use
+  `directory "/var/cache/bind";` and that writable files (journals, keys) live under `/var/lib/bind`.
+- **rndc** is no longer exposed by the Service: set `service.exposeRndc: true` if you need it.
+- **ServiceMonitor** now requires `metrics.enabled: true` and is skipped when the Prometheus Operator CRD is absent.
+  `metrics.serviceMonitor.enabled` now defaults to `false`.
 
 ## Troubleshooting
 
-### Check Pod Status
-
 ```bash
-kubectl get pods -n dns-system
-kubectl logs -n dns-system <pod-name>
+# Check the configuration and a zone file
+kubectl exec -n dns-system deploy/my-dns-bind9 -c bind9 -- named-checkconf /etc/bind/named.conf
+kubectl exec -n dns-system deploy/my-dns-bind9 -c bind9 -- named-checkzone example.com /etc/bind/example-com.zone
+
+# Query the server
+kubectl exec -n dns-system deploy/my-dns-bind9 -c bind9 -- dig @127.0.0.1 www.example.com
 ```
 
-### Test DNS Resolution
+- **`the working directory is not writable`**: add `directory "/var/cache/bind";` to `options`.
+- **`permission denied` on files under /var/lib/bind**: the files must be readable/writable by uid or gid 53.
 
-```bash
-# From within the cluster
-kubectl run -it --rm debug --image=busybox --restart=Never -- nslookup example.com <service-ip>
+## Requirements
 
-# From host (if using NodePort)
-dig @<node-ip> -p 30053 example.com
-```
+Kubernetes: `>=1.27.0-0`
 
-### Verify Configuration
+## Values
 
-```bash
-# View rendered configuration
-helm template my-dns unxwares/bind9 -f values.yaml
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| affinity | object | `{}` | Affinity rules. |
+| autoscaling.enabled | bool | `false` | Enable the HorizontalPodAutoscaler (static zones only: no persistence). |
+| autoscaling.maxReplicas | int | `10` |  |
+| autoscaling.minReplicas | int | `1` |  |
+| autoscaling.targetCPUUtilizationPercentage | int | `80` |  |
+| bind.args | list | `[]` | Extra arguments passed to named (after `-u bind -g`). |
+| bind.namedConf | string | `"options {\n  directory \"/var/cache/bind\";\n  listen-on { any; };\n  listen-on-v6 { any; };\n  // Authoritative only: no recursion, no zone transfers unless allowed per zone.\n  recursion no;\n  allow-transfer { none; };\n  // Do not reveal the version in CH TXT version.bind queries.\n  version none;\n};\n# zone \"example.com\" {\n#   type primary;\n#   file \"/etc/bind/example-com.zone\";\n# };\n"` | named.conf content. The default is a minimal authoritative-only server: add your zones (see `bind.zones`). Keep `directory "/var/cache/bind";`: it is the only writable working directory. https://bind9.readthedocs.io/en/stable/reference.html |
+| bind.zones | object | `{}` | Zone files, mounted as `/etc/bind/<key>.zone`. |
+| fullnameOverride | string | `""` | Override the full resource names. |
+| image.digest | string | `""` | Image digest (`sha256:...`). When set, it takes precedence over the tag. |
+| image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
+| image.repository | string | `"docker.io/internetsystemsconsortium/bind9"` | Bind9 image repository (ISC official image). |
+| image.tag | string | `""` | Image tag (defaults to the chart appVersion, the current ISC stable branch). `9.21` is ISC's development branch. |
+| imagePullSecrets | list | `[]` | Secrets for pulling images from a private registry. |
+| livenessProbe | object | `{"exec":{"command":["dig","+time=2","+tries=1","@127.0.0.1","version.bind","txt","chaos"]},"initialDelaySeconds":10,"periodSeconds":15,"timeoutSeconds":5}` | Liveness probe (dig exits 0 as soon as the server answers, whatever the answer). |
+| metrics.enabled | bool | `false` | Run the Prometheus bind_exporter sidecar (reads the statistics channel on 127.0.0.1:8053). |
+| metrics.image.digest | string | `""` | Exporter image digest (takes precedence over the tag). |
+| metrics.image.pullPolicy | string | `"IfNotPresent"` | Exporter image pull policy. |
+| metrics.image.repository | string | `"docker.io/prometheuscommunity/bind-exporter"` | Exporter image repository. |
+| metrics.image.tag | string | `"v0.8.0"` | Exporter image tag. |
+| metrics.livenessProbe | object | `{"failureThreshold":3,"httpGet":{"path":"/","port":"metrics","scheme":"HTTP"},"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1}` | Exporter liveness probe. |
+| metrics.readinessProbe | object | `{"failureThreshold":3,"httpGet":{"path":"/","port":"metrics","scheme":"HTTP"},"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1}` | Exporter readiness probe. |
+| metrics.resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"32Mi"}}` | Exporter resources. |
+| metrics.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsGroup":65534,"runAsNonRoot":true,"runAsUser":65534}` | Exporter security context (the image runs as `nobody`). |
+| metrics.serviceMonitor.enabled | bool | `false` | Create a Prometheus Operator ServiceMonitor (requires `metrics.enabled`; rendered only when the CRD exists). |
+| metrics.serviceMonitor.endpoints | list | `[{"port":"metrics","scheme":"http"}]` | ServiceMonitor endpoints. |
+| metrics.serviceMonitor.labels | object | `{}` | Extra ServiceMonitor labels (e.g. `release: kube-prometheus-stack`). |
+| metrics.statsGroups | list | `["server","view"]` | Statistics groups to collect (`tasks` is deprecated since bind_exporter 0.8.0). |
+| nameOverride | string | `""` | Override the chart name. |
+| networkPolicy.adminAllowedFrom | list | `[]` | Peers allowed to reach rndc and metrics (e.g. your Prometheus namespace). |
+| networkPolicy.enabled | bool | `false` | Create a NetworkPolicy: DNS stays open, rndc and metrics only accept the peers below. |
+| nodeSelector | object | `{}` | Node selector. |
+| persistence.accessMode | string | `"ReadWriteOnce"` | Access mode. |
+| persistence.emptyDirSizeLimit | string | `""` | Size limit of the emptyDir used when persistence is disabled. |
+| persistence.enabled | bool | `false` | Persist /var/lib/bind in a PVC. Without it an emptyDir is used. |
+| persistence.existingClaim | string | `""` | Use an existing PVC. |
+| persistence.size | string | `"1Gi"` | Volume size. |
+| persistence.storageClass | string | `""` | Storage class (empty uses the cluster default). |
+| podAnnotations | object | `{}` | Pod annotations. |
+| podDisruptionBudget.enabled | bool | `false` | Create a PodDisruptionBudget (useful with 2+ replicas). |
+| podDisruptionBudget.maxUnavailable | string | `nil` | Maximum unavailable pods (used instead of minAvailable when set). |
+| podDisruptionBudget.minAvailable | int | `1` | Minimum available pods. |
+| podLabels | object | `{}` | Pod labels. |
+| podSecurityContext | object | `{"fsGroup":53,"fsGroupChangePolicy":"OnRootMismatch","seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. named starts as root only to bind port 53, then switches to the `bind` user (uid 53) with `-u bind`. |
+| priorityClassName | string | `""` | Priority class of the pods. |
+| readinessProbe | object | `{"exec":{"command":["dig","+time=2","+tries=1","@127.0.0.1","version.bind","txt","chaos"]},"initialDelaySeconds":5,"periodSeconds":10,"timeoutSeconds":5}` | Readiness probe. |
+| replicaCount | int | `1` | Number of Bind9 replicas. With `persistence.enabled` and a ReadWriteOnce volume, keep 1. |
+| resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"50m","memory":"64Mi"}}` | Bind9 container resources. |
+| securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"add":["NET_BIND_SERVICE","SETUID","SETGID"],"drop":["ALL"]},"readOnlyRootFilesystem":true}` | Bind9 container security context: every capability is dropped except the three named needs to bind port 53 and switch user. |
+| service.annotations | object | `{}` | Service annotations (e.g. MetalLB or cloud load balancer settings). |
+| service.enabled | bool | `true` | Create the DNS service. |
+| service.exposeRndc | bool | `false` | Expose the rndc control port through the service. Off by default: rndc is an administrative channel. |
+| service.externalTrafficPolicy | string | `""` | `Local` preserves client source IPs (needed by ACLs such as allow-transfer). |
+| service.loadBalancerIP | string | `""` | Load balancer IP, when supported by the provider. |
+| service.loadBalancerSourceRanges | list | `[]` | Source ranges allowed by the load balancer. |
+| service.ports.dnsTcp | int | `53` | DNS TCP port. |
+| service.ports.dnsTcpNodePort | string | `nil` | NodePort for DNS over TCP. |
+| service.ports.dnsUdp | int | `53` | DNS UDP port. |
+| service.ports.dnsUdpNodePort | string | `nil` | NodePort for DNS over UDP. |
+| service.ports.metrics | int | `9119` | Prometheus exporter port. |
+| service.ports.metricsNodePort | string | `nil` | NodePort for the metrics port. |
+| service.ports.rndc | int | `953` | rndc port (only exposed with `service.exposeRndc`). |
+| service.ports.rndcNodePort | string | `nil` | NodePort for rndc. |
+| service.type | string | `"ClusterIP"` | Service type. |
+| serviceAccount.annotations | object | `{}` | Service account annotations. |
+| serviceAccount.automount | bool | `false` | Bind9 never talks to the Kubernetes API: the token is not mounted. |
+| serviceAccount.create | bool | `true` | Create a dedicated service account. |
+| serviceAccount.name | string | `""` | Service account name (generated when empty). |
+| tolerations | list | `[]` | Tolerations. |
+| topologySpreadConstraints | list | `[]` | Topology spread constraints. |
+| volumeMounts | list | `[]` | Additional volumeMounts on the Bind9 container. |
+| volumes | list | `[]` | Additional volumes on the pod. |
 
-# Check named configuration
-kubectl exec -n dns-system <pod-name> -- named-checkconf /etc/bind/named.conf
+## Credits
 
-# Check zone files
-kubectl exec -n dns-system <pod-name> -- named-checkzone example.com /etc/bind/zones/example-com
-```
-
-### Common Issues
-
-1. **DNS Not Resolving**: Check that the service is properly exposed and DNS ports (53 TCP/UDP) are accessible
-2. **Zone File Errors**: Validate zone file syntax using `named-checkzone` before deploying
-3. **Permission Denied**: Ensure security contexts and capabilities are properly configured
-4. **Out of Memory**: Adjust resource limits based on zone sizes and query load
-
-## Security Considerations
-
-- The chart runs Bind9 with minimal required capabilities (`NET_BIND_SERVICE`)
-- Consider enabling DNSSEC for zones requiring additional security
-- Use network policies to restrict access to DNS services
-- Regularly update to latest Bind9 versions for security patches
-- Never expose recursive DNS servers to the public internet
+See [CREDITS.md](CREDITS.md). Thanks to Pierre Gindraud ([@Turgon37](https://github.com/Turgon37)) and
+Kostiantyn Astakhov ([@kastakhov](https://github.com/kastakhov)) for their contributions.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE.md](LICENSE.md) file for details.
-
-## Maintainers
-
-**Maintainer:**
-- David Gheghea - david.gheghea@unxwares.com
-
-**Co-Maintainer:**
-- Baptiste Gosselin - baptiste.gosselin@unxwares.com
-
-## Links
-
-- [ISC Bind9 Official Website](https://www.isc.org/bind/)
-- [Bind9 Documentation](https://bind9.readthedocs.io/)
-- [GitHub Repository](https://github.com/UnxWares/helm)
-- [Docker Hub](https://hub.docker.com/r/internetsystemsconsortium/bind9)
-
----
-
-## Contributing
-
-We welcome contributions! Please see our [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
-
-### Reporting Issues
-
-For bugs or feature requests, please open an issue on our [GitHub repository](https://github.com/UnxWares/helm/issues).
-
-### Security Vulnerabilities
-
-If you discover a security vulnerability, please email: **security@unxwares.com**
-
-### Questions and Support
-
-For general questions: **opensource@unxwares.com**
-
----
-
-**Made with ❤️ by the UnxWares Team**
+The chart is released under the MIT license. BIND 9 is licensed under the MPL-2.0.
