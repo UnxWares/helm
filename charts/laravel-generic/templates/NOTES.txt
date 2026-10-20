@@ -1,0 +1,47 @@
+{{- $fullname := include "laravel-generic.fullname" . -}}
+Laravel ({{ include "laravel-generic.image" .Values.image }}) is deployed with the {{ .Values.workload.runtime.type }} runtime
+{{- if include "laravel-generic.fpm" . }} behind an nginx sidecar{{ end }}.
+
+Service: http://{{ $fullname }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}
+{{- if .Values.ingress.enabled }}
+{{- range .Values.ingress.hosts }}
+URL: http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else if .Values.httpRoute.enabled }}
+{{- range .Values.httpRoute.hostnames }}
+URL: {{ . }} (HTTPRoute)
+{{- end }}
+{{- else }}
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ $fullname }} 8080:{{ .Values.service.port }}
+{{- end }}
+
+Run artisan commands:
+  kubectl exec -n {{ .Release.Namespace }} -it deploy/{{ $fullname }} -c app -- php artisan about
+{{- if and .Values.workload.migrations.enabled (not (include "laravel-generic.sqlite" .)) }}
+
+Migrations ran in the {{ $fullname }}-migrations Job (pre-install/pre-upgrade hook). On failure:
+  kubectl logs -n {{ .Release.Namespace }} job/{{ $fullname }}-migrations
+{{- end }}
+{{- if include "laravel-generic.sqlite" . }}
+
+SQLite: {{ include "laravel-generic.sqlitePath" . }} on the persistent volume, single web replica.
+{{- end }}
+{{- if not .Values.laravel.key.existingSecret }}
+
+APP_KEY:
+  kubectl get secret -n {{ .Release.Namespace }} {{ include "laravel-generic.secretName" . }} -o jsonpath='{.data.app-key}' | base64 -d
+{{- if not .Values.laravel.key.value }}
+
+NOTE: APP_KEY was generated and is kept across upgrades. With GitOps tools that render offline
+(Argo CD...), set laravel.key.value or laravel.key.existingSecret so it never changes: losing it
+makes encrypted data and sessions unreadable.
+{{- end }}
+{{- end }}
+{{- if or .Values.volumes .Values.volumeMounts }}
+
+DEPRECATED: `volumes` / `volumeMounts` are now `extraVolumes` / `extraVolumeMounts`.
+{{- end }}
+{{- if .Values.laravel.debug }}
+
+WARNING: APP_DEBUG is enabled: never leave it on in production.
+{{- end }}

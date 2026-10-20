@@ -1,0 +1,223 @@
+# Laravel (generic) Helm Chart
+
+{{ template "chart.badgesSection" . }}
+
+Run **your own [Laravel](https://laravel.com) application image** on Kubernetes, packaged by UnxWares:
+web pods (FrankenPHP, or PHP-FPM with an nginx sidecar), queue workers, scheduler and database
+migrations, with hardened defaults. The chart ships no application: you build the image, the chart runs it.
+
+## Features
+
+- **Two runtimes**: `frankenphp` (the image serves HTTP itself, Octane compatible) or `fpm` (PHP-FPM + an unprivileged nginx sidecar sharing the public files of your image).
+- **Queue workers** (`queue:work`), **scheduler** (CronJob running `schedule:run` every minute, or a `schedule:work` Deployment) and **migrations** run before every install/upgrade.
+- **Secrets never in plain environment values**: APP_KEY, database/Redis/mail passwords, AWS keys and `laravel.secretEnv` live in a Secret (or your own existing Secrets) and are injected with `secretKeyRef`. APP_KEY is generated and kept across upgrades when you do not provide one.
+- **Hardened by default**: non-root (uid 33), read-only root filesystem, every capability dropped, seccomp `RuntimeDefault`, no service account token. The directories Laravel writes to are volumes, seeded with what your image ships there.
+- **Persistence** for `storage/app` and SQLite (PVC kept on uninstall), with the scheduling constraints a ReadWriteOnce volume needs.
+- Ingress or Gateway API HTTPRoute, HPA, PodDisruptionBudget, NetworkPolicies (ingress + optional egress lockdown), `helm test`.
+
+## Requirements for your image
+
+| | FrankenPHP | PHP-FPM |
+|---|---|---|
+| Base image | [`dunglas/frankenphp`](https://frankenphp.dev/docs/docker/) (or Octane with FrankenPHP) | [`php:*-fpm`](https://hub.docker.com/_/php) |
+| `appPath` (application directory) | `/app` (default) | usually `/var/www/html` |
+| Listens on | `workload.runtime.frankenphp.port` (8000) | `workload.runtime.fpm.port` (9000, FastCGI) |
+
+- The image must contain `/bin/sh` and `cp` (true for every official PHP image): an init container copies the content of the writable paths and of `public/` into volumes.
+- Files must be readable by uid 33 (`www-data` in the Debian images; files are world-readable by default). Change `podSecurityContext` for another user.
+- The root filesystem is read-only: everything is decided at build time (`composer install --no-dev`, `npm run build`, `php artisan storage:link`...). Run `php artisan optimize` at container start rather than at build time, since configuration comes from environment variables.
+- Laravel 11+ exposes `/up`, used by the probes. Older applications: add a health route or change the probes.
+- **FrankenPHP and capabilities**: the official binary carries the `cap_net_bind_service` file capability and cannot even start when the capability is missing from the bounding set. The chart keeps `NET_BIND_SERVICE` on the web container (the only capability allowed by the Pod Security Standards *restricted* profile). If your Dockerfile runs `setcap -r /usr/local/bin/frankenphp` (recommended), set `workload.runtime.frankenphp.keepNetBindService=false`.
+
+## Installation
+
+```bash
+helm repo add unxwares https://helm.unxwares.studio
+helm repo update
+helm install shop unxwares/laravel-generic --namespace shop --create-namespace \
+  --set image.repository=registry.example.com/acme/shop \
+  --set image.tag=1.4.2
+```
+
+`image.repository` and `image.tag` (or `image.digest`) are required. The chart `appVersion` (`{{ .AppVersion }}`)
+is the Laravel version the chart targets, never an image tag.
+
+Charts are signed: see [verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures)
+and add `--verify --keyring <keyring>` to `helm install`.
+
+## Examples
+
+### FrankenPHP with SQLite (defaults)
+
+A single web replica with the SQLite database and `storage/app` on a PVC; migrations run in an init container of the web pod.
+
+```yaml
+image:
+  repository: registry.example.com/acme/shop
+  tag: "1.4.2"
+laravel:
+  name: Shop
+  url: https://shop.example.com
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: shop.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: shop-tls
+      hosts:
+        - shop.example.com
+```
+
+### PHP-FPM + nginx, PostgreSQL, Redis and S3, scaled out
+
+```yaml
+image:
+  repository: registry.example.com/acme/shop-fpm
+  tag: "1.4.2"
+appPath: /var/www/html
+workload:
+  runtime:
+    type: fpm
+  scheduler:
+    mode: deployment        # schedule:work, no pod per minute
+replicaCount: 3
+persistence:
+  enabled: false            # files on S3: no shared volume needed
+podDisruptionBudget:
+  enabled: true
+laravel:
+  key:
+    existingSecret: shop-app-key   # key: key
+  database:
+    connection: pgsql
+    # CloudNativePG application secret: host, port, dbname, user, password
+    existingSecret: shop-db-app
+    secretKeys:
+      host: host
+      port: port
+      database: dbname
+      username: user
+      password: password
+  redis:
+    enabled: true
+    host: shop-redis.databases.svc
+    existingSecret: shop-redis
+    secretKeys:
+      host: ""                     # keep the plain value
+      port: ""
+      password: password
+  session:
+    driver: redis
+  cache:
+    store: redis
+  queue_connection: redis
+  filesystem_disk: s3
+  aws:
+    enabled: true
+    bucket: shop
+    region: eu-west-3
+    existingSecret: shop-s3        # aws-access-key-id, aws-secret-access-key
+    secretKeys:
+      region: ""
+      bucket: ""
+      use_path_style_endpoint: ""
+```
+
+### Persist the whole `storage` directory
+
+```yaml
+persistence:
+  enabled: true
+  accessModes: [ReadWriteMany]   # lets the web Deployment scale and roll out without downtime
+  paths:
+    - storage
+```
+
+Writable paths inside a persisted path (`storage/framework`, `storage/logs`...) then live on the volume too.
+
+### Laravel Octane (FrankenPHP worker mode)
+
+```yaml
+command: ["php", "artisan", "octane:frankenphp", "--host=0.0.0.0", "--port=8000", "--max-requests=500"]
+```
+
+### Lock down the network
+
+```yaml
+networkPolicy:
+  enabled: true
+  allowedFrom:                     # who may reach the web pods
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+  egress:
+    enabled: true                  # DNS and release pods are always allowed
+    rules:
+      - to:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: databases
+        ports:
+          - port: 5432
+            protocol: TCP
+```
+
+### More secrets
+
+```yaml
+laravel:
+  secretEnv:                       # stored in the chart Secret, injected with secretKeyRef
+    STRIPE_SECRET: sk_live_xxx
+  extraEnvFrom:                    # or bring your own Secret
+    - secretRef:
+        name: shop-env
+```
+
+## How it works
+
+- **Web pods** run the `app` container (FrankenPHP or PHP-FPM). With `fpm`, an `nginx` sidecar listens on 8080, serves the static files and passes PHP to `127.0.0.1:9000`. The `public/` directory is copied from your image into a volume mounted at the same path in nginx, so `SCRIPT_FILENAME` is valid in both containers; files of the `public` disk (`storage/app/public`) are served from the persistent volume when it holds them. The Service maps `service.port` to the HTTP port of the pod.
+- **Writable paths** (`writablePaths`) are emptyDir volumes. The `prepare` init container seeds them with what the image contains (`bootstrap/cache/packages.php`, the `storage` skeleton...) and creates the directories Laravel expects. Paths listed in `persistence.paths` (or inside them) are stored on the PVC instead. `storage/app` is ephemeral unless persisted: use `persistence` or S3 for uploads.
+- **Migrations** (`workload.migrations`) run in a `pre-install,pre-upgrade` hook Job, before the new pods roll out. Release resources do not exist yet at that point, so the Job uses its own copy of the Secret (deleted once it succeeds), no PVC, and the namespace default service account (or `serviceAccount.name` when `serviceAccount.create=false`). With SQLite, the single web pod creates the database file and migrates in an init container instead. Raise `helm --timeout` for long migrations.
+- **Queue workers** get `terminationGracePeriodSeconds: 60` to finish their current job. **Scheduler**: a CronJob with `concurrencyPolicy: Forbid` and no retry (a retry would run the tasks of a past minute), or `mode: deployment` for a single `schedule:work` pod.
+- **ReadWriteOnce volume**: the web Deployment keeps one replica with the `Recreate` strategy and the queue/scheduler pods are scheduled on the node of the web pod (required pod affinity). A ReadWriteMany volume, or `persistence.enabled=false` with S3, lifts both limits.
+- **Graceful shutdown**: a 5 s `preStop` sleep on the web containers lets endpoints drain before FrankenPHP/PHP-FPM/nginx stop.
+- **Logs** go to stderr by default (`laravel.log.channel`), visible with `kubectl logs`.
+
+## Upgrading
+
+### From 2026.2.x to 2026.10.1
+
+This release fixes a chart that could not work as published (invalid image, unused runtime ports, unreachable nginx, failing migrations) and contains **breaking changes**:
+
+1. **Required values**: set `image.repository` **and** `image.tag` (or `image.digest`): the tag no longer defaults to `12.x`.
+2. **Selectors changed** (standard `app.kubernetes.io/component` labels), and the service account was a hook resource that Helm cannot adopt. Before `helm upgrade`, delete them (the new ones are created by the upgrade):
+   ```bash
+   kubectl -n <namespace> delete deployment <fullname> <fullname>-queue
+   kubectl -n <namespace> delete serviceaccount <fullname>
+   ```
+3. **nginx** is now a sidecar used with `workload.runtime.type=fpm` (`workload.nginx.enabled`, `replicaCount` and `service` are gone; the old Deployment/Service are removed). `workload.nginx.config` still replaces the `server { }` block, which must now listen on 8080 and pass PHP to `127.0.0.1:9000`. The image is `nginxinc/nginx-unprivileged` (the official `nginx` image cannot run unprivileged).
+4. **Hardened security context**: non-root uid 33, read-only root filesystem. Anything your application writes outside `writablePaths`, `persistence.paths` and `/tmp` must be added to these lists.
+5. **SQLite** now requires `persistence.enabled` and a dedicated directory; the default file is `storage/database/database.sqlite`. A database under `database/` would hide the migrations and is refused.
+6. **Credentials**: the `user`/`password` database defaults are gone; non SQLite connections require `laravel.database.host` and a password (or `existingSecret`).
+7. `volumes`/`volumeMounts` are renamed `extraVolumes`/`extraVolumeMounts` (the old names still work, deprecated).
+8. Defaults changed: `LOG_CHANNEL=stderr`, `MAIL_FROM_NAME`/`VITE_APP_NAME` use `$(APP_NAME)`, the S3 region is exported as `AWS_DEFAULT_REGION`, empty settings (APP_URL, ports...) are no longer exported so Laravel's defaults apply.
+
+## Notes
+
+- **APP_KEY**: when it is generated, the Secret holding it is kept on `helm uninstall` (like the PVC) so a reinstall of the same release reuses it. Delete the Secret and the PVC to start from scratch.
+- **GitOps**: when APP_KEY is generated, tools that render templates offline (Argo CD...) cannot read it back and would rotate it on every sync. Set `laravel.key.value` or `laravel.key.existingSecret`. Losing APP_KEY makes encrypted data and sessions unreadable.
+- `helm lint` succeeds without values, but `helm template`/`helm install` fail until `image.repository` and `image.tag` are set.
+- With several web replicas, use shared stores for sessions, cache and maintenance mode (database or Redis) and S3 (or a ReadWriteMany volume) for files.
+- `php artisan down` with the default `file` maintenance driver only affects one pod: use `laravel.maintenance.driver=cache` with a shared store.
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+## License
+
+The chart is released under the MIT license. Laravel is licensed under the MIT license; your application image keeps its own license.

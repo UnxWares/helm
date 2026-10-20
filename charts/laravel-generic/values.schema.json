@@ -1,0 +1,1197 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "affinity": {
+            "description": "Affinity rules.",
+            "type": "object"
+        },
+        "appPath": {
+            "description": "Directory of the Laravel application in the image (its WORKDIR): `/app` for FrankenPHP images, usually `/var/www/html` for the official PHP-FPM images.",
+            "type": "string"
+        },
+        "args": {
+            "description": "Arguments of the web container.",
+            "type": "array"
+        },
+        "autoscaling": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Enable the web HorizontalPodAutoscaler (not with SQLite or a ReadWriteOnce volume).",
+                    "type": "boolean"
+                },
+                "maxReplicas": {
+                    "description": "Maximum replicas.",
+                    "type": "integer"
+                },
+                "minReplicas": {
+                    "description": "Minimum replicas.",
+                    "type": "integer"
+                },
+                "targetCPUUtilizationPercentage": {
+                    "description": "Target CPU utilization.",
+                    "type": "integer"
+                }
+            }
+        },
+        "command": {
+            "description": "Command of the web container (empty: the image entrypoint), e.g. `[\"php\", \"artisan\", \"octane:frankenphp\", \"--port=8000\"]`.",
+            "type": "array"
+        },
+        "commonLabels": {
+            "description": "Labels added to every resource.",
+            "type": "object"
+        },
+        "emptyDirSizeLimit": {
+            "description": "Size limit of the emptyDir volumes (`/tmp`, writable paths, public files copy, Caddy state). Empty: no limit.",
+            "type": "string"
+        },
+        "extraVolumeMounts": {
+            "description": "Extra volume mounts of every Laravel container.",
+            "type": "array"
+        },
+        "extraVolumes": {
+            "description": "Extra volumes of every Laravel pod.",
+            "type": "array"
+        },
+        "fullnameOverride": {
+            "description": "Override the full resource names.",
+            "type": "string"
+        },
+        "httpRoute": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "HTTPRoute annotations.",
+                    "type": "object"
+                },
+                "enabled": {
+                    "description": "Create a Gateway API HTTPRoute.",
+                    "type": "boolean"
+                },
+                "hostnames": {
+                    "description": "Hostnames matched by the route.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "parentRefs": {
+                    "description": "Gateways the route attaches to.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "sectionName": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "rules": {
+                    "description": "Routing rules (each one is sent to the Service).",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "matches": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "path": {
+                                            "type": "object",
+                                            "properties": {
+                                                "type": {
+                                                    "type": "string"
+                                                },
+                                                "value": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "image": {
+            "type": "object",
+            "properties": {
+                "digest": {
+                    "description": "Image digest (`sha256:...`). When set, it takes precedence over the tag.",
+                    "type": "string"
+                },
+                "pullPolicy": {
+                    "description": "Image pull policy.",
+                    "type": "string",
+                    "enum": [
+                        "Always",
+                        "IfNotPresent",
+                        "Never"
+                    ]
+                },
+                "repository": {
+                    "description": "Application image repository, fully qualified (e.g. `registry.example.com/acme/shop`). Required.",
+                    "type": "string"
+                },
+                "tag": {
+                    "description": "Application image tag. Required unless `digest` is set (the chart appVersion is the Laravel version, not a tag of your image).",
+                    "type": "string"
+                }
+            }
+        },
+        "imagePullSecrets": {
+            "description": "Secrets for pulling images from a private registry.",
+            "type": "array"
+        },
+        "ingress": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "Ingress annotations.",
+                    "type": "object"
+                },
+                "className": {
+                    "description": "Ingress class name.",
+                    "type": "string"
+                },
+                "enabled": {
+                    "description": "Create an Ingress.",
+                    "type": "boolean"
+                },
+                "hosts": {
+                    "description": "Ingress hosts.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "host": {
+                                "type": "string"
+                            },
+                            "paths": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "path": {
+                                            "type": "string"
+                                        },
+                                        "pathType": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "tls": {
+                    "description": "Ingress TLS.",
+                    "type": "array"
+                }
+            }
+        },
+        "initContainers": {
+            "description": "Extra init containers of the web pods (run after the chart ones).",
+            "type": "array"
+        },
+        "laravel": {
+            "type": "object",
+            "properties": {
+                "aws": {
+                    "type": "object",
+                    "properties": {
+                        "access_key_id": {
+                            "description": "AWS_ACCESS_KEY_ID, stored in the chart secret.",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "bucket": {
+                            "description": "AWS_BUCKET.",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "enabled": {
+                            "description": "Render the AWS_* variables (S3 filesystem disk).",
+                            "type": "boolean"
+                        },
+                        "endpoint": {
+                            "description": "AWS_ENDPOINT (S3 compatible storage: MinIO, Garage, Ceph RGW...).",
+                            "type": "string"
+                        },
+                        "existingSecret": {
+                            "description": "Existing secret holding the AWS settings (each `secretKeys` entry overrides the plain value, `\"\"` keeps it).",
+                            "type": "string"
+                        },
+                        "region": {
+                            "description": "AWS_DEFAULT_REGION.",
+                            "type": "string"
+                        },
+                        "secretKeys": {
+                            "type": "object",
+                            "properties": {
+                                "access_key_id": {
+                                    "description": "Key of AWS_ACCESS_KEY_ID in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "bucket": {
+                                    "description": "Key of AWS_BUCKET in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "region": {
+                                    "description": "Key of AWS_DEFAULT_REGION in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "secret_access_key": {
+                                    "description": "Key of AWS_SECRET_ACCESS_KEY in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "use_path_style_endpoint": {
+                                    "description": "Key of AWS_USE_PATH_STYLE_ENDPOINT in `existingSecret`.",
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "secret_access_key": {
+                            "description": "AWS_SECRET_ACCESS_KEY, stored in the chart secret.",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "url": {
+                            "description": "AWS_URL (public URL of the bucket).",
+                            "type": "string"
+                        },
+                        "use_path_style_endpoint": {
+                            "description": "AWS_USE_PATH_STYLE_ENDPOINT.",
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "bcrypt_rounds": {
+                    "description": "BCRYPT_ROUNDS.",
+                    "type": "integer"
+                },
+                "broadcast_connection": {
+                    "description": "BROADCAST_CONNECTION.",
+                    "type": "string"
+                },
+                "cache": {
+                    "type": "object",
+                    "properties": {
+                        "prefix": {
+                            "description": "CACHE_PREFIX.",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "store": {
+                            "description": "CACHE_STORE.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "cli_server_workers": {
+                    "description": "PHP_CLI_SERVER_WORKERS (only used by `php artisan serve`).",
+                    "type": "integer"
+                },
+                "database": {
+                    "type": "object",
+                    "properties": {
+                        "connection": {
+                            "description": "DB_CONNECTION: `sqlite` (single web replica, file on the persistent volume), `pgsql`, `mysql`, `mariadb`, `sqlsrv`.",
+                            "type": "string"
+                        },
+                        "database": {
+                            "description": "DB_DATABASE: database name, or the SQLite file path relative to `appPath` or absolute (empty: `storage/database/database.sqlite`). The SQLite file needs its own directory: it is mounted from the persistent volume.",
+                            "type": "string"
+                        },
+                        "enabled": {
+                            "description": "Render the DB_* variables.",
+                            "type": "boolean"
+                        },
+                        "existingSecret": {
+                            "description": "Existing secret holding the connection settings. Each `secretKeys` entry read from it overrides the plain value; set an entry to `\"\"` to keep the plain value (e.g. a secret holding only the password).",
+                            "type": "string"
+                        },
+                        "host": {
+                            "description": "DB_HOST (required unless SQLite).",
+                            "type": "string"
+                        },
+                        "password": {
+                            "description": "DB_PASSWORD, stored in the chart secret (required unless SQLite or `existingSecret`).",
+                            "type": "string"
+                        },
+                        "port": {
+                            "description": "DB_PORT (empty: the default port of the connection).",
+                            "type": [
+                                "integer",
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "secretKeys": {
+                            "type": "object",
+                            "properties": {
+                                "database": {
+                                    "description": "Key of DB_DATABASE in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "host": {
+                                    "description": "Key of DB_HOST in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "password": {
+                                    "description": "Key of DB_PASSWORD in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "port": {
+                                    "description": "Key of DB_PORT in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "username": {
+                                    "description": "Key of DB_USERNAME in `existingSecret`.",
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "username": {
+                            "description": "DB_USERNAME.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "debug": {
+                    "description": "APP_DEBUG. Never enable it in production.",
+                    "type": "boolean"
+                },
+                "env": {
+                    "description": "APP_ENV.",
+                    "type": "string"
+                },
+                "extraEnv": {
+                    "description": "Extra environment variables of every Laravel container (rendered last: they override the chart variables).",
+                    "type": "array"
+                },
+                "extraEnvFrom": {
+                    "description": "Extra envFrom sources of every Laravel container.",
+                    "type": "array"
+                },
+                "filesystem_disk": {
+                    "description": "FILESYSTEM_DISK. Use `s3` (see `aws`) to scale out without a ReadWriteMany volume.",
+                    "type": "string"
+                },
+                "key": {
+                    "type": "object",
+                    "properties": {
+                        "existingSecret": {
+                            "description": "Existing secret holding APP_KEY (takes precedence over `value`).",
+                            "type": "string"
+                        },
+                        "existingSecretKey": {
+                            "description": "Key of APP_KEY in `existingSecret`.",
+                            "type": "string"
+                        },
+                        "value": {
+                            "description": "APP_KEY (`base64:...`). Leave empty to generate one, kept across upgrades. Set it explicitly, or use `existingSecret`, with GitOps tools that render templates offline.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "locale": {
+                    "type": "object",
+                    "properties": {
+                        "default": {
+                            "description": "APP_LOCALE.",
+                            "type": "string"
+                        },
+                        "faker": {
+                            "description": "APP_FAKER_LOCALE.",
+                            "type": "string"
+                        },
+                        "fallback": {
+                            "description": "APP_FALLBACK_LOCALE.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "log": {
+                    "type": "object",
+                    "properties": {
+                        "channel": {
+                            "description": "LOG_CHANNEL. `stderr` sends the logs to `kubectl logs`; file channels write to the ephemeral `storage/logs`.",
+                            "type": "string"
+                        },
+                        "deprecations_channel": {
+                            "description": "LOG_DEPRECATIONS_CHANNEL.",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "level": {
+                            "description": "LOG_LEVEL.",
+                            "type": "string"
+                        },
+                        "stack": {
+                            "description": "LOG_STACK (channels of the `stack` channel).",
+                            "type": "string"
+                        }
+                    }
+                },
+                "mail": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "description": "Render the MAIL_* variables.",
+                            "type": "boolean"
+                        },
+                        "existingSecret": {
+                            "description": "Existing secret holding the mail settings (each `secretKeys` entry overrides the plain value, `\"\"` keeps it).",
+                            "type": "string"
+                        },
+                        "from": {
+                            "type": "object",
+                            "properties": {
+                                "address": {
+                                    "description": "MAIL_FROM_ADDRESS.",
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "description": "MAIL_FROM_NAME. `$(APP_NAME)` is expanded by Kubernetes.",
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "host": {
+                            "description": "MAIL_HOST.",
+                            "type": "string"
+                        },
+                        "mailer": {
+                            "description": "MAIL_MAILER.",
+                            "type": "string"
+                        },
+                        "password": {
+                            "description": "MAIL_PASSWORD, stored in the chart secret.",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "port": {
+                            "description": "MAIL_PORT.",
+                            "type": [
+                                "integer",
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "scheme": {
+                            "description": "MAIL_SCHEME (`smtp` or `smtps`).",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "secretKeys": {
+                            "type": "object",
+                            "properties": {
+                                "host": {
+                                    "description": "Key of MAIL_HOST in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "password": {
+                                    "description": "Key of MAIL_PASSWORD in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "port": {
+                                    "description": "Key of MAIL_PORT in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "username": {
+                                    "description": "Key of MAIL_USERNAME in `existingSecret`.",
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "username": {
+                            "description": "MAIL_USERNAME.",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "maintenance": {
+                    "type": "object",
+                    "properties": {
+                        "driver": {
+                            "description": "APP_MAINTENANCE_DRIVER. Use `cache` with a shared store (database, redis) so `php artisan down` reaches every pod.",
+                            "type": "string"
+                        },
+                        "store": {
+                            "description": "APP_MAINTENANCE_STORE (cache store of the `cache` driver).",
+                            "type": "string"
+                        }
+                    }
+                },
+                "memcached": {
+                    "type": "object",
+                    "properties": {
+                        "host": {
+                            "description": "MEMCACHED_HOST.",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "name": {
+                    "description": "APP_NAME.",
+                    "type": "string"
+                },
+                "queue_connection": {
+                    "description": "QUEUE_CONNECTION.",
+                    "type": "string"
+                },
+                "redis": {
+                    "type": "object",
+                    "properties": {
+                        "client": {
+                            "description": "REDIS_CLIENT.",
+                            "type": "string"
+                        },
+                        "enabled": {
+                            "description": "Render the REDIS_* variables.",
+                            "type": "boolean"
+                        },
+                        "existingSecret": {
+                            "description": "Existing secret holding the Redis settings (each `secretKeys` entry overrides the plain value, `\"\"` keeps it).",
+                            "type": "string"
+                        },
+                        "host": {
+                            "description": "REDIS_HOST.",
+                            "type": "string"
+                        },
+                        "password": {
+                            "description": "REDIS_PASSWORD, stored in the chart secret.",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "port": {
+                            "description": "REDIS_PORT.",
+                            "type": [
+                                "integer",
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "secretKeys": {
+                            "type": "object",
+                            "properties": {
+                                "host": {
+                                    "description": "Key of REDIS_HOST in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "password": {
+                                    "description": "Key of REDIS_PASSWORD in `existingSecret`.",
+                                    "type": "string"
+                                },
+                                "port": {
+                                    "description": "Key of REDIS_PORT in `existingSecret`.",
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "secretEnv": {
+                    "description": "Secret environment variables (`NAME: value`), stored in the chart secret and injected with secretKeyRef.",
+                    "type": "object"
+                },
+                "session": {
+                    "type": "object",
+                    "properties": {
+                        "domain": {
+                            "description": "SESSION_DOMAIN.",
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "driver": {
+                            "description": "SESSION_DRIVER. Use a shared store (database, redis) with several web replicas.",
+                            "type": "string"
+                        },
+                        "encrypt": {
+                            "description": "SESSION_ENCRYPT.",
+                            "type": "boolean"
+                        },
+                        "lifetime": {
+                            "description": "SESSION_LIFETIME (minutes).",
+                            "type": "integer"
+                        },
+                        "path": {
+                            "description": "SESSION_PATH.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "url": {
+                    "description": "APP_URL (empty: derived from the first Ingress host, else Laravel's default).",
+                    "type": "string"
+                },
+                "vite": {
+                    "type": "object",
+                    "properties": {
+                        "app_name": {
+                            "description": "VITE_APP_NAME.",
+                            "type": "string"
+                        },
+                        "enabled": {
+                            "description": "Render VITE_APP_NAME (only useful to server-side code: Vite variables are compiled at build time).",
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
+        "lifecycle": {
+            "description": "Lifecycle hooks of the web container (the sleep lets endpoints drain before the server stops).",
+            "type": "object"
+        },
+        "livenessProbe": {
+            "description": "Liveness probe of the HTTP container (FrankenPHP, or nginx with `fpm`). `/up` is the health route of Laravel 11+.",
+            "type": "object"
+        },
+        "nameOverride": {
+            "description": "Override the chart name.",
+            "type": "string"
+        },
+        "networkPolicy": {
+            "type": "object",
+            "properties": {
+                "allowedFrom": {
+                    "description": "Peers allowed to reach the web pods (e.g. the ingress controller namespace). Empty: any source. Pods of the release are always allowed.",
+                    "type": "array"
+                },
+                "egress": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "description": "Restrict egress of every pod to DNS, the release pods and `rules`.",
+                            "type": "boolean"
+                        },
+                        "rules": {
+                            "description": "Allowed egress rules (database, Redis, SMTP, S3, external APIs...).",
+                            "type": "array"
+                        }
+                    }
+                },
+                "enabled": {
+                    "description": "Create NetworkPolicies: the web pods only accept HTTP, the other pods accept nothing.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "nodeSelector": {
+            "description": "Node selector.",
+            "type": "object"
+        },
+        "persistence": {
+            "type": "object",
+            "properties": {
+                "accessModes": {
+                    "description": "Access modes. With `ReadWriteOnce` the web Deployment runs a single replica (`Recreate`) and the queue/scheduler pods are scheduled on its node; `ReadWriteMany` lifts both limits.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "annotations": {
+                    "description": "PVC annotations.",
+                    "type": "object"
+                },
+                "enabled": {
+                    "description": "Store `paths` (and the SQLite database) on a PersistentVolumeClaim shared by the web, queue and scheduler pods.",
+                    "type": "boolean"
+                },
+                "existingClaim": {
+                    "description": "Use an existing PVC.",
+                    "type": "string"
+                },
+                "paths": {
+                    "description": "Directories stored on the volume, relative to `appPath` or absolute (each one in its own sub-directory of the volume).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "size": {
+                    "description": "Volume size.",
+                    "type": "string"
+                },
+                "storageClass": {
+                    "description": "Storage class (empty uses the cluster default).",
+                    "type": "string"
+                }
+            }
+        },
+        "podAnnotations": {
+            "description": "Pod annotations (every pod).",
+            "type": "object"
+        },
+        "podDisruptionBudget": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Create a PodDisruptionBudget for the web pods (useful with 2+ replicas).",
+                    "type": "boolean"
+                },
+                "maxUnavailable": {
+                    "description": "Maximum unavailable pods (used instead of minAvailable when set).",
+                    "type": [
+                        "integer",
+                        "string",
+                        "null"
+                    ]
+                },
+                "minAvailable": {
+                    "description": "Minimum available pods.",
+                    "type": "integer"
+                }
+            }
+        },
+        "podLabels": {
+            "description": "Pod labels (every pod).",
+            "type": "object"
+        },
+        "podSecurityContext": {
+            "description": "Pod security context. 33 is `www-data` in the Debian based PHP images (82 in the Alpine ones): files only need to be readable by this user, writable paths are volumes.",
+            "type": "object"
+        },
+        "prepareResources": {
+            "description": "Resources of the `prepare` init container (seeds the writable paths, copies the public files for nginx).",
+            "type": "object"
+        },
+        "priorityClassName": {
+            "description": "Priority class of the pods.",
+            "type": "string"
+        },
+        "publicPath": {
+            "description": "Public directory served over HTTP, relative to `appPath` or absolute (empty: `\u003cappPath\u003e/public`). With the nginx sidecar it is copied from the image and served at the same path.",
+            "type": "string"
+        },
+        "readinessProbe": {
+            "description": "Readiness probe of the HTTP container.",
+            "type": "object"
+        },
+        "replicaCount": {
+            "description": "Number of web replicas. Must stay at 1 with SQLite or a ReadWriteOnce persistent volume.",
+            "type": "integer"
+        },
+        "resources": {
+            "description": "Resources of the web container (FrankenPHP or PHP-FPM).",
+            "type": "object"
+        },
+        "securityContext": {
+            "description": "Security context of the Laravel containers.",
+            "type": "object"
+        },
+        "seedWritablePaths": {
+            "description": "Copy what the image ships in each writable path before Laravel starts (keeps the `bootstrap/cache/*.php` files and the directory skeleton built into the image). Needs `/bin/sh` and `cp` in the image.",
+            "type": "boolean"
+        },
+        "service": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "Service annotations.",
+                    "type": "object"
+                },
+                "port": {
+                    "description": "Service port (mapped to the HTTP port of the web pods).",
+                    "type": "integer"
+                },
+                "type": {
+                    "description": "Service type.",
+                    "type": "string",
+                    "enum": [
+                        "ClusterIP",
+                        "NodePort",
+                        "LoadBalancer"
+                    ]
+                }
+            }
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "Service account annotations (cloud workload identity...).",
+                    "type": "object"
+                },
+                "automount": {
+                    "description": "Mount the service account token. Laravel does not talk to the Kubernetes API.",
+                    "type": "boolean"
+                },
+                "create": {
+                    "description": "Create a dedicated service account.",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "Service account name (generated when empty).",
+                    "type": "string"
+                }
+            }
+        },
+        "sidecars": {
+            "description": "Extra containers of the web pods.",
+            "type": "array"
+        },
+        "startupProbe": {
+            "description": "Startup probe of the HTTP container.",
+            "type": "object"
+        },
+        "terminationGracePeriodSeconds": {
+            "description": "Grace period of the web pods.",
+            "type": "integer"
+        },
+        "tests": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "description": "Image used by `helm test` (needs `wget`; defaults to the nginx image).",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "Path requested by `helm test`.",
+                    "type": "string"
+                }
+            }
+        },
+        "tolerations": {
+            "description": "Tolerations.",
+            "type": "array"
+        },
+        "topologySpreadConstraints": {
+            "description": "Topology spread constraints of the web pods.",
+            "type": "array"
+        },
+        "updateStrategy": {
+            "description": "Web Deployment update strategy. The chart forces `Recreate` with a ReadWriteOnce persistent volume.",
+            "type": "object"
+        },
+        "workload": {
+            "type": "object",
+            "properties": {
+                "migrations": {
+                    "type": "object",
+                    "properties": {
+                        "activeDeadlineSeconds": {
+                            "description": "Maximum duration of the migration Job, in seconds (also raise `helm --timeout`).",
+                            "type": "integer"
+                        },
+                        "affinity": {
+                            "description": "Affinity (empty: the top-level `affinity`).",
+                            "type": "object"
+                        },
+                        "backoffLimit": {
+                            "description": "Retries of the migration Job.",
+                            "type": "integer"
+                        },
+                        "command": {
+                            "description": "Migration command.",
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "enabled": {
+                            "description": "Run the database migrations: a pre-install/pre-upgrade Job, or with SQLite an init container of the web pod.",
+                            "type": "boolean"
+                        },
+                        "nodeSelector": {
+                            "description": "Node selector (empty: the top-level `nodeSelector`).",
+                            "type": "object"
+                        },
+                        "resources": {
+                            "description": "Resources of the migrations.",
+                            "type": "object"
+                        },
+                        "tolerations": {
+                            "description": "Tolerations (empty: the top-level `tolerations`).",
+                            "type": "array"
+                        }
+                    }
+                },
+                "nginx": {
+                    "type": "object",
+                    "properties": {
+                        "clientMaxBodySize": {
+                            "description": "Maximum request body size (uploads).",
+                            "type": "string"
+                        },
+                        "config": {
+                            "description": "Replace the default `server { }` block (it must listen on `port`, use `root` = the public path and pass PHP to `127.0.0.1:\u003cfpm port\u003e`).",
+                            "type": "string"
+                        },
+                        "extraVolumeMounts": {
+                            "description": "Extra volume mounts of the nginx container.",
+                            "type": "array"
+                        },
+                        "image": {
+                            "type": "object",
+                            "properties": {
+                                "digest": {
+                                    "description": "Image digest (takes precedence over the tag).",
+                                    "type": "string"
+                                },
+                                "pullPolicy": {
+                                    "description": "Image pull policy.",
+                                    "type": "string",
+                                    "enum": [
+                                        "Always",
+                                        "IfNotPresent",
+                                        "Never"
+                                    ]
+                                },
+                                "repository": {
+                                    "description": "nginx image repository (must run unprivileged).",
+                                    "type": "string"
+                                },
+                                "tag": {
+                                    "description": "nginx image tag.",
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "ipv6": {
+                            "description": "Also listen on IPv6 (dual-stack clusters). nginx fails to start in pods without IPv6.",
+                            "type": "boolean"
+                        },
+                        "lifecycle": {
+                            "description": "Lifecycle hooks of the nginx container (the sleep lets endpoints drain before nginx stops).",
+                            "type": "object"
+                        },
+                        "port": {
+                            "description": "Port nginx listens on.",
+                            "type": "integer"
+                        },
+                        "resources": {
+                            "description": "Resources of the nginx container.",
+                            "type": "object"
+                        },
+                        "securityContext": {
+                            "description": "Security context of the nginx container.",
+                            "type": "object"
+                        },
+                        "workerProcesses": {
+                            "description": "nginx worker processes (`auto` starts one per node CPU).",
+                            "type": [
+                                "integer",
+                                "string"
+                            ]
+                        }
+                    }
+                },
+                "queueWorker": {
+                    "type": "object",
+                    "properties": {
+                        "affinity": {
+                            "description": "Affinity (empty: the top-level `affinity`).",
+                            "type": "object"
+                        },
+                        "command": {
+                            "description": "Queue worker command.",
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "enabled": {
+                            "description": "Run queue workers (`php artisan queue:work`).",
+                            "type": "boolean"
+                        },
+                        "livenessProbe": {
+                            "description": "Liveness probe of the queue workers.",
+                            "type": "object"
+                        },
+                        "nodeSelector": {
+                            "description": "Node selector (empty: the top-level `nodeSelector`).",
+                            "type": "object"
+                        },
+                        "replicaCount": {
+                            "description": "Number of queue worker pods.",
+                            "type": "integer"
+                        },
+                        "resources": {
+                            "description": "Resources of the queue workers.",
+                            "type": "object"
+                        },
+                        "terminationGracePeriodSeconds": {
+                            "description": "Seconds a worker gets to finish its current job on shutdown (keep it above the job timeout).",
+                            "type": "integer"
+                        },
+                        "tolerations": {
+                            "description": "Tolerations (empty: the top-level `tolerations`).",
+                            "type": "array"
+                        }
+                    }
+                },
+                "runtime": {
+                    "type": "object",
+                    "properties": {
+                        "fpm": {
+                            "type": "object",
+                            "properties": {
+                                "livenessProbe": {
+                                    "description": "Liveness probe of the PHP-FPM container (the HTTP probes run on the nginx sidecar).",
+                                    "type": "object"
+                                },
+                                "port": {
+                                    "description": "Port PHP-FPM listens on (FastCGI). The nginx sidecar reaches it on 127.0.0.1.",
+                                    "type": "integer"
+                                },
+                                "readinessProbe": {
+                                    "description": "Readiness probe of the PHP-FPM container.",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "frankenphp": {
+                            "type": "object",
+                            "properties": {
+                                "keepNetBindService": {
+                                    "description": "Keep NET_BIND_SERVICE in the bounding set: the official FrankenPHP binary carries it as a file capability and cannot be executed without it. Set false if your image strips it (`setcap -r /usr/local/bin/frankenphp`).",
+                                    "type": "boolean"
+                                },
+                                "port": {
+                                    "description": "Port FrankenPHP listens on (unprivileged).",
+                                    "type": "integer"
+                                },
+                                "serverName": {
+                                    "description": "SERVER_NAME given to the stock FrankenPHP Caddyfile (empty: `:\u003cport\u003e`, plain HTTP on that port).",
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "type": {
+                            "description": "How the web pods serve HTTP: `frankenphp` (the image serves HTTP itself) or `fpm` (PHP-FPM + nginx sidecar).",
+                            "type": "string",
+                            "enum": [
+                                "frankenphp",
+                                "fpm"
+                            ]
+                        }
+                    }
+                },
+                "scheduler": {
+                    "type": "object",
+                    "properties": {
+                        "affinity": {
+                            "description": "Affinity (empty: the top-level `affinity`).",
+                            "type": "object"
+                        },
+                        "backoffLimit": {
+                            "description": "Retries of a failed run (a retry would run in a later minute).",
+                            "type": "integer"
+                        },
+                        "command": {
+                            "description": "Command of the CronJob.",
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "concurrencyPolicy": {
+                            "description": "CronJob concurrency policy. `Forbid` skips a minute while the previous run is still going (use `runInBackground()` for long tasks).",
+                            "type": "string",
+                            "enum": [
+                                "Allow",
+                                "Forbid",
+                                "Replace"
+                            ]
+                        },
+                        "enabled": {
+                            "description": "Run the Laravel scheduler.",
+                            "type": "boolean"
+                        },
+                        "failedJobsHistoryLimit": {
+                            "description": "Failed Jobs kept.",
+                            "type": "integer"
+                        },
+                        "mode": {
+                            "description": "`cronjob`: a CronJob runs `schedule:run` every minute. `deployment`: one long-running pod runs `schedule:work` (no pod per minute).",
+                            "type": "string",
+                            "enum": [
+                                "cronjob",
+                                "deployment"
+                            ]
+                        },
+                        "nodeSelector": {
+                            "description": "Node selector (empty: the top-level `nodeSelector`).",
+                            "type": "object"
+                        },
+                        "resources": {
+                            "description": "Resources of the scheduler.",
+                            "type": "object"
+                        },
+                        "schedule": {
+                            "description": "Cron schedule of the CronJob.",
+                            "type": "string"
+                        },
+                        "startingDeadlineSeconds": {
+                            "description": "Seconds after its schedule a missed run may still start.",
+                            "type": "integer"
+                        },
+                        "successfulJobsHistoryLimit": {
+                            "description": "Successful Jobs kept.",
+                            "type": "integer"
+                        },
+                        "tolerations": {
+                            "description": "Tolerations (empty: the top-level `tolerations`).",
+                            "type": "array"
+                        },
+                        "ttlSecondsAfterFinished": {
+                            "description": "Seconds a finished Job is kept.",
+                            "type": "integer"
+                        },
+                        "workCommand": {
+                            "description": "Command of the `deployment` mode.",
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "writablePaths": {
+            "description": "Directories Laravel writes to, relative to `appPath` or absolute. They are emptyDir volumes so the root filesystem can stay read-only; a path also listed in `persistence.paths` lives on the persistent volume instead.",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        }
+    }
+}

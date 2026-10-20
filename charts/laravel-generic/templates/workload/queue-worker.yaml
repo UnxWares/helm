@@ -1,52 +1,59 @@
 {{- if .Values.workload.queueWorker.enabled }}
+{{- $q := .Values.workload.queueWorker }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "laravel-generic.fullname" . }}-queue
   labels:
     {{- include "laravel-generic.labels" . | nindent 4 }}
+    app.kubernetes.io/component: queue-worker
 spec:
-  replicas: {{ .Values.workload.queueWorker.replicaCount }}
+  replicas: {{ $q.replicaCount }}
   selector:
     matchLabels:
-      app: {{ include "laravel-generic.fullname" . }}-queue
+      {{- include "laravel-generic.componentSelectorLabels" (dict "ctx" . "component" "queue-worker") | nindent 6 }}
   template:
     metadata:
+      annotations:
+        checksum/secret: {{ include "laravel-generic.secretChecksum" . }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       labels:
-        app: {{ include "laravel-generic.fullname" . }}-queue
+        {{- include "laravel-generic.podLabels" (dict "ctx" . "component" "queue-worker") | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      serviceAccountName: {{ include "laravel-generic.serviceAccountName" . }}
-      {{- with .Values.podSecurityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
+      {{- include "laravel-generic.podCommon" (dict "ctx" . "serviceAccount" true "nodeSelector" $q.nodeSelector "tolerations" $q.tolerations "affinity" $q.affinity "colocate" (include "laravel-generic.singleNodeVolume" .)) | trim | nindent 6 }}
+      # queue:work finishes the current job on SIGTERM.
+      terminationGracePeriodSeconds: {{ $q.terminationGracePeriodSeconds }}
+      {{- with (include "laravel-generic.prepareContainer" (dict "ctx" . "persistence" .Values.persistence.enabled)) }}
+      initContainers:
+        {{- . | nindent 8 }}
       {{- end }}
       containers:
         - name: queue-worker
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: {{ include "laravel-generic.image" .Values.image | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with (include "laravel-generic.securityContext" (dict "ctx" .)) }}
+          securityContext:
+            {{- . | nindent 12 }}
+          {{- end }}
           command:
-            {{- range .Values.workload.queueWorker.command }}
-            - {{ . | quote }}
-            {{- end }}
+            {{- toYaml $q.command | nindent 12 }}
           env:
-            {{- include "laravel-generic.env" . | nindent 12 }}
-
-          {{ if .Values.laravel.extraEnvFrom }}
-          envFrom:
-            {{- toYaml .Values.laravel.extraEnvFrom | nindent 12 }}
-          {{ end }}
-          resources:
-            {{- toYaml .Values.workload.queueWorker.resources | nindent 12 }}
-          {{- with .Values.volumeMounts }}
-          volumeMounts:
+            {{- include "laravel-generic.env" (dict "ctx" . "secretName" (include "laravel-generic.secretName" .)) | nindent 12 }}
+          {{- with (include "laravel-generic.envFrom" .) }}
+          {{- . | nindent 10 }}
+          {{- end }}
+          {{- with $q.livenessProbe }}
+          livenessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-      {{- with .Values.volumes }}
+          {{- with $q.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- include "laravel-generic.appVolumeMounts" (dict "ctx" . "persistence" .Values.persistence.enabled) | nindent 12 }}
       volumes:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- include "laravel-generic.appVolumes" (dict "ctx" . "persistence" .Values.persistence.enabled) | nindent 8 }}
 {{- end }}
