@@ -1,0 +1,53 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "kener.fullname" . }}
+  labels:
+    {{- include "kener.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "kener.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  # Egress stays open: monitors probe arbitrary hosts.
+  ingress:
+    - ports:
+        - port: http
+          protocol: TCP
+      {{- with .Values.networkPolicy.ingressFrom }}
+      from:
+        # Pods of this release (helm test).
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ $.Release.Name }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- if .Values.redis.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "kener.valkey.fullname" . }}
+  labels:
+    {{- include "kener.valkey.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "kener.valkey.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  # Only Kener reaches Valkey, and Valkey reaches nothing.
+  ingress:
+    - ports:
+        - port: redis
+          protocol: TCP
+      from:
+        - podSelector:
+            matchLabels:
+              {{- include "kener.selectorLabels" . | nindent 14 }}
+  egress: []
+{{- end }}
+{{- end }}

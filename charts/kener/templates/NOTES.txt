@@ -1,35 +1,54 @@
-1. Get the application URL by running these commands:
-{{- if .Values.httpRoute.enabled }}
-{{- if .Values.httpRoute.hostnames }}
-    export APP_HOSTNAME={{ .Values.httpRoute.hostnames | first }}
-{{- else }}
-    export APP_HOSTNAME=$(kubectl get --namespace {{(first .Values.httpRoute.parentRefs).namespace | default .Release.Namespace }} gateway/{{ (first .Values.httpRoute.parentRefs).name }} -o jsonpath="{.spec.listeners[0].hostname}")
-  {{- end }}
-{{- if and .Values.httpRoute.rules (first .Values.httpRoute.rules).matches (first (first .Values.httpRoute.rules).matches).path.value }}
-    echo "Visit http://$APP_HOSTNAME{{ (first (first .Values.httpRoute.rules).matches).path.value }} to use your application"
+{{- $base := include "kener.basePath" . -}}
+Kener {{ .Chart.AppVersion }} is deployed ({{ include "kener.kenerImage" . }}).
 
-    NOTE: Your HTTPRoute depends on the listener configuration of your gateway and your HTTPRoute rules.
-    The rules can be set for path, method, header and query parameters.
-    You can check the gateway configuration with 'kubectl get --namespace {{(first .Values.httpRoute.parentRefs).namespace | default .Release.Namespace }} gateway/{{ (first .Values.httpRoute.parentRefs).name }} -o yaml'
+Public URL (ORIGIN): {{ .Values.kener.origin }}{{ $base }}
+{{- if .Values.ingress.enabled }}
+Ingress hosts:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
 {{- end }}
-{{- else if .Values.ingress.enabled }}
-{{- range $host := .Values.ingress.hosts }}
-  {{- range .paths }}
-  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
-  {{- end }}
+{{- else if .Values.httpRoute.enabled }}
+HTTPRoute hostnames: {{ join ", " .Values.httpRoute.hostnames }}
+{{- else }}
+Local access:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "kener.fullname" . }} 3000:{{ .Values.service.port }}
+  then open http://localhost:3000{{ $base }} (forms only work when this matches kener.origin)
 {{- end }}
-{{- else if contains "NodePort" .Values.service.type }}
-  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "kener.fullname" . }})
-  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-  echo http://$NODE_IP:$NODE_PORT
-{{- else if contains "LoadBalancer" .Values.service.type }}
-     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-           You can watch its status by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "kener.fullname" . }}'
-  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "kener.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
-  echo http://$SERVICE_IP:{{ .Values.service.port }}
-{{- else if contains "ClusterIP" .Values.service.type }}
-  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "kener.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
-  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
-  echo "Visit http://127.0.0.1:8080 to use your application"
-  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+Create the administrator account now at {{ .Values.kener.origin }}{{ $base }}/account/signin:
+until one exists, anyone who reaches Kener can create it.
+
+Database: {{ if include "kener.sqlite" . }}SQLite in /app/database{{ if .Values.persistence.enabled }} (PVC {{ .Values.persistence.existingClaim | default (include "kener.fullname" .) }}, kept on uninstall){{ end }}{{ else }}external (DATABASE_URL from a Secret){{ end }}
+Redis: {{ if .Values.redis.enabled }}bundled Valkey {{ include "kener.valkey.fullname" . }}:{{ .Values.redis.service.port }}{{ else }}external (REDIS_URL from a Secret){{ end }}
+Health: {{ $base }}/healthcheck?strict=1 (503 while the database or Redis is unreachable)
+{{- if and (or .Values.ingress.enabled .Values.httpRoute.enabled) (regexMatch "^https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$" .Values.kener.origin) }}
+
+WARNING: kener.origin is still {{ .Values.kener.origin }}: set it to the public URL (e.g. https://status.example.com),
+otherwise logins and every other form are rejected.
+{{- end }}
+{{- if and (include "kener.sqlite" .) (not .Values.persistence.enabled) }}
+
+WARNING: persistence is disabled, the SQLite database is lost when the pod restarts.
+{{- end }}
+{{- if not (include "kener.secretKey.existingSecret" .) }}
+{{- if not (include "kener.secretKey.value" .) }}
+
+NOTE: KENER_SECRET_KEY was generated and is kept across upgrades. With GitOps tools that render
+offline (Argo CD, Flux post-renderers...), set kener.secretKey or kener.existingSecret: a new key
+would log everybody out and invalidate every API key on each sync.
+{{- else if lt (len (include "kener.secretKey.value" .)) 32 }}
+
+WARNING: kener.secretKey is shorter than 32 characters. Use a random value (openssl rand -base64 32).
+{{- end }}
+{{- end }}
+{{- if or (dig "key" "" .Values.kener) (dig "keyFrom" "secretRef" "" .Values.kener) (dig "secretKeys" "url" "" .Values.database) (not (kindIs "invalid" (dig "enabled" nil .Values.database))) (index .Values "volumes") (index .Values "volumeMounts") }}
+
+DEPRECATED values in use: kener.key -> kener.secretKey, kener.keyFrom -> kener.existingSecret(+Key),
+database.secretKeys.url -> database.existingSecretKey, database.enabled (empty database.url means SQLite),
+volumes/volumeMounts -> extraVolumes/extraVolumeMounts. They still work for now.
+{{- end }}
+{{- if not .Values.pingMonitors.enabled }}
+
+Ping (ICMP) monitors need pingMonitors.enabled=true (all capabilities are dropped). HTTP, TCP,
+DNS, SSL, SQL, gRPC and heartbeat monitors work as is.
 {{- end }}

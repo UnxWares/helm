@@ -1,205 +1,403 @@
+# -- Override the chart name.
+nameOverride: ""
+# -- Override the full resource names.
+fullnameOverride: ""
+# -- Labels added to every resource.
+commonLabels: {}
+
+# -- Secrets for pulling images from a private registry.
+imagePullSecrets: []
+# - name: my-registry-secret
+
+## Kener
+## https://kener.ing/docs/v4
+image:
+  # -- Kener image repository.
+  repository: docker.io/rajnandan1/kener
+  # -- Image tag. Empty builds it from the chart appVersion, `kener.basePath` and `image.variant` (`4.1.7-alpine`, `4.1.7`, `4.1.7-status-alpine`...).
+  tag: ""
+  # -- Base of the published image when `image.tag` is empty: `alpine` (node:24-alpine, far fewer known CVEs) or `debian` (node:24-slim, the upstream default).
+  variant: alpine  # @schema enum:[alpine, debian]
+  # -- Image digest (`sha256:...`). When set, it takes precedence over the tag.
+  digest: ""
+  # -- Image pull policy.
+  pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
+
+# -- Number of Kener replicas. Must stay at 1 with SQLite. PostgreSQL/MySQL with a shared Redis can run more (not tested upstream).
 replicaCount: 1
 
-# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
-image:
-  repository: rajnandan1/kener
-  pullPolicy: IfNotPresent
-  tag: ""
-
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+# -- Deployment update strategy. With SQLite and persistence the chart forces `Recreate`.
+updateStrategy: {}
+# type: RollingUpdate
 
 kener:
-  # Node environment
+  # -- Public URL of Kener (`ORIGIN`): scheme + host + optional port, no path, no trailing slash (e.g. `https://status.example.com`). It must match the URL in the browser or every form (login included) is rejected; `https://` also turns on secure cookies. The default only suits `kubectl port-forward`.
+  origin: http://localhost:3000
+  # -- Serve Kener under a sub path (`KENER_BASE_PATH`). The base path is compiled into the image: published images exist for `""` and `/status` (the `-status` tags, picked automatically). Any other path needs your own image in `image.tag`.
+  basePath: ""
+  # -- Secret key (`KENER_SECRET_KEY`, 32+ characters) signing sessions and hashing API keys. Leave empty to generate one (kept across upgrades). Set it, or use `existingSecret`, with GitOps tools that render templates offline: changing it logs everybody out and invalidates every API key.
+  secretKey: ""
+  # -- Existing secret holding the secret key.
+  existingSecret: ""
+  # -- Key of the secret key in `existingSecret`.
+  existingSecretKey: secret-key
+  # -- `NODE_ENV` of the Kener process.
   nodeEnv: production
+  # -- Maximum request body size (`BODY_SIZE_LIMIT`), raise it to upload larger images.
+  bodySizeLimit: 3M
+  # -- Re-enable the email/password login when it is disabled in the OpenID Connect settings (`KENER_FORCE_LOCAL_LOGIN`). Emergency use only: turn it off once the identity provider works again.
+  forceLocalLogin: false
 
-  # Origin
-  origin: https://status.example.com
-
-  # Custom key
-  key: "thesuperprivatekeytonotshare"
-
-  # Or reference a secret
-  # keyFrom:
-  #   secretRef: "existing-secret"
-  #   secretKey: "key"
-
-# Database configuration
+## Database: SQLite on the persistent volume by default, or an external PostgreSQL / MySQL
+## https://kener.ing/docs/v4/setup/database-setup
 database:
+  # -- External database URL: `postgresql://user:password@host:5432/kener` or `mysql://user:password@host:3306/kener` (stored in a Secret; percent-encode reserved characters of the password). Empty uses SQLite in `/app/database`.
+  url: ""
+  # -- Existing secret holding the database URL (`postgresql://` or `mysql://`). Takes precedence over `database.url`.
+  existingSecret: ""
+  # -- Key of the URL in `existingSecret`.
+  existingSecretKey: database-url
+  pool:
+    # -- `DATABASE_POOL_MIN` (PostgreSQL/MySQL). Null keeps the Kener default (0).
+    min: null  # @schema type:[integer, null]
+    # -- `DATABASE_POOL_MAX`: connections serving web requests, per replica (Kener default 10). Keep `replicas x (max + workerMax)` below the database `max_connections`.
+    max: null  # @schema type:[integer, null]
+    # -- `DATABASE_WORKER_POOL_MAX`: connections of the background jobs, per replica (Kener default 5).
+    workerMax: null  # @schema type:[integer, null]
+    # -- `DATABASE_ACQUIRE_TIMEOUT_MS` (Kener default 15000).
+    acquireTimeoutMs: null  # @schema type:[integer, null]
+    # -- `DATABASE_CREATE_TIMEOUT_MS` (Kener default 15000).
+    createTimeoutMs: null  # @schema type:[integer, null]
+    # -- `DATABASE_IDLE_TIMEOUT_MS` (Kener default 30000).
+    idleTimeoutMs: null  # @schema type:[integer, null]
+  # -- `DATABASE_KEEPALIVE`: TCP keepalive on database connections. Null keeps the Kener default (`true`).
+  keepAlive: null  # @schema type:[boolean, null]
+
+persistence:
+  # -- Persist the SQLite database (`/app/database`). Without it the database lives in an emptyDir and is lost with the pod. Unused with an external database.
   enabled: true
+  # -- Use an existing PVC (e.g. the one you mounted on `/app/database` with the previous chart).
+  existingClaim: ""
+  # -- Storage class (empty uses the cluster default).
+  storageClass: ""
+  # -- Access modes.
+  accessModes:
+    - ReadWriteOnce
+  # -- Volume size.
+  size: 2Gi
+  # -- PVC annotations.
+  annotations: {}
 
-  url: "postgresql://user:password@host:port/db"
+## Redis is mandatory since Kener 4 (BullMQ queues, cache, schedulers)
+## https://kener.ing/docs/v4/setup/redis-setup
+redis:
+  # -- Deploy a bundled single-instance Valkey (Redis compatible). Set to `false` and fill `redis.external` to use your own Redis 6+ / Valkey.
+  enabled: true
+  image:
+    # -- Valkey image repository.
+    repository: docker.io/valkey/valkey
+    # -- Valkey image tag.
+    tag: "9.1.2-alpine"
+    # -- Image digest (takes precedence over the tag).
+    digest: ""
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
+  auth:
+    # -- Password of the bundled Valkey. Leave empty to generate one (kept across upgrades). It is embedded in `REDIS_URL`, so only `A-Z a-z 0-9 . _ ~ -` are allowed.
+    password: ""
+    # -- Existing secret holding the Valkey password (same character rules).
+    existingSecret: ""
+    # -- Key of the password in `existingSecret`.
+    existingSecretPasswordKey: redis-password
+  # -- Raw lines appended to valkey.conf (e.g. `maxmemory 200mb`). Keep `maxmemory-policy noeviction`: BullMQ needs it.
+  extraConfig: ""
+  persistence:
+    # -- Keep Valkey data (AOF) on a PVC. Kener rebuilds its schedules from the database at startup, so an emptyDir is enough unless queued notifications must survive a Valkey restart.
+    enabled: false
+    # -- Use an existing PVC.
+    existingClaim: ""
+    # -- Storage class (empty uses the cluster default).
+    storageClass: ""
+    # -- Access modes.
+    accessModes:
+      - ReadWriteOnce
+    # -- Volume size.
+    size: 1Gi
+    # -- PVC annotations.
+    annotations: {}
+  service:
+    # -- Valkey service port.
+    port: 6379
+  # -- Pod annotations.
+  podAnnotations: {}
+  # -- Pod labels.
+  podLabels: {}
+  # -- Valkey pod security context. The image user is `valkey` (uid 999, gid 1000).
+  podSecurityContext:  # @schema skipProperties:true
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 1000
+    fsGroup: 1000
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Valkey container security context.
+  securityContext:  # @schema skipProperties:true
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+  # -- Valkey resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      memory: 256Mi
+  # -- Valkey liveness probe.
+  livenessProbe:  # @schema skipProperties:true
+    tcpSocket:
+      port: redis
+    periodSeconds: 15
+    timeoutSeconds: 3
+    failureThreshold: 4
+  # -- Valkey readiness probe (`valkey-cli ping`, authenticated through `VALKEYCLI_AUTH`).
+  readinessProbe:  # @schema skipProperties:true
+    exec:
+      command:
+        - sh
+        - -c
+        - '[ "$(valkey-cli -h 127.0.0.1 -p 6379 ping)" = PONG ]'
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  # -- Priority class of the Valkey pod.
+  priorityClassName: ""
+  # -- Node selector.
+  nodeSelector: {}
+  # -- Tolerations.
+  tolerations: []
+  # -- Affinity rules.
+  affinity: {}
 
-  # If you want to pull values from an existing secret
-  # Using existingSecret will override database.url
-  # existingSecret: "existing-secret"
-  secretKeys:
-    url: database-url
+  external:
+    # -- URL of your own Redis when `redis.enabled` is false: `redis://[user:password@]host:6379[/db]`, or `rediss://` for TLS (stored in a Secret).
+    url: ""
+    # -- Existing secret holding the full Redis URL. Takes precedence over `redis.external.url`.
+    existingSecret: ""
+    # -- Key of the URL in `existingSecret`.
+    existingSecretKey: redis-url
 
+## Email sent by Kener (invitations, verification, password resets, subscriber notifications). SMTP wins when both are set.
+## https://kener.ing/docs/v4/setup/email-setup
+email:
+  smtp:
+    # -- SMTP host (`SMTP_HOST`). Kener uses SMTP from the environment only when host, port, user, sender and password are all set.
+    host: ""
+    # -- SMTP port (`SMTP_PORT`).
+    port: 587
+    # -- SMTP user (`SMTP_USER`).
+    user: ""
+    # -- SMTP password (`SMTP_PASS`, stored in a Secret; ignored when `existingSecret` is set).
+    password: ""
+    # -- Existing secret holding the SMTP password.
+    existingSecret: ""
+    # -- Key of the password in `existingSecret`.
+    existingSecretPasswordKey: smtp-password
+    # -- Sender address (`SMTP_FROM_EMAIL`), e.g. `Status <status@example.com>`.
+    fromEmail: ""
+    # -- Implicit TLS (`SMTP_SECURE=1`, usually port 465). Keep `false` for STARTTLS on port 587.
+    secure: false
+  resend:
+    # -- Resend API key (`RESEND_API_KEY`, stored in a Secret; ignored when `existingSecret` is set).
+    apiKey: ""
+    # -- Existing secret holding the Resend API key.
+    existingSecret: ""
+    # -- Key of the API key in `existingSecret`.
+    existingSecretKey: resend-api-key
+    # -- Sender address (`RESEND_SENDER_EMAIL`), required with Resend.
+    senderEmail: ""
+
+## Outbound proxy for monitors, triggers, Resend and OIDC
+proxy:
+  # -- `HTTP_PROXY` (stored in a Secret: it may carry credentials, percent-encoded).
+  httpProxy: ""
+  # -- `HTTPS_PROXY` (stored in a Secret).
+  httpsProxy: ""
+  # -- `NO_PROXY`: hosts, `host:port`, `.suffix` (no CIDR). Add the in-cluster services your monitors reach directly.
+  noProxy: ""
+
+pingMonitors:
+  # -- Make ICMP ping monitors work with all capabilities dropped: sets the safe sysctl `net.ipv4.ping_group_range` so `ping` can use unprivileged ICMP sockets, and keeps `NET_RAW` in the capability bounding set only, so the image's `ping` (which carries a `cap_net_raw` file capability) can still be executed. The process never holds `NET_RAW` (non-root, no privilege escalation), but the pod then matches the Pod Security Standard `baseline` instead of `restricted`.
+  enabled: false
+
+# -- Extra environment variables of the Kener container. Kener substitutes `$NAME` variables in monitors and triggers: pass their secrets here with `valueFrom.secretKeyRef`. Never drop `--experimental-strip-types` if you set `NODE_OPTIONS`.
 extraEnv: []
-# - name: NODE_ENV
-#   value: production
-# - name: API_KEY
+# - name: API_TOKEN
 #   valueFrom:
 #     secretKeyRef:
-#       name: my-secret
-#       key: api-key
+#       name: kener-monitor-secrets
+#       key: api-token
 
+# -- Extra `envFrom` sources of the Kener container.
 extraEnvFrom: []
 # - secretRef:
-#     name: my-secret
-# - configMapRef:
-#     name: my-config
+#     name: kener-monitor-secrets
+
+# -- Extra volumes.
+extraVolumes: []
+# -- Extra volume mounts of the Kener container. Do not mount `/app/database`: use `persistence.existingClaim`.
+extraVolumeMounts: []
 
 serviceAccount:
-  # Specifies whether a service account should be created
+  # -- Create a dedicated service account.
   create: true
-  # Automatically mount a ServiceAccount's API credentials?
-  automount: true
-  # Annotations to add to the service account
-  annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
+  # -- Service account name (generated when empty).
   name: ""
+  # -- Service account annotations.
+  annotations: {}
+  # -- Kener never talks to the Kubernetes API: the token is not mounted.
+  automount: false
 
-# This is for setting Kubernetes Annotations to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+# -- Pod annotations.
 podAnnotations: {}
-# This is for setting Kubernetes Labels to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+# -- Pod labels.
 podLabels: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+# -- Pod security context. The image user is `node` (uid/gid 1000).
+podSecurityContext:  # @schema skipProperties:true
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+# -- Container security context.
+securityContext:  # @schema skipProperties:true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
 
-# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
-  type: ClusterIP
+  # -- Service type.
+  type: ClusterIP  # @schema enum:[ClusterIP, NodePort, LoadBalancer]
+  # -- Service port (the container always listens on 3000).
   port: 3000
+  # -- Service annotations.
+  annotations: {}
 
 ingress:
+  # -- Create an Ingress.
   enabled: false
+  # -- Ingress class name.
   className: ""
+  # -- Ingress annotations.
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
+  # cert-manager.io/cluster-issuer: letsencrypt
+  # -- Hosts and paths. With `kener.basePath`, route that path (e.g. `/status`).
   hosts:
-    - host: chart-example.local
+    - host: status.example.com
       paths:
         - path: /
-          pathType: ImplementationSpecific
+          pathType: Prefix
+  # -- TLS settings.
   tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  # - secretName: status-example-com-tls
+  #   hosts:
+  #     - status.example.com
 
 httpRoute:
-  # HTTPRoute enabled.
+  # -- Create a Gateway API HTTPRoute.
   enabled: false
-  # HTTPRoute annotations.
+  # -- HTTPRoute annotations.
   annotations: {}
-  # Which Gateways this Route is attached to.
+  # -- Gateways this route attaches to.
   parentRefs:
-  - name: gateway
-    sectionName: http
-    # namespace: default
-  # Hostnames matching HTTP header.
+    - name: gateway
+      sectionName: http
+      # namespace: default
+  # -- Hostnames.
   hostnames:
-  - chart-example.local
-  # List of rules and filters applied.
+    - status.example.com
+  # -- Rules (`matches`, `filters`); each one is sent to the Kener service. With `kener.basePath`, match that path instead of `/`.
   rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /headers
-  #   filters:
-  #   - type: RequestHeaderModifier
-  #     requestHeaderModifier:
-  #       set:
-  #       - name: My-Overwrite-Header
-  #         value: this-is-the-only-value
-  #       remove:
-  #       - User-Agent
-  # - matches:
-  #   - path:
-  #       type: PathPrefix
-  #       value: /echo
-  #     headers:
-  #     - name: version
-  #       value: v2
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
 
-resources: {}
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+# -- Resource requests and limits (Kener recommends 1 vCPU / 1 GiB for real workloads).
+resources:  # @schema skipProperties:true
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 1Gi
 
-livenessProbe:
-  httpGet:
-    path: /
-    port: http
-  initialDelaySeconds: 20
+# -- Liveness probe (`enabled: false` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck` (always 200 while the server answers). Generous on purpose: large SQLite migrations block the process at the first start of a new version.
+livenessProbe:  # @schema skipProperties:true
+  enabled: true
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 6
+# -- Readiness probe (`enabled: false` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck?strict=1` (503 while the database or Redis is unreachable).
+readinessProbe:  # @schema skipProperties:true
+  enabled: true
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3
-  successThreshold: 1
-
-readinessProbe:
-  httpGet:
-    path: /
-    port: http
-  initialDelaySeconds: 10
+# -- Startup probe (`enabled: false` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck`.
+startupProbe:  # @schema skipProperties:true
+  enabled: true
   periodSeconds: 5
   timeoutSeconds: 5
-  failureThreshold: 3
-  successThreshold: 1
+  failureThreshold: 60
 
-startupProbe:
-  httpGet:
-    path: /
-    port: http
-  failureThreshold: 30
-  periodSeconds: 5
-  timeoutSeconds: 5
-
-# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
+  # -- Enable the HorizontalPodAutoscaler (PostgreSQL/MySQL only, not tested upstream).
   enabled: false
-  minReplicas: 1
-  maxReplicas: 100
+  # -- Minimum replicas.
+  minReplicas: 2
+  # -- Maximum replicas.
+  maxReplicas: 4
+  # -- Target CPU utilization.
   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  # -- Target memory utilization.
+  targetMemoryUtilizationPercentage: null  # @schema type:[integer, null]
 
-volumes: []
-# - name: kener-data
-#   persistentVolumeClaim:
-#     claimName: kener-data
-# - name: kener-uploads
-#   persistentVolumeClaim:
-#     claimName: kener-uploads
+podDisruptionBudget:
+  # -- Create a PodDisruptionBudget for Kener (useful with 2+ replicas).
+  enabled: false
+  # -- Minimum available pods.
+  minAvailable: 1
+  # -- Maximum unavailable pods (used instead of minAvailable when set).
+  maxUnavailable: null  # @schema type:[integer, string, null]
 
-# Additional volumeMounts on the output Deployment definition.
-volumeMounts: []
-# - name: kener-data
-#   mountPath: "/app/database"
-#   readOnly: false
-# - name: kener-uploads
-#   mountPath: "/app/uploads"
-#   readOnly: false
+networkPolicy:
+  # -- Create NetworkPolicies: Kener only accepts traffic on its HTTP port, and the bundled Valkey only accepts Kener pods (no egress at all).
+  enabled: false
+  # -- Peers allowed to reach Kener (e.g. your ingress controller). Empty allows any source on the HTTP port; pods of this release are always allowed.
+  ingressFrom: []
+  # - namespaceSelector:
+  #     matchLabels:
+  #       kubernetes.io/metadata.name: ingress-nginx
 
+# -- Priority class of the Kener pods.
+priorityClassName: ""
+# -- Node selector.
 nodeSelector: {}
-
+# -- Tolerations.
 tolerations: []
-
+# -- Affinity rules.
 affinity: {}
+# -- Topology spread constraints.
+topologySpreadConstraints: []
+
+tests:
+  # -- Image used by `helm test` (defaults to the Kener image, which ships curl).
+  image: ""

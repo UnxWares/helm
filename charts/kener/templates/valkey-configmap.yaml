@@ -1,0 +1,27 @@
+{{- if .Values.redis.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kener.valkey.fullname" . }}
+  labels:
+    {{- include "kener.valkey.labels" . | nindent 4 }}
+data:
+  valkey.conf: |
+    # Managed by the kener chart. The password is read from stdin at startup, never written here.
+    bind * -::*
+    port 6379
+    dir /data
+    # BullMQ (Kener queues) refuses to run with an eviction policy.
+    maxmemory-policy noeviction
+    {{- if .Values.redis.persistence.enabled }}
+    appendonly yes
+    appendfsync everysec
+    {{- else }}
+    # Cache and queues only: Kener rebuilds its schedules from the database at startup.
+    save ""
+    appendonly no
+    {{- end }}
+    {{- with .Values.redis.extraConfig }}
+    {{- . | nindent 4 }}
+    {{- end }}
+{{- end }}

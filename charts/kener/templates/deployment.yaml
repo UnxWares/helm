@@ -1,24 +1,42 @@
+{{- include "kener.validate" . }}
+{{- $sqlite := include "kener.sqlite" . }}
+{{- $base := include "kener.basePath" . }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "kener.fullname" . }}
   labels:
     {{- include "kener.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- if and $sqlite .Values.persistence.enabled }}
+  # A ReadWriteOnce volume cannot be attached to the old and the new pod at the same time,
+  # and SQLite must never have two writers.
+  strategy:
+    type: Recreate
+  {{- else if .Values.updateStrategy }}
+  strategy:
+    {{- toYaml .Values.updateStrategy | nindent 4 }}
   {{- end }}
   selector:
     matchLabels:
       {{- include "kener.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        checksum/secret: {{ list (include "kener.secretKey.value" .) .Values.database.url .Values.redis.auth.password .Values.redis.external.url .Values.email.smtp.password .Values.email.resend.apiKey .Values.proxy.httpProxy .Values.proxy.httpsProxy | toJson | sha256sum }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
-        {{- include "kener.labels" . | nindent 8 }}
+        {{- include "kener.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+        {{- with .Values.commonLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -28,86 +46,75 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "kener.serviceAccountName" . }}
-      {{- with .Values.podSecurityContext }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+      enableServiceLinks: false
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with include "kener.podSecurityContext" . }}
       securityContext:
-        {{- toYaml . | nindent 8 }}
+        {{- . | nindent 8 }}
       {{- end }}
       containers:
-        - name: {{ .Chart.Name }}
-          {{- with .Values.securityContext }}
-          securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        - name: kener
+          image: {{ include "kener.kenerImage" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: {{ .Values.service.port }}
-              protocol: TCP
+          {{- with include "kener.securityContext" . }}
+          securityContext:
+            {{- . | nindent 12 }}
+          {{- end }}
           env:
-            - name: NODE_ENV
-              value: {{ .Values.kener.nodeEnv | quote }}
-            - name: ORIGIN
-              value: {{ .Values.kener.origin | quote }}
-
-            {{- if and .Values.kener.keyFrom .Values.kener.keyFrom.secretRef }}
-            - name: KENER_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.kener.keyFrom.secretRef }}
-                  key: {{ .Values.kener.keyFrom.secretKey }}
-            {{- else if .Values.kener.key }}
-            - name: KENER_SECRET_KEY
-              value: {{ .Values.kener.key | quote }}
-            {{- end }}
-
-            {{- if .Values.database.enabled }}
-
-            - name: DATABASE_URL
-              {{- if .Values.database.existingSecret }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.database.existingSecret }}
-                  key: {{ .Values.database.secretKeys.url }}
-              {{- else }}
-              value: {{ .Values.database.url | quote }}
-              {{- end }}
-
-            {{- end }}
-
-            {{- with .Values.extraEnv }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
-
+            {{- include "kener.env" . | nindent 12 }}
           {{- with .Values.extraEnvFrom }}
           envFrom:
-          {{- toYaml . | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
-
-          {{- with .Values.livenessProbe }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
-            {{- toYaml . | nindent 12 }}
+            {{- include "kener.probe" (dict "probe" .Values.livenessProbe "path" (printf "%s/healthcheck" $base)) | nindent 12 }}
           {{- end }}
-          {{- with .Values.readinessProbe }}
+          {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
-            {{- toYaml . | nindent 12 }}
+            {{- include "kener.probe" (dict "probe" .Values.readinessProbe "path" (printf "%s/healthcheck?strict=1" $base)) | nindent 12 }}
           {{- end }}
-          {{- with .Values.startupProbe }}
+          {{- if .Values.startupProbe.enabled }}
           startupProbe:
-            {{- toYaml . | nindent 12 }}
+            {{- include "kener.probe" (dict "probe" .Values.startupProbe "path" (printf "%s/healthcheck" $base)) | nindent 12 }}
           {{- end }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.volumeMounts }}
           volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-      {{- with .Values.volumes }}
+            - name: tmp
+              mountPath: /tmp
+            {{- if $sqlite }}
+            - name: data
+              mountPath: /app/database
+            {{- end }}
+            {{- with include "kener.extraVolumeMounts" . }}
+            {{- . | nindent 12 }}
+            {{- end }}
       volumes:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+        {{- if $sqlite }}
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (include "kener.fullname" .) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- end }}
+        {{- with include "kener.extraVolumes" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -118,5 +125,9 @@ spec:
       {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}

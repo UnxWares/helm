@@ -1,0 +1,11 @@
+# /status base path image on Debian, persistent Valkey, ping monitors (sysctl + NET_RAW bounding set).
+kener:
+  origin: http://localhost
+  basePath: /status
+image:
+  variant: debian
+redis:
+  persistence:
+    enabled: true
+pingMonitors:
+  enabled: true

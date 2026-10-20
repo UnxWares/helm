@@ -21,3 +21,6 @@
 .idea/
 *.tmproj
 .vscode/
+# CI values used by chart-testing
+ci/
+README.md.gotmpl

@@ -1,0 +1,45 @@
+{{- if and (include "kener.sqlite" .) .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "kener.fullname" . }}
+  labels:
+    {{- include "kener.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+    {{- with .Values.persistence.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  accessModes:
+    {{- toYaml .Values.persistence.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size | quote }}
+  {{- with .Values.persistence.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+{{- end }}
+{{- if and .Values.redis.enabled .Values.redis.persistence.enabled (not .Values.redis.persistence.existingClaim) }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "kener.valkey.fullname" . }}
+  labels:
+    {{- include "kener.valkey.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+    {{- with .Values.redis.persistence.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  accessModes:
+    {{- toYaml .Values.redis.persistence.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.redis.persistence.size | quote }}
+  {{- with .Values.redis.persistence.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+{{- end }}

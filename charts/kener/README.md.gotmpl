@@ -1,0 +1,223 @@
+# Kener Helm Chart
+
+{{ template "chart.badgesSection" . }}
+
+[Kener](https://kener.ing) is an open source status page: monitors (HTTP, TCP, DNS, ping, SSL, SQL, gRPC,
+heartbeat...), incidents, maintenances and subscriptions. This chart, maintained by UnxWares, runs Kener 4 on
+Kubernetes with its mandatory Redis.
+
+## Features
+
+- **Kener 4** on SQLite (single replica + PVC kept on uninstall), PostgreSQL or MySQL. Database migrations run automatically at startup.
+- **Bundled Valkey** (Redis compatible, required by Kener 4 for its queues): a single hardened pod with a generated password, no persistence by default since Kener rebuilds its schedules from the database. Or bring your own Redis 6+ through `redis.external`.
+- **No default credentials**: `KENER_SECRET_KEY` and the Valkey password are generated and kept across upgrades, or read from your own Secrets. The database URL, Redis URL, SMTP password, Resend key and proxy URLs only reach the container through `secretKeyRef`.
+- **Hardened by default**: non-root (uid 1000), read-only root filesystem, every capability dropped, seccomp `RuntimeDefault`, no service account token. The default pods meet the Pod Security Standard `restricted`.
+- **Image choice**: Alpine variant by default (far fewer known CVEs than the Debian one), Debian on demand, and the upstream `-status` images for a `/status` base path.
+- **Probes on `/healthcheck`**: readiness uses `?strict=1`, so a pod leaves the Service while its database or Redis is unreachable.
+- Ingress or Gateway API HTTPRoute, optional NetworkPolicies (Valkey only reachable by Kener, without any egress), PodDisruptionBudget and HPA (SQL databases), `helm test`.
+
+## Installation
+
+```bash
+helm repo add unxwares https://helm.unxwares.studio
+helm repo update
+helm install status unxwares/kener --namespace status --create-namespace \
+  --set kener.origin=https://status.example.com
+```
+
+`kener.origin` must be the exact URL users type in their browser (scheme + host + optional port, no path, no
+trailing slash): Kener rejects every form, login included, when it does not match. The default,
+`http://localhost:3000`, only suits a quick test through `kubectl port-forward svc/status-kener 3000:3000`.
+
+Then open `<origin><basePath>/account/signin` and create the administrator account. Kener lets **anyone** who
+reaches this page create the first account while none exists: do it before exposing the page publicly (through a
+port-forward, or with the Ingress restricted to your network).
+
+Charts are signed: see [verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures)
+and add `--verify --keyring <keyring>` to `helm install`.
+
+## Examples
+
+### Public status page behind an Ingress
+
+```yaml
+kener:
+  origin: https://status.example.com
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+  hosts:
+    - host: status.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: status-example-com-tls
+      hosts:
+        - status.example.com
+networkPolicy:
+  enabled: true
+  ingressFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+```
+
+### Under `/status` with the Gateway API
+
+The base path is compiled into the Kener image: the chart picks the upstream `-status` image
+(`4.1.7-status-alpine`) when `kener.basePath` is `/status`. Any other path needs your own build
+(`KENER_BASE_PATH` build argument) in `image.tag`.
+
+```yaml
+kener:
+  origin: https://example.com      # origin only, never the /status path
+  basePath: /status
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: main-gateway
+      namespace: gateway-system
+      sectionName: https
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /status
+```
+
+### PostgreSQL, external Redis and two replicas
+
+```yaml
+kener:
+  origin: https://status.example.com
+  existingSecret: kener            # key: secret-key
+database:
+  existingSecret: kener            # key: database-url = postgresql://kener:<password>@db-rw.databases.svc:5432/kener
+redis:
+  enabled: false
+  external:
+    existingSecret: kener          # key: redis-url = rediss://default:<password>@redis.example.com:6379
+replicaCount: 2
+podDisruptionBudget:
+  enabled: true
+```
+
+Kener only accepts `postgresql://` (not `postgres://`) and `mysql://` URLs. Percent-encode reserved characters of the
+password (`@` → `%40`, `/` → `%2F`, `:` → `%3A`...). Several replicas sharing one database and one Redis is how
+Kener 4 is designed, but it is not tested upstream: keep `replicas × (DATABASE_POOL_MAX + DATABASE_WORKER_POOL_MAX)`
+(10 + 5 per replica by default, see `database.pool`) below the database `max_connections`.
+
+### Email through SMTP
+
+```yaml
+email:
+  smtp:
+    host: smtp.example.com
+    port: 587
+    user: status@example.com
+    existingSecret: kener-smtp     # key: smtp-password
+    fromEmail: Status <status@example.com>
+```
+
+Resend works the same way with `email.resend` (SMTP wins when both are set). User invitations and email
+verification need one of them.
+
+### Secrets for monitors and triggers
+
+Kener replaces `$NAME` in monitor URLs, headers, bodies, SQL connection strings and trigger settings with the
+environment variable `NAME`. Pass them from a Secret, never as plain values:
+
+```yaml
+extraEnvFrom:
+  - secretRef:
+      name: kener-monitor-secrets   # API_TOKEN, DB_PASSWORD...
+```
+
+Kener substitutes **any** variable of its environment, including `KENER_SECRET_KEY`, `DATABASE_URL` and
+`REDIS_URL`: a user allowed to edit monitors or triggers can send them to a server of their choice. Only give these
+permissions to people you would trust with the secrets themselves.
+
+### Ping monitors
+
+Ping (ICMP) monitors run the image's `ping`, which carries a `cap_net_raw` file capability. With every capability
+dropped the kernel refuses to even start it. `pingMonitors.enabled: true`:
+
+- sets the safe sysctl `net.ipv4.ping_group_range=0 2147483647` on the pod, so `ping` can use unprivileged ICMP
+  sockets;
+- keeps `NET_RAW` in the container capability **bounding set only**, so `ping` can be executed. Kener runs as
+  uid 1000 with `allowPrivilegeEscalation: false`, so neither Node.js nor `ping` actually holds `NET_RAW`.
+
+The pod then matches the Pod Security Standard `baseline` instead of `restricted` (only `NET_BIND_SERVICE` may be
+added under `restricted`). HTTP, TCP, DNS, SSL, SQL, gRPC and heartbeat monitors do not need it.
+
+## Notes
+
+- **GitOps**: generated secrets cannot be read back by tools that render templates offline (Argo CD...), which would
+  rotate them on every sync. A new `KENER_SECRET_KEY` logs everybody out **and invalidates every API key** (they are
+  stored as HMACs of this key). Set `kener.secretKey` (32+ random characters) or `kener.existingSecret`, and
+  `redis.auth.password` or `redis.auth.existingSecret`.
+- **SQLite** supports a single replica: the chart refuses `replicaCount > 1` or the HPA with it and uses the
+  `Recreate` strategy.
+- **Valkey** keeps no data by default (`save ""`, no AOF): a restart only loses queued jobs (pending notifications);
+  monitor schedules are rebuilt from the database. Set `redis.persistence.enabled` to keep them. The Valkey password
+  is embedded in `REDIS_URL`, so it is limited to `A-Z a-z 0-9 . _ ~ -`.
+- **`NODE_OPTIONS`**: the image sets `--experimental-strip-types`, which Kener needs to load its migrations. The chart
+  refuses an `extraEnv` `NODE_OPTIONS` without it.
+- **Large SQLite upgrades**: migrations block the process at the first start of a new version. The liveness probe
+  tolerates 2 minutes; raise `livenessProbe.failureThreshold` for very large databases.
+
+## Upgrading
+
+### From 2026.2.x (Kener 3.2.19) to 2026.10.1 (Kener 4.1.7)
+
+Kener 4 is a major release. Back up the database first (the PVC mounted on `/app/database`, or your
+PostgreSQL/MySQL database): the migrations run automatically at the first start and cannot be rolled back.
+
+Chart changes:
+
+1. **Secret key** — the previous chart shipped a default `KENER_SECRET_KEY` (`thesuperprivatekeytonotshare`). It was
+   public: anyone could forge a session for any account. The chart now refuses it and generates a random key unless
+   you set one. After the upgrade everybody logs in again and API keys created before must be re-created. If you
+   had set your own key, it is kept (`kener.key` and `kener.keyFrom` still work, prefer `kener.secretKey` and
+   `kener.existingSecret` + `kener.existingSecretKey`).
+2. **SQLite data** — the previous chart had no persistence. If you mounted your own PVC on `/app/database` through
+   `volumes`/`volumeMounts`, remove these entries and set `persistence.existingClaim: <your PVC>` (the chart refuses a
+   second mount on `/app/database`). Without such a volume the data lived in the container and cannot be recovered.
+   `/app/uploads` is gone: Kener 4 stores images in the database.
+3. **External database** — `database.url` and `database.existingSecret` keep their meaning, but the URL now goes
+   through a Secret and must start with `postgresql://` or `mysql://`. `database.secretKeys.url` becomes
+   `database.existingSecretKey`, and `database.enabled: false` is simply an empty `database.url` (both old names still
+   work). The old default URL (`postgresql://user:password@host:port/db`) is gone: SQLite is now the default.
+4. **Redis** is mandatory: the bundled Valkey is deployed unless you set `redis.enabled: false` and `redis.external`.
+5. **Image** — `docker.io/rajnandan1/kener:4.1.7-alpine` by default (`image.variant: debian` for the upstream
+   default). The container always listens on 3000; `service.port` only changes the Service.
+6. **Security context** — pods run as uid/gid 1000 (the image `node` user, as before) with a read-only root
+   filesystem. Files of an existing volume are made group-accessible through `fsGroup: 1000`.
+7. `kener.origin` now defaults to `http://localhost:3000` and is validated (no path, no trailing slash): set it to
+   your public URL. The HTTPRoute default rule now routes `PathPrefix /` (it only matched `/headers`).
+8. The Deployment keeps its name and selector, so `helm upgrade` works in place; with SQLite it switches to the
+   `Recreate` strategy. If the upgrade is refused with `spec.strategy.rollingUpdate: Forbidden`, delete the
+   Deployment (`kubectl delete deploy <release>-kener`, the data is on the PVC) and run `helm upgrade` again.
+
+Kener changes ([v4.0.0 notes](https://kener.ing/docs/v4/changelogs/v4.0.0)), to handle after the upgrade:
+
+- Heartbeat monitors: update callers to `/ext/heartbeat/{tag}:{secret}`.
+- REST API: v3 routes are gone, use `/api/v4/*`.
+- Re-upload the logo and favicon (**Manage → Site**): `/uploads/...` URLs return 404. Host custom fonts elsewhere.
+- Assign monitors to a page (**Manage → Pages**): they are hidden until then.
+- Open and save monitors that had a custom timeout (string to number fix).
+- Subscriptions and subscribers are not migrated: configure them again.
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+## License
+
+The chart is released under the MIT license. Kener is licensed under the MIT license, Valkey under the BSD-3-Clause
+license.
