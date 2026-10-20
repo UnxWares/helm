@@ -1,32 +1,25 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+# Regenerate values.schema.json (from the `# @schema` annotations of values.yaml) and README.md
+# (from README.md.gotmpl and the `# --` comments) for every chart, or for the charts given as arguments.
+# CI fails when the committed files differ from what this script produces.
+#
+# usage: ./generate-schemas.sh [chart ...]
+# needs: helm-values-schema-json v2.6.0
+#          helm plugin install https://github.com/losisin/helm-values-schema-json.git --version v2.6.0
+#        helm-docs v1.14.2 (https://github.com/norwoodj/helm-docs/releases/tag/v1.14.2)
+# env:   SCHEMA (default: "helm schema"), HELM_DOCS (default: helm-docs)
+set -euo pipefail
 
-echo "🔧 Generating values schemas for all charts..."
+cd "$(dirname "$0")"
+read -r -a schema <<<"${SCHEMA:-helm schema}"
+helm_docs=${HELM_DOCS:-helm-docs}
 
-# Check if helm-schema-gen plugin is installed
-if ! helm plugin list | grep -q schema-gen; then
-    echo "📦 Installing helm-schema-gen plugin..."
-    helm plugin install https://github.com/karuppiah7890/helm-schema-gen.git
-fi
-
-# Generate schema for each chart
-for chart in charts/*/; do
-    chart_name=$(basename "$chart")
-    echo "📝 Generating schema for $chart_name..."
-
-    if [ -f "$chart/values.yaml" ]; then
-        helm schema-gen "$chart/values.yaml" > "$chart/values.schema.json"
-        echo "✅ Schema generated: $chart/values.schema.json"
-    else
-        echo "⚠️  No values.yaml found for $chart_name"
-    fi
+charts=("$@")
+[ ${#charts[@]} -gt 0 ] || charts=(charts/*/)
+for chart in "${charts[@]}"; do
+  chart=${chart%/}
+  [ -d "$chart" ] || chart=charts/$chart
+  echo "==> $chart"
+  (cd "$chart" && "${schema[@]}" -f values.yaml -o values.schema.json --use-helm-docs --draft 7 >/dev/null)
+  (cd "$chart" && "$helm_docs" --chart-search-root . --template-files README.md.gotmpl --log-level warning)
 done
-
-echo ""
-echo "🎉 All schemas generated successfully!"
-echo ""
-echo "Next steps:"
-echo "1. Review the generated schemas in each chart directory"
-echo "2. Customize them if needed (add descriptions, constraints, etc.)"
-echo "3. Commit and push to trigger a new release"
-echo "4. Artifact Hub will automatically display the schema documentation"

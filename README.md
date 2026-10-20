@@ -4,321 +4,122 @@
 
 # <div align="center">UnxWares Helm Charts</div>
 
-A curated collection of production-ready Helm charts for Kubernetes deployments, maintained by UnxWares.
+<div align="center">
 
-[Charts](#available-charts) • [Installation](#installation) • [Contributing](#contributing) • [Support](#support)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/unxwares)](https://artifacthub.io/packages/search?repo=unxwares)
+[![Release Charts](https://github.com/UnxWares/helm/actions/workflows/release.yaml/badge.svg)](https://github.com/UnxWares/helm/actions/workflows/release.yaml)
+[![Image scan](https://github.com/UnxWares/helm/actions/workflows/image-scan.yaml/badge.svg)](https://github.com/UnxWares/helm/actions/workflows/image-scan.yaml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+
+[Charts](#available-charts) • [Installation](#installation) • [Signatures](#verifying-signatures) • [Contributing](#contributing) • [Support](#support)
 
 </div>
 
 ---
 
-## Overview
+Helm charts we run ourselves, maintained by UnxWares. Every chart follows the same rules:
 
-This repository contains Helm charts designed for production Kubernetes environments. Each chart is carefully maintained to provide reliable, secure, and scalable deployments with sensible defaults and extensive customization options.
+- **Pinned, current images**, scanned weekly with Trivy; releases that only bump images for CVEs are flagged
+  `containsSecurityUpdates` on Artifact Hub.
+- **No default passwords**: secrets are generated once and kept across upgrades, or read from your own Secret, and
+  reach containers through `secretKeyRef` only.
+- **Hardened by default**: non-root wherever the image allows it, read-only root filesystem, capabilities dropped,
+  seccomp `RuntimeDefault`, no service account token unless the workload talks to the Kubernetes API.
+- **Values schema** (`values.schema.json`) and a README generated from the annotated `values.yaml`.
+- **Signed packages** (Helm provenance files) and CI on every pull request: `helm lint --strict` on Helm 3 and 4,
+  kubeconform, chart-testing installs on kind, Artifact Hub lint.
 
-## Available Charts
+## Available charts
 
-### OpenEverest Database Tools
+| Chart | Application | Description |
+|-------|-------------|-------------|
+| [bind9](charts/bind9) | ISC BIND 9.20 | Authoritative DNS server, with an optional Prometheus exporter |
+| [cloudreve](charts/cloudreve) | Cloudreve 4.19 | Self-hosted file management and sharing (SQLite, PostgreSQL, MySQL, Redis) |
+| [excalidash](charts/excalidash) | ExcaliDash 0.6 | Dashboard and organizer for Excalidraw drawings, with live collaboration and OIDC |
+| [fossflow](charts/fossflow) | FossFLOW 1.0 | Isometric infrastructure diagrams, with server-side storage |
+| [kener](charts/kener) | Kener 4.1 | Status page with a bundled Valkey, SQLite or external PostgreSQL/MySQL |
+| [laravel-generic](charts/laravel-generic) | Laravel 12 | Deploy your own Laravel image: FrankenPHP or PHP-FPM + nginx, queue workers, scheduler, migrations |
+| [openeverest-database-tools](charts/openeverest-database-tools) | OpenEverest 1.17 | Create databases, users and run init scripts on OpenEverest PostgreSQL, MySQL and MongoDB clusters |
+| [powerdns](charts/powerdns) | PowerDNS Auth 5.1 / Recursor 5.4 | Authoritative DNS with its REST API (SQLite, PostgreSQL, MySQL) and an optional recursor |
+| [taiga](charts/taiga) | Taiga 6.10 | Agile project management: backend, workers, events, front, bundled PostgreSQL and RabbitMQ |
 
-Database initialization and management tools for OpenEverest clusters.
-
-- **Chart Version:** 2026.2.11
-- **Description:** Automated database creation, initialization scripts, and ArgoCD integration for MySQL, PostgreSQL, and MongoDB
-- **Documentation:** [charts/openeverest-database-tools/README.md](charts/openeverest-database-tools/README.md)
-
-**Key Features:**
-
-- Multi-database support (MySQL, PostgreSQL, MongoDB)
-- Automated database initialization
-- Custom SQL script execution
-- Native ArgoCD integration with sync waves
-- Secure credential management
-
-### Bind9
-
-Production-ready ISC Bind9 DNS server for Kubernetes.
-
-- **Chart Version:** 2026.2.22
-- **App Version:** 9.21
-- **Description:** Flexible and production-ready authoritative DNS server deployment
-- **Documentation:** [charts/bind9/README.md](charts/bind9/README.md)
-- **Upstream:** [ISC Bind9](https://www.isc.org/bind/)
-
-**Key Features:**
-
-- Full-featured DNS server
-- Zone management support
-- Persistence options
-- Kubernetes-native configuration
-
-### Cloudreve
-
-Self-hosted file management and sharing system.
-
-- **Chart Version:** 2026.2.4
-- **App Version:** 3.8.0
-- **Description:** Self-hosted file management system with multiple storage provider support
-- **Documentation:** [charts/cloudreve/README.md](charts/cloudreve/README.md)
-- **Upstream:** [Cloudreve](https://cloudreve.org/)
-
-**Key Features:**
-
-- Multiple storage backends
-- User-friendly web interface
-- Share management
-- Cloud storage integration
-
-### Kener
-
-Modern status page application.
-
-- **Chart Version:** 2026.2.5
-- **App Version:** 3.2.19
-- **Description:** Beautiful and responsive status page for monitoring your services
-- **Documentation:** [charts/kener/README.md](charts/kener/README.md)
-- **Upstream:** [Kener](https://kener.ing)
-
-**Key Features:**
-
-- Modern status page interface
-- Database integration (PostgreSQL)
-- HTTPRoute and Ingress support
-- Customizable monitoring
+Each chart README lists every value, examples and the upgrade notes between releases.
 
 ## Installation
-
-### Add the Helm Repository
 
 ```bash
 helm repo add unxwares https://helm.unxwares.studio
 helm repo update
+helm search repo unxwares
+
+helm install my-dns unxwares/powerdns --namespace dns --create-namespace
 ```
 
-### Install a Chart
+## Verifying signatures
+
+Packages are signed with the **UnxWares Helm Charts** OpenPGP key
+(`7902 E52E A435 EF27 C643  2E53 78D6 B532 C599 DA9B`, published at
+<https://helm.unxwares.studio/pgp-public-key.asc>):
 
 ```bash
-# Install OpenEverest Database Tools
-helm install my-release unxwares/openeverest-database-tools
-
-# Install Bind9
-helm install my-dns unxwares/bind9
-
-# Install Cloudreve
-helm install my-storage unxwares/cloudreve
+curl -fsSL https://helm.unxwares.studio/pgp-public-key.asc | gpg --import
+gpg --export 7902E52EA435EF27C6432E5378D6B532C599DA9B > ~/.gnupg/unxwares-helm.gpg
+helm install my-dns unxwares/powerdns --verify --keyring ~/.gnupg/unxwares-helm.gpg
 ```
 
-### Custom Configuration
-
-```bash
-# Using a custom values file
-helm install my-release unxwares/openeverest-database-tools -f values.yaml
-
-# Override specific values
-helm install my-release unxwares/openeverest-database-tools \
-  --set global.namespace=my-namespace \
-  --set rbac.create=true
-```
+See [SECURITY.md](SECURITY.md#verifying-chart-signatures) for details.
 
 ## Versioning
 
-All charts in this repository follow a **calendar-based versioning scheme**:
+Charts use calendar versioning, `year.month.number`: `2026.10.1` is the first release of October 2026, `2026.10.2`
+the second one. The number restarts at 1 every month. Breaking changes are announced in the chart's
+`artifacthub.io/changes` annotation and in the "Upgrading" section of its README.
 
-```
-year.month.version_number
-```
-
-### Version Format
-
-- **Year**: 4-digit year (e.g., `2026`)
-- **Month**: Month number without leading zero (e.g., `3` for March, `12` for December)
-- **Version Number**: Sequential number starting from 1 for each month
-
-### Examples
-
-- `2026.3.1` - First version released in March 2026
-- `2026.3.2` - Second version released in March 2026 (even if released on March 28th)
-- `2026.4.1` - First version released in April 2026
-
-### Version Increments
-
-- Each new release in a month increments the version number
-- Version numbers reset to 1 at the beginning of each new month
-- The actual day of release within the month doesn't affect the version number
-
-This versioning scheme makes it easy to track when changes were made and ensures chronological ordering of releases.
-
-## Verified Publisher on Artifact Hub
-
-This repository is configured as a **Verified Publisher** on Artifact Hub, which provides users with confidence that the charts are maintained by the official UnxWares team.
-
-### How It Works
-
-The verification is done through the `artifacthub-repo.yml` file located at the root of this repository. This file contains:
-- **Repository ID**: The unique identifier from Artifact Hub
-- **Owners**: List of maintainers and their contact information
-
-The file is automatically deployed to GitHub Pages alongside the chart repository `index.yaml` during the release process.
-
-### Repository ID Configuration
-
-To maintain the verified status:
-1. Log in to [Artifact Hub Control Panel](https://artifacthub.io/control-panel)
-2. Navigate to the **Repositories** tab
-3. Find your repository ID (displayed on the repository card)
-4. Ensure the `repositoryID` field in `artifacthub-repo.yml` matches this ID
-
-The verified publisher badge will appear after the next repository synchronization (triggered when `index.yaml` changes).
-
-## Values Schema
-
-All charts include a **values schema** (`values.schema.json`) that:
-- ✅ Validates user-provided values
-- ✅ Provides rich documentation on Artifact Hub
-- ✅ Enables IDE autocompletion
-- ✅ Prevents configuration errors
-
-### Generating Schemas
-
-To regenerate schemas after modifying `values.yaml`:
+## Development
 
 ```bash
-# Run the automated script
-./generate-schemas.sh
+# Lint and render a chart with its CI values
+helm lint --strict charts/powerdns -f charts/powerdns/ci/default-values.yaml
+helm template t charts/powerdns -f charts/powerdns/ci/default-values.yaml
+
+# Validate every chart against the Kubernetes schemas (needs kubeconform)
+.github/scripts/kubeconform.sh 1.31.0 1.34.0
+
+# Regenerate values.schema.json and README.md after editing values.yaml or README.md.gotmpl
+./generate-schemas.sh powerdns
 ```
 
-Or manually for a specific chart:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the conventions and the release process.
 
-```bash
-# Install the plugin (first time only)
-helm plugin install https://github.com/karuppiah7890/helm-schema-gen.git
+## Verified publisher on Artifact Hub
 
-# Generate schema
-helm schema-gen charts/bind9/values.yaml > charts/bind9/values.schema.json
-```
-
-### Schema Benefits
-
-Users installing your charts benefit from:
-- **Validation**: Helm validates values against the schema before installation
-- **Documentation**: Artifact Hub displays an interactive schema documentation
-- **Type Safety**: Catch configuration errors early in the deployment process
-
-## Chart Development
-
-### Directory Structure
-
-```
-.
-├── charts/
-│   ├── bind9/
-│   │   ├── Chart.yaml
-│   │   ├── values.yaml
-│   │   ├── templates/
-│   │   └── README.md
-│   ├── cloudreve/
-│   │   ├── Chart.yaml
-│   │   ├── values.yaml
-│   │   ├── templates/
-│   │   └── README.md
-│   ├── kener/
-│   │   ├── Chart.yaml
-│   │   ├── values.yaml
-│   │   ├── templates/
-│   │   └── README.md
-│   └── openeverest-database-tools/
-│       ├── Chart.yaml
-│       ├── values.yaml
-│       ├── templates/
-│       └── README.md
-├── README.md
-└── CONTRIBUTING.md
-```
-
-### Testing Charts Locally
-
-```bash
-# Lint a chart
-helm lint charts/openeverest-database-tools
-
-# Template to see rendered manifests
-helm template my-release charts/openeverest-database-tools
-
-# Install from local chart
-helm install my-release ./charts/openeverest-database-tools
-```
-
-## Requirements
-
-- Kubernetes 1.19+
-- Helm 3.0+
-
-Specific charts may have additional requirements. Please refer to individual chart documentation for details.
-
-## Documentation
-
-Each chart includes comprehensive documentation in its respective directory:
-
-- **Chart README:** Installation instructions, configuration options, and examples
-- **values.yaml:** Annotated configuration with defaults and explanations
-- **Chart.yaml:** Chart metadata and dependencies
+`artifacthub-repo.yml` holds the Artifact Hub repository ID and owners; the release workflow publishes it next to
+`index.yaml`, together with the public signing key. Packages listed in its `ignore` section (the former `opencloud`
+chart) stay in `index.yaml` for existing users but are hidden on Artifact Hub.
 
 ## Support
 
-### Questions and General Support
-
-For general questions, support inquiries, or discussions about our charts:
-
-**Email:** opensource@unxwares.com
-
-### Bug Reports and Feature Requests
-
-Please report issues or request features on our [GitHub Issues](https://github.com/UnxWares/helm/issues) page.
-
-When reporting a bug, please include:
-
-- Chart name and version
-- Kubernetes version
-- Helm version
-- Steps to reproduce
-- Expected vs actual behavior
-
-### Security Vulnerabilities
-
-If you discover a security vulnerability, please DO NOT open a public issue.
-
-**Email security issues to:** security@unxwares.com
-
-We take security seriously and will respond promptly to all security-related concerns.
+- Questions: **opensource@unxwares.com**
+- Bugs and feature requests: [GitHub issues](https://github.com/UnxWares/helm/issues)
+- Security vulnerabilities: **security@unxwares.com** or
+  [private vulnerability reporting](https://github.com/UnxWares/helm/security/advisories/new), never a public issue
+  (see [SECURITY.md](SECURITY.md))
 
 ## Contributing
 
-We welcome contributions from the community! Whether you're fixing bugs, improving documentation, or adding new features, your contributions are appreciated.
-
-Please see our [CONTRIBUTING.md](CONTRIBUTING.md) file for detailed guidelines on how to contribute.
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-This project is licensed under the MIT License. See individual chart LICENSE files for details.
+The charts are released under the MIT license (see [LICENSE.md](LICENSE.md)); each application keeps its own license.
 
 ## Maintainers
 
-**Maintainer:**
-
-- David Gheghea - david.gheghea@unxwares.com
-
-**Co-Maintainer:**
-
-- Baptiste Gosselin - baptiste.gosselin@unxwares.com
+- David Gheghea, david.gheghea@unxwares.com
+- Baptiste Gosselin, baptiste.gosselin@unxwares.com
 
 ## Links
 
-- [UnxWares Website](https://unxwares.com)
-- [GitHub Repository](https://github.com/UnxWares/helm)
-- [Helm Repository](https://helm.unxwares.studio)
+- [UnxWares](https://unxwares.com)
+- [Helm repository](https://helm.unxwares.studio)
 - [Artifact Hub](https://artifacthub.io/packages/search?repo=unxwares)
-
----
-
-<div align="center">
-  <strong>Made with ❤️ by the UnxWares Team</strong>
-</div>
