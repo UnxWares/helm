@@ -1,0 +1,19 @@
+{{- if and .Values.recursor.enabled .Values.recursor.podDisruptionBudget.enabled }}
+{{- $pdb := .Values.recursor.podDisruptionBudget }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "powerdns.recursor.fullname" . }}
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: recursor
+spec:
+  {{- if not (kindIs "invalid" $pdb.maxUnavailable) }}
+  maxUnavailable: {{ $pdb.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ $pdb.minAvailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "powerdns.recursor.selectorLabels" . | nindent 6 }}
+{{- end }}

@@ -1,0 +1,67 @@
+{{- include "powerdns.validate" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "powerdns.fullname" . }}
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+data:
+  pdns.conf: |
+    # Managed by Helm. Secrets (API key, database password) are not stored here:
+    # they are rendered at startup into /etc/powerdns/pdns.d/secrets.conf.
+    {{- $port := int .Values.dns.containerPort }}
+    {{- $listen := list }}
+    {{- range .Values.dns.listenAddresses }}
+    {{- $listen = append $listen (printf "%s:%d" . $port) }}
+    {{- end }}
+    local-address={{ join "," $listen }}
+    socket-dir=/run/pdns
+    include-dir=/etc/powerdns/pdns.d
+    launch={{ .Values.backend.type }}
+    {{- $dnssec := ternary "yes" "no" .Values.backend.dnssec }}
+    {{- if eq .Values.backend.type "gsqlite3" }}
+    gsqlite3-database={{ .Values.backend.gsqlite3.database }}
+    gsqlite3-dnssec={{ $dnssec }}
+    {{- else if eq .Values.backend.type "gpgsql" }}
+    {{- with .Values.backend.gpgsql }}
+    gpgsql-host={{ .host }}
+    gpgsql-port={{ .port }}
+    gpgsql-dbname={{ .dbname }}
+    gpgsql-user={{ .user }}
+    gpgsql-dnssec={{ $dnssec }}
+    {{- with .extraConnectionParameters }}
+    gpgsql-extra-connection-parameters={{ . }}
+    {{- end }}
+    {{- end }}
+    {{- else if eq .Values.backend.type "gmysql" }}
+    {{- with .Values.backend.gmysql }}
+    gmysql-host={{ .host }}
+    gmysql-port={{ .port }}
+    gmysql-dbname={{ .dbname }}
+    gmysql-user={{ .user }}
+    gmysql-dnssec={{ $dnssec }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.webserver.enabled }}
+    webserver=yes
+    webserver-address=0.0.0.0
+    webserver-port={{ .Values.webserver.port }}
+    webserver-allow-from={{ join "," .Values.webserver.allowFrom }}
+    {{- else }}
+    webserver=no
+    {{- end }}
+    api={{ ternary "yes" "no" .Values.api.enabled }}
+    {{- range $key, $value := .Values.config }}
+    {{ $key }}={{ $value }}
+    {{- end }}
+    {{- with .Values.extraConfig }}
+    {{- . | nindent 4 }}
+    {{- end }}
+  # Jinja2 template rendered by the image entrypoint (TEMPLATE_FILES) from environment variables.
+  secrets.j2: |
+    {{- if .Values.api.enabled }}
+    api-key={{ "{{ PDNS_API_KEY }}" }}
+    {{- end }}
+    {{- if ne .Values.backend.type "gsqlite3" }}
+    {{ .Values.backend.type }}-password={{ "{{ PDNS_DB_PASSWORD }}" }}
+    {{- end }}

@@ -1,0 +1,24 @@
+{{- if .Values.webserver.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "powerdns.fullname" . }}-api
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: authoritative
+    {{- /* Lets the ServiceMonitor select this service only. */}}
+    powerdns.unxwares.com/endpoint: webserver
+  {{- with .Values.apiService.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.apiService.type }}
+  ports:
+    - name: http
+      port: {{ .Values.apiService.port }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "powerdns.auth.selectorLabels" . | nindent 4 }}
+{{- end }}

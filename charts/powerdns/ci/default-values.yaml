@@ -1,0 +1,7 @@
+# SQLite backend, API enabled, recursor forwarding a zone to the authoritative server.
+recursor:
+  enabled: true
+  authoritativeZones:
+    - example.test
+networkPolicy:
+  enabled: true

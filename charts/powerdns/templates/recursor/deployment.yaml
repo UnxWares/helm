@@ -1,0 +1,134 @@
+{{- if .Values.recursor.enabled }}
+{{- $rec := .Values.recursor }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "powerdns.recursor.fullname" . }}
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: recursor
+spec:
+  {{- if not $rec.autoscaling.enabled }}
+  replicas: {{ $rec.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "powerdns.recursor.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/recursor/configmap.yaml") . | sha256sum }}
+        {{- with $rec.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "powerdns.recursor.selectorLabels" . | nindent 8 }}
+        {{- with .Values.commonLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with $rec.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "powerdns.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+      # The authoritative server address comes from the <SERVICE>_SERVICE_HOST variables.
+      enableServiceLinks: true
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: recursor
+          image: {{ include "powerdns.image" (dict "image" $rec.image "default" $rec.image.tag) | quote }}
+          imagePullPolicy: {{ $rec.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args:
+            - --config-dir=/etc/powerdns/recursor.d
+          env:
+            - name: TEMPLATE_FILES
+              value: recursor
+            {{- with $rec.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: dns-udp
+              containerPort: {{ $rec.containerPort }}
+              protocol: UDP
+            - name: dns-tcp
+              containerPort: {{ $rec.containerPort }}
+              protocol: TCP
+            {{- if $rec.webserver.enabled }}
+            - name: http
+              containerPort: {{ $rec.webserver.port }}
+              protocol: TCP
+            {{- end }}
+          {{- with $rec.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $rec.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $rec.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/powerdns/templates.d/recursor.j2
+              subPath: recursor.j2
+              readOnly: true
+            - name: recursor-d
+              mountPath: /etc/powerdns/recursor.d
+            - name: run
+              mountPath: /run/pdns-recursor
+            - name: tmp
+              mountPath: /tmp
+            {{- with $rec.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "powerdns.recursor.fullname" . }}
+        - name: recursor-d
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: run
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi
+        {{- with $rec.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with $rec.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $rec.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $rec.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $rec.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

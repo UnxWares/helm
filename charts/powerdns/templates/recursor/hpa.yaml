@@ -1,0 +1,24 @@
+{{- if and .Values.recursor.enabled .Values.recursor.autoscaling.enabled }}
+{{- $as := .Values.recursor.autoscaling }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "powerdns.recursor.fullname" . }}
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: recursor
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "powerdns.recursor.fullname" . }}
+  minReplicas: {{ $as.minReplicas }}
+  maxReplicas: {{ $as.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $as.targetCPUUtilizationPercentage }}
+{{- end }}

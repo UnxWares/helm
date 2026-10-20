@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "powerdns.fullname" . }}
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: authoritative
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  {{- with .Values.service.clusterIP }}
+  clusterIP: {{ . }}
+  {{- end }}
+  {{- if eq .Values.service.type "LoadBalancer" }}
+  {{- with .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  {{- with .Values.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  {{- if and .Values.service.externalTrafficPolicy (has .Values.service.type (list "LoadBalancer" "NodePort")) }}
+  externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
+  {{- end }}
+  {{- with .Values.service.ipFamilyPolicy }}
+  ipFamilyPolicy: {{ . }}
+  {{- end }}
+  {{- with .Values.service.ipFamilies }}
+  ipFamilies:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  ports:
+    - name: dns-udp
+      port: {{ .Values.service.port }}
+      targetPort: dns-udp
+      protocol: UDP
+      {{- if and .Values.service.nodePorts.udp (has .Values.service.type (list "LoadBalancer" "NodePort")) }}
+      nodePort: {{ .Values.service.nodePorts.udp }}
+      {{- end }}
+    - name: dns-tcp
+      port: {{ .Values.service.port }}
+      targetPort: dns-tcp
+      protocol: TCP
+      {{- if and .Values.service.nodePorts.tcp (has .Values.service.type (list "LoadBalancer" "NodePort")) }}
+      nodePort: {{ .Values.service.nodePorts.tcp }}
+      {{- end }}
+  selector:
+    {{- include "powerdns.auth.selectorLabels" . | nindent 4 }}

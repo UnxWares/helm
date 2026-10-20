@@ -1,0 +1,25 @@
+{{- $mon := .Values.recursor.metrics.serviceMonitor }}
+{{- if and .Values.recursor.enabled $mon.enabled .Values.recursor.webserver.enabled (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1/ServiceMonitor") }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "powerdns.recursor.fullname" . }}
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: recursor
+    {{- with $mon.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ $mon.interval }}
+      scrapeTimeout: {{ $mon.scrapeTimeout }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "powerdns.recursor.selectorLabels" . | nindent 6 }}
+{{- end }}

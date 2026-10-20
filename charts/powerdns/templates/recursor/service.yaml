@@ -1,0 +1,48 @@
+{{- if .Values.recursor.enabled }}
+{{- $svc := .Values.recursor.service }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "powerdns.recursor.fullname" . }}
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: recursor
+  {{- with $svc.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ $svc.type }}
+  {{- with $svc.clusterIP }}
+  clusterIP: {{ . }}
+  {{- end }}
+  {{- if eq $svc.type "LoadBalancer" }}
+  {{- with $svc.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  {{- with $svc.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  {{- if and $svc.externalTrafficPolicy (has $svc.type (list "LoadBalancer" "NodePort")) }}
+  externalTrafficPolicy: {{ $svc.externalTrafficPolicy }}
+  {{- end }}
+  ports:
+    - name: dns-udp
+      port: {{ $svc.port }}
+      targetPort: dns-udp
+      protocol: UDP
+    - name: dns-tcp
+      port: {{ $svc.port }}
+      targetPort: dns-tcp
+      protocol: TCP
+    {{- if .Values.recursor.webserver.enabled }}
+    - name: http
+      port: {{ .Values.recursor.webserver.port }}
+      targetPort: http
+      protocol: TCP
+    {{- end }}
+  selector:
+    {{- include "powerdns.recursor.selectorLabels" . | nindent 4 }}
+{{- end }}

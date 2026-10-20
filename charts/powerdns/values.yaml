@@ -1,0 +1,443 @@
+# -- Override the chart name.
+nameOverride: ""
+# -- Override the full resource names.
+fullnameOverride: ""
+# -- Labels added to every resource.
+commonLabels: {}
+
+# -- Secrets for pulling images from a private registry.
+imagePullSecrets: []
+# - name: my-registry-secret
+
+## PowerDNS Authoritative Server
+## https://doc.powerdns.com/authoritative/
+image:
+  # -- Authoritative server image repository.
+  repository: docker.io/powerdns/pdns-auth-51
+  # -- Image tag (defaults to the chart appVersion).
+  tag: ""
+  # -- Image digest (`sha256:...`). When set, it takes precedence over the tag.
+  digest: ""
+  # -- Image pull policy.
+  pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
+
+# -- Number of authoritative server replicas. Must stay at 1 with the gsqlite3 backend.
+replicaCount: 1
+
+# -- Deployment update strategy. With gsqlite3 and persistence the chart forces `Recreate`.
+updateStrategy: {}
+# type: RollingUpdate
+
+backend:
+  # -- Database backend: `gsqlite3` (single replica, PVC), `gpgsql` or `gmysql` (external database, can scale out).
+  type: gsqlite3  # @schema enum:[gsqlite3, gpgsql, gmysql]
+  # -- Store DNSSEC keys and metadata in the database (`<backend>-dnssec=yes`).
+  dnssec: true
+
+  gsqlite3:
+    # -- Path of the SQLite database inside the container.
+    database: /var/lib/powerdns/pdns.sqlite3
+
+  gpgsql:
+    # -- PostgreSQL host.
+    host: ""
+    # -- PostgreSQL port.
+    port: 5432
+    # -- Database name.
+    dbname: pdns
+    # -- Database user.
+    user: pdns
+    # -- Database password (ignored when `existingSecret` is set).
+    password: ""
+    # -- Existing secret holding the database password.
+    existingSecret: ""
+    # -- Key of the password in `existingSecret`.
+    existingSecretPasswordKey: password
+    # -- Extra libpq connection parameters, e.g. `sslmode=verify-full sslrootcert=/etc/ssl/db/ca.crt`.
+    extraConnectionParameters: "sslmode=prefer"
+
+  gmysql:
+    # -- MySQL/MariaDB host.
+    host: ""
+    # -- MySQL/MariaDB port.
+    port: 3306
+    # -- Database name.
+    dbname: pdns
+    # -- Database user.
+    user: pdns
+    # -- Database password (ignored when `existingSecret` is set).
+    password: ""
+    # -- Existing secret holding the database password.
+    existingSecret: ""
+    # -- Key of the password in `existingSecret`.
+    existingSecretPasswordKey: password
+
+  # Create the PowerDNS schema when the database is empty (init container, idempotent).
+  # The schema file comes from the PowerDNS image itself, so it always matches the server version.
+  schemaInit:
+    # -- Run the schema init container.
+    enabled: true
+    # -- Seconds to wait for the database to accept connections.
+    timeoutSeconds: 120
+    # -- Client image used for gpgsql.
+    postgresImage: docker.io/library/postgres:18.6-alpine
+    # -- Client image used for gmysql.
+    mysqlImage: docker.io/library/mysql:8.4.11
+    # -- Resources of the schema init containers.
+    resources: {}
+
+dns:
+  # -- Port PowerDNS listens on inside the pod. A non privileged port lets the server run without any capability; the Service exposes it on 53.
+  containerPort: 1053
+  # -- Addresses to bind. Drop `[::]` on clusters where pods have IPv6 disabled.
+  listenAddresses:
+    - 0.0.0.0
+    - "[::]"
+
+webserver:
+  # -- Enable the built-in webserver (needed by the API and by the Prometheus `/metrics` endpoint).
+  enabled: true
+  # -- Webserver port.
+  port: 8081
+  # -- Networks allowed to reach the webserver. Narrow it to your pod CIDR; the API also requires the key.
+  allowFrom:
+    - 127.0.0.1/32
+    - ::1/128
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+    - fc00::/7
+
+api:
+  # -- Enable the REST API (used by ExternalDNS, PowerDNS-Admin, cert-manager webhooks...). Requires `webserver.enabled`.
+  enabled: true
+  # -- API key. Leave empty to generate one (kept across upgrades). Set it explicitly, or use `existingSecret`, with GitOps tools that render templates offline.
+  key: ""
+  # -- Existing secret holding the API key.
+  existingSecret: ""
+  # -- Key of the API key in `existingSecret`.
+  existingSecretKey: api-key
+
+# -- Extra pdns.conf settings as `setting: value` (see https://doc.powerdns.com/authoritative/settings.html).
+config:
+  loglevel: 4
+  # Do not reveal the version in CH TXT version.bind queries.
+  version-string: anonymous
+  # primary: "yes"
+  # allow-axfr-ips: 10.0.0.0/8
+  # default-soa-content: ns1.example.com. hostmaster.@ 0 10800 3600 604800 3600
+
+# -- Raw lines appended to pdns.conf.
+extraConfig: ""
+
+service:
+  # -- DNS service type. Use `LoadBalancer` to serve DNS outside the cluster.
+  type: ClusterIP  # @schema enum:[ClusterIP, NodePort, LoadBalancer]
+  # -- DNS port exposed by the service.
+  port: 53
+  # -- Service annotations (e.g. MetalLB or cloud load balancer settings).
+  annotations: {}
+  # -- Static cluster IP (lets other resolvers forward to a stable address).
+  clusterIP: ""
+  # -- Load balancer IP, when supported by the provider.
+  loadBalancerIP: ""
+  # -- Source ranges allowed by the load balancer.
+  loadBalancerSourceRanges: []
+  # -- `Local` preserves client source IPs (needed for allow-axfr-ips / ACLs).
+  externalTrafficPolicy: ""
+  # -- IP family policy (`SingleStack`, `PreferDualStack`, `RequireDualStack`).
+  ipFamilyPolicy: ""
+  # -- IP families.
+  ipFamilies: []
+  nodePorts:
+    # -- NodePort for DNS over UDP.
+    udp: null  # @schema type:[integer, null]
+    # -- NodePort for DNS over TCP.
+    tcp: null  # @schema type:[integer, null]
+
+apiService:
+  # -- API/webserver service type. Keep it internal; expose it through an authenticated ingress if needed.
+  type: ClusterIP  # @schema enum:[ClusterIP, NodePort, LoadBalancer]
+  # -- API/webserver service port.
+  port: 8081
+  # -- Service annotations.
+  annotations: {}
+
+persistence:
+  # -- Persist the SQLite database (gsqlite3 backend only). Without it the database lives in an emptyDir.
+  enabled: true
+  # -- Use an existing PVC.
+  existingClaim: ""
+  # -- Storage class (empty uses the cluster default).
+  storageClass: ""
+  # -- Access modes.
+  accessModes:
+    - ReadWriteOnce
+  # -- Volume size.
+  size: 1Gi
+  # -- PVC annotations.
+  annotations: {}
+
+serviceAccount:
+  # -- Create a dedicated service account.
+  create: true
+  # -- Service account name (generated when empty).
+  name: ""
+  # -- Service account annotations.
+  annotations: {}
+  # -- PowerDNS never talks to the Kubernetes API: the token is not mounted.
+  automount: false
+
+# -- Pod annotations.
+podAnnotations: {}
+# -- Pod labels.
+podLabels: {}
+
+# -- Pod security context.
+podSecurityContext:  # @schema skipProperties:true
+  runAsNonRoot: true
+  runAsUser: 953
+  runAsGroup: 953
+  fsGroup: 953
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- Container security context.
+securityContext:  # @schema skipProperties:true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# -- Resource requests and limits.
+resources:  # @schema skipProperties:true
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 512Mi
+
+# -- Liveness probe.
+livenessProbe:  # @schema skipProperties:true
+  tcpSocket:
+    port: dns-tcp
+  periodSeconds: 15
+  timeoutSeconds: 3
+  failureThreshold: 4
+# -- Readiness probe.
+readinessProbe:  # @schema skipProperties:true
+  tcpSocket:
+    port: dns-tcp
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+# -- Startup probe.
+startupProbe:  # @schema skipProperties:true
+  tcpSocket:
+    port: dns-tcp
+  periodSeconds: 5
+  failureThreshold: 30
+
+# -- Extra environment variables of the server container.
+extraEnv: []
+# -- Extra volumes.
+extraVolumes: []
+# -- Extra volume mounts of the server container.
+extraVolumeMounts: []
+
+autoscaling:
+  # -- Enable the HorizontalPodAutoscaler (gpgsql/gmysql backends only).
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 75
+  # targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  # -- Create a PodDisruptionBudget (useful with 2+ replicas).
+  enabled: false
+  # -- Minimum available pods.
+  minAvailable: 1
+  # -- Maximum unavailable pods (used instead of minAvailable when set).
+  maxUnavailable: null  # @schema type:[integer, string, null]
+
+# -- Priority class of the pods.
+priorityClassName: ""
+# -- Node selector.
+nodeSelector: {}
+# -- Tolerations.
+tolerations: []
+# -- Affinity rules.
+affinity: {}
+# -- Topology spread constraints.
+topologySpreadConstraints: []
+
+metrics:
+  serviceMonitor:
+    # -- Create a Prometheus Operator ServiceMonitor scraping `/metrics` on the webserver (rendered only when the CRD exists).
+    enabled: false
+    # -- Scrape interval.
+    interval: 30s
+    # -- Scrape timeout.
+    scrapeTimeout: 10s
+    # -- Extra ServiceMonitor labels (e.g. `release: kube-prometheus-stack`).
+    labels: {}
+
+networkPolicy:
+  # -- Create NetworkPolicies: DNS stays open, the API/webserver only accepts the peers below.
+  enabled: false
+  # -- Peers allowed to reach the API/webserver (in addition to the recursor and same-release pods).
+  apiAllowedFrom: []
+  # - namespaceSelector:
+  #     matchLabels:
+  #       kubernetes.io/metadata.name: external-dns
+
+## PowerDNS Recursor (optional)
+## https://doc.powerdns.com/recursor/
+recursor:
+  # -- Deploy a PowerDNS Recursor next to the authoritative server.
+  enabled: false
+  # -- Recursor replicas.
+  replicaCount: 1
+  image:
+    # -- Recursor image repository.
+    repository: docker.io/powerdns/pdns-recursor-54
+    # -- Recursor image tag.
+    tag: "5.4.7"
+    # -- Image digest (takes precedence over the tag).
+    digest: ""
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
+
+  # -- Port the recursor listens on inside the pod (exposed on 53 by its service).
+  containerPort: 1053
+  # -- Addresses to bind (the port is `recursor.containerPort`).
+  listenAddresses:
+    - 0.0.0.0
+    - "::"
+  # -- Clients allowed to query the recursor. Never leave a recursor open to the Internet.
+  allowFrom:
+    - 127.0.0.0/8
+    - ::1/128
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+    - fc00::/7
+
+  # -- Zones the recursor sends to the authoritative server of this release (resolved through its Service IP).
+  authoritativeZones: []
+  # - example.com
+  # - 10.in-addr.arpa
+  # -- Other forward zones (`zone` + `forwarders` IP:port list).
+  forwardZones: []
+  # - zone: corp.example
+  #   forwarders: ["10.0.0.53:53"]
+  # -- Forward everything else to these resolvers instead of recursing from the root (e.g. `["9.9.9.9:53"]`).
+  forwardZonesRecurse: []
+
+  # -- DNSSEC validation mode (`off`, `process-no-validate`, `process`, `log-fail`, `validate`).
+  dnssecValidation: process  # @schema enum:[off, process-no-validate, process, log-fail, validate]
+
+  webserver:
+    # -- Enable the recursor webserver (API + `/metrics`).
+    enabled: true
+    # -- Webserver port.
+    port: 8082
+    # -- Networks allowed to reach the recursor webserver.
+    allowFrom:
+      - 127.0.0.1/32
+      - ::1/128
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+      - fc00::/7
+
+  # -- Extra recursor settings merged into recursor.yml (YAML settings, see https://doc.powerdns.com/recursor/yamlsettings.html).
+  config: {}
+  # logging:
+  #   loglevel: 6
+  # recordcache:
+  #   max_entries: 1000000
+
+  service:
+    # -- Recursor service type.
+    type: ClusterIP  # @schema enum:[ClusterIP, NodePort, LoadBalancer]
+    # -- Recursor DNS port.
+    port: 53
+    # -- Service annotations.
+    annotations: {}
+    # -- Static cluster IP.
+    clusterIP: ""
+    # -- Load balancer IP.
+    loadBalancerIP: ""
+    # -- Source ranges allowed by the load balancer.
+    loadBalancerSourceRanges: []
+    # -- External traffic policy.
+    externalTrafficPolicy: ""
+
+  # -- Pod annotations.
+  podAnnotations: {}
+  # -- Pod labels.
+  podLabels: {}
+  # -- Resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 1Gi
+  # -- Liveness probe.
+  livenessProbe:  # @schema skipProperties:true
+    tcpSocket:
+      port: dns-tcp
+    periodSeconds: 15
+    timeoutSeconds: 3
+    failureThreshold: 4
+  # -- Readiness probe.
+  readinessProbe:  # @schema skipProperties:true
+    tcpSocket:
+      port: dns-tcp
+    periodSeconds: 10
+    timeoutSeconds: 3
+  # -- Extra environment variables.
+  extraEnv: []
+  # -- Extra volumes.
+  extraVolumes: []
+  # -- Extra volume mounts.
+  extraVolumeMounts: []
+
+  autoscaling:
+    # -- Enable the recursor HorizontalPodAutoscaler.
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 75
+
+  podDisruptionBudget:
+    # -- Create a PodDisruptionBudget for the recursor.
+    enabled: false
+    minAvailable: 1
+    maxUnavailable: null  # @schema type:[integer, string, null]
+
+  # -- Node selector.
+  nodeSelector: {}
+  # -- Tolerations.
+  tolerations: []
+  # -- Affinity rules.
+  affinity: {}
+  # -- Topology spread constraints.
+  topologySpreadConstraints: []
+
+  metrics:
+    serviceMonitor:
+      # -- Create a ServiceMonitor for the recursor.
+      enabled: false
+      interval: 30s
+      scrapeTimeout: 10s
+      labels: {}
+
+tests:
+  # -- Image used by `helm test` (defaults to the authoritative server image, which ships Python).
+  image: ""

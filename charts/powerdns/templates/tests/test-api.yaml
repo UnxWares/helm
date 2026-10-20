@@ -1,0 +1,37 @@
+{{- if and .Values.api.enabled .Values.webserver.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "powerdns.fullname" . }}-test-api
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  {{- with .Values.podSecurityContext }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  containers:
+    - name: api
+      image: {{ .Values.tests.image | default (include "powerdns.image" (dict "image" .Values.image "default" .Chart.AppVersion)) | quote }}
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      command:
+        - python3
+        - -c
+        - |
+          import json, os, urllib.request
+          url = "http://{{ include "powerdns.fullname" . }}-api:{{ .Values.apiService.port }}/api/v1/servers/localhost"
+          req = urllib.request.Request(url, headers={"X-API-Key": os.environ["PDNS_API_KEY"]})
+          server = json.load(urllib.request.urlopen(req, timeout=10))
+          print("PowerDNS API OK:", server["daemon_type"], server["version"])
+      env:
+        {{- include "powerdns.secretEnv" . | nindent 8 }}
+{{- end }}

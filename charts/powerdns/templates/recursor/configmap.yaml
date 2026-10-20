@@ -1,0 +1,38 @@
+{{- if .Values.recursor.enabled }}
+{{- $rec := .Values.recursor }}
+{{- $authIP := .Values.service.clusterIP }}
+{{- if not $authIP }}
+{{- /* Kubernetes injects <SERVICE>_SERVICE_HOST into pods created after the Service: resolved at startup. */}}
+{{- $authIP = printf "{{ %s_SERVICE_HOST }}" (include "powerdns.fullname" . | upper | replace "-" "_") }}
+{{- end }}
+{{- $forwardZones := list }}
+{{- range $rec.authoritativeZones }}
+{{- $forwardZones = append $forwardZones (dict "zone" . "forwarders" (list (printf "%s:%d" $authIP (int $.Values.service.port)))) }}
+{{- end }}
+{{- $forwardZones = concat $forwardZones $rec.forwardZones }}
+{{- $config := dict
+  "recursor" (dict "socket_dir" "/run/pdns-recursor")
+  "incoming" (dict "listen" $rec.listenAddresses "port" (int $rec.containerPort) "allow_from" $rec.allowFrom)
+  "dnssec" (dict "validation" $rec.dnssecValidation)
+  "webservice" (dict "webserver" $rec.webserver.enabled "address" "0.0.0.0" "port" (int $rec.webserver.port) "allow_from" $rec.webserver.allowFrom)
+}}
+{{- if $forwardZones }}
+{{- $_ := set $config.recursor "forward_zones" $forwardZones }}
+{{- end }}
+{{- with $rec.forwardZonesRecurse }}
+{{- $_ := set $config.recursor "forward_zones_recurse" (list (dict "zone" "." "forwarders" .)) }}
+{{- end }}
+{{- $config = mergeOverwrite $config (deepCopy $rec.config) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "powerdns.recursor.fullname" . }}
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: recursor
+data:
+  # Jinja2 template rendered by the image entrypoint into /etc/powerdns/recursor.d/recursor.yml.
+  recursor.j2: |
+    # Managed by Helm.
+    {{- toYaml $config | nindent 4 }}
+{{- end }}
