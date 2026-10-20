@@ -1,0 +1,36 @@
+{{- if .Values.httpRoute.enabled -}}
+{{- $fullName := include "cloudreve.fullname" . -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $fullName }}
+  namespace: {{ include "cloudreve.namespace" . }}
+  labels:
+    {{- include "cloudreve.labels" . | nindent 4 }}
+  {{- with .Values.httpRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- toYaml .Values.httpRoute.parentRefs | nindent 4 }}
+  {{- with .Values.httpRoute.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- range .Values.httpRoute.rules }}
+    - {{- with .matches }}
+      matches:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .filters }}
+      filters:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      backendRefs:
+        - name: {{ $fullName }}
+          port: {{ $.Values.service.port }}
+          weight: 1
+    {{- end }}
+{{- end }}

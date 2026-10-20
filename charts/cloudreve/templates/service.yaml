@@ -2,13 +2,18 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "cloudreve.fullname" . }}
+  namespace: {{ include "cloudreve.namespace" . }}
   labels:
     {{- include "cloudreve.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.targetPort }}
+      targetPort: {{ .Values.podPortName }}
       protocol: TCP
       name: http
   selector:

@@ -1,153 +1,248 @@
-# Default values for cloudreve.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-replicaCount: 1
+# Default values for cloudreve (Cloudreve v4).
+
 image:
-  repository: cloudreve/cloudreve
-  pullPolicy: Always 
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "3.8.0"
+  # -- Cloudreve image repository.
+  repository: docker.io/cloudreve/cloudreve
+  # -- Image pull policy.
+  pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
+  # -- Image tag (defaults to the chart appVersion).
+  tag: ""
+  # -- Image digest (`sha256:...`). When set, it takes precedence over the tag.
+  digest: ""
+
+# -- Secrets for pulling images from a private registry.
 imagePullSecrets: []
+# -- Override the chart name.
 nameOverride: ""
+# -- Override the full resource names.
 fullnameOverride: ""
+# -- Override the deployment namespace.
+namespaceOverride: ""
+
 serviceAccount:
-  # Specifies whether a service account should be created
+  # -- Create a dedicated service account.
   create: true
-  # Annotations to add to the service account
+  # -- Cloudreve never talks to the Kubernetes API: the token is not mounted.
+  automount: false
+  # -- Service account annotations.
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
+  # -- Service account name (generated when empty).
   name: ""
+
+# -- Deployment labels.
+labels: {}
+# -- Deployment annotations.
+annotations: {}
+# -- Pod annotations.
 podAnnotations: {}
-podSecurityContext:
-  {}
-  # fsGroup: 2000
-securityContext:
-  {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+# -- Pod labels.
+podLabels: {}
+
+# -- Pod security context. Cloudreve runs fine as an arbitrary non-root user.
+podSecurityContext:  # @schema skipProperties:true
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- Container security context.
+securityContext:  # @schema skipProperties:true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
 service:
-  type: ClusterIP
+  # -- Service type.
+  type: ClusterIP  # @schema enum:[ClusterIP, NodePort, LoadBalancer]
+  # -- Service port.
   port: 80
-  targetPort: 5212
+  # -- Service annotations.
+  annotations: {}
+
+# -- Name of the container port.
+podPortName: http
+
 ingress:
+  # -- Expose Cloudreve through an Ingress.
   enabled: false
+  # -- Ingress class name.
   className: ""
-  annotations:
-    {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
+  # -- Ingress annotations. Raise the body size limit of your controller for uploads
+  # (e.g. `nginx.ingress.kubernetes.io/proxy-body-size: "0"`).
+  annotations: {}
+  # -- Ingress hosts.
   hosts:
     - host: chart-example.local
       paths:
         - path: /
           pathType: Prefix
+  # -- Ingress TLS.
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
-resources:
-  {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-autoscaling:
+
+httpRoute:
+  # -- Expose Cloudreve through a Gateway API HTTPRoute.
   enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  # -- HTTPRoute annotations.
+  annotations: {}
+  # -- Gateways this route is attached to.
+  parentRefs:
+    - name: gateway
+      sectionName: http
+      # namespace: default
+  # -- Hostnames.
+  hostnames:
+    - chart-example.local
+  # -- Rules (every rule is sent to the Cloudreve service).
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+# -- Resource requests and limits.
+resources:  # @schema skipProperties:true
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 1Gi
+
+# -- Liveness probe.
+livenessProbe:  # @schema skipProperties:true
+  httpGet:
+    path: /api/v4/site/ping
+    port: http
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 3
+# -- Readiness probe.
+readinessProbe:  # @schema skipProperties:true
+  httpGet:
+    path: /api/v4/site/ping
+    port: http
+  periodSeconds: 10
+  timeoutSeconds: 5
+# -- Startup probe (the first start runs the database migrations).
+startupProbe:  # @schema skipProperties:true
+  httpGet:
+    path: /api/v4/site/ping
+    port: http
+  periodSeconds: 5
+  failureThreshold: 60
+
+# -- Node selector.
 nodeSelector: {}
+# -- Tolerations.
 tolerations: []
+# -- Affinity rules.
 affinity: {}
-## Override the deployment namespace
-##
-namespaceOverride: ""
-## Deployment labels
-labels: {}
-## Deployment annotations
-annotations: {}
-## Enable persistence using Persistent Volume Claims
-## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
-##
+# -- Priority class of the pod.
+priorityClassName: ""
+
+# -- Timezone of the container (the image defaults to Asia/Shanghai).
+timezone: UTC
+
+# -- Extra environment variables. Do not put secrets in `CR_CONF_*` variables: Cloudreve logs their values.
+extraEnv: []
+# - name: CR_SETTING_DEFAULT_siteURL
+#   value: https://cloud.example.com
+
+# -- Extra volumes.
+extraVolumes: []
+# -- Extra volume mounts of the Cloudreve container.
+extraVolumeMounts: []
+
+## Persistence of /cloudreve/data (SQLite database, local storage policy uploads, avatars, caches)
 persistence:
-  type: pvc
-  enabled: false
-  storageClassName: default
+  # -- Persist /cloudreve/data in a PVC. Without it, files and the SQLite database are lost when the pod restarts.
+  enabled: true
+  # -- Use an existing PVC.
+  existingClaim: ""
+  # -- Storage class (empty uses the cluster default).
+  storageClassName: ""
+  # -- Access modes.
   accessModes:
     - ReadWriteOnce
+  # -- Volume size.
   size: 10Gi
-  # annotations: {}
-  finalizers:
-    - kubernetes.io/pvc-protection
-  # selectorLabels: {}
-  ## Sub-directory of the PV to mount. Can be templated.
-  # subPath: ""
-  ## Name of an existing PVC. Can be templated.
-  # existingClaim:
-  ## Extra labels to apply to a PVC.
+  # -- PVC annotations.
+  annotations: {}
+  # -- Extra PVC labels.
   extraPvcLabels: {}
-  ## If persistence is not enabled, this allows to mount the
-  ## local storage in-memory to improve performance
-  ##
-  inMemory:
-    enabled: true
-    ## The maximum usage on memory medium EmptyDir would be
-    ## the minimum value between the SizeLimit specified
-    ## here and the sum of memory limits of all containers in a pod
-    ##
-    # sizeLimit: 300Mi
-podPortName: cloudreve
-# Enable creating the cloudreve configmap
-createConfigmap: true
+  # -- Sub-directory of the volume to mount.
+  subPath: ""
+
+cloudreve:
+  # -- Session secret (64+ random characters). Leave empty to generate one (kept across upgrades).
+  sessionSecret: ""
+  # -- Existing secret holding the session secret.
+  existingSecret: ""
+  # -- Key of the session secret in `existingSecret`.
+  existingSecretKey: session-secret
+  # -- HTTP header carrying the client IP when Cloudreve runs behind a reverse proxy.
+  proxyHeader: X-Forwarded-For
+  # -- Log level (`debug`, `info`, `warning`, `error`).
+  logLevel: info  # @schema enum:[debug, info, warning, error]
+  # -- Extra conf.ini sections and keys, e.g. `{CORS: {AllowOrigins: "*"}}` (https://docs.cloudreve.org).
+  config: {}
 
 ## Database configuration
-## Can be overridden by valuesFromSecret
 database:
-  type: mysql
-  host: 127.0.0.1
-  port: 3306
-  name: v3
-  user: root
-  password: root
-  # Use existing secret for database credentials
-  # If existingSecret is set, the secret should contain the following keys:
-  # - type (optional)
-  # - host (optional)
-  # - port (optional)
-  # - name (optional)
-  # - user (required)
-  # - password (required)
+  # -- Database type: `sqlite` (stored in the data volume), `postgres`, `mysql` or `mariadb`.
+  type: sqlite  # @schema enum:[sqlite, postgres, mysql, mariadb]
+  # -- Database host.
+  host: ""
+  # -- Database port.
+  port: 5432
+  # -- Database name.
+  name: cloudreve
+  # -- Database user.
+  user: cloudreve
+  # -- Database password (ignored when `existingSecret` is set).
+  password: ""
+  # -- MySQL/MariaDB charset.
+  charset: utf8mb4
+  # -- Full connection URL (overrides host/port/user/password/name). Needed for PostgreSQL TLS, e.g. `postgres://user:pass@host:5432/db?sslmode=verify-full`. Stored in the chart secret.
+  url: ""
+  # -- Existing secret holding the database password (and optionally the URL).
   existingSecret: ""
-  # Keys in the existing secret (if different from default)
   existingSecretKeys:
-    type: type
-    host: host
-    port: port
-    name: name
-    user: user
+    # -- Key of the password in `existingSecret`.
     password: password
+    # -- Key of the connection URL in `existingSecret` (optional).
+    url: ""
 
-## cloudreve's primary configuration
-## NOTE: values in map will be converted to ini format
-## ref: https://docs.cloudreve.org/getting-started/config
+## Redis (optional, recommended): sessions and caches survive restarts and the UI is faster
+redis:
+  # -- Use a Redis server.
+  enabled: false
+  # -- Redis address (`host:port`).
+  server: ""
+  # -- Redis user (ACL), if any.
+  user: ""
+  # -- Redis password (ignored when `existingSecret` is set).
+  password: ""
+  # -- Existing secret holding the Redis password.
+  existingSecret: ""
+  # -- Key of the password in `existingSecret`.
+  existingSecretKey: password
+  # -- Redis database index.
+  db: 0
+  # -- Connect with TLS.
+  useTLS: false
+  # -- Skip TLS certificate verification (Cloudreve's own default is true; the chart verifies).
+  tlsSkipVerify: false
+
+## Complete conf.ini provided by you (advanced). When set, the chart does not render conf.ini and the
+## `cloudreve`, `database` and `redis` sections above are ignored.
 confini:
-  fromSecret: false      # if true, the conf.ini will come from a secret
-  secretName: ""         # name of the secret containing conf.ini
-  data: |                # used only if fromSecret is false
-    System:
-      Mode: master
-      Listen: ":5212"
-      Debug: false
-      SessionSecret: 23333
+  # -- Existing secret containing a full `conf.ini` key.
+  existingSecret: ""

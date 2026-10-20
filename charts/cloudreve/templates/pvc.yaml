@@ -1,4 +1,4 @@
-{{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) (eq .Values.persistence.type "pvc")}}
+{{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -9,14 +9,11 @@ metadata:
     {{- with .Values.persistence.extraPvcLabels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with .Values.persistence.annotations }}
   annotations:
+    helm.sh/resource-policy: keep
+    {{- with .Values.persistence.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- with .Values.persistence.finalizers }}
-  finalizers:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
 spec:
   accessModes:
     {{- range .Values.persistence.accessModes }}
@@ -26,11 +23,6 @@ spec:
     requests:
       storage: {{ .Values.persistence.size | quote }}
   {{- with .Values.persistence.storageClassName }}
-  storageClassName: {{ . }}
-  {{- end }}
-  {{- with .Values.persistence.selectorLabels }}
-  selector:
-    matchLabels:
-    {{- toYaml . | nindent 6 }}
+  storageClassName: {{ . | quote }}
   {{- end }}
 {{- end }}

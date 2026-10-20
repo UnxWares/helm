@@ -1,0 +1,121 @@
+# Cloudreve Helm Chart
+
+{{ template "chart.badgesSection" . }}
+
+A Helm chart for [Cloudreve v4](https://cloudreve.org/), a self-hosted file management and sharing system with
+support for multiple storage providers (local, S3, OneDrive, OSS, COS, ...).
+
+## Features
+
+- **Cloudreve v4** with SQLite (default, in the data volume), PostgreSQL, MySQL or MariaDB
+- Optional **Redis** for sessions and caches (recommended in production)
+- **Secrets stay secret**: the session secret is generated and kept across upgrades (or read from your Secret);
+  `conf.ini` is rendered at startup into a memory-backed volume, never into a ConfigMap
+- **Hardened**: non-root (uid 1000), read-only root filesystem, every capability dropped, seccomp `RuntimeDefault`,
+  no service account token. The Cloudreve binary is started directly (the image entrypoint runs aria2 under supervisord as root)
+- Persistent `/cloudreve/data` (enabled by default), Ingress or Gateway API HTTPRoute, probes on `/api/v4/site/ping`, `helm test`
+
+## Installation
+
+```bash
+helm repo add unxwares https://helm.unxwares.studio
+helm repo update
+helm install my-storage unxwares/cloudreve --namespace storage --create-namespace
+```
+
+The first account registered becomes the administrator. Charts are signed: see
+[verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures).
+
+## Examples
+
+### PostgreSQL + Redis behind an Ingress
+
+```yaml
+database:
+  type: postgres
+  host: cloudreve-db-rw.databases.svc
+  port: 5432
+  name: cloudreve
+  user: cloudreve
+  existingSecret: cloudreve-db      # key: password
+redis:
+  enabled: true
+  server: valkey.cache.svc:6379
+  existingSecret: cloudreve-redis   # key: password
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    cert-manager.io/cluster-issuer: letsencrypt
+  hosts:
+    - host: cloud.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: cloud-example-com-tls
+      hosts:
+        - cloud.example.com
+extraEnv:
+  # Seeds the site URL at first install only.
+  - name: CR_SETTING_DEFAULT_siteURL
+    value: https://cloud.example.com
+```
+
+### PostgreSQL over TLS
+
+Cloudreve ignores `sslmode` in the individual fields: use a connection URL.
+
+```yaml
+database:
+  type: postgres
+  existingSecret: cloudreve-db
+  existingSecretKeys:
+    password: password
+    url: url    # postgres://cloudreve:...@db:5432/cloudreve?sslmode=verify-full
+```
+
+### Extra conf.ini settings
+
+```yaml
+cloudreve:
+  config:
+    CORS:
+      AllowOrigins: "https://app.example.com"
+      AllowCredentials: true
+```
+
+## Upgrading
+
+### From 2026.2.x (Cloudreve 3.8) to 2026.10.1 (Cloudreve 4)
+
+Cloudreve 4 is a new major version with a different database schema, and the previous chart could not render
+its configuration (`confini.data`), so a fresh install is the expected path.
+
+To migrate an existing Cloudreve 3.8 instance (see the [official guide](https://docs.cloudreve.org/en/maintain/upgrade-from-v3)):
+
+1. Back up the v3 database and files.
+2. Install this chart with a **new, empty database** (`database.*`) and scale it to 0 once it started:
+   `kubectl scale deploy/<release>-cloudreve --replicas 0`.
+3. Run the migration with the v3 `conf.ini` (its directory must be writable) against the v4 `conf.ini`:
+   `cloudreve migrate --v3-conf /path/to/v3/conf.ini -c /etc/cloudreve/conf.ini`
+   The Cloudreve docs recommend running the migration with a 4.0.x binary, as the tool will be removed later.
+4. Local files uploaded with v3 are expected under `/cloudreve/uploads`: copy them into the new volume accordingly.
+5. Scale back to 1.
+
+Value changes: `confini.fromSecret` + `confini.secretName` → `confini.existingSecret` (old names still work);
+`confini.data`, `replicaCount`, `autoscaling`, `persistence.type`, `persistence.inMemory` and `createConfigmap` are gone;
+`database.type` now defaults to `sqlite` and the defaults `root`/`root` were removed.
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+## Credits
+
+See [CREDITS.md](CREDITS.md).
+
+## License
+
+The chart is released under the MIT license. Cloudreve is licensed under the GPL-3.0.

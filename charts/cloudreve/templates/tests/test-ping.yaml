@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "cloudreve.fullname" . }}-test-ping
+  namespace: {{ include "cloudreve.namespace" . }}
+  labels:
+    {{- include "cloudreve.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  {{- with .Values.podSecurityContext }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  containers:
+    - name: ping
+      image: {{ include "cloudreve.image" . | quote }}
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      command:
+        - wget
+        - -qO-
+        - http://{{ include "cloudreve.fullname" . }}:{{ .Values.service.port }}/api/v4/site/ping

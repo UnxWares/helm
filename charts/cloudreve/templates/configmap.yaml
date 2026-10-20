@@ -1,4 +1,5 @@
-{{- if not .Values.confini.fromSecret }}
+{{- include "cloudreve.validate" . }}
+{{- if not (include "cloudreve.confiniSecret" .) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,30 +12,63 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 data:
-  conf.ini: |
-  {{- range $elem, $elemVal := index .Values.confini "data" }}
-    {{- if not (kindIs "map" $elemVal) }}
-      {{- if kindIs "invalid" $elemVal }}
-{{ $elem }} =
-      {{- else if kindIs "string" $elemVal }}
-{{ $elem }} = {{ tpl $elemVal $ }}
-      {{- else }}
-{{ $elem }} = {{ $elemVal }}
-      {{- end }}
+  # Replaces every @@NAME@@ placeholder with the value of the NAME environment variable.
+  render.awk: |
+    {
+      while (match($0, /@@[A-Z_]+@@/)) {
+        name = substr($0, RSTART + 2, RLENGTH - 4)
+        $0 = substr($0, 1, RSTART - 1) ENVIRON[name] substr($0, RSTART + RLENGTH)
+      }
+      print
+    }
+  # Template of conf.ini: the @@VAR@@ placeholders are filled from secret-backed environment
+  # variables by the render-config init container, into a memory-backed volume.
+  conf.ini.tpl: |
+    [System]
+    Mode = master
+    Listen = :5212
+    Debug = false
+    SessionSecret = `@@CR_SESSION_SECRET@@`
+    {{- with .Values.cloudreve.proxyHeader }}
+    ProxyHeader = {{ . }}
     {{- end }}
-  {{- end }}
-  {{- range $key, $value := index .Values.confini "data" }}
-    {{- if kindIs "map" $value }}
-[{{ $key }}]
-      {{- range $elem, $elemVal := $value }}
-        {{- if kindIs "invalid" $elemVal }}
-{{ $elem }} =
-        {{- else if kindIs "string" $elemVal }}
-{{ $elem }} = {{ tpl $elemVal $ }}
-        {{- else }}
-{{ $elem }} = {{ $elemVal }}
-        {{- end }}
-      {{- end }}
+    LogLevel = {{ .Values.cloudreve.logLevel }}
+
+    [Database]
+    Type = {{ .Values.database.type }}
+    {{- if eq .Values.database.type "sqlite" }}
+    DBFile = /cloudreve/data/cloudreve.db
+    {{- else if or .Values.database.url .Values.database.existingSecretKeys.url }}
+    DatabaseURL = `@@CR_DB_URL@@`
+    {{- else }}
+    Host = {{ .Values.database.host }}
+    Port = {{ .Values.database.port }}
+    User = {{ .Values.database.user }}
+    Password = `@@CR_DB_PASSWORD@@`
+    Name = {{ .Values.database.name }}
+    {{- if has .Values.database.type (list "mysql" "mariadb") }}
+    Charset = {{ .Values.database.charset }}
     {{- end }}
-  {{- end }}
+    {{- end }}
+    {{- if .Values.redis.enabled }}
+
+    [Redis]
+    Server = {{ .Values.redis.server }}
+    {{- with .Values.redis.user }}
+    User = {{ . }}
+    {{- end }}
+    {{- if or .Values.redis.password .Values.redis.existingSecret }}
+    Password = `@@CR_REDIS_PASSWORD@@`
+    {{- end }}
+    DB = {{ .Values.redis.db }}
+    UseTLS = {{ .Values.redis.useTLS }}
+    TLSSkipVerify = {{ .Values.redis.tlsSkipVerify }}
+    {{- end }}
+    {{- range $section, $keys := .Values.cloudreve.config }}
+
+    [{{ $section }}]
+    {{- range $key, $value := $keys }}
+    {{ $key }} = {{ $value }}
+    {{- end }}
+    {{- end }}
 {{- end }}

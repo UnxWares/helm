@@ -1,488 +1,205 @@
 # Cloudreve Helm Chart
 
-A Helm chart for deploying Cloudreve, a self-hosted file management and sharing system with support for multiple storage providers.
+![Version: 2026.10.1](https://img.shields.io/badge/Version-2026.10.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.19.1](https://img.shields.io/badge/AppVersion-4.19.1-informational?style=flat-square)
 
-## Overview
-
-Cloudreve is a feature-rich, self-hosted cloud storage system that supports multiple storage backends including local storage, OneDrive, Amazon S3, Alibaba Cloud OSS, Tencent Cloud COS, and many more. This Helm chart makes it easy to deploy Cloudreve on Kubernetes with database integration and persistent storage.
+A Helm chart for [Cloudreve v4](https://cloudreve.org/), a self-hosted file management and sharing system with
+support for multiple storage providers (local, S3, OneDrive, OSS, COS, ...).
 
 ## Features
 
-- **Multi-Storage Support**: Local, OneDrive, S3, OSS, COS, and more storage backends
-- **User-Friendly Interface**: Modern web interface for file management
-- **Share Management**: Easy file sharing with customizable permissions
-- **Database Integration**: MySQL/PostgreSQL/SQLite support
-- **Persistent Storage**: Configurable persistent volume support
-- **Ingress Support**: Easy exposure via ingress controllers
-- **Auto-scaling**: Optional horizontal pod autoscaling
-- **Flexible Configuration**: ConfigMap or Secret-based configuration
+- **Cloudreve v4** with SQLite (default, in the data volume), PostgreSQL, MySQL or MariaDB
+- Optional **Redis** for sessions and caches (recommended in production)
+- **Secrets stay secret**: the session secret is generated and kept across upgrades (or read from your Secret);
+  `conf.ini` is rendered at startup into a memory-backed volume, never into a ConfigMap
+- **Hardened**: non-root (uid 1000), read-only root filesystem, every capability dropped, seccomp `RuntimeDefault`,
+  no service account token. The Cloudreve binary is started directly (the image entrypoint runs aria2 under supervisord as root)
+- Persistent `/cloudreve/data` (enabled by default), Ingress or Gateway API HTTPRoute, probes on `/api/v4/site/ping`, `helm test`
 
 ## Installation
-
-### Add the Helm Repository
 
 ```bash
 helm repo add unxwares https://helm.unxwares.studio
 helm repo update
+helm install my-storage unxwares/cloudreve --namespace storage --create-namespace
 ```
 
-### Install the Chart
-
-```bash
-helm install my-storage unxwares/cloudreve \
-  --namespace storage \
-  --create-namespace
-```
-
-## Configuration
-
-### Basic Installation with MySQL
-
-```yaml
-database:
-  type: mysql
-  host: mysql-service
-  port: 3306
-  name: cloudreve
-  user: cloudreve
-  password: your-secure-password
-
-persistence:
-  enabled: true
-  size: 50Gi
-  storageClassName: standard
-
-ingress:
-  enabled: true
-  className: nginx
-  hosts:
-    - host: files.mycompany.com
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: files-tls
-      hosts:
-        - files.mycompany.com
-```
-
-### Using Existing Database Secret
-
-```yaml
-database:
-  existingSecret: cloudreve-db-credentials
-  # The secret should contain: user, password
-  # Optionally: type, host, port, name
-
-persistence:
-  enabled: true
-  size: 100Gi
-```
-
-### Custom Configuration via ConfigMap
-
-```yaml
-createConfigmap: true
-
-confini:
-  fromSecret: false
-  data: |
-    [System]
-    Mode = master
-    Listen = :5212
-    Debug = false
-    SessionSecret = your-secure-session-secret
-    HashIDSalt = your-secure-hash-salt
-
-    [Database]
-    Type = mysql
-    Port = 3306
-    DBFile = cloudreve.db
-
-    [Redis]
-    Server = redis-service:6379
-    Password =
-    DB = 0
-```
-
-### Using Configuration from Secret
-
-```yaml
-confini:
-  fromSecret: true
-  secretName: cloudreve-config
-```
-
-## Configuration Options
-
-### Global Settings
-
-| Parameter             | Description                    | Default              |
-| --------------------- | ------------------------------ | -------------------- |
-| `replicaCount`        | Number of replicas             | `1`                  |
-| `image.repository`    | Container image repository     | `cloudreve/cloudreve`|
-| `image.tag`           | Container image tag            | `3.8.0`              |
-| `image.pullPolicy`    | Image pull policy              | `Always`             |
-| `imagePullSecrets`    | Image pull secrets             | `[]`                 |
-| `nameOverride`        | Override chart name            | `""`                 |
-| `fullnameOverride`    | Override full chart name       | `""`                 |
-| `namespaceOverride`   | Override deployment namespace  | `""`                 |
-| `labels`              | Deployment labels              | `{}`                 |
-| `annotations`         | Deployment annotations         | `{}`                 |
-
-### Service Account
-
-| Parameter                        | Description                      | Default |
-| -------------------------------- | -------------------------------- | ------- |
-| `serviceAccount.create`          | Create service account           | `true`  |
-| `serviceAccount.annotations`     | Service account annotations      | `{}`    |
-| `serviceAccount.name`            | Service account name             | `""`    |
-
-### Service Configuration
-
-| Parameter            | Description              | Default     |
-| -------------------- | ------------------------ | ----------- |
-| `service.type`       | Service type             | `ClusterIP` |
-| `service.port`       | Service port             | `80`        |
-| `service.targetPort` | Container target port    | `5212`      |
-| `podPortName`        | Pod port name            | `cloudreve` |
-
-### Ingress Configuration
-
-| Parameter              | Description              | Default                    |
-| ---------------------- | ------------------------ | -------------------------- |
-| `ingress.enabled`      | Enable ingress           | `false`                    |
-| `ingress.className`    | Ingress class name       | `""`                       |
-| `ingress.annotations`  | Ingress annotations      | `{}`                       |
-| `ingress.hosts`        | Ingress hosts            | `[{host: chart-example.local}]` |
-| `ingress.tls`          | Ingress TLS config       | `[]`                       |
-
-### Database Configuration
-
-| Parameter                           | Description                      | Default    |
-| ----------------------------------- | -------------------------------- | ---------- |
-| `database.type`                     | Database type (mysql/postgresql/sqlite) | `mysql` |
-| `database.host`                     | Database host                    | `127.0.0.1`|
-| `database.port`                     | Database port                    | `3306`     |
-| `database.name`                     | Database name                    | `v3`       |
-| `database.user`                     | Database user                    | `root`     |
-| `database.password`                 | Database password                | `root`     |
-| `database.existingSecret`           | Use existing secret for DB creds | `""`       |
-| `database.existingSecretKeys.type`  | Key for DB type in secret        | `type`     |
-| `database.existingSecretKeys.host`  | Key for DB host in secret        | `host`     |
-| `database.existingSecretKeys.port`  | Key for DB port in secret        | `port`     |
-| `database.existingSecretKeys.name`  | Key for DB name in secret        | `name`     |
-| `database.existingSecretKeys.user`  | Key for DB user in secret        | `user`     |
-| `database.existingSecretKeys.password` | Key for DB password in secret | `password` |
-
-### Persistence Configuration
-
-| Parameter                     | Description                        | Default           |
-| ----------------------------- | ---------------------------------- | ----------------- |
-| `persistence.type`            | Persistence type                   | `pvc`             |
-| `persistence.enabled`         | Enable persistence                 | `false`           |
-| `persistence.storageClassName`| Storage class name                 | `default`         |
-| `persistence.accessModes`     | Access modes                       | `[ReadWriteOnce]` |
-| `persistence.size`            | Persistent volume size             | `10Gi`            |
-| `persistence.finalizers`      | PVC finalizers                     | `[kubernetes.io/pvc-protection]` |
-| `persistence.extraPvcLabels`  | Extra labels for PVC               | `{}`              |
-| `persistence.existingClaim`   | Use existing PVC                   | `""`              |
-| `persistence.subPath`         | Sub-path of PV to mount            | `""`              |
-| `persistence.inMemory.enabled`| Use in-memory storage when disabled| `true`            |
-| `persistence.inMemory.sizeLimit` | Memory size limit               | `""`              |
-
-### Configuration File Settings
-
-| Parameter                | Description                         | Default |
-| ------------------------ | ----------------------------------- | ------- |
-| `createConfigmap`        | Create ConfigMap for configuration  | `true`  |
-| `confini.fromSecret`     | Load conf.ini from Secret           | `false` |
-| `confini.secretName`     | Secret name containing conf.ini     | `""`    |
-| `confini.data`           | Configuration data (INI format)     | See values.yaml |
-
-### Resources
-
-| Parameter                  | Description              | Default |
-| -------------------------- | ------------------------ | ------- |
-| `resources.limits.cpu`     | CPU limit                | `""`    |
-| `resources.limits.memory`  | Memory limit             | `""`    |
-| `resources.requests.cpu`   | CPU request              | `""`    |
-| `resources.requests.memory`| Memory request           | `""`    |
-
-### Autoscaling
-
-| Parameter                                   | Description                    | Default |
-| ------------------------------------------- | ------------------------------ | ------- |
-| `autoscaling.enabled`                       | Enable autoscaling             | `false` |
-| `autoscaling.minReplicas`                   | Minimum replicas               | `1`     |
-| `autoscaling.maxReplicas`                   | Maximum replicas               | `100`   |
-| `autoscaling.targetCPUUtilizationPercentage`| Target CPU utilization        | `80`    |
-
-### Pod Configuration
-
-| Parameter              | Description                | Default |
-| ---------------------- | -------------------------- | ------- |
-| `podAnnotations`       | Pod annotations            | `{}`    |
-| `podLabels`            | Pod labels                 | `{}`    |
-| `podSecurityContext`   | Pod security context       | `{}`    |
-| `securityContext`      | Container security context | `{}`    |
-
-### Node Scheduling
-
-| Parameter       | Description         | Default |
-| --------------- | ------------------- | ------- |
-| `nodeSelector`  | Node selector       | `{}`    |
-| `tolerations`   | Pod tolerations     | `[]`    |
-| `affinity`      | Pod affinity        | `{}`    |
+The first account registered becomes the administrator. Charts are signed: see
+[verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures).
 
 ## Examples
 
-### Production Setup with MySQL and S3
+### PostgreSQL + Redis behind an Ingress
 
 ```yaml
-replicaCount: 2
-
 database:
-  type: mysql
-  host: mysql-service.database.svc.cluster.local
-  port: 3306
+  type: postgres
+  host: cloudreve-db-rw.databases.svc
+  port: 5432
   name: cloudreve
-  existingSecret: cloudreve-mysql-credentials
-
-persistence:
+  user: cloudreve
+  existingSecret: cloudreve-db      # key: password
+redis:
   enabled: true
-  size: 100Gi
-  storageClassName: fast-ssd
-  accessModes:
-    - ReadWriteMany
-
+  server: valkey.cache.svc:6379
+  existingSecret: cloudreve-redis   # key: password
 ingress:
   enabled: true
   className: nginx
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/proxy-body-size: "1024m"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    cert-manager.io/cluster-issuer: letsencrypt
   hosts:
-    - host: files.mycompany.com
+    - host: cloud.example.com
       paths:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: cloudreve-tls
+    - secretName: cloud-example-com-tls
       hosts:
-        - files.mycompany.com
-
-resources:
-  limits:
-    cpu: 1000m
-    memory: 2Gi
-  requests:
-    cpu: 250m
-    memory: 512Mi
-
-autoscaling:
-  enabled: true
-  minReplicas: 2
-  maxReplicas: 5
-  targetCPUUtilizationPercentage: 70
-
-confini:
-  fromSecret: false
-  data: |
-    [System]
-    Mode = master
-    Listen = :5212
-    Debug = false
-    SessionSecret = your-secure-session-secret-change-this
-    HashIDSalt = your-secure-hash-salt-change-this
-
-    [Database]
-    Type = mysql
-    Port = 3306
-
-    [CORS]
-    AllowOrigins = https://files.mycompany.com
-    AllowMethods = GET,POST,PUT,PATCH,DELETE
-    AllowHeaders = *
-    AllowCredentials = true
+        - cloud.example.com
+extraEnv:
+  # Seeds the site URL at first install only.
+  - name: CR_SETTING_DEFAULT_siteURL
+    value: https://cloud.example.com
 ```
 
-### PostgreSQL with Redis
+### PostgreSQL over TLS
+
+Cloudreve ignores `sslmode` in the individual fields: use a connection URL.
 
 ```yaml
 database:
-  type: postgresql
-  host: postgresql-service
-  port: 5432
-  name: cloudreve
-  user: cloudreve
-  password: secure-password
-
-persistence:
-  enabled: true
-  size: 50Gi
-
-confini:
-  fromSecret: false
-  data: |
-    [System]
-    Mode = master
-    Listen = :5212
-
-    [Database]
-    Type = postgresql
-    Port = 5432
-
-    [Redis]
-    Server = redis-service:6379
-    Password =
-    DB = 0
+  type: postgres
+  existingSecret: cloudreve-db
+  existingSecretKeys:
+    password: password
+    url: url    # postgres://cloudreve:...@db:5432/cloudreve?sslmode=verify-full
 ```
 
-### Development Setup with SQLite
+### Extra conf.ini settings
 
 ```yaml
-replicaCount: 1
-
-database:
-  type: sqlite
-
-persistence:
-  enabled: true
-  size: 10Gi
-
-service:
-  type: NodePort
-
-confini:
-  fromSecret: false
-  data: |
-    [System]
-    Mode = master
-    Listen = :5212
-    Debug = true
-
-    [Database]
-    Type = sqlite3
-    DBFile = /data/cloudreve.db
+cloudreve:
+  config:
+    CORS:
+      AllowOrigins: "https://app.example.com"
+      AllowCredentials: true
 ```
 
-## Troubleshooting
+## Upgrading
 
-### Check Pod Status
+### From 2026.2.x (Cloudreve 3.8) to 2026.10.1 (Cloudreve 4)
 
-```bash
-kubectl get pods -n storage
-kubectl logs -n storage <pod-name>
-```
+Cloudreve 4 is a new major version with a different database schema, and the previous chart could not render
+its configuration (`confini.data`), so a fresh install is the expected path.
 
-### Access Application Logs
+To migrate an existing Cloudreve 3.8 instance (see the [official guide](https://docs.cloudreve.org/en/maintain/upgrade-from-v3)):
 
-```bash
-kubectl logs -n storage <pod-name> --tail=100 -f
-```
+1. Back up the v3 database and files.
+2. Install this chart with a **new, empty database** (`database.*`) and scale it to 0 once it started:
+   `kubectl scale deploy/<release>-cloudreve --replicas 0`.
+3. Run the migration with the v3 `conf.ini` (its directory must be writable) against the v4 `conf.ini`:
+   `cloudreve migrate --v3-conf /path/to/v3/conf.ini -c /etc/cloudreve/conf.ini`
+   The Cloudreve docs recommend running the migration with a 4.0.x binary, as the tool will be removed later.
+4. Local files uploaded with v3 are expected under `/cloudreve/uploads`: copy them into the new volume accordingly.
+5. Scale back to 1.
 
-### Verify Configuration
+Value changes: `confini.fromSecret` + `confini.secretName` → `confini.existingSecret` (old names still work);
+`confini.data`, `replicaCount`, `autoscaling`, `persistence.type`, `persistence.inMemory` and `createConfigmap` are gone;
+`database.type` now defaults to `sqlite` and the defaults `root`/`root` were removed.
 
-```bash
-# View ConfigMap
-kubectl get configmap -n storage
-kubectl describe configmap cloudreve-config -n storage
+## Requirements
 
-# Check database connection
-kubectl exec -n storage <pod-name> -- cat /app/conf.ini
-```
+Kubernetes: `>=1.27.0-0`
 
-### Common Issues
+## Values
 
-1. **Database Connection Failed**: Verify database credentials and ensure database service is accessible
-2. **Permission Denied on Storage**: Check PVC permissions and pod security contexts
-3. **Upload Fails**: Increase `nginx.ingress.kubernetes.io/proxy-body-size` annotation for larger files
-4. **Session Issues**: Ensure SessionSecret is set and consistent across pod restarts
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| affinity | object | `{}` | Affinity rules. |
+| annotations | object | `{}` | Deployment annotations. |
+| cloudreve.config | object | `{}` | Extra conf.ini sections and keys, e.g. `{CORS: {AllowOrigins: "*"}}` (https://docs.cloudreve.org). |
+| cloudreve.existingSecret | string | `""` | Existing secret holding the session secret. |
+| cloudreve.existingSecretKey | string | `"session-secret"` | Key of the session secret in `existingSecret`. |
+| cloudreve.logLevel | string | `"info"` | Log level (`debug`, `info`, `warning`, `error`). |
+| cloudreve.proxyHeader | string | `"X-Forwarded-For"` | HTTP header carrying the client IP when Cloudreve runs behind a reverse proxy. |
+| cloudreve.sessionSecret | string | `""` | Session secret (64+ random characters). Leave empty to generate one (kept across upgrades). |
+| confini.existingSecret | string | `""` | Existing secret containing a full `conf.ini` key. |
+| database.charset | string | `"utf8mb4"` | MySQL/MariaDB charset. |
+| database.existingSecret | string | `""` | Existing secret holding the database password (and optionally the URL). |
+| database.existingSecretKeys.password | string | `"password"` | Key of the password in `existingSecret`. |
+| database.existingSecretKeys.url | string | `""` | Key of the connection URL in `existingSecret` (optional). |
+| database.host | string | `""` | Database host. |
+| database.name | string | `"cloudreve"` | Database name. |
+| database.password | string | `""` | Database password (ignored when `existingSecret` is set). |
+| database.port | int | `5432` | Database port. |
+| database.type | string | `"sqlite"` | Database type: `sqlite` (stored in the data volume), `postgres`, `mysql` or `mariadb`. |
+| database.url | string | `""` | Full connection URL (overrides host/port/user/password/name). Needed for PostgreSQL TLS, e.g. `postgres://user:pass@host:5432/db?sslmode=verify-full`. Stored in the chart secret. |
+| database.user | string | `"cloudreve"` | Database user. |
+| extraEnv | list | `[]` | Extra environment variables. Do not put secrets in `CR_CONF_*` variables: Cloudreve logs their values. |
+| extraVolumeMounts | list | `[]` | Extra volume mounts of the Cloudreve container. |
+| extraVolumes | list | `[]` | Extra volumes. |
+| fullnameOverride | string | `""` | Override the full resource names. |
+| httpRoute.annotations | object | `{}` | HTTPRoute annotations. |
+| httpRoute.enabled | bool | `false` | Expose Cloudreve through a Gateway API HTTPRoute. |
+| httpRoute.hostnames | list | `["chart-example.local"]` | Hostnames. |
+| httpRoute.parentRefs | list | `[{"name":"gateway","sectionName":"http"}]` | Gateways this route is attached to. |
+| httpRoute.rules | list | `[{"matches":[{"path":{"type":"PathPrefix","value":"/"}}]}]` | Rules (every rule is sent to the Cloudreve service). |
+| image.digest | string | `""` | Image digest (`sha256:...`). When set, it takes precedence over the tag. |
+| image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
+| image.repository | string | `"docker.io/cloudreve/cloudreve"` | Cloudreve image repository. |
+| image.tag | string | `""` | Image tag (defaults to the chart appVersion). |
+| imagePullSecrets | list | `[]` | Secrets for pulling images from a private registry. |
+| ingress.annotations | object | `{}` | Ingress annotations. Raise the body size limit of your controller for uploads (e.g. `nginx.ingress.kubernetes.io/proxy-body-size: "0"`). |
+| ingress.className | string | `""` | Ingress class name. |
+| ingress.enabled | bool | `false` | Expose Cloudreve through an Ingress. |
+| ingress.hosts | list | `[{"host":"chart-example.local","paths":[{"path":"/","pathType":"Prefix"}]}]` | Ingress hosts. |
+| ingress.tls | list | `[]` | Ingress TLS. |
+| labels | object | `{}` | Deployment labels. |
+| livenessProbe | object | `{"failureThreshold":3,"httpGet":{"path":"/api/v4/site/ping","port":"http"},"periodSeconds":20,"timeoutSeconds":5}` | Liveness probe. |
+| nameOverride | string | `""` | Override the chart name. |
+| namespaceOverride | string | `""` | Override the deployment namespace. |
+| nodeSelector | object | `{}` | Node selector. |
+| persistence.accessModes | list | `["ReadWriteOnce"]` | Access modes. |
+| persistence.annotations | object | `{}` | PVC annotations. |
+| persistence.enabled | bool | `true` | Persist /cloudreve/data in a PVC. Without it, files and the SQLite database are lost when the pod restarts. |
+| persistence.existingClaim | string | `""` | Use an existing PVC. |
+| persistence.extraPvcLabels | object | `{}` | Extra PVC labels. |
+| persistence.size | string | `"10Gi"` | Volume size. |
+| persistence.storageClassName | string | `""` | Storage class (empty uses the cluster default). |
+| persistence.subPath | string | `""` | Sub-directory of the volume to mount. |
+| podAnnotations | object | `{}` | Pod annotations. |
+| podLabels | object | `{}` | Pod labels. |
+| podPortName | string | `"http"` | Name of the container port. |
+| podSecurityContext | object | `{"fsGroup":1000,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. Cloudreve runs fine as an arbitrary non-root user. |
+| priorityClassName | string | `""` | Priority class of the pod. |
+| readinessProbe | object | `{"httpGet":{"path":"/api/v4/site/ping","port":"http"},"periodSeconds":10,"timeoutSeconds":5}` | Readiness probe. |
+| redis.db | int | `0` | Redis database index. |
+| redis.enabled | bool | `false` | Use a Redis server. |
+| redis.existingSecret | string | `""` | Existing secret holding the Redis password. |
+| redis.existingSecretKey | string | `"password"` | Key of the password in `existingSecret`. |
+| redis.password | string | `""` | Redis password (ignored when `existingSecret` is set). |
+| redis.server | string | `""` | Redis address (`host:port`). |
+| redis.tlsSkipVerify | bool | `false` | Skip TLS certificate verification (Cloudreve's own default is true; the chart verifies). |
+| redis.useTLS | bool | `false` | Connect with TLS. |
+| redis.user | string | `""` | Redis user (ACL), if any. |
+| resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | Resource requests and limits. |
+| securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | Container security context. |
+| service.annotations | object | `{}` | Service annotations. |
+| service.port | int | `80` | Service port. |
+| service.type | string | `"ClusterIP"` | Service type. |
+| serviceAccount.annotations | object | `{}` | Service account annotations. |
+| serviceAccount.automount | bool | `false` | Cloudreve never talks to the Kubernetes API: the token is not mounted. |
+| serviceAccount.create | bool | `true` | Create a dedicated service account. |
+| serviceAccount.name | string | `""` | Service account name (generated when empty). |
+| startupProbe | object | `{"failureThreshold":60,"httpGet":{"path":"/api/v4/site/ping","port":"http"},"periodSeconds":5}` | Startup probe (the first start runs the database migrations). |
+| timezone | string | `"UTC"` | Timezone of the container (the image defaults to Asia/Shanghai). |
+| tolerations | list | `[]` | Tolerations. |
 
-## Initial Setup
+## Credits
 
-After deploying Cloudreve:
-
-1. **Access the application** via ingress hostname or service
-2. **First login** - Default admin account will be created on first run
-3. **Check logs** for initial admin password: `kubectl logs -n storage <pod-name>`
-4. **Change password** immediately after first login
-5. **Configure storage policies** in the admin panel
-6. **Set up users and groups** as needed
-
-## Storage Backends
-
-Cloudreve supports various storage backends. Configure them in the admin panel after deployment:
-
-- **Local Storage**: Uses the persistent volume
-- **OneDrive**: Microsoft OneDrive integration
-- **Amazon S3**: S3-compatible storage
-- **Alibaba Cloud OSS**: Alibaba cloud storage
-- **Tencent Cloud COS**: Tencent cloud storage
-- **Qiniu Kodo**: Qiniu cloud storage
-- **Upyun**: Upyun cloud storage
-
-## Security Considerations
-
-- Always change default SessionSecret and HashIDSalt
-- Use secrets for database credentials
-- Enable HTTPS/TLS for production
-- Implement proper RBAC and network policies
-- Regular backups of database and storage
-- Keep Cloudreve updated to latest version
-- Use strong passwords for admin accounts
-- Configure CORS properly for your domain
-
-## Performance Tuning
-
-For better performance:
-
-- Use ReadWriteMany access mode with multiple replicas
-- Enable Redis for caching and session storage
-- Configure appropriate resource limits
-- Use fast storage classes (SSD)
-- Enable CDN for static files
-- Configure proper ingress timeouts for large uploads
+See [CREDITS.md](CREDITS.md).
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE.md](LICENSE.md) file for details.
-
-## Maintainers
-
-**Maintainer:**
-- David Gheghea - david.gheghea@unxwares.com
-
-**Co-Maintainer:**
-- Baptiste Gosselin - baptiste.gosselin@unxwares.com
-
-## Links
-
-- [Cloudreve Official Website](https://cloudreve.org/)
-- [Cloudreve Documentation](https://docs.cloudreve.org/)
-- [Cloudreve GitHub Repository](https://github.com/cloudreve/Cloudreve)
-- [UnxWares Helm Repository](https://github.com/UnxWares/helm)
-
----
-
-## Contributing
-
-We welcome contributions! Please see our [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
-
-### Reporting Issues
-
-For bugs or feature requests, please open an issue on our [GitHub repository](https://github.com/UnxWares/helm/issues).
-
-### Security Vulnerabilities
-
-If you discover a security vulnerability, please email: **security@unxwares.com**
-
-### Questions and Support
-
-For general questions: **opensource@unxwares.com**
-
----
-
-**Made with ❤️ by the UnxWares Team**
+The chart is released under the MIT license. Cloudreve is licensed under the GPL-3.0.

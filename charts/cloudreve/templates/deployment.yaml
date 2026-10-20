@@ -1,3 +1,4 @@
+{{- $userConf := include "cloudreve.confiniSecret" . }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,47 +14,115 @@ metadata:
   {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
-  {{- end }}
+  # Cloudreve keeps WebDAV locks, the task queue and cron jobs in memory: run a single replica.
+  replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "cloudreve.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ list .Values.cloudreve.sessionSecret .Values.database.password .Values.database.url .Values.redis.password | toJson | sha256sum }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "cloudreve.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "cloudreve.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if not $userConf }}
+      initContainers:
+        - name: render-config
+          image: {{ include "cloudreve.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - /bin/sh
+            - -ec
+            - awk -f /config-template/render.awk /config-template/conf.ini.tpl > /config/conf.ini
+          env:
+            {{- include "cloudreve.configEnv" . | nindent 12 }}
+          volumeMounts:
+            - name: config-template
+              mountPath: /config-template
+              readOnly: true
+            - name: config
+              mountPath: /config
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "cloudreve.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Run the binary directly: the image entrypoint also starts aria2 under supervisord as root.
+          command:
+            - /cloudreve/cloudreve
+            - -c
+            - /etc/cloudreve/conf.ini
+          env:
+            - name: TZ
+              value: {{ .Values.timezone | quote }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           ports:
             - name: {{ .Values.podPortName }}
-              containerPort: {{ .Values.service.targetPort }}
+              containerPort: 5212
               protocol: TCP
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: config
-              mountPath: "/cloudreve/conf.ini"
-              subPath: conf.ini
+              mountPath: /etc/cloudreve
               readOnly: true
             - name: storage
-              mountPath: "/data"
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+              mountPath: /cloudreve/data
+              {{- with .Values.persistence.subPath }}
+              subPath: {{ tpl . $ }}
+              {{- end }}
+            - name: tmp
+              mountPath: /tmp
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -67,32 +136,33 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
+        {{- if $userConf }}
         - name: config
-          {{- if .Values.confini.fromSecret }}
           secret:
-            secretName: {{ .Values.confini.secretName }}
+            secretName: {{ $userConf }}
             items:
               - key: conf.ini
                 path: conf.ini
-          {{- else }}
+        {{- else }}
+        - name: config-template
           configMap:
             name: {{ include "cloudreve.fullname" . }}
-          {{- end }}
-        {{- if and .Values.persistence.enabled (eq .Values.persistence.type "pvc") }}
-        - name: storage
-          persistentVolumeClaim:
-            claimName: {{ tpl (.Values.persistence.existingClaim | default (include "cloudreve.fullname" .)) . }}
-        {{- else}}
-        - name: storage
-          {{- if .Values.persistence.inMemory.enabled }}
+        # Rendered conf.ini (contains secrets): memory-backed, never written to the node disk.
+        - name: config
           emptyDir:
             medium: Memory
-            {{- with .Values.persistence.inMemory.sizeLimit }}
-            sizeLimit: {{ . }}
-            {{- end }}
+            sizeLimit: 1Mi
+        {{- end }}
+        - name: storage
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ tpl (.Values.persistence.existingClaim | default (include "cloudreve.fullname" .)) . }}
           {{- else }}
           emptyDir: {}
           {{- end }}
+        - name: tmp
+          emptyDir:
+            sizeLimit: 2Gi
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
-
-

@@ -1,129 +1,245 @@
 {
-    "$schema": "http://json-schema.org/schema#",
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "affinity": {
+            "description": "Affinity rules.",
             "type": "object"
         },
         "annotations": {
+            "description": "Deployment annotations.",
             "type": "object"
         },
-        "autoscaling": {
+        "cloudreve": {
             "type": "object",
             "properties": {
-                "enabled": {
-                    "type": "boolean"
+                "config": {
+                    "description": "Extra conf.ini sections and keys, e.g. `{CORS: {AllowOrigins: \"*\"}}` (https://docs.cloudreve.org).",
+                    "type": "object"
                 },
-                "maxReplicas": {
-                    "type": "integer"
+                "existingSecret": {
+                    "description": "Existing secret holding the session secret.",
+                    "type": "string"
                 },
-                "minReplicas": {
-                    "type": "integer"
+                "existingSecretKey": {
+                    "description": "Key of the session secret in `existingSecret`.",
+                    "type": "string"
                 },
-                "targetCPUUtilizationPercentage": {
-                    "type": "integer"
+                "logLevel": {
+                    "description": "Log level (`debug`, `info`, `warning`, `error`).",
+                    "type": "string",
+                    "enum": [
+                        "debug",
+                        "info",
+                        "warning",
+                        "error"
+                    ]
+                },
+                "proxyHeader": {
+                    "description": "HTTP header carrying the client IP when Cloudreve runs behind a reverse proxy.",
+                    "type": "string"
+                },
+                "sessionSecret": {
+                    "description": "Session secret (64+ random characters). Leave empty to generate one (kept across upgrades).",
+                    "type": "string"
                 }
             }
         },
         "confini": {
             "type": "object",
             "properties": {
-                "data": {
-                    "type": "string"
-                },
-                "fromSecret": {
-                    "type": "boolean"
-                },
-                "secretName": {
+                "existingSecret": {
+                    "description": "Existing secret containing a full `conf.ini` key.",
                     "type": "string"
                 }
             }
         },
-        "createConfigmap": {
-            "type": "boolean"
-        },
         "database": {
             "type": "object",
             "properties": {
+                "charset": {
+                    "description": "MySQL/MariaDB charset.",
+                    "type": "string"
+                },
                 "existingSecret": {
+                    "description": "Existing secret holding the database password (and optionally the URL).",
                     "type": "string"
                 },
                 "existingSecretKeys": {
                     "type": "object",
                     "properties": {
-                        "host": {
-                            "type": "string"
-                        },
-                        "name": {
-                            "type": "string"
-                        },
                         "password": {
+                            "description": "Key of the password in `existingSecret`.",
                             "type": "string"
                         },
-                        "port": {
-                            "type": "string"
-                        },
-                        "type": {
-                            "type": "string"
-                        },
-                        "user": {
+                        "url": {
+                            "description": "Key of the connection URL in `existingSecret` (optional).",
                             "type": "string"
                         }
                     }
                 },
                 "host": {
+                    "description": "Database host.",
                     "type": "string"
                 },
                 "name": {
+                    "description": "Database name.",
                     "type": "string"
                 },
                 "password": {
+                    "description": "Database password (ignored when `existingSecret` is set).",
                     "type": "string"
                 },
                 "port": {
+                    "description": "Database port.",
                     "type": "integer"
                 },
                 "type": {
+                    "description": "Database type: `sqlite` (stored in the data volume), `postgres`, `mysql` or `mariadb`.",
+                    "type": "string",
+                    "enum": [
+                        "sqlite",
+                        "postgres",
+                        "mysql",
+                        "mariadb"
+                    ]
+                },
+                "url": {
+                    "description": "Full connection URL (overrides host/port/user/password/name). Needed for PostgreSQL TLS, e.g. `postgres://user:pass@host:5432/db?sslmode=verify-full`. Stored in the chart secret.",
                     "type": "string"
                 },
                 "user": {
+                    "description": "Database user.",
                     "type": "string"
                 }
             }
         },
+        "extraEnv": {
+            "description": "Extra environment variables. Do not put secrets in `CR_CONF_*` variables: Cloudreve logs their values.",
+            "type": "array"
+        },
+        "extraVolumeMounts": {
+            "description": "Extra volume mounts of the Cloudreve container.",
+            "type": "array"
+        },
+        "extraVolumes": {
+            "description": "Extra volumes.",
+            "type": "array"
+        },
         "fullnameOverride": {
+            "description": "Override the full resource names.",
             "type": "string"
+        },
+        "httpRoute": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "HTTPRoute annotations.",
+                    "type": "object"
+                },
+                "enabled": {
+                    "description": "Expose Cloudreve through a Gateway API HTTPRoute.",
+                    "type": "boolean"
+                },
+                "hostnames": {
+                    "description": "Hostnames.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "parentRefs": {
+                    "description": "Gateways this route is attached to.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "sectionName": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "rules": {
+                    "description": "Rules (every rule is sent to the Cloudreve service).",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "matches": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "path": {
+                                            "type": "object",
+                                            "properties": {
+                                                "type": {
+                                                    "type": "string"
+                                                },
+                                                "value": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         },
         "image": {
             "type": "object",
             "properties": {
-                "pullPolicy": {
+                "digest": {
+                    "description": "Image digest (`sha256:...`). When set, it takes precedence over the tag.",
                     "type": "string"
                 },
+                "pullPolicy": {
+                    "description": "Image pull policy.",
+                    "type": "string",
+                    "enum": [
+                        "Always",
+                        "IfNotPresent",
+                        "Never"
+                    ]
+                },
                 "repository": {
+                    "description": "Cloudreve image repository.",
                     "type": "string"
                 },
                 "tag": {
+                    "description": "Image tag (defaults to the chart appVersion).",
                     "type": "string"
                 }
             }
         },
         "imagePullSecrets": {
+            "description": "Secrets for pulling images from a private registry.",
             "type": "array"
         },
         "ingress": {
             "type": "object",
             "properties": {
                 "annotations": {
+                    "description": "Ingress annotations. Raise the body size limit of your controller for uploads (e.g. `nginx.ingress.kubernetes.io/proxy-body-size: \"0\"`).",
                     "type": "object"
                 },
                 "className": {
+                    "description": "Ingress class name.",
                     "type": "string"
                 },
                 "enabled": {
+                    "description": "Expose Cloudreve through an Ingress.",
                     "type": "boolean"
                 },
                 "hosts": {
+                    "description": "Ingress hosts.",
                     "type": "array",
                     "items": {
                         "type": "object",
@@ -149,91 +265,163 @@
                     }
                 },
                 "tls": {
+                    "description": "Ingress TLS.",
                     "type": "array"
                 }
             }
         },
         "labels": {
+            "description": "Deployment labels.",
+            "type": "object"
+        },
+        "livenessProbe": {
+            "description": "Liveness probe.",
             "type": "object"
         },
         "nameOverride": {
+            "description": "Override the chart name.",
             "type": "string"
         },
         "namespaceOverride": {
+            "description": "Override the deployment namespace.",
             "type": "string"
         },
         "nodeSelector": {
+            "description": "Node selector.",
             "type": "object"
         },
         "persistence": {
             "type": "object",
             "properties": {
                 "accessModes": {
+                    "description": "Access modes.",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "enabled": {
-                    "type": "boolean"
-                },
-                "extraPvcLabels": {
+                "annotations": {
+                    "description": "PVC annotations.",
                     "type": "object"
                 },
-                "finalizers": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "enabled": {
+                    "description": "Persist /cloudreve/data in a PVC. Without it, files and the SQLite database are lost when the pod restarts.",
+                    "type": "boolean"
                 },
-                "inMemory": {
-                    "type": "object",
-                    "properties": {
-                        "enabled": {
-                            "type": "boolean"
-                        }
-                    }
+                "existingClaim": {
+                    "description": "Use an existing PVC.",
+                    "type": "string"
+                },
+                "extraPvcLabels": {
+                    "description": "Extra PVC labels.",
+                    "type": "object"
                 },
                 "size": {
+                    "description": "Volume size.",
                     "type": "string"
                 },
                 "storageClassName": {
+                    "description": "Storage class (empty uses the cluster default).",
                     "type": "string"
                 },
-                "type": {
+                "subPath": {
+                    "description": "Sub-directory of the volume to mount.",
                     "type": "string"
                 }
             }
         },
         "podAnnotations": {
+            "description": "Pod annotations.",
+            "type": "object"
+        },
+        "podLabels": {
+            "description": "Pod labels.",
             "type": "object"
         },
         "podPortName": {
+            "description": "Name of the container port.",
             "type": "string"
         },
         "podSecurityContext": {
+            "description": "Pod security context. Cloudreve runs fine as an arbitrary non-root user.",
             "type": "object"
         },
-        "replicaCount": {
-            "type": "integer"
+        "priorityClassName": {
+            "description": "Priority class of the pod.",
+            "type": "string"
+        },
+        "readinessProbe": {
+            "description": "Readiness probe.",
+            "type": "object"
+        },
+        "redis": {
+            "type": "object",
+            "properties": {
+                "db": {
+                    "description": "Redis database index.",
+                    "type": "integer"
+                },
+                "enabled": {
+                    "description": "Use a Redis server.",
+                    "type": "boolean"
+                },
+                "existingSecret": {
+                    "description": "Existing secret holding the Redis password.",
+                    "type": "string"
+                },
+                "existingSecretKey": {
+                    "description": "Key of the password in `existingSecret`.",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "Redis password (ignored when `existingSecret` is set).",
+                    "type": "string"
+                },
+                "server": {
+                    "description": "Redis address (`host:port`).",
+                    "type": "string"
+                },
+                "tlsSkipVerify": {
+                    "description": "Skip TLS certificate verification (Cloudreve's own default is true; the chart verifies).",
+                    "type": "boolean"
+                },
+                "useTLS": {
+                    "description": "Connect with TLS.",
+                    "type": "boolean"
+                },
+                "user": {
+                    "description": "Redis user (ACL), if any.",
+                    "type": "string"
+                }
+            }
         },
         "resources": {
+            "description": "Resource requests and limits.",
             "type": "object"
         },
         "securityContext": {
+            "description": "Container security context.",
             "type": "object"
         },
         "service": {
             "type": "object",
             "properties": {
-                "port": {
-                    "type": "integer"
+                "annotations": {
+                    "description": "Service annotations.",
+                    "type": "object"
                 },
-                "targetPort": {
+                "port": {
+                    "description": "Service port.",
                     "type": "integer"
                 },
                 "type": {
-                    "type": "string"
+                    "description": "Service type.",
+                    "type": "string",
+                    "enum": [
+                        "ClusterIP",
+                        "NodePort",
+                        "LoadBalancer"
+                    ]
                 }
             }
         },
@@ -241,17 +429,33 @@
             "type": "object",
             "properties": {
                 "annotations": {
+                    "description": "Service account annotations.",
                     "type": "object"
                 },
+                "automount": {
+                    "description": "Cloudreve never talks to the Kubernetes API: the token is not mounted.",
+                    "type": "boolean"
+                },
                 "create": {
+                    "description": "Create a dedicated service account.",
                     "type": "boolean"
                 },
                 "name": {
+                    "description": "Service account name (generated when empty).",
                     "type": "string"
                 }
             }
         },
+        "startupProbe": {
+            "description": "Startup probe (the first start runs the database migrations).",
+            "type": "object"
+        },
+        "timezone": {
+            "description": "Timezone of the container (the image defaults to Asia/Shanghai).",
+            "type": "string"
+        },
         "tolerations": {
+            "description": "Tolerations.",
             "type": "array"
         }
     }
