@@ -1,306 +1,322 @@
-# OpenEverest Database Tools
+# OpenEverest Database Tools Helm Chart
 
-A Helm chart providing database initialization and management tools for [OpenEverest](https://openeverest.io) deployments by UnxWares.
+![Version: 2026.10.1](https://img.shields.io/badge/Version-2026.10.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.17.0](https://img.shields.io/badge/AppVersion-1.17.0-informational?style=flat-square)
 
-## Overview
-
-OpenEverest Database Tools is a collection of additional tools and features designed to streamline database management within OpenEverest clusters. This chart enables automatic database creation, initialization script execution, and seamless ArgoCD integration for database lifecycle management.
+Database initialization Jobs for [OpenEverest](https://openeverest.io) by UnxWares. Each Job waits until an
+OpenEverest `DatabaseCluster` is ready, then creates databases, users and grants and runs your init scripts on
+PostgreSQL, MySQL (Percona XtraDB Cluster) or MongoDB (Percona Server for MongoDB).
 
 ## Features
 
-- **Multi-Database Support**: Automated initialization for MySQL, PostgreSQL, and MongoDB
-- **Database Creation**: Automatically create databases within your cluster at deployment time
-- **Init Scripts**: Execute custom SQL commands at startup
-- **ArgoCD Integration**: Automatic job re-execution on configuration changes via sync waves
-- **Credential Management**: Secure integration with Kubernetes secrets
-- **Customizable Jobs**: Per-database configuration with resource limits, TTL, and retry policies
-- **RBAC Support**: Optional RBAC resources for secure cluster operations
+- **PostgreSQL, MySQL and MongoDB**: one Job per entry, any number of entries per engine.
+- **Waits for the cluster**: `kubectl wait` init containers block until the `DatabaseCluster` exists and reports
+  `status.status: ready`, then the client retries until the admin user can log in.
+- **Idempotent**: databases and users are created when missing, grants are re-applied and user passwords are
+  re-synced from their Secret. Running a Job twice is harmless.
+- **No runtime downloads**: pinned official client images (`postgres`, `mysql`, `mongo`) and the distroless
+  `registry.k8s.io/kubectl`; nothing is installed when the Job starts, every image is scanned by Artifact Hub.
+- **Injection-safe**: usernames and passwords stay in Secrets and environment variables, never in SQL or
+  JavaScript text. Database, collection, role and privilege names are validated when rendering.
+- **Least privilege**: a dedicated ServiceAccount that can only read DatabaseClusters, its token mounted only into
+  the wait containers; non-root (uid 65532), read-only root filesystem, every capability dropped, seccomp `RuntimeDefault`.
+- **Upgrade-friendly**: Job names carry a hash of their settings, so `helm upgrade` never hits the immutable Job
+  spec and a changed Job runs again. Argo CD hook annotations are added by default.
+
+## Requirements
+
+- OpenEverest 1.x (tested with 1.17.0): the Jobs wait on
+  `databaseclusters.everest.percona.com` (API `v1alpha1`).
+- The Jobs, their ConfigMaps and RBAC are created in `global.namespace` (default `everest-databases`), which must
+  be a [namespace managed by OpenEverest](https://openeverest.io/documentation/current/administer/manage_namespaces.html)
+  holding the DatabaseClusters and their credential Secrets. Leave it empty to use the release namespace.
+- The nodes must be able to pull from `docker.io` and `registry.k8s.io` (or your mirror, see `image.*`).
 
 ## Installation
-
-> **NOTE:** OpenEverest Database Tools must be installed in an OpenEverest managed namespace. For more information, see the [OpenEverest documentation on managing namespaces](https://openeverest.io/documentation/1.13.0/administer/manage_namespaces.html?h=namespace).
-
-### Add the Helm Repository
 
 ```bash
 helm repo add unxwares https://helm.unxwares.studio
 helm repo update
+helm install db-tools unxwares/openeverest-database-tools \
+  --namespace everest-databases \
+  --set global.namespace=everest-databases \
+  -f my-databases.yaml
 ```
 
-### Install the Chart
+Charts are signed: see [verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures)
+and add `--verify --keyring <keyring>` to `helm install`.
 
-```bash
-helm install openeverest-database-tools unxwares/openeverest-database-tools \
-  --namespace everest-system \
-  --create-namespace
-```
+## How it works
 
-## Configuration
+For every entry of `databases.postgresql`, `databases.mysql` and `databases.mongodb` the chart renders a
+ConfigMap (the generated SQL/JavaScript and your init scripts) and a Job named `<name>-<hash>`:
 
-### PostgreSQL Example
+1. `wait-cluster-created` and `wait-cluster-ready` (kubectl) wait up to `waitTimeoutSeconds` each for the
+   DatabaseCluster to exist, then to be `ready`. Disable them with `waitForCluster: false`.
+2. The client container retries the admin login for up to `connectTimeoutSeconds`, then:
+   creates the `databases`, creates or updates every user of `users` with its grants, creates the MongoDB
+   `collections`, and runs each entry of `initScripts` in order.
+
+The admin credentials come from `adminCredentialsSecret`; each user comes from its own `credentialsSecret`
+(keys `username` and `password` by default).
+
+## Examples
+
+### PostgreSQL
+
+OpenEverest stores the `postgres` superuser in `everest-secrets-<cluster>` with the keys the chart expects
+by default (`pgbouncer-host`, `user`, `password`).
 
 ```yaml
 databases:
   postgresql:
-    - name: my-app-db-init
-      clusterName: my-dev-pg-cluster
-      credentialsSecret: my-dev-pg-cluster-credentials
+    - name: laravel-db-init
+      clusterName: my-pg
+      adminCredentialsSecret: everest-secrets-my-pg
       databases:
         - laravel-app
-        - laravel-cache
+      users:
+        - credentialsSecret: laravel-app-db   # keys: username, password
+          databases:
+            - laravel-app
+      initScriptsDatabase: laravel-app
       initScripts:
         - CREATE EXTENSION IF NOT EXISTS pg_trgm;
         - CREATE EXTENSION IF NOT EXISTS pgcrypto;
-        - CREATE TABLE IF NOT EXISTS migrations (id SERIAL PRIMARY KEY);
 ```
 
-### MySQL Example
+Each user owns its databases and their `public` schema, which is closed to `PUBLIC`.
+
+### MySQL (Percona XtraDB Cluster)
+
+`everest-secrets-<cluster>` holds the `root` password under the key `root`; the cluster is reached through its
+HAProxy (or ProxySQL) service.
 
 ```yaml
 databases:
   mysql:
     - name: wordpress-db-init
-      clusterName: wordpress-mysql-cluster
-      credentialsSecret: wordpress-mysql-cluster-credentials
+      clusterName: my-mysql
+      adminCredentialsSecret: everest-secrets-my-mysql
+      host: my-mysql-haproxy
+      adminUser: root
+      passwordKey: root
       databases:
         - wordpress
-        - wordpress_cache
-      initScripts:
-        - CREATE TABLE IF NOT EXISTS init_log (id INT AUTO_INCREMENT PRIMARY KEY, message VARCHAR(255));
-        - INSERT INTO init_log (message) VALUES ('Database initialized');
+      users:
+        - credentialsSecret: wordpress-db
+          databases:
+            - wordpress
+          privileges:       # default: ALL PRIVILEGES
+            - SELECT
+            - INSERT
+            - UPDATE
+            - DELETE
+            - CREATE
+            - ALTER
+            - INDEX
+            - DROP
 ```
 
-### MongoDB Example
+### MongoDB (Percona Server for MongoDB)
+
+The admin user needs `userAdmin` on the target databases to manage `users`, and `readWrite` to create
+`collections` and run `initScripts`. With the system users kept in `everest-secrets-<cluster>`, use for example
+`MONGODB_USER_ADMIN_USER`/`MONGODB_USER_ADMIN_PASSWORD` for users and `MONGODB_DATABASE_ADMIN_*` for collections and
+scripts (two entries), or a dedicated admin user with both.
 
 ```yaml
 databases:
   mongodb:
-    - name: app-mongo-init
-      clusterName: app-mongo-cluster
-      credentialsSecret: app-mongo-cluster-credentials
+    - name: app-mongo-users
+      clusterName: my-mongo
+      adminCredentialsSecret: everest-secrets-my-mongo
+      host: my-mongo-rs0
+      uriOptions: replicaSet=rs0
+      userKey: MONGODB_USER_ADMIN_USER
+      passwordKey: MONGODB_USER_ADMIN_PASSWORD
+      users:
+        - credentialsSecret: appdb-user
+          databases:
+            - appdb
+          roles:            # default: readWrite
+            - readWrite
+    - name: app-mongo-schema
+      clusterName: my-mongo
+      adminCredentialsSecret: everest-secrets-my-mongo
+      host: my-mongo-rs0
+      uriOptions: replicaSet=rs0
+      userKey: MONGODB_DATABASE_ADMIN_USER
+      passwordKey: MONGODB_DATABASE_ADMIN_PASSWORD
       databases:
         - appdb
       collections:
         - name: users
           database: appdb
-        - name: sessions
-          database: appdb
-      initScripts:
-        - db.users.createIndex({ "email": 1 }, { unique: true });
-        - db.sessions.createIndex({ "createdAt": 1 }, { expireAfterSeconds: 3600 });
+      initScripts:          # `db` is initScriptsDatabase (default: the first database)
+        - 'db.users.createIndex({ email: 1 }, { unique: true });'
+        - 'db.sessions.createIndex({ createdAt: 1 }, { expireAfterSeconds: 3600 });'
 ```
 
-## ArgoCD Integration
+MongoDB users are created in each of their databases (connect with `authSource=<database>`). MongoDB creates a
+database on its first write, so a database without collection only appears once the application writes to it.
 
-This chart includes built-in support for ArgoCD synchronization hooks, allowing database initialization jobs to automatically re-run when configurations change.
+Quote init scripts that contain `: ` (YAML would read them as a mapping).
 
-### Default ArgoCD Configuration
+## Entry reference
 
-```yaml
-global:
-  argocd:
-    enabled: true
-    hook: Sync
-    syncOptions: Replace=true
-    hookDeletePolicy: HookSucceeded
-```
+Keys of each entry of `databases.postgresql`, `databases.mysql` and `databases.mongodb`:
 
-### How It Works
+| Key | Engines | Default | Description |
+|-----|---------|---------|-------------|
+| `name` | all | required | Job name (DNS label). The Job and its ConfigMap are named `<name>-<hash>`. |
+| `clusterName` | all | required | Name of the OpenEverest `DatabaseCluster` to wait for. |
+| `adminCredentialsSecret` | all | required | Secret with the admin credentials (`credentialsSecret` is accepted as an alias). |
+| `hostKey` | all | `pgbouncer-host` / `host` / `host` | Key of the host in the admin Secret. |
+| `host` | all | | Literal host, takes precedence over `hostKey` (e.g. `my-mysql-haproxy`). |
+| `port` | all | `5432` / `3306` / `27017` | Port. |
+| `userKey` | all | `user` | Key of the admin username in the admin Secret. |
+| `adminUser` | all | | Literal admin username, takes precedence over `userKey` (e.g. `root`). |
+| `passwordKey` | all | `password` | Key of the admin password in the admin Secret. |
+| `databases` | all | `[]` | Databases to create (letters, digits, `_`, `-`). |
+| `users[].credentialsSecret` | all | required | Secret holding the user credentials. |
+| `users[].usernameKey` / `users[].passwordKey` | all | `username` / `password` | Keys in that Secret. |
+| `users[].databases` | all | `[]` | Databases the user gets access to (PostgreSQL: owner; MySQL: grants; MongoDB: roles). |
+| `users[].privileges` | MySQL | `[ALL PRIVILEGES]` | Privileges granted on each database. |
+| `users[].roles` | MongoDB | `[readWrite]` | Roles granted on each database. |
+| `initScripts` | all | `[]` | SQL (PostgreSQL, MySQL) or mongosh JavaScript run in order, after users and grants. |
+| `initScriptsDatabase` | all | admin database / none / first database | Database the init scripts run in. |
+| `sslMode` | PostgreSQL, MySQL | `require` / `PREFERRED` | libpq `sslmode` or MySQL `--ssl-mode`. |
+| `adminDatabase` | PostgreSQL | `postgres` | Database the admin connects to. |
+| `authDatabase` | MongoDB | `admin` | Authentication database of the admin user. |
+| `uriOptions` | MongoDB | | Extra connection string options, e.g. `replicaSet=rs0&tls=true`. |
+| `collections[]` | MongoDB | `[]` | `name` + `database` of collections to create. |
+| `image` | all | `image.<engine>` | Client image: full reference string or `{repository, tag, digest}`. |
+| `env`, `extraEnv` | all | `[]` | Extra environment variables of the client container. |
+| `resources` | all | `resources` | Resources of every container of the Job. |
+| `labels`, `annotations`, `podAnnotations` | all | `{}` | Extra Job labels (also on the pod), Job annotations and pod annotations. |
+| `ttlSecondsAfterFinished`, `backoffLimit`, `restartPolicy`, `activeDeadlineSeconds` | all | `global.*` | Job settings. |
+| `waitForCluster`, `waitTimeoutSeconds`, `connectTimeoutSeconds`, `updateUserPasswords` | all | `global.*` | Wait, connection and password settings. |
 
-- Jobs are executed during the ArgoCD `Sync` phase
-- Completed jobs are automatically deleted after successful execution
-- Configuration changes trigger automatic re-initialization
-- Sync waves ensure proper execution order
+## Argo CD
 
-### Disabling ArgoCD Integration
+With `global.argocd.enabled` (default), the Jobs carry `argocd.argoproj.io/hook: Sync`,
+`hook-delete-policy: HookSucceeded` and `sync-options: Replace=true`: Argo CD runs them on every sync and deletes
+them once they succeed. Set `global.argocd.enabled: false` to manage them as plain resources.
 
-```yaml
-global:
-  argocd:
-    enabled: false
-```
+Without Argo CD, Helm keeps the Jobs as release resources: an unchanged Job keeps its name (`helm upgrade`
+recreates it, and it runs again, once `ttlSecondsAfterFinished` has deleted it), a changed one gets a new name and
+runs again. Either way the Job spec is never patched, so upgrades cannot fail on its immutability.
 
-## Configuration Options
+## Security notes
 
-### Global Settings
+- Credentials only reach the containers through `secretKeyRef`. PostgreSQL reads them with `\getenv` and quotes
+  them with `%L`/`%I`; MySQL receives them hex-encoded and quotes them with `QUOTE()` in prepared statements;
+  mongosh reads `process.env`. The MySQL admin password is written to an option file on a memory-backed volume.
+- `CREATE ROLE ... PASSWORD`/`CREATE USER ... IDENTIFIED BY` statements can appear in the server logs if statement
+  logging is enabled on the cluster, as with any client.
+- The pod does not mount the ServiceAccount token: a projected token is mounted read-only into the two kubectl
+  wait containers only. With `rbac.create: false`, give the ServiceAccount `get`, `list` and `watch` on
+  `databaseclusters.everest.percona.com`, or set `waitForCluster: false`.
+- Init scripts are stored in a ConfigMap, readable by whoever can read ConfigMaps in the namespace: keep secrets
+  out of them.
 
-| Parameter                        | Description                                   | Default             |
-| -------------------------------- | --------------------------------------------- | ------------------- |
-| `global.namespace`               | Namespace where database clusters are located | `everest-databases` |
-| `global.argocd.enabled`          | Enable ArgoCD integration                     | `true`              |
-| `global.argocd.hook`             | ArgoCD hook type                              | `Sync`              |
-| `global.argocd.hookDeletePolicy` | Hook deletion policy                          | `HookSucceeded`     |
-| `global.ttlSecondsAfterFinished` | Job TTL after completion (seconds)            | `180`               |
-| `global.backoffLimit`            | Job retry limit                               | `5`                 |
-| `global.restartPolicy`           | Job restart policy                            | `OnFailure`         |
+## Upgrading
 
-### RBAC Settings
+### To 2026.10.1
 
-| Parameter                 | Description           | Default   |
-| ------------------------- | --------------------- | --------- |
-| `rbac.create`             | Create RBAC resources | `true`    |
-| `rbac.serviceAccountName` | Service account name  | `default` |
-
-### Database Configuration
-
-Each database type (`postgresql`, `mysql`, `mongodb`) supports the following parameters:
-
-| Parameter                 | Description                       | Required |
-| ------------------------- | --------------------------------- | -------- |
-| `name`                    | Job name                          | Yes      |
-| `clusterName`             | Database cluster name             | Yes      |
-| `credentialsSecret`       | Secret containing credentials     | Yes      |
-| `databases`               | List of databases to create       | Yes      |
-| `initScripts`             | SQL/JavaScript scripts to execute | No       |
-| `ttlSecondsAfterFinished` | Override global TTL               | No       |
-| `backoffLimit`            | Override global backoff limit     | No       |
-| `image`                   | Override default image            | No       |
-| `env`                     | Additional environment variables  | No       |
-| `annotations`             | Additional annotations            | No       |
-| `labels`                  | Additional labels                 | No       |
-
-### Image Settings
-
-| Parameter          | Description             | Default        |
-| ------------------ | ----------------------- | -------------- |
-| `image.postgresql` | PostgreSQL client image | `alpine:3.19`  |
-| `image.mysql`      | MySQL client image      | `alpine:3.19`  |
-| `image.mongodb`    | MongoDB client image    | `alpine:3.19`  |
-| `image.pullPolicy` | Image pull policy       | `IfNotPresent` |
-
-## Examples
-
-### Complete Example with Multiple Databases
-
-```yaml
-global:
-  namespace: everest-databases
-  argocd:
-    enabled: true
-  ttlSecondsAfterFinished: 300
-
-databases:
-  postgresql:
-    - name: main-app-db
-      clusterName: production-pg
-      credentialsSecret: production-pg-credentials
-      databases:
-        - appdb
-        - analytics
-      initScripts:
-        - CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-        - CREATE SCHEMA IF NOT EXISTS app;
-
-  mysql:
-    - name: legacy-app-db
-      clusterName: legacy-mysql
-      credentialsSecret: legacy-mysql-credentials
-      databases:
-        - legacy_prod
-      initScripts:
-        - SET GLOBAL max_connections = 500;
-
-  mongodb:
-    - name: cache-db
-      clusterName: cache-mongo
-      credentialsSecret: cache-mongo-credentials
-      databases:
-        - cache
-      collections:
-        - name: sessions
-          database: cache
-        - name: temp_data
-          database: cache
-```
-
-### Custom Resource Limits
-
-```yaml
-resources:
-  limits:
-    cpu: 200m
-    memory: 256Mi
-  requests:
-    cpu: 100m
-    memory: 128Mi
-
-securityContext:
-  runAsNonRoot: true
-  runAsUser: 1000
-  fsGroup: 1000
-```
+- **Images (BREAKING)**: the Jobs no longer run `apk add` on `alpine:3.19`. `image.postgresql`, `image.mysql` and
+  `image.mongodb` are now `{repository, tag, digest}` objects pointing to the official client images, plus
+  `image.kubectl`. Remove any `image.*` or per-entry `image:` override that pointed to Alpine: the chart refuses it.
+  The MySQL client is now Oracle MySQL 8.4 (TLS `PREFERRED`, see `sslMode`).
+- **Job names**: Jobs and their ConfigMaps are named `<name>-<hash>`. Helm deletes the old `<name>` Jobs on upgrade;
+  adapt scripts that use `job/<name>` (`kubectl get jobs -l app.kubernetes.io/instance=<release>`). The MySQL
+  component label stays `mariadb-init`; the custom `job-name` pod label is gone (Kubernetes still adds `job-name`
+  and `batch.kubernetes.io/job-name`).
+- **ServiceAccount**: with `rbac.create: true` the Jobs run as a new `<release>-openeverest-database-tools`
+  ServiceAccount instead of `default`. The old default value `rbac.serviceAccountName: default` is ignored; any
+  other name keeps its previous meaning (an existing account the Role is bound to).
+- **Security context**: pods run as uid/gid 65532 with a read-only root filesystem (`HOME` and the writable paths
+  live on a `/tmp` emptyDir). `securityContext` is deprecated but still merged into the pod security context; use
+  `podSecurityContext` and `containerSecurityContext`.
+- **Passwords**: existing users now get their password reset to the value of their Secret on every run. Set
+  `global.updateUserPasswords: false` to keep the previous create-only behaviour.
+- **PostgreSQL**: the admin connects to `adminDatabase` (`postgres`) instead of a database named after the admin
+  user; init scripts run there unless `initScriptsDatabase` is set.
+- **MongoDB**: the Job works now (it always failed before). Init scripts run with `db` set to
+  `initScriptsDatabase` (default: first entry of `databases`).
 
 ## Troubleshooting
 
-### Check Job Status
-
 ```bash
-kubectl get jobs -n everest-databases
-kubectl logs job/<job-name> -n everest-databases
+kubectl get jobs -n everest-databases -l app.kubernetes.io/instance=<release>
+kubectl logs -n everest-databases job/<name>-<hash> -f
+kubectl logs -n everest-databases job/<name>-<hash> -c wait-cluster-ready
+kubectl describe job -n everest-databases <name>-<hash>
 ```
 
-### Debug Failed Initialization
+- **Waiting forever**: `kubectl get databaseclusters -n everest-databases` must show the cluster `ready`.
+  `Forbidden` in the wait logs means the ServiceAccount cannot read DatabaseClusters (see `rbac.*`).
+- **Pod stuck in `CreateContainerConfigError`**: a Secret or key referenced by the entry does not exist.
+- **Timed out connecting**: check `host`/`hostKey`, `port`, `sslMode` and the NetworkPolicies of the namespace
+  (the pods carry `app.kubernetes.io/component: postgresql-init|mariadb-init|mongodb-init`).
 
-```bash
-kubectl describe job/<job-name> -n everest-databases
-kubectl get events -n everest-databases --sort-by='.lastTimestamp'
-```
+## Requirements
 
-### Common Issues
+Kubernetes: `>=1.27.0-0`
 
-1. **Credentials Not Found**: Ensure the `credentialsSecret` exists in the correct namespace
-2. **Permission Denied**: Verify RBAC settings and service account permissions
-3. **Connection Timeout**: Check network policies and database cluster accessibility
+## Values
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| affinity | object | `{}` | Affinity rules. |
+| annotations | object | `{}` | Annotations added to every Job. |
+| containerSecurityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true}` | Container security context of every container. |
+| databases.mongodb | list | `[]` | MongoDB (Percona Server for MongoDB) Jobs. |
+| databases.mysql | list | `[]` | MySQL (Percona XtraDB Cluster) Jobs. |
+| databases.postgresql | list | `[]` | PostgreSQL Jobs. |
+| extraEnv | list | `[]` | Extra environment variables of the client containers (merged with the per-entry `extraEnv`/`env`). |
+| fullnameOverride | string | `""` | Override the full resource names. |
+| global.activeDeadlineSeconds | int | `nil` | Maximum duration of a Job in seconds, retries included (`null` for no limit). |
+| global.annotations | object | `{}` | Annotations added to every Job. |
+| global.argocd.enabled | bool | `true` | Add the Argo CD hook annotations to the Jobs. |
+| global.argocd.hook | string | `"Sync"` | Argo CD hook phase (`PreSync`, `Sync`, `PostSync`...). |
+| global.argocd.hookDeletePolicy | string | `"HookSucceeded"` | Argo CD hook delete policy. |
+| global.argocd.syncOptions | string | `"Replace=true"` | Argo CD sync options of the Jobs. |
+| global.backoffLimit | int | `5` | Retries before a Job is marked failed. |
+| global.connectTimeoutSeconds | int | `120` | How long the client keeps retrying to connect and authenticate, in seconds. |
+| global.namespace | string | `"everest-databases"` | Namespace of the OpenEverest DatabaseClusters and their credential Secrets. Jobs, ConfigMaps and RBAC are created there. Empty uses the release namespace. |
+| global.restartPolicy | string | `"OnFailure"` | Pod restart policy. |
+| global.ttlSecondsAfterFinished | int | `180` | Seconds before a finished Job is garbage collected (`null` keeps it). |
+| global.updateUserPasswords | bool | `true` | Reset the password of users that already exist to the value of their Secret. |
+| global.waitForCluster | bool | `true` | Wait for the DatabaseCluster to exist and report `status.status: ready` (kubectl init containers) before connecting. |
+| global.waitTimeoutSeconds | int | `300` | Timeout of each wait step (creation, then readiness), in seconds. |
+| image.kubectl.digest | string | `""` | kubectl image digest (`sha256:...`). |
+| image.kubectl.repository | string | `"registry.k8s.io/kubectl"` | kubectl image repository (distroless, used by the wait init containers). |
+| image.kubectl.tag | string | `"v1.37.1"` | kubectl image tag. |
+| image.mongodb.digest | string | `""` | MongoDB client image digest (`sha256:...`). |
+| image.mongodb.repository | string | `"docker.io/library/mongo"` | MongoDB client image repository (mongosh). |
+| image.mongodb.tag | string | `"8.0.34"` | MongoDB client image tag. |
+| image.mysql.digest | string | `""` | MySQL client image digest (`sha256:...`). |
+| image.mysql.repository | string | `"docker.io/library/mysql"` | MySQL client image repository (mysql). |
+| image.mysql.tag | string | `"8.4.11"` | MySQL client image tag. |
+| image.postgresql.digest | string | `""` | PostgreSQL client image digest (`sha256:...`). |
+| image.postgresql.repository | string | `"docker.io/library/postgres"` | PostgreSQL client image repository (psql). |
+| image.postgresql.tag | string | `"18.6-alpine"` | PostgreSQL client image tag. |
+| image.pullPolicy | string | `"IfNotPresent"` | Image pull policy of every container. |
+| imagePullSecrets | list | `[]` | Secrets for pulling images from a private registry. |
+| labels | object | `{}` | Labels added to every Job and its pods. |
+| nameOverride | string | `""` | Override the chart name. |
+| nodeSelector | object | `{}` | Node selector. |
+| podAnnotations | object | `{}` | Annotations added to every Job pod. |
+| podSecurityContext | object | `{"fsGroup":65532,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. The client images run fine as any uid: HOME points to the /tmp emptyDir. |
+| priorityClassName | string | `""` | Priority class of the Job pods. |
+| rbac.create | bool | `true` | Create a ServiceAccount (unless `rbac.serviceAccountName` names an existing one) and a Role/RoleBinding allowing it to read DatabaseClusters. |
+| rbac.serviceAccountName | string | `""` | Existing ServiceAccount to run the Jobs as. Empty: a dedicated `<release>-openeverest-database-tools` account is created when `rbac.create` is true, `default` otherwise. The former default value `default` is ignored when `rbac.create` is true. |
+| resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"10m","memory":"64Mi"}}` | Resources of every container (overridable per entry with `resources`). |
+| securityContext | object | `{}` | DEPRECATED, use `podSecurityContext`. Still merged into the pod security context for backward compatibility. |
+| tolerations | list | `[]` | Tolerations. |
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE.md](LICENSE.md) file for details.
-
-## Maintainers
-
-**Maintainer:**
-- David Gheghea - david.gheghea@unxwares.com
-
-**Co-Maintainer:**
-- Baptiste Gosselin - baptiste.gosselin@unxwares.com
-
-## Links
-
-- [OpenEverest Official Website](https://openeverest.io)
-- [GitHub Repository](https://github.com/UnxWares/helm)
-
----
-
-## Contributing
-
-We welcome contributions from the community! If you'd like to contribute to OpenEverest Database Tools:
-
-1. **Fork the Repository**: Create your own fork of the project
-2. **Create a Feature Branch**: `git checkout -b feature/your-feature-name`
-3. **Make Your Changes**: Implement your feature or bug fix
-4. **Test Thoroughly**: Ensure your changes work as expected
-5. **Commit Your Changes**: Use clear and descriptive commit messages
-6. **Push to Your Fork**: `git push origin feature/your-feature-name`
-7. **Open a Pull Request**: Submit a PR to the main repository with a detailed description
-
-### Reporting Issues
-
-If you encounter bugs or have feature requests, please open an issue on our [GitHub repository](https://github.com/UnxWares/helm/issues).
-
-### Security Vulnerabilities
-
-If you discover a security vulnerability, please DO NOT open a public issue. Instead, email us directly at:
-
-**security@unxwares.com**
-
-We take security seriously and will respond promptly to all security-related concerns.
-
-### Questions and Support
-
-For general questions, support, or inquiries about our open source initiative:
-
-**opensource@unxwares.com**
-
----
-
-**Made with ❤️ by the UnxWares Team**
+The chart is released under the MIT license. OpenEverest is licensed under the Apache-2.0 license.
+Report security issues privately as described in [SECURITY.md](https://github.com/UnxWares/helm/blob/main/SECURITY.md).

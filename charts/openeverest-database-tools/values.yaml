@@ -1,148 +1,179 @@
-# Global settings
-global:
-  # Namespace where database clusters are located
-  namespace: everest-databases
+# -- Override the chart name.
+nameOverride: ""
+# -- Override the full resource names.
+fullnameOverride: ""
 
-  # Additional annotations for all jobs
+global:
+  # -- Namespace of the OpenEverest DatabaseClusters and their credential Secrets. Jobs, ConfigMaps and RBAC are created there. Empty uses the release namespace.
+  namespace: everest-databases
+  # -- Annotations added to every Job.
   annotations: {}
 
-  # ArgoCD integration settings
+  # Argo CD integration: the Jobs become Argo CD hooks, run on every sync and are deleted once they succeed.
   argocd:
+    # -- Add the Argo CD hook annotations to the Jobs.
     enabled: true
+    # -- Argo CD hook phase (`PreSync`, `Sync`, `PostSync`...).
     hook: Sync
+    # -- Argo CD sync options of the Jobs.
     syncOptions: Replace=true
+    # -- Argo CD hook delete policy.
     hookDeletePolicy: HookSucceeded
 
-  # Job TTL after completion (seconds)
-  ttlSecondsAfterFinished: 180
+  # -- Seconds before a finished Job is garbage collected (`null` keeps it).
+  ttlSecondsAfterFinished: 180  # @schema type:[integer, null]; minimum:0
+  # -- Retries before a Job is marked failed.
+  backoffLimit: 5  # @schema minimum:0
+  # -- Pod restart policy.
+  restartPolicy: OnFailure  # @schema enum:[OnFailure, Never]
+  # -- (int) Maximum duration of a Job in seconds, retries included (`null` for no limit).
+  activeDeadlineSeconds: null  # @schema type:[integer, null]; minimum:1
+  # -- Wait for the DatabaseCluster to exist and report `status.status: ready` (kubectl init containers) before connecting.
+  waitForCluster: true
+  # -- Timeout of each wait step (creation, then readiness), in seconds.
+  waitTimeoutSeconds: 300  # @schema minimum:1
+  # -- How long the client keeps retrying to connect and authenticate, in seconds.
+  connectTimeoutSeconds: 120  # @schema minimum:1
+  # -- Reset the password of users that already exist to the value of their Secret.
+  updateUserPasswords: true
 
-  # Job backoff limit for retries
-  backoffLimit: 5
-
-  # Default restart policy
-  restartPolicy: OnFailure
-
-# RBAC settings
 rbac:
-  # Create RBAC resources
+  # -- Create a ServiceAccount (unless `rbac.serviceAccountName` names an existing one) and a Role/RoleBinding allowing it to read DatabaseClusters.
   create: true
-  # Service account to use
-  serviceAccountName: default
+  # -- Existing ServiceAccount to run the Jobs as. Empty: a dedicated `<release>-openeverest-database-tools` account is created when `rbac.create` is true, `default` otherwise. The former default value `default` is ignored when `rbac.create` is true.
+  serviceAccountName: ""
 
-# Database initialization jobs
-# Each database type can have multiple instances
+## Database initialization Jobs: one Job per entry. Every entry key is documented in the README.
 databases:
-  # PostgreSQL databases
-  postgresql: []
-    # Example configuration:
-    # - name: my-db-init
-    #   clusterName: my-dev-pg-cluster
-    #   adminCredentialsSecret: my-dev-pg-cluster-credentials
-    #   databases:
-    #     - laravel-app
-    #   users:
-    #     - credentialsSecret: app-user-secret
-    #       databases:
-    #         - laravel-app
-    #   # Optional: custom SQL scripts to run
-    #   initScripts: []
-    #     - CREATE EXTENSION IF NOT EXISTS pg_trgm;
-    #     - CREATE EXTENSION IF NOT EXISTS pgcrypto;
-    #   # Optional: override global settings
-    #   ttlSecondsAfterFinished: 300
-    #   backoffLimit: 3
-    #   image: alpine:3.19
-    #   env:
-    #     - name: CUSTOM_VAR
-    #       value: custom_value
-    #   annotations: {}
-    #   labels: {}
+  # -- PostgreSQL Jobs.
+  postgresql: []  # @schema item: object; itemRequired:[name, clusterName]
+  # - name: my-app-db-init
+  #   clusterName: my-pg-cluster
+  #   adminCredentialsSecret: everest-secrets-my-pg-cluster
+  #   databases:
+  #     - laravel-app
+  #   users:
+  #     - credentialsSecret: laravel-app-db
+  #       databases:
+  #         - laravel-app
+  #   initScriptsDatabase: laravel-app
+  #   initScripts:
+  #     - CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
-  # MySQL databases
-  mysql: []
-    # Example configuration:
-    # - name: wordpress-db-init
-    #   clusterName: wordpress-mysql-cluster
-    #   adminCredentialsSecret: wordpress-mysql-cluster-credentials
-    #   databases:
-    #     - wordpress
-    #     - wordpress_cache
-    #   users:
-    #     - credentialsSecret: wordpress-user-secret
-    #       databases:
-    #         - wordpress
-    #       privileges:
-    #         - ALL
-    #   initScripts: []
-    #     - CREATE TABLE IF NOT EXISTS init_log (id INT AUTO_INCREMENT PRIMARY KEY, message VARCHAR(255));
-    #   ttlSecondsAfterFinished: 300
-    #   backoffLimit: 3
-    #   image: alpine:3.19
-    #   env: []
-    #   annotations: {}
-    #   labels: {}
+  # -- MySQL (Percona XtraDB Cluster) Jobs.
+  mysql: []  # @schema item: object; itemRequired:[name, clusterName]
+  # - name: wordpress-db-init
+  #   clusterName: my-mysql-cluster
+  #   adminCredentialsSecret: wordpress-mysql-admin
+  #   databases:
+  #     - wordpress
+  #   users:
+  #     - credentialsSecret: wordpress-db
+  #       databases:
+  #         - wordpress
+  #       privileges:
+  #         - ALL PRIVILEGES
 
-  # MongoDB databases
-  mongodb: []
-    # Example configuration:
-    # - name: app-mongo-init
-    #   clusterName: app-mongo-cluster
-    #   adminCredentialsSecret: app-mongo-cluster-credentials
-    #   databases:
-    #     - appdb
-    #   users:
-    #     - credentialsSecret: mongo-user-secret
-    #       databases:
-    #         - appdb
-    #   # Optional collections to create
-    #   collections:
-    #     - name: users
-    #       database: appdb
-    #     - name: sessions
-    #       database: appdb
-    #   # Optional: MongoDB init scripts (JavaScript)
-    #   initScripts: []
-    #     - db.users.createIndex({ "email": 1 }, { unique: true });
-    #   ttlSecondsAfterFinished: 300
-    #   backoffLimit: 3
-    #   image: alpine:3.19
-    #   env: []
-    #   annotations: {}
-    #   labels: {}
+  # -- MongoDB (Percona Server for MongoDB) Jobs.
+  mongodb: []  # @schema item: object; itemRequired:[name, clusterName]
+  # - name: app-mongo-init
+  #   clusterName: my-mongo-cluster
+  #   adminCredentialsSecret: app-mongo-admin
+  #   databases:
+  #     - appdb
+  #   users:
+  #     - credentialsSecret: appdb-user
+  #       databases:
+  #         - appdb
+  #   collections:
+  #     - name: users
+  #       database: appdb
+  #   initScripts:
+  #     - 'db.users.createIndex({ email: 1 }, { unique: true });'
 
-# Image settings (can be overridden per database)
+## Client images. Each one is a {repository, tag, digest} object (digest takes precedence over tag).
+## The clients are part of the images: nothing is installed at runtime.
 image:
-  postgresql: alpine:3.19
-  mysql: alpine:3.19
-  mongodb: alpine:3.19
-  pullPolicy: IfNotPresent
+  postgresql:  # @schema type:[object, string]
+    # -- PostgreSQL client image repository (psql).
+    repository: docker.io/library/postgres
+    # -- PostgreSQL client image tag.
+    tag: 18.6-alpine
+    # -- PostgreSQL client image digest (`sha256:...`).
+    digest: ""
+  mysql:  # @schema type:[object, string]
+    # -- MySQL client image repository (mysql).
+    repository: docker.io/library/mysql
+    # -- MySQL client image tag.
+    tag: 8.4.11
+    # -- MySQL client image digest (`sha256:...`).
+    digest: ""
+  mongodb:  # @schema type:[object, string]
+    # -- MongoDB client image repository (mongosh).
+    repository: docker.io/library/mongo
+    # -- MongoDB client image tag.
+    tag: 8.0.34
+    # -- MongoDB client image digest (`sha256:...`).
+    digest: ""
+  kubectl:  # @schema type:[object, string]
+    # -- kubectl image repository (distroless, used by the wait init containers).
+    repository: registry.k8s.io/kubectl
+    # -- kubectl image tag.
+    tag: v1.37.1
+    # -- kubectl image digest (`sha256:...`).
+    digest: ""
+  # -- Image pull policy of every container.
+  pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
 
-# Additional annotations for all jobs
+# -- Secrets for pulling images from a private registry.
+imagePullSecrets: []
+# - name: my-registry-secret
+
+# -- Annotations added to every Job.
 annotations: {}
-
-# Additional labels for all jobs
+# -- Labels added to every Job and its pods.
 labels: {}
+# -- Annotations added to every Job pod.
+podAnnotations: {}
 
-# Resource limits for init jobs
-resources: {}
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 50m
-  #   memory: 64Mi
+# -- Extra environment variables of the client containers (merged with the per-entry `extraEnv`/`env`).
+extraEnv: []
 
-# Security context
+# -- Resources of every container (overridable per entry with `resources`).
+resources:  # @schema skipProperties:true
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 512Mi
+
+# -- Pod security context. The client images run fine as any uid: HOME points to the /tmp emptyDir.
+podSecurityContext:  # @schema skipProperties:true
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- Container security context of every container.
+containerSecurityContext:  # @schema skipProperties:true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  privileged: false
+  capabilities:
+    drop:
+      - ALL
+
+# -- DEPRECATED, use `podSecurityContext`. Still merged into the pod security context for backward compatibility.
 securityContext: {}
-  # runAsNonRoot: true
-  # runAsUser: 1000
-  # fsGroup: 1000
 
-# Node selector
+# -- Priority class of the Job pods.
+priorityClassName: ""
+# -- Node selector.
 nodeSelector: {}
-
-# Tolerations
+# -- Tolerations.
 tolerations: []
-
-# Affinity
+# -- Affinity rules.
 affinity: {}

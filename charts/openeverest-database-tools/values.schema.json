@@ -1,105 +1,291 @@
 {
-    "$schema": "http://json-schema.org/schema#",
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
         "affinity": {
+            "description": "Affinity rules.",
             "type": "object"
         },
         "annotations": {
+            "description": "Annotations added to every Job.",
+            "type": "object"
+        },
+        "containerSecurityContext": {
+            "description": "Container security context of every container.",
             "type": "object"
         },
         "databases": {
             "type": "object",
             "properties": {
                 "mongodb": {
-                    "type": "array"
+                    "description": "MongoDB (Percona Server for MongoDB) Jobs.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "name",
+                            "clusterName"
+                        ]
+                    }
                 },
                 "mysql": {
-                    "type": "array"
+                    "description": "MySQL (Percona XtraDB Cluster) Jobs.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "name",
+                            "clusterName"
+                        ]
+                    }
                 },
                 "postgresql": {
-                    "type": "array"
+                    "description": "PostgreSQL Jobs.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "name",
+                            "clusterName"
+                        ]
+                    }
                 }
             }
+        },
+        "extraEnv": {
+            "description": "Extra environment variables of the client containers (merged with the per-entry `extraEnv`/`env`).",
+            "type": "array"
+        },
+        "fullnameOverride": {
+            "description": "Override the full resource names.",
+            "type": "string"
         },
         "global": {
             "type": "object",
             "properties": {
+                "activeDeadlineSeconds": {
+                    "description": "Maximum duration of a Job in seconds, retries included (`null` for no limit).",
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 1
+                },
                 "annotations": {
+                    "description": "Annotations added to every Job.",
                     "type": "object"
                 },
                 "argocd": {
                     "type": "object",
                     "properties": {
                         "enabled": {
+                            "description": "Add the Argo CD hook annotations to the Jobs.",
                             "type": "boolean"
                         },
                         "hook": {
+                            "description": "Argo CD hook phase (`PreSync`, `Sync`, `PostSync`...).",
                             "type": "string"
                         },
                         "hookDeletePolicy": {
+                            "description": "Argo CD hook delete policy.",
                             "type": "string"
                         },
                         "syncOptions": {
+                            "description": "Argo CD sync options of the Jobs.",
                             "type": "string"
                         }
                     }
                 },
                 "backoffLimit": {
-                    "type": "integer"
+                    "description": "Retries before a Job is marked failed.",
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "connectTimeoutSeconds": {
+                    "description": "How long the client keeps retrying to connect and authenticate, in seconds.",
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "namespace": {
+                    "description": "Namespace of the OpenEverest DatabaseClusters and their credential Secrets. Jobs, ConfigMaps and RBAC are created there. Empty uses the release namespace.",
                     "type": "string"
                 },
                 "restartPolicy": {
-                    "type": "string"
+                    "description": "Pod restart policy.",
+                    "type": "string",
+                    "enum": [
+                        "OnFailure",
+                        "Never"
+                    ]
                 },
                 "ttlSecondsAfterFinished": {
-                    "type": "integer"
+                    "description": "Seconds before a finished Job is garbage collected (`null` keeps it).",
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 0
+                },
+                "updateUserPasswords": {
+                    "description": "Reset the password of users that already exist to the value of their Secret.",
+                    "type": "boolean"
+                },
+                "waitForCluster": {
+                    "description": "Wait for the DatabaseCluster to exist and report `status.status: ready` (kubectl init containers) before connecting.",
+                    "type": "boolean"
+                },
+                "waitTimeoutSeconds": {
+                    "description": "Timeout of each wait step (creation, then readiness), in seconds.",
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },
         "image": {
             "type": "object",
             "properties": {
+                "kubectl": {
+                    "type": [
+                        "object",
+                        "string"
+                    ],
+                    "properties": {
+                        "digest": {
+                            "description": "kubectl image digest (`sha256:...`).",
+                            "type": "string"
+                        },
+                        "repository": {
+                            "description": "kubectl image repository (distroless, used by the wait init containers).",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "kubectl image tag.",
+                            "type": "string"
+                        }
+                    }
+                },
                 "mongodb": {
-                    "type": "string"
+                    "type": [
+                        "object",
+                        "string"
+                    ],
+                    "properties": {
+                        "digest": {
+                            "description": "MongoDB client image digest (`sha256:...`).",
+                            "type": "string"
+                        },
+                        "repository": {
+                            "description": "MongoDB client image repository (mongosh).",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "MongoDB client image tag.",
+                            "type": "string"
+                        }
+                    }
                 },
                 "mysql": {
-                    "type": "string"
+                    "type": [
+                        "object",
+                        "string"
+                    ],
+                    "properties": {
+                        "digest": {
+                            "description": "MySQL client image digest (`sha256:...`).",
+                            "type": "string"
+                        },
+                        "repository": {
+                            "description": "MySQL client image repository (mysql).",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "MySQL client image tag.",
+                            "type": "string"
+                        }
+                    }
                 },
                 "postgresql": {
-                    "type": "string"
+                    "type": [
+                        "object",
+                        "string"
+                    ],
+                    "properties": {
+                        "digest": {
+                            "description": "PostgreSQL client image digest (`sha256:...`).",
+                            "type": "string"
+                        },
+                        "repository": {
+                            "description": "PostgreSQL client image repository (psql).",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "PostgreSQL client image tag.",
+                            "type": "string"
+                        }
+                    }
                 },
                 "pullPolicy": {
-                    "type": "string"
+                    "description": "Image pull policy of every container.",
+                    "type": "string",
+                    "enum": [
+                        "Always",
+                        "IfNotPresent",
+                        "Never"
+                    ]
                 }
             }
         },
+        "imagePullSecrets": {
+            "description": "Secrets for pulling images from a private registry.",
+            "type": "array"
+        },
         "labels": {
+            "description": "Labels added to every Job and its pods.",
             "type": "object"
         },
+        "nameOverride": {
+            "description": "Override the chart name.",
+            "type": "string"
+        },
         "nodeSelector": {
+            "description": "Node selector.",
             "type": "object"
+        },
+        "podAnnotations": {
+            "description": "Annotations added to every Job pod.",
+            "type": "object"
+        },
+        "podSecurityContext": {
+            "description": "Pod security context. The client images run fine as any uid: HOME points to the /tmp emptyDir.",
+            "type": "object"
+        },
+        "priorityClassName": {
+            "description": "Priority class of the Job pods.",
+            "type": "string"
         },
         "rbac": {
             "type": "object",
             "properties": {
                 "create": {
+                    "description": "Create a ServiceAccount (unless `rbac.serviceAccountName` names an existing one) and a Role/RoleBinding allowing it to read DatabaseClusters.",
                     "type": "boolean"
                 },
                 "serviceAccountName": {
+                    "description": "Existing ServiceAccount to run the Jobs as. Empty: a dedicated `\u003crelease\u003e-openeverest-database-tools` account is created when `rbac.create` is true, `default` otherwise. The former default value `default` is ignored when `rbac.create` is true.",
                     "type": "string"
                 }
             }
         },
         "resources": {
+            "description": "Resources of every container (overridable per entry with `resources`).",
             "type": "object"
         },
         "securityContext": {
+            "description": "DEPRECATED, use `podSecurityContext`. Still merged into the pod security context for backward compatibility.",
             "type": "object"
         },
         "tolerations": {
+            "description": "Tolerations.",
             "type": "array"
         }
     }

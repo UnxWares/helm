@@ -1,0 +1,40 @@
+{{- $ns := include "openeverest-database-tools.namespace" . }}
+{{- $jobs := list }}
+{{- range $engine := list "postgresql" "mysql" "mongodb" }}
+{{- range $db := index $.Values.databases $engine | default list }}
+{{- $jobs = append $jobs (printf "%s  (%s, DatabaseCluster %s)" (include "openeverest-database-tools.jobName" (dict "root" $ "db" $db "engine" $engine)) $engine $db.clusterName) }}
+{{- end }}
+{{- end -}}
+OpenEverest Database Tools {{ .Chart.Version }} (tested with OpenEverest {{ .Chart.AppVersion }}).
+{{- if $jobs }}
+
+Jobs in namespace {{ $ns }} (run as ServiceAccount {{ include "openeverest-database-tools.serviceAccountName" . }}):
+{{- range $jobs }}
+  - {{ . }}
+{{- end }}
+
+Follow a Job:
+  kubectl logs -n {{ $ns }} job/<name> -f
+{{- if .Values.global.waitForCluster }}
+  kubectl logs -n {{ $ns }} job/<name> -c wait-cluster-ready   # while it waits for the DatabaseCluster
+{{- end }}
+
+Job names end with a hash of their settings: a changed entry creates a new Job, which runs again.
+{{- else }}
+
+No database configured: add entries under databases.postgresql, databases.mysql or databases.mongodb.
+{{- end }}
+{{- if and .Values.rbac.create (eq (.Values.rbac.serviceAccountName | default "") "default") }}
+
+NOTE: rbac.serviceAccountName=default is ignored: the Jobs run as the dedicated ServiceAccount
+{{ include "openeverest-database-tools.serviceAccountName" . }}. Remove the value from your overrides.
+{{- end }}
+{{- if .Values.securityContext }}
+
+DEPRECATED: securityContext is merged into the pod security context; move it to podSecurityContext.
+{{- end }}
+{{- if and (not .Values.rbac.create) .Values.global.waitForCluster }}
+
+rbac.create is false: ServiceAccount {{ include "openeverest-database-tools.serviceAccountName" . }} must be allowed to get, list and
+watch databaseclusters.everest.percona.com in {{ $ns }}, or the wait init containers fail.
+{{- end }}

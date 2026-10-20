@@ -1,20 +1,25 @@
 apiVersion: v2
 name: openeverest-database-tools
-description: A various set of tools for OpenEverest
+description: Jobs that wait for an OpenEverest DatabaseCluster to be ready, then create PostgreSQL, MySQL and MongoDB databases, users, grants and run init scripts.
 type: application
-version: 2026.2.12
-appVersion: "1.16.0"
-icon: https://openeverest.io/images/brandkit/logo-vertical-full-color-white-min.png
+version: 2026.10.1
+# OpenEverest release the chart is tested against (DatabaseCluster everest.percona.com/v1alpha1, 1.x series).
+appVersion: "1.17.0"
+kubeVersion: ">=1.27.0-0"
+home: https://github.com/UnxWares/helm/tree/main/charts/openeverest-database-tools
+icon: https://openeverest.io/images/brandkit/icon-full-color-white-min.png
 
 sources:
-  - https://openeverest.io
-  - https://github.com/UnxWares/helm
+  - https://github.com/openeverest/openeverest
+  - https://github.com/openeverest/openeverest-operator
+  - https://github.com/UnxWares/helm/tree/main/charts/openeverest-database-tools
 
 keywords:
   - database
   - initialization
-  - percona
+  - openeverest
   - everest
+  - percona
   - postgresql
   - mysql
   - mongodb
@@ -28,5 +33,49 @@ maintainers:
     url: https://github.com/UnxWares
 
 annotations:
-  category: networking
-  artifacthub.io/license: "MIT"
+  artifacthub.io/displayName: OpenEverest Database Tools
+  artifacthub.io/category: database
+  artifacthub.io/license: MIT
+  artifacthub.io/links: |
+    - name: Chart source
+      url: https://github.com/UnxWares/helm/tree/main/charts/openeverest-database-tools
+    - name: OpenEverest documentation
+      url: https://openeverest.io/documentation/current/
+    - name: Support
+      url: https://github.com/UnxWares/helm/issues
+  artifacthub.io/images: |
+    - name: postgres-client
+      image: docker.io/library/postgres:18.6-alpine
+    - name: mysql-client
+      image: docker.io/library/mysql:8.4.11
+    - name: mongodb-client
+      image: docker.io/library/mongo:8.0.34
+    - name: kubectl
+      image: registry.k8s.io/kubectl:v1.37.1
+  artifacthub.io/containsSecurityUpdates: "true"
+  artifacthub.io/changes: |
+    - kind: fixed
+      description: The MongoDB job always failed (mongosh is not part of Alpine's mongodb-tools); it now runs mongosh from the official mongo image.
+    - kind: security
+      description: "BREAKING: no more `apk add` at runtime on the EOL alpine:3.19 image: pinned postgres, mysql and mongo client images, kubectl wait init containers. image.postgresql/mysql/mongodb are now {repository, tag, digest} objects; alpine overrides are rejected."
+    - kind: security
+      description: Jobs run under a dedicated ServiceAccount bound to the read-only DatabaseCluster Role instead of the namespace `default` ServiceAccount; the API token is only mounted in the wait init containers.
+    - kind: security
+      description: "Usernames and passwords from Secrets are no longer interpolated into SQL/JavaScript (psql \\getenv + %L, hex + QUOTE() for MySQL, process.env for mongosh); database, collection, role and privilege names are validated."
+    - kind: security
+      description: Hardened pods by default (non-root uid 65532, read-only root filesystem, every capability dropped, seccomp RuntimeDefault) and resource requests.
+    - kind: changed
+      description: "BREAKING: Job names get a `-<hash>` suffix computed from their values, so `helm upgrade` never hits the immutable Job spec and changed jobs run again. Scripts live in a ConfigMap of the same name."
+    - kind: changed
+      description: Existing users get their password re-synced from their Secret (global.updateUserPasswords, default true).
+    - kind: deprecated
+      description: securityContext (pod level) is replaced by podSecurityContext and containerSecurityContext; it is still merged into the pod security context.
+    - kind: fixed
+      description: MySQL jobs with users or initScripts rendered an invalid manifest (here-doc terminator outside the YAML block); labels, env, privileges and the documented credentialsSecret key were ignored by some jobs.
+    - kind: fixed
+      description: Artifact Hub category is now database.
+    - kind: added
+      description: extraEnv, podAnnotations, imagePullSecrets, activeDeadlineSeconds, priorityClassName, per-user Secret keys, literal host/adminUser, sslMode, MySQL privileges, MongoDB roles and uriOptions, initScriptsDatabase, values schema.
+  artifacthub.io/signKey: |
+    fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+    url: https://helm.unxwares.studio/pgp-public-key.asc
