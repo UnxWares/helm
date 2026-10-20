@@ -1,3 +1,4 @@
+{{- $media := .Values.global.persistence.media }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,10 +16,11 @@ spec:
       app.kubernetes.io/component: backend
   template:
     metadata:
-      {{- with .Values.backend.podAnnotations }}
       annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.backend.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "taiga.labels" . | nindent 8 }}
         app.kubernetes.io/component: backend
@@ -31,6 +33,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "taiga.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.global.serviceAccount.automount }}
       {{- with (default .Values.global.podSecurityContext .Values.backend.podSecurityContext) }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -41,15 +44,11 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if and .Values.global.oidc.enabled .Values.global.oidc.backend.overrideImage.name }}
-          image: "{{ .Values.global.oidc.backend.overrideImage.name }}:{{ .Values.global.oidc.backend.overrideImage.tag }}"
-          {{- else }}
-          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
-          {{- end }}
+          image: {{ include "taiga.backImage" (dict "ctx" . "image" .Values.backend.image) | quote }}
           imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.backend.service.port }}
+              containerPort: 8000
               protocol: TCP
           env:
             {{- include "taiga.backendEnv" . | nindent 12 }}
@@ -67,34 +66,22 @@ spec:
           {{- end }}
           {{- with .Values.backend.livenessProbe }}
           livenessProbe:
-            {{- toYaml . | nindent 12 }}
-            {{- with $.Values.global.defaultProbes.liveness }}
-            initialDelaySeconds: {{ .initialDelaySeconds }}
-            periodSeconds: {{ .periodSeconds }}
-            timeoutSeconds: {{ .timeoutSeconds }}
-            failureThreshold: {{ .failureThreshold }}
-            {{- end }}
+            {{- include "taiga.probe" (dict "probe" . "defaults" $.Values.global.defaultProbes.liveness) | nindent 12 }}
           {{- end }}
           {{- with .Values.backend.readinessProbe }}
           readinessProbe:
+            {{- include "taiga.probe" (dict "probe" . "defaults" $.Values.global.defaultProbes.readiness) | nindent 12 }}
+          {{- end }}
+          {{- with .Values.backend.startupProbe }}
+          startupProbe:
             {{- toYaml . | nindent 12 }}
-            {{- with $.Values.global.defaultProbes.readiness }}
-            initialDelaySeconds: {{ .initialDelaySeconds }}
-            periodSeconds: {{ .periodSeconds }}
-            timeoutSeconds: {{ .timeoutSeconds }}
-            failureThreshold: {{ .failureThreshold }}
-            {{- end }}
           {{- end }}
           {{- with (default .Values.global.resources .Values.backend.resources) }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if .Values.global.persistence.static.enabled }}
-            - name: static
-              mountPath: /taiga-back/static
-            {{- end }}
-            {{- if .Values.global.persistence.media.enabled }}
+            {{- if $media.enabled }}
             - name: media
               mountPath: /taiga-back/media
             {{- end }}
@@ -102,15 +89,10 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
       volumes:
-        {{- if .Values.global.persistence.static.enabled }}
-        - name: static
-          persistentVolumeClaim:
-            claimName: {{ if .Values.global.persistence.static.existingClaim }}{{ .Values.global.persistence.static.existingClaim }}{{ else }}{{ include "taiga.fullname" . }}-static{{ end }}
-        {{- end }}
-        {{- if .Values.global.persistence.media.enabled }}
+        {{- if $media.enabled }}
         - name: media
           persistentVolumeClaim:
-            claimName: {{ if .Values.global.persistence.media.existingClaim }}{{ .Values.global.persistence.media.existingClaim }}{{ else }}{{ include "taiga.fullname" . }}-media{{ end }}
+            claimName: {{ include "taiga.mediaClaimName" . }}
         {{- end }}
         {{- with .Values.backend.extraVolumes }}
         {{- toYaml . | nindent 8 }}
@@ -119,9 +101,9 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (default .Values.global.pod.affinity .Values.backend.affinity) }}
+      {{- with (include "taiga.affinity" (dict "ctx" . "affinity" (default .Values.global.pod.affinity .Values.backend.affinity) "media" true)) }}
       affinity:
-        {{- toYaml . | nindent 8 }}
+        {{- . | nindent 8 }}
       {{- end }}
       {{- with (default .Values.global.pod.tolerations .Values.backend.tolerations) }}
       tolerations:

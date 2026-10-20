@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "taiga.fullname" . }}-rabbitmq
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+data:
+  # Celery/kombu declare transient non-exclusive queues, denied by default since RabbitMQ 4.3.
+  20-taiga.conf: |
+    deprecated_features.permit.transient_nonexcl_queues = true

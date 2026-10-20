@@ -78,6 +78,93 @@ app.kubernetes.io/component: {{ .component }}
 {{- end }}
 
 {{/*
+Name of the chart-managed secret.
+*/}}
+{{- define "taiga.secretName" -}}
+{{- include "taiga.fullname" . }}
+{{- end }}
+
+{{/*
+Value of a generated secret key: explicit value, else the value already stored in the release secret, else random.
+Usage: include "taiga.generatedSecret" (dict "ctx" $ "key" "secret-key" "value" .Values.global.secretKey "length" 64)
+*/}}
+{{- define "taiga.generatedSecret" -}}
+{{- if .value -}}
+{{- .value -}}
+{{- else -}}
+{{- $secret := lookup "v1" "Secret" .ctx.Release.Namespace (include "taiga.secretName" .ctx) -}}
+{{- if and $secret (index $secret.data .key) -}}
+{{- index $secret.data .key | b64dec -}}
+{{- else -}}
+{{- randAlphaNum (int .length) -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Probe merged with the global defaults (values set on the probe win).
+Usage: include "taiga.probe" (dict "probe" .Values.backend.livenessProbe "defaults" .Values.global.defaultProbes.liveness)
+*/}}
+{{- define "taiga.probe" -}}
+{{- toYaml (merge (deepCopy .probe) (deepCopy (.defaults | default dict))) }}
+{{- end }}
+
+{{/*
+Image of the backend/async containers (OIDC override, with an optional digest).
+*/}}
+{{- define "taiga.backImage" -}}
+{{- $img := .image }}
+{{- if and .ctx.Values.global.oidc.enabled .ctx.Values.global.oidc.backend.overrideImage.name }}
+{{- with .ctx.Values.global.oidc.backend.overrideImage }}
+{{- if .digest }}{{ printf "%s@%s" .name .digest }}{{ else }}{{ printf "%s:%s" .name .tag }}{{ end }}
+{{- end }}
+{{- else }}
+{{- printf "%s:%s" $img.repository ($img.tag | toString) }}
+{{- end }}
+{{- end }}
+
+{{/*
+Claim name of the shared media volume.
+*/}}
+{{- define "taiga.mediaClaimName" -}}
+{{- .Values.global.persistence.media.existingClaim | default (printf "%s-media" (include "taiga.fullname" .)) }}
+{{- end }}
+
+{{/*
+Access mode of the media volume. An existing claim keeps the mode it was created with
+(accessModes are immutable: releases created with the former ReadWriteMany default keep it).
+*/}}
+{{- define "taiga.mediaAccessMode" -}}
+{{- $media := .Values.global.persistence.media }}
+{{- $existing := lookup "v1" "PersistentVolumeClaim" .Release.Namespace (include "taiga.mediaClaimName" .) }}
+{{- if and $existing $existing.spec.accessModes }}
+{{- first $existing.spec.accessModes }}
+{{- else }}
+{{- $media.accessMode }}
+{{- end }}
+{{- end }}
+
+{{/*
+Pod affinity. Backend, async and gateway share the media volume: with a ReadWriteOnce volume they must run on the
+backend's node, so the chart adds that rule when no affinity is configured for the component.
+Usage: include "taiga.affinity" (dict "ctx" $ "affinity" (default .Values.global.pod.affinity .Values.backend.affinity) "media" true)
+*/}}
+{{- define "taiga.affinity" -}}
+{{- $media := .ctx.Values.global.persistence.media }}
+{{- if .affinity }}
+{{- toYaml .affinity }}
+{{- else if and .media $media.enabled (eq (include "taiga.mediaAccessMode" .ctx) "ReadWriteOnce") }}
+podAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    - labelSelector:
+        matchLabels:
+          {{- include "taiga.selectorLabels" .ctx | nindent 10 }}
+          app.kubernetes.io/component: backend
+      topologyKey: kubernetes.io/hostname
+{{- end }}
+{{- end }}
+
+{{/*
 Database host
 */}}
 {{- define "taiga.databaseHost" -}}
@@ -93,19 +180,62 @@ Database host
 {{- end }}
 
 {{/*
+Secret reference for a value that comes from: a component secret, else global.existingSecret, else the chart secret.
+Usage: include "taiga.secretRef" (dict "ctx" $ "existing" .auth.existingSecret "existingKey" .auth.secretKeys.password "globalKey" "RABBITMQ_PASS" "chartKey" "async-rabbitmq-password")
+*/}}
+{{- define "taiga.secretRef" -}}
+valueFrom:
+  secretKeyRef:
+    {{- if .existing }}
+    name: {{ .existing }}
+    key: {{ .existingKey }}
+    {{- else if and .globalKey .ctx.Values.global.existingSecret }}
+    name: {{ .ctx.Values.global.existingSecret }}
+    key: {{ .globalKey }}
+    {{- else }}
+    name: {{ include "taiga.secretName" .ctx }}
+    key: {{ .chartKey }}
+    {{- end }}
+{{- end }}
+
+{{/*
+TAIGA_SECRET_KEY / SECRET_KEY reference.
+*/}}
+{{- define "taiga.secretKeyRef" -}}
+{{- include "taiga.secretRef" (dict "ctx" . "existing" .Values.global.existingSecret "existingKey" .Values.global.secretKeys.secretKey "chartKey" "secret-key") }}
+{{- end }}
+
+{{/*
+Broker credentials as environment variables, then the amqp URL built with Kubernetes $(VAR) expansion,
+so passwords never appear in clear text in the manifests.
+Usage: include "taiga.brokerEnv" (dict "ctx" $ "prefix" "ASYNC" "broker" .Values.asyncRabbitmq "host" "<svc>" "chartKey" "async-rabbitmq-password")
+*/}}
+{{- define "taiga.brokerEnv" -}}
+{{- $auth := .broker.auth }}
+- name: {{ .prefix }}_RABBITMQ_USER
+  {{- if $auth.existingSecret }}
+  {{- include "taiga.secretRef" (dict "ctx" .ctx "existing" $auth.existingSecret "existingKey" $auth.secretKeys.user) | nindent 2 }}
+  {{- else if .ctx.Values.global.existingSecret }}
+  {{- include "taiga.secretRef" (dict "ctx" .ctx "globalKey" "RABBITMQ_USER") | nindent 2 }}
+  {{- else }}
+  value: {{ $auth.user | quote }}
+  {{- end }}
+- name: {{ .prefix }}_RABBITMQ_PASS
+  {{- include "taiga.secretRef" (dict "ctx" .ctx "existing" $auth.existingSecret "existingKey" $auth.secretKeys.password "globalKey" "RABBITMQ_PASS" "chartKey" .chartKey) | nindent 2 }}
+- name: {{ .prefix }}_RABBITMQ_VHOST
+  {{- if $auth.existingSecret }}
+  {{- include "taiga.secretRef" (dict "ctx" .ctx "existing" $auth.existingSecret "existingKey" $auth.secretKeys.vhost) | nindent 2 }}
+  {{- else }}
+  value: {{ $auth.vhost | quote }}
+  {{- end }}
+{{- end }}
+
+{{/*
 Backend environment variables
 */}}
 {{- define "taiga.backendEnv" -}}
-{{- if .Values.global.existingSecret }}
 - name: TAIGA_SECRET_KEY
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.global.existingSecret }}
-      key: {{ .Values.global.secretKeys.secretKey }}
-{{- else }}
-- name: TAIGA_SECRET_KEY
-  value: {{ .Values.global.secretKey | quote }}
-{{- end }}
+  {{- include "taiga.secretKeyRef" . | nindent 2 }}
 
 - name: TAIGA_SITES_SCHEME
   value: {{ .Values.global.scheme | quote }}
@@ -115,79 +245,61 @@ Backend environment variables
   value: {{ .Values.global.subPath | quote }}
 
 {{- if .Values.externalDatabase.enabled }}
-{{- if .Values.externalDatabase.existingSecret }}
+{{- with .Values.externalDatabase }}
+{{- if .existingSecret }}
 - name: POSTGRES_HOST
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.externalDatabase.existingSecret }}
-      key: {{ .Values.externalDatabase.secretKeys.host }}
+      name: {{ .existingSecret }}
+      key: {{ .secretKeys.host }}
 - name: POSTGRES_PORT
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.externalDatabase.existingSecret }}
-      key: {{ .Values.externalDatabase.secretKeys.port }}
+      name: {{ .existingSecret }}
+      key: {{ .secretKeys.port }}
 - name: POSTGRES_DB
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.externalDatabase.existingSecret }}
-      key: {{ .Values.externalDatabase.secretKeys.database }}
+      name: {{ .existingSecret }}
+      key: {{ .secretKeys.database }}
 - name: POSTGRES_USER
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.externalDatabase.existingSecret }}
-      key: {{ .Values.externalDatabase.secretKeys.username }}
+      name: {{ .existingSecret }}
+      key: {{ .secretKeys.username }}
 - name: POSTGRES_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.externalDatabase.existingSecret }}
-      key: {{ .Values.externalDatabase.secretKeys.password }}
+      name: {{ .existingSecret }}
+      key: {{ .secretKeys.password }}
 {{- else }}
 - name: POSTGRES_HOST
-  value: {{ .Values.externalDatabase.host | quote }}
+  value: {{ .host | quote }}
 - name: POSTGRES_PORT
-  value: {{ .Values.externalDatabase.port | quote }}
+  value: {{ .port | quote }}
 - name: POSTGRES_DB
-  value: {{ .Values.externalDatabase.database | quote }}
+  value: {{ .database | quote }}
 - name: POSTGRES_USER
-  value: {{ .Values.externalDatabase.username | quote }}
+  value: {{ .username | quote }}
 - name: POSTGRES_PASSWORD
-  value: {{ .Values.externalDatabase.password | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "taiga.secretName" $ }}
+      key: postgres-password
+{{- end }}
+{{- with .sslmode }}
+- name: POSTGRES_SSLMODE
+  value: {{ . | quote }}
+{{- end }}
 {{- end }}
 {{- else }}
 - name: POSTGRES_HOST
   value: {{ include "taiga.databaseHost" . | quote }}
 - name: POSTGRES_PORT
-  value: "5432"
-{{- if .Values.db.auth.existingSecret }}
-- name: POSTGRES_USER
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.db.auth.existingSecret }}
-      key: {{ .Values.db.auth.secretKeys.user }}
-- name: POSTGRES_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.db.auth.existingSecret }}
-      key: {{ .Values.db.auth.secretKeys.password }}
-{{- else if .Values.global.existingSecret }}
-- name: POSTGRES_USER
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.global.existingSecret }}
-      key: POSTGRES_USER
-- name: POSTGRES_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.global.existingSecret }}
-      key: POSTGRES_PASSWORD
-{{- else }}
-- name: POSTGRES_USER
-  value: {{ .Values.db.auth.user | quote }}
-- name: POSTGRES_PASSWORD
-  value: {{ .Values.db.auth.password | quote }}
-{{- end }}
+  value: {{ .Values.db.service.port | quote }}
 - name: POSTGRES_DB
   value: {{ .Values.db.auth.database | quote }}
+{{- include "taiga.dbCredentialsEnv" . }}
 {{- end }}
 
 {{- if .Values.backend.email.existingSecret }}
@@ -204,8 +316,13 @@ Backend environment variables
 {{- else }}
 - name: EMAIL_HOST_USER
   value: {{ .Values.backend.email.user | quote }}
+{{- if .Values.backend.email.password }}
 - name: EMAIL_HOST_PASSWORD
-  value: {{ .Values.backend.email.password | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "taiga.secretName" . }}
+      key: email-password
+{{- end }}
 {{- end }}
 - name: EMAIL_BACKEND
   value: {{ printf "django.core.mail.backends.%s.EmailBackend" .Values.backend.email.backend | quote }}
@@ -224,47 +341,19 @@ Backend environment variables
 - name: EMAIL_PORT
   value: {{ .Values.backend.email.port | quote }}
 
+{{- $async := printf "%s-async-rabbitmq" (include "taiga.fullname" .) }}
+{{- $events := printf "%s-events-rabbitmq" (include "taiga.fullname" .) }}
 - name: TAIGA_ASYNC_RABBITMQ_HOST
-  value: {{ include "taiga.fullname" . }}-async-rabbitmq
+  value: {{ $async }}
 - name: TAIGA_EVENTS_RABBITMQ_HOST
-  value: {{ include "taiga.fullname" . }}-events-rabbitmq
-{{- if .Values.asyncRabbitmq.auth.existingSecret }}
-- name: RABBITMQ_USER
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.asyncRabbitmq.auth.existingSecret }}
-      key: {{ .Values.asyncRabbitmq.auth.secretKeys.user }}
-- name: RABBITMQ_PASS
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.asyncRabbitmq.auth.existingSecret }}
-      key: {{ .Values.asyncRabbitmq.auth.secretKeys.password }}
-- name: RABBITMQ_VHOST
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.asyncRabbitmq.auth.existingSecret }}
-      key: {{ .Values.asyncRabbitmq.auth.secretKeys.vhost }}
-{{- else if .Values.global.existingSecret }}
-- name: RABBITMQ_USER
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.global.existingSecret }}
-      key: RABBITMQ_USER
-- name: RABBITMQ_PASS
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.global.existingSecret }}
-      key: RABBITMQ_PASS
-- name: RABBITMQ_VHOST
-  value: {{ .Values.asyncRabbitmq.auth.vhost | quote }}
-{{- else }}
-- name: RABBITMQ_USER
-  value: {{ .Values.asyncRabbitmq.auth.user | quote }}
-- name: RABBITMQ_PASS
-  value: {{ .Values.asyncRabbitmq.auth.password | quote }}
-- name: RABBITMQ_VHOST
-  value: {{ .Values.asyncRabbitmq.auth.vhost | quote }}
-{{- end }}
+  value: {{ $events }}
+{{- include "taiga.brokerEnv" (dict "ctx" . "prefix" "ASYNC" "broker" .Values.asyncRabbitmq "chartKey" "async-rabbitmq-password") | nindent 0 }}
+{{- include "taiga.brokerEnv" (dict "ctx" . "prefix" "EVENTS" "broker" .Values.eventsRabbitmq "chartKey" "events-rabbitmq-password") | nindent 0 }}
+# Each broker gets its own credentials (taiga-back would otherwise use RABBITMQ_USER/PASS for both).
+- name: CELERY_BROKER_URL
+  value: "amqp://$(ASYNC_RABBITMQ_USER):$(ASYNC_RABBITMQ_PASS)@{{ $async }}:{{ .Values.asyncRabbitmq.service.port }}/$(ASYNC_RABBITMQ_VHOST)"
+- name: EVENTS_PUSH_BACKEND_URL
+  value: "amqp://$(EVENTS_RABBITMQ_USER):$(EVENTS_RABBITMQ_PASS)@{{ $events }}:{{ .Values.eventsRabbitmq.service.port }}/$(EVENTS_RABBITMQ_VHOST)"
 
 - name: ENABLE_TELEMETRY
   value: {{ .Values.global.telemetry.enabled | quote }}
@@ -289,7 +378,10 @@ Backend environment variables
 - name: OIDC_CLIENT_ID
   value: {{ .Values.global.oidc.clientId | quote }}
 - name: OIDC_CLIENT_SECRET
-  value: {{ .Values.global.oidc.clientSecret | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "taiga.secretName" . }}
+      key: oidc-client-secret
 {{- end }}
 - name: OIDC_SCOPES
   value: {{ .Values.global.oidc.scopes | quote }}
@@ -316,8 +408,32 @@ Backend environment variables
 {{- end }}
 
 {{- with .Values.global.extraEnv }}
-{{- toYaml . }}
+{{ toYaml . }}
 {{- end }}
+{{- end }}
+
+{{/*
+Credentials of the bundled database (user + password).
+*/}}
+{{- define "taiga.dbCredentialsEnv" -}}
+{{- if .Values.db.auth.existingSecret }}
+- name: POSTGRES_USER
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.db.auth.existingSecret }}
+      key: {{ .Values.db.auth.secretKeys.user }}
+{{- else if .Values.global.existingSecret }}
+- name: POSTGRES_USER
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.global.existingSecret }}
+      key: POSTGRES_USER
+{{- else }}
+- name: POSTGRES_USER
+  value: {{ .Values.db.auth.user | quote }}
+{{- end }}
+- name: POSTGRES_PASSWORD
+  {{- include "taiga.secretRef" (dict "ctx" . "existing" .Values.db.auth.existingSecret "existingKey" .Values.db.auth.secretKeys.password "globalKey" "POSTGRES_PASSWORD" "chartKey" "db-password") | nindent 2 }}
 {{- end }}
 
 {{/*
@@ -341,67 +457,33 @@ Frontend environment variables
 {{- end }}
 
 {{- with .Values.global.extraEnv }}
-{{- toYaml . }}
+{{ toYaml . }}
 {{- end }}
 {{- end }}
 
 {{/*
-Events environment variables
+Events environment variables (taiga-events builds amqp://RABBITMQ_USER:RABBITMQ_PASS@host:5672/taiga itself)
 */}}
 {{- define "taiga.eventsEnv" -}}
-{{- if .Values.global.existingSecret }}
 - name: TAIGA_SECRET_KEY
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.global.existingSecret }}
-      key: {{ .Values.global.secretKeys.secretKey }}
-{{- else }}
-- name: TAIGA_SECRET_KEY
-  value: {{ .Values.global.secretKey | quote }}
-{{- end }}
+  {{- include "taiga.secretKeyRef" . | nindent 2 }}
 
 - name: TAIGA_EVENTS_RABBITMQ_HOST
   value: {{ include "taiga.fullname" . }}-events-rabbitmq
-{{- if .Values.eventsRabbitmq.auth.existingSecret }}
+{{- $auth := .Values.eventsRabbitmq.auth }}
 - name: RABBITMQ_USER
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.eventsRabbitmq.auth.existingSecret }}
-      key: {{ .Values.eventsRabbitmq.auth.secretKeys.user }}
+  {{- if $auth.existingSecret }}
+  {{- include "taiga.secretRef" (dict "ctx" . "existing" $auth.existingSecret "existingKey" $auth.secretKeys.user) | nindent 2 }}
+  {{- else if .Values.global.existingSecret }}
+  {{- include "taiga.secretRef" (dict "ctx" . "globalKey" "RABBITMQ_USER") | nindent 2 }}
+  {{- else }}
+  value: {{ $auth.user | quote }}
+  {{- end }}
 - name: RABBITMQ_PASS
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.eventsRabbitmq.auth.existingSecret }}
-      key: {{ .Values.eventsRabbitmq.auth.secretKeys.password }}
-- name: RABBITMQ_VHOST
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.eventsRabbitmq.auth.existingSecret }}
-      key: {{ .Values.eventsRabbitmq.auth.secretKeys.vhost }}
-{{- else if .Values.global.existingSecret }}
-- name: RABBITMQ_USER
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.global.existingSecret }}
-      key: RABBITMQ_USER
-- name: RABBITMQ_PASS
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.global.existingSecret }}
-      key: RABBITMQ_PASS
-- name: RABBITMQ_VHOST
-  value: {{ .Values.eventsRabbitmq.auth.vhost | quote }}
-{{- else }}
-- name: RABBITMQ_USER
-  value: {{ .Values.eventsRabbitmq.auth.user | quote }}
-- name: RABBITMQ_PASS
-  value: {{ .Values.eventsRabbitmq.auth.password | quote }}
-- name: RABBITMQ_VHOST
-  value: {{ .Values.eventsRabbitmq.auth.vhost | quote }}
-{{- end }}
+  {{- include "taiga.secretRef" (dict "ctx" . "existing" $auth.existingSecret "existingKey" $auth.secretKeys.password "globalKey" "RABBITMQ_PASS" "chartKey" "events-rabbitmq-password") | nindent 2 }}
 
 {{- with .Values.global.extraEnv }}
-{{- toYaml . }}
+{{ toYaml . }}
 {{- end }}
 {{- end }}
 
@@ -411,18 +493,33 @@ Protected environment variables
 {{- define "taiga.protectedEnv" -}}
 - name: MAX_AGE
   value: {{ .Values.protected.maxAge | quote }}
-{{- if .Values.global.existingSecret }}
+- name: TAIGA_SUBPATH
+  value: {{ .Values.global.subPath | quote }}
 - name: SECRET_KEY
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.global.existingSecret }}
-      key: {{ .Values.global.secretKeys.secretKey }}
-{{- else }}
-- name: SECRET_KEY
-  value: {{ .Values.global.secretKey | quote }}
-{{- end }}
+  {{- include "taiga.secretKeyRef" . | nindent 2 }}
 
 {{- with .Values.global.extraEnv }}
-{{- toYaml . }}
+{{ toYaml . }}
+{{- end }}
+{{- end }}
+
+{{/*
+Validate values that would otherwise produce a broken deployment.
+*/}}
+{{- define "taiga.validate" -}}
+{{- if and .Values.externalDatabase.enabled .Values.db.enabled }}
+{{- fail "enable either externalDatabase or db (bundled PostgreSQL), not both" }}
+{{- end }}
+{{- if and (not .Values.externalDatabase.enabled) (not .Values.db.enabled) }}
+{{- fail "a database is required: enable externalDatabase or db" }}
+{{- end }}
+{{- if and .Values.externalDatabase.enabled (not .Values.externalDatabase.existingSecret) (not .Values.externalDatabase.password) }}
+{{- fail "externalDatabase.password or externalDatabase.existingSecret is required" }}
+{{- end }}
+{{- if and .Values.global.oidc.enabled (not .Values.global.oidc.existingSecret) (not .Values.global.oidc.clientSecret) }}
+{{- fail "global.oidc.clientSecret or global.oidc.existingSecret is required when OIDC is enabled" }}
+{{- end }}
+{{- if and .Values.global.persistence.media.enabled (eq (include "taiga.mediaAccessMode" .) "ReadWriteOncePod") }}
+{{- fail "global.persistence.media.accessMode cannot be ReadWriteOncePod: backend, async and gateway mount the same volume" }}
 {{- end }}
 {{- end }}

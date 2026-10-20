@@ -1,63 +1,74 @@
 global:
   pod:
+    # -- Default node selector for every pod.
     nodeSelector: {}
+    # -- Default tolerations for every pod.
     tolerations: []
+    # -- Default affinity for every pod.
     affinity: {}
 
+  # -- Image pull secrets for every pod.
   imagePullSecrets: []
   # - name: my-registry-secret
 
-  scheme: "https"
+  # -- Public URL scheme (`http` or `https`).
+  scheme: "https"  # @schema enum:[http, https]
+  # -- Public domain of Taiga.
   domain: "taiga.example.com"
+  # -- Sub-path when Taiga is not served at the root of the domain.
   subPath: ""
 
-  websocketsScheme: "wss" # ws | wss
+  # -- Websocket scheme (`ws` or `wss`).
+  websocketsScheme: "wss"  # @schema enum:[ws, wss]
 
-  ## Prefer existingSecret in production.
-  secretKey: "changeme"
+  # -- Django secret key shared by back, async, events and protected. Leave empty to generate one (kept across upgrades).
+  secretKey: ""
 
-  ## If set, this secret is mounted as envFrom on every relevant service.
-  ## It must expose all keys referenced in secretKeys below.
+  # -- Existing secret used for every service. It must expose all the keys referenced in `secretKeys`
+  # (plus POSTGRES_USER/POSTGRES_PASSWORD and RABBITMQ_USER/RABBITMQ_PASS when the bundled services use it).
   existingSecret: ""
   secretKeys:
+    # -- Key of the Django secret key in `existingSecret`.
     secretKey: SECRET_KEY
 
   telemetry:
-    enabled: true
+    # -- Send anonymous usage telemetry to Taiga.
+    enabled: false
 
   persistence:
-    static:
-      enabled: false
-      existingClaim: ""
-      storageClass: ""
-      accessMode: ReadWriteMany
-      size: 1Gi
-      annotations: {}
+    # Django static files need no volume: the gateway copies them from the backend image at startup.
     media:
-      enabled: false
+      # -- Persist uploaded attachments and exports, shared by backend, async and gateway. Without it, attachments
+      # cannot be downloaded and are lost when the backend pod restarts.
+      enabled: true
+      # -- Use an existing PVC.
       existingClaim: ""
+      # -- Storage class.
       storageClass: ""
-      accessMode: ReadWriteMany
+      # -- Access mode. With ReadWriteOnce, backend, async and gateway are scheduled on the same node (pod affinity
+      # added by the chart); use ReadWriteMany to spread them. An existing claim keeps its original mode.
+      accessMode: ReadWriteOnce  # @schema enum:[ReadWriteOnce, ReadWriteMany]
+      # -- Volume size.
       size: 5Gi
+      # -- PVC annotations.
       annotations: {}
 
+  # -- Extra environment variables for every Taiga service.
   extraEnv: []
   # - name: SOME_SETTING
   #   value: "some-value"
 
+  # -- Extra envFrom sources for every Taiga service.
   extraEnvFrom: []
   # - secretRef:
   #     name: my-extra-secret
 
+  # -- Default resources (used when a component does not set its own).
   resources: {}
-  # limits:
-  #   cpu: 500m
-  #   memory: 512Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
 
+  # -- Default pod security context (used when a component does not set its own).
   podSecurityContext: {}
+  # -- Default container security context (used when a component does not set its own).
   securityContext: {}
 
   defaultProbes:
@@ -73,22 +84,31 @@ global:
       failureThreshold: 3
 
   serviceAccount:
+    # -- Create a dedicated service account.
     create: true
-    automount: true
+    # -- Taiga never talks to the Kubernetes API: the token is not mounted.
+    automount: false
+    # -- Service account annotations.
     annotations: {}
+    # -- Service account name (generated when empty).
     name: ""
 
   ## OIDC Authentication Configuration
   ## See: https://github.com/UnxWares/taiga-contrib-oidc-auth for more information
   oidc:
+    # -- Enable OIDC login (uses the UnxWares OIDC-enabled front/back images below).
     enabled: false
 
+    # -- OIDC issuer URL.
     issuer: ""
+    # -- OIDC scopes.
     scopes: "openid profile email"
 
+    # -- OIDC client ID.
     clientId: ""
+    # -- OIDC client secret (stored in the chart secret; ignored with `existingSecret`).
     clientSecret: ""
-    # Setting existingSecret will override clientId and clientSecret
+    # -- Existing secret with the client ID and secret.
     existingSecret: ""
     secretKeys:
       clientId: "oidc-client-id"
@@ -103,76 +123,118 @@ global:
 
     frontend:
       overrideImage:
+        # -- OIDC-enabled frontend image.
         name: ghcr.io/unxwares/taiga-front
+        # -- Image tag.
         tag: latest-oidc
+        # -- Image digest (pinned: the `latest-oidc` tag moves).
+        digest: "sha256:6e3a52da17b8f16d82b972ac47c1c8f14b0639aafc5a5d0957dd796359f72c83"
+      # -- Text of the SSO button.
       buttonText: "Login with SSO"
+      # -- Keep the username/password login form.
       enableDefaultLogin: true
 
     backend:
       overrideImage:
+        # -- OIDC-enabled backend image (also used by async).
         name: ghcr.io/unxwares/taiga-back
+        # -- Image tag.
         tag: latest-oidc
-      ## Enable if running behind reverse proxy with TLS termination
+        # -- Image digest (pinned: the `latest-oidc` tag moves).
+        digest: "sha256:7724c7934a02d13c2d4f4ca0f04ba09614df2dc19243e1a762606463bc07a316"
+      # -- Enable if running behind reverse proxy with TLS termination.
       useXForwardedHost: false
 
 
 externalDatabase:
+  # -- Use an external PostgreSQL database (set `db.enabled` and disable this to use the bundled one).
   enabled: true
+  # -- Database host.
   host: 127.0.0.1
+  # -- Database port.
   port: 5432
+  # -- Database name.
   database: postgres
+  # -- Database user.
   username: user
-  password: password
+  # -- Database password (stored in the chart secret). Required unless `existingSecret` is set.
+  password: ""
+  # -- libpq sslmode (`disable`, `require`, `verify-full`...).
+  sslmode: prefer
 
   ## If existingSecret is set, all inline values above are ignored.
   ## The secret must expose the keys listed in secretKeys.
+  # -- Existing secret holding the connection settings.
   existingSecret: ""
   secretKeys:
-    host:     database-host
-    port:     database-port
+    host: database-host
+    port: database-port
     database: database-name
     username: database-username
     password: database-password
 
 
 db:
+  # -- Deploy a bundled PostgreSQL (single pod, for small instances; prefer an operator-managed database in production).
   enabled: false
 
   image:
-    repository: postgres
-    tag: "12.3"
-    pullPolicy: IfNotPresent
+    # -- PostgreSQL image.
+    repository: docker.io/library/postgres
+    # -- Image tag.
+    tag: "17.11-alpine"
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
 
   ## Credentials – ignored when global.existingSecret is set.
   auth:
+    # -- Database name.
     database: taiga
+    # -- Database user.
     user: taiga
-    password: "changeme"
-    existingSecret: ""   # overrides auth.user / auth.password
+    # -- Database password. Leave empty to generate one (kept across upgrades).
+    password: ""
+    # -- Existing secret holding the user and password (overrides auth.user / auth.password).
+    existingSecret: ""
     secretKeys:
-      user:     POSTGRES_USER
+      user: POSTGRES_USER
       password: POSTGRES_PASSWORD
 
   persistence:
-    enabled: false
+    # -- Persist the bundled database.
+    enabled: true
+    # -- Use an existing PVC.
     existingClaim: ""
+    # -- Storage class.
     storageClass: ""
+    # -- Access mode.
     accessMode: ReadWriteOnce
+    # -- Volume size.
     size: 8Gi
+    # -- PVC annotations.
     annotations: {}
 
   service:
+    # -- Service type.
     type: ClusterIP
+    # -- Service port.
     port: 5432
 
   healthcheck:
+    # -- Enable the pg_isready probes.
     enabled: true
-    interval: 2s
-    timeout: 15s
+    interval: 10s
+    timeout: 5s
     retries: 5
-    startPeriod: 3s
+    startPeriod: 5s
 
-  resources: {}
+  # -- Resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 1Gi
 
   nodeSelector: {}
   tolerations: []
@@ -180,20 +242,38 @@ db:
 
   podAnnotations: {}
   podLabels: {}
-  podSecurityContext: {}
-  securityContext: {}
+  # -- Pod security context (postgres alpine image user: uid/gid 70).
+  podSecurityContext:  # @schema skipProperties:true
+    runAsNonRoot: true
+    runAsUser: 70
+    runAsGroup: 70
+    fsGroup: 70
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container security context.
+  securityContext:  # @schema skipProperties:true
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
 
 
 backend:
+  # -- Backend replicas.
   replicaCount: 1
 
   image:
-    ## NOTE: When global.oidc.enabled=true, use OIDC-compatible images
-    ## Example: ghcr.io/unxwares/taiga-back:latest-oidc
-    repository: taigaio/taiga-back
-    tag: latest
-    pullPolicy: IfNotPresent
+    ## NOTE: When global.oidc.enabled=true, the OIDC image from global.oidc.backend.overrideImage is used.
+    # -- Backend image repository.
+    repository: docker.io/taigaio/taiga-back
+    # -- Image tag.
+    tag: "6.10.2"
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
 
+  # -- Image pull secrets (defaults to global.imagePullSecrets).
   imagePullSecrets: []
 
   service:
@@ -201,24 +281,35 @@ backend:
     port: 8000
 
   email:
-    backend: "console"   # console | smtp
+    # -- Django email backend (`console` or `smtp`).
+    backend: "console"  # @schema enum:[console, smtp]
+    # -- Sender address.
     defaultFrom: "no-reply@taiga.example.com"
+    # -- Use STARTTLS.
     useTLS: false
+    # -- Use implicit TLS.
     useSSL: false
+    # -- SMTP host.
     host: ""
+    # -- SMTP port.
     port: 25
+    # -- SMTP user.
     user: ""
+    # -- SMTP password (stored in the chart secret).
     password: ""
     ## If existingSecret is set, email.user / email.password are ignored.
+    # -- Existing secret with the SMTP credentials.
     existingSecret: ""
     secretKeys:
-      user:     EMAIL_HOST_USER
+      user: EMAIL_HOST_USER
       password: EMAIL_HOST_PASSWORD
 
+  # -- Extra volumes.
   extraVolumes: []
   # - name: custom-config
   #   configMap:
   #     name: taiga-back-config
+  # -- Extra volume mounts.
   extraVolumeMounts: []
   # - name: custom-config
   #   mountPath: /taiga-back/settings/config.py
@@ -234,33 +325,67 @@ backend:
     targetCPUUtilizationPercentage: 80
     # targetMemoryUtilizationPercentage: 80
 
-  resources: {}
+  # -- Resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 100m
+      memory: 384Mi
+    limits:
+      memory: 1Gi
 
   podAnnotations: {}
   podLabels: {}
-  podSecurityContext: {}
-  securityContext: {}
+  # -- Pod security context.
+  podSecurityContext:  # @schema skipProperties:true
+    fsGroup: 999
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container security context. The image entrypoint runs migrations and `chown` as root, then switches to the
+  # `taiga` user (uid 999) with gosu: only the capabilities needed for that are kept.
+  securityContext:  # @schema skipProperties:true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - CHOWN
+        - DAC_OVERRIDE
+        - FOWNER
+        - SETUID
+        - SETGID
   nodeSelector: {}
   tolerations: []
   affinity: {}
 
-  livenessProbe:
+  livenessProbe:  # @schema skipProperties:true
     httpGet:
       path: /api/v1/
       port: http
-  readinessProbe:
+  readinessProbe:  # @schema skipProperties:true
     httpGet:
       path: /api/v1/
       port: http
+  # -- Startup probe (the first start runs the database migrations).
+  startupProbe:  # @schema skipProperties:true
+    httpGet:
+      path: /api/v1/
+      port: http
+    periodSeconds: 10
+    failureThreshold: 60
 
 
 async:
+  # -- Celery worker replicas.
   replicaCount: 1
 
   image:
-    repository: taigaio/taiga-back
-    tag: latest
-    pullPolicy: IfNotPresent
+    # -- Async (celery) image repository.
+    repository: docker.io/taigaio/taiga-back
+    # -- Image tag.
+    tag: "6.10.2"
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
 
   command: ["/taiga-back/docker/async_entrypoint.sh"]
 
@@ -275,44 +400,81 @@ async:
     maxReplicas: 5
     targetCPUUtilizationPercentage: 80
 
-  resources: {}
+  # -- Resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
 
   podAnnotations: {}
   podLabels: {}
-  podSecurityContext: {}
-  securityContext: {}
+  # -- Pod security context.
+  podSecurityContext:  # @schema skipProperties:true
+    fsGroup: 999
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container security context (same entrypoint model as the backend).
+  securityContext:  # @schema skipProperties:true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - CHOWN
+        - DAC_OVERRIDE
+        - FOWNER
+        - SETUID
+        - SETGID
   nodeSelector: {}
   tolerations: []
   affinity: {}
 
 
 asyncRabbitmq:
+  # -- Async broker replicas (keep 1: the chart does not configure a RabbitMQ cluster).
   replicaCount: 1
 
   image:
-    repository: rabbitmq
-    tag: 3.8-management-alpine
-    pullPolicy: IfNotPresent
+    # -- RabbitMQ image.
+    repository: docker.io/library/rabbitmq
+    # -- Image tag.
+    tag: "4.4.0-management-alpine"
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
 
   auth:
+    # -- Broker user.
     user: taiga
-    password: "changeme"
+    # -- Broker password. Leave empty to generate one (kept across upgrades).
+    password: ""
+    # -- Virtual host.
     vhost: taiga
-    erlangCookie: "changeme-erlang-cookie"
+    # -- Deprecated: RabbitMQ 4 ignores the RABBITMQ_ERLANG_COOKIE variable; a cookie is generated in the data volume.
+    erlangCookie: ""
     ## If existingSecret is set, all inline auth values are ignored.
+    # -- Existing secret with the broker credentials.
     existingSecret: ""
     secretKeys:
-      user:         RABBITMQ_USER
-      password:     RABBITMQ_PASS
-      vhost:        RABBITMQ_VHOST
+      user: RABBITMQ_USER
+      password: RABBITMQ_PASS
+      vhost: RABBITMQ_VHOST
       erlangCookie: RABBITMQ_ERLANG_COOKIE
 
   persistence:
+    # -- Persist the broker data.
     enabled: true
+    # -- Use an existing PVC.
     existingClaim: ""
+    # -- Storage class.
     storageClass: ""
+    # -- Access mode.
     accessMode: ReadWriteOnce
+    # -- Volume size.
     size: 5Gi
+    # -- PVC annotations.
     annotations: {}
 
   service:
@@ -320,44 +482,79 @@ asyncRabbitmq:
     port: 5672
     managementPort: 15672
 
-  resources: {}
+  # -- Resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 50m
+      memory: 192Mi
+    limits:
+      memory: 1Gi
 
   podAnnotations: {}
   podLabels: {}
-  podSecurityContext: {}
-  securityContext: {}
+  # -- Pod security context (rabbitmq alpine image user: uid 100, gid 101).
+  podSecurityContext:  # @schema skipProperties:true
+    runAsNonRoot: true
+    runAsUser: 100
+    runAsGroup: 101
+    fsGroup: 101
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container security context.
+  securityContext:  # @schema skipProperties:true
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
   nodeSelector: {}
   tolerations: []
   affinity: {}
 
 
 eventsRabbitmq:
+  # -- Events broker replicas (keep 1).
   replicaCount: 1
 
   image:
-    repository: rabbitmq
-    tag: 3.8-management-alpine
-    pullPolicy: IfNotPresent
+    # -- RabbitMQ image.
+    repository: docker.io/library/rabbitmq
+    # -- Image tag.
+    tag: "4.4.0-management-alpine"
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
 
   auth:
+    # -- Broker user.
     user: taiga
-    password: "changeme"
+    # -- Broker password. Leave empty to generate one (kept across upgrades).
+    password: ""
+    # -- Virtual host. taiga-events hard-codes `taiga`: do not change it.
     vhost: taiga
-    erlangCookie: "changeme-erlang-cookie"
+    # -- Deprecated: RabbitMQ 4 ignores the RABBITMQ_ERLANG_COOKIE variable; a cookie is generated in the data volume.
+    erlangCookie: ""
     ## If existingSecret is set, all inline auth values are ignored.
+    # -- Existing secret with the broker credentials.
     existingSecret: ""
     secretKeys:
-      user:         RABBITMQ_USER
-      password:     RABBITMQ_PASS
-      vhost:        RABBITMQ_VHOST
+      user: RABBITMQ_USER
+      password: RABBITMQ_PASS
+      vhost: RABBITMQ_VHOST
       erlangCookie: RABBITMQ_ERLANG_COOKIE
 
   persistence:
+    # -- Persist the broker data.
     enabled: true
+    # -- Use an existing PVC.
     existingClaim: ""
+    # -- Storage class.
     storageClass: ""
+    # -- Access mode.
     accessMode: ReadWriteOnce
+    # -- Volume size.
     size: 5Gi
+    # -- PVC annotations.
     annotations: {}
 
   service:
@@ -365,26 +562,50 @@ eventsRabbitmq:
     port: 5672
     managementPort: 15672
 
-  resources: {}
+  # -- Resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 50m
+      memory: 192Mi
+    limits:
+      memory: 1Gi
 
   podAnnotations: {}
   podLabels: {}
-  podSecurityContext: {}
-  securityContext: {}
+  # -- Pod security context (rabbitmq alpine image user: uid 100, gid 101).
+  podSecurityContext:  # @schema skipProperties:true
+    runAsNonRoot: true
+    runAsUser: 100
+    runAsGroup: 101
+    fsGroup: 101
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container security context.
+  securityContext:  # @schema skipProperties:true
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
   nodeSelector: {}
   tolerations: []
   affinity: {}
 
 frontend:
+  # -- Frontend replicas.
   replicaCount: 1
 
   image:
-    ## NOTE: When global.oidc.enabled=true, use OIDC-compatible images
-    ## Example: ghcr.io/unxwares/taiga-front:latest-oidc
-    repository: taigaio/taiga-front
-    tag: latest
-    pullPolicy: IfNotPresent
+    ## NOTE: When global.oidc.enabled=true, the OIDC image from global.oidc.frontend.overrideImage is used.
+    # -- Frontend image repository.
+    repository: docker.io/taigaio/taiga-front
+    # -- Image tag.
+    tag: "6.10.3"
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
 
+  # -- Image pull secrets (defaults to global.imagePullSecrets).
   imagePullSecrets: []
 
   service:
@@ -409,33 +630,57 @@ frontend:
     maxReplicas: 5
     targetCPUUtilizationPercentage: 80
 
-  resources: {}
+  # -- Resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
 
   podAnnotations: {}
   podLabels: {}
-  podSecurityContext: {}
-  securityContext: {}
+  # -- Pod security context.
+  podSecurityContext:  # @schema skipProperties:true
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container security context. The image (nginx as root) rewrites conf.json at startup and binds port 80.
+  securityContext:  # @schema skipProperties:true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - CHOWN
+        - DAC_OVERRIDE
+        - SETUID
+        - SETGID
+        - NET_BIND_SERVICE
   nodeSelector: {}
   tolerations: []
   affinity: {}
 
-  livenessProbe:
+  livenessProbe:  # @schema skipProperties:true
     httpGet:
       path: /
       port: http
-  readinessProbe:
+  readinessProbe:  # @schema skipProperties:true
     httpGet:
       path: /
       port: http
 
 
 events:
+  # -- Events (websockets) replicas.
   replicaCount: 1
 
   image:
-    repository: taigaio/taiga-events
-    tag: latest
-    pullPolicy: IfNotPresent
+    # -- Events image repository.
+    repository: docker.io/taigaio/taiga-events
+    # -- Image tag.
+    tag: "6.10.0"
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
 
   service:
     type: ClusterIP
@@ -444,26 +689,62 @@ events:
   extraEnv: []
   extraEnvFrom: []
 
-  resources: {}
+  # -- Resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 20m
+      memory: 96Mi
+    limits:
+      memory: 512Mi
 
   podAnnotations: {}
   podLabels: {}
-  podSecurityContext: {}
-  securityContext: {}
+  # -- Pod security context.
+  podSecurityContext:  # @schema skipProperties:true
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container security context. The entrypoint renders .env and chowns as root, then switches to uid 99 with su-exec.
+  securityContext:  # @schema skipProperties:true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - CHOWN
+        - DAC_OVERRIDE
+        - FOWNER
+        - SETUID
+        - SETGID
   nodeSelector: {}
   tolerations: []
   affinity: {}
 
+  # -- Liveness probe (health endpoint on port 3023).
+  livenessProbe:  # @schema skipProperties:true
+    httpGet:
+      path: /healthz
+      port: health
+  # -- Readiness probe.
+  readinessProbe:  # @schema skipProperties:true
+    httpGet:
+      path: /healthz
+      port: health
+
 protected:
+  # -- Protected (signed attachment URLs) replicas.
   replicaCount: 1
 
   image:
-    repository: taigaio/taiga-protected
-    tag: latest
-    pullPolicy: IfNotPresent
+    # -- Protected image repository.
+    repository: docker.io/taigaio/taiga-protected
+    # -- Image tag.
+    tag: "6.10.1"
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
 
   ## MAX_AGE controls how long signed attachment URLs remain valid (seconds).
   ## Default is 360 s (6 min). Increase for larger files on slow connections.
+  # -- Validity of signed attachment URLs (seconds).
   maxAge: 360
 
   service:
@@ -473,24 +754,57 @@ protected:
   extraEnv: []
   extraEnvFrom: []
 
-  resources: {}
+  # -- Resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 20m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
 
   podAnnotations: {}
   podLabels: {}
-  podSecurityContext: {}
-  securityContext: {}
+  # -- Pod security context.
+  podSecurityContext:  # @schema skipProperties:true
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container security context (same entrypoint model as the backend: chown as root, then gosu to uid 999).
+  securityContext:  # @schema skipProperties:true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - CHOWN
+        - DAC_OVERRIDE
+        - FOWNER
+        - SETUID
+        - SETGID
   nodeSelector: {}
   tolerations: []
   affinity: {}
 
+  # -- Liveness probe.
+  livenessProbe:  # @schema skipProperties:true
+    tcpSocket:
+      port: http
+  # -- Readiness probe.
+  readinessProbe:  # @schema skipProperties:true
+    tcpSocket:
+      port: http
+
 
 gateway:
+  # -- Gateway (nginx reverse proxy) replicas.
   replicaCount: 1
 
   image:
-    repository: nginx
-    tag: 1.19-alpine
-    pullPolicy: IfNotPresent
+    # -- Gateway image (unprivileged nginx, listens on 8080).
+    repository: docker.io/nginxinc/nginx-unprivileged
+    # -- Image tag (nginx stable branch).
+    tag: 1.30.6-alpine
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
 
   service:
     type: ClusterIP
@@ -499,43 +813,83 @@ gateway:
   ## Provide the name of a ConfigMap whose key "default.conf" contains a
   ## custom nginx config, mirroring the ./taiga-gateway/taiga.conf bind-mount
   ## in docker-compose. Leave empty to use the chart's built-in config.
+  ## A custom config must listen on 8080 (the image runs as an unprivileged user).
+  # -- Existing ConfigMap with a custom `default.conf`.
   configMapName: ""
+
+  # -- Maximum upload size.
+  clientMaxBodySize: 100M
 
   extraVolumes: []
   extraVolumeMounts: []
 
-  resources: {}
+  # -- Resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
 
   podAnnotations: {}
   podLabels: {}
-  podSecurityContext: {}
-  securityContext: {}
+  # -- Pod security context (nginx-unprivileged runs as uid 101).
+  podSecurityContext:  # @schema skipProperties:true
+    runAsNonRoot: true
+    runAsUser: 101
+    runAsGroup: 101
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container security context.
+  securityContext:  # @schema skipProperties:true
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
   nodeSelector: {}
   tolerations: []
   affinity: {}
 
-  livenessProbe:
+  livenessProbe:  # @schema skipProperties:true
     httpGet:
       path: /
       port: http
-  readinessProbe:
+  readinessProbe:  # @schema skipProperties:true
     httpGet:
       path: /
       port: http
 
 
 ingress:
+  # -- Expose Taiga through an Ingress (to the gateway).
   enabled: false
+  # -- Ingress class name.
   className: ""
+  # -- Ingress annotations (websockets must be allowed on /events; raise the body size for uploads).
   annotations: {}
   # kubernetes.io/ingress.class: nginx
   # cert-manager.io/cluster-issuer: letsencrypt-prod
+  # -- Ingress hosts.
   hosts:
     - host: taiga.example.com
       paths:
         - path: /
           pathType: Prefix
+  # -- Ingress TLS.
   tls: []
   # - secretName: taiga-tls
   #   hosts:
   #     - taiga.example.com
+
+httpRoute:
+  # -- Expose Taiga through a Gateway API HTTPRoute (to the gateway service).
+  enabled: false
+  # -- HTTPRoute annotations.
+  annotations: {}
+  # -- Gateways this route is attached to.
+  parentRefs:
+    - name: gateway
+      sectionName: http
+  # -- Hostnames (defaults to global.domain when empty).
+  hostnames: []

@@ -1,0 +1,15 @@
+# Full stack with the bundled PostgreSQL (fresh kind cluster, no ingress).
+global:
+  scheme: http
+  websocketsScheme: ws
+  domain: localhost
+externalDatabase:
+  enabled: false
+db:
+  enabled: true
+asyncRabbitmq:
+  persistence:
+    size: 1Gi
+eventsRabbitmq:
+  persistence:
+    size: 1Gi

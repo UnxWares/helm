@@ -1,0 +1,27 @@
+{{- if .Values.httpRoute.enabled -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "taiga.fullname" . }}
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+  {{- with .Values.httpRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- toYaml .Values.httpRoute.parentRefs | nindent 4 }}
+  hostnames:
+    {{- toYaml (.Values.httpRoute.hostnames | default (list .Values.global.domain)) | nindent 4 }}
+  rules:
+    # The Taiga gateway routes /api, /admin, /events, /media and the frontend itself.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ printf "/%s" (trimPrefix "/" .Values.global.subPath) }}
+      backendRefs:
+        - name: {{ include "taiga.fullname" . }}-gateway
+          port: {{ .Values.gateway.service.port }}
+          weight: 1
+{{- end }}

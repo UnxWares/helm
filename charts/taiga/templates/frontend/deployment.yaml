@@ -31,6 +31,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "taiga.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.global.serviceAccount.automount }}
       {{- with (default .Values.global.podSecurityContext .Values.frontend.podSecurityContext) }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -42,14 +43,16 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- if and .Values.global.oidc.enabled .Values.global.oidc.frontend.overrideImage.name }}
-          image: "{{ .Values.global.oidc.frontend.overrideImage.name }}:{{ .Values.global.oidc.frontend.overrideImage.tag }}"
+          {{- with .Values.global.oidc.frontend.overrideImage }}
+          image: {{ ternary (printf "%s@%s" .name .digest) (printf "%s:%s" .name .tag) (not (empty .digest)) | quote }}
+          {{- end }}
           {{- else }}
           image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
           {{- end }}
           imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.frontend.service.port }}
+              containerPort: 80
               protocol: TCP
           env:
             {{- include "taiga.frontendEnv" . | nindent 12 }}
@@ -67,23 +70,11 @@ spec:
           {{- end }}
           {{- with .Values.frontend.livenessProbe }}
           livenessProbe:
-            {{- toYaml . | nindent 12 }}
-            {{- with $.Values.global.defaultProbes.liveness }}
-            initialDelaySeconds: {{ .initialDelaySeconds }}
-            periodSeconds: {{ .periodSeconds }}
-            timeoutSeconds: {{ .timeoutSeconds }}
-            failureThreshold: {{ .failureThreshold }}
-            {{- end }}
+            {{- include "taiga.probe" (dict "probe" . "defaults" $.Values.global.defaultProbes.liveness) | nindent 12 }}
           {{- end }}
           {{- with .Values.frontend.readinessProbe }}
           readinessProbe:
-            {{- toYaml . | nindent 12 }}
-            {{- with $.Values.global.defaultProbes.readiness }}
-            initialDelaySeconds: {{ .initialDelaySeconds }}
-            periodSeconds: {{ .periodSeconds }}
-            timeoutSeconds: {{ .timeoutSeconds }}
-            failureThreshold: {{ .failureThreshold }}
-            {{- end }}
+            {{- include "taiga.probe" (dict "probe" . "defaults" $.Values.global.defaultProbes.readiness) | nindent 12 }}
           {{- end }}
           {{- with (default .Values.global.resources .Values.frontend.resources) }}
           resources:

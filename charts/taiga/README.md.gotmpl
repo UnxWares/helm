@@ -1,0 +1,145 @@
+# Taiga Helm Chart
+
+{{ template "chart.badgesSection" . }}
+
+[Taiga](https://taiga.io/) is an open-source project management platform for agile teams (Scrum, Kanban, issues,
+wiki). This chart deploys the whole stack of [taiga-docker](https://github.com/taigaio/taiga-docker): backend API,
+Celery workers, events (websockets), front, protected media, an nginx gateway, two RabbitMQ brokers and, optionally,
+a bundled PostgreSQL.
+
+## Features
+
+- **Taiga 6.10** with pinned images, optional **OIDC** login (UnxWares OIDC-enabled front/back images)
+- **Generated secrets** (Django key, database and broker passwords) kept across upgrades, or your own Secret;
+  passwords reach containers through `secretKeyRef` only, broker URLs are assembled with Kubernetes `$(VAR)` expansion
+- **Supported versions**: PostgreSQL 17, RabbitMQ 4.4, nginx 1.30 (the previous release shipped PostgreSQL 12.3,
+  RabbitMQ 3.8 and nginx 1.19, all end-of-life)
+- **Hardened**: gateway, PostgreSQL and RabbitMQ run as non-root with a read-only root filesystem; the Taiga images
+  must start as root (their entrypoints `chown` the volumes then drop to `taiga` with gosu), so they keep only the
+  capabilities this needs; seccomp `RuntimeDefault`, no service account token
+- **Media that works out of the box**: backend, async workers and gateway share one volume. With a ReadWriteOnce
+  volume the chart schedules them on the same node; use ReadWriteMany to spread them
+- Ingress or Gateway API HTTPRoute (websockets included)
+
+## Installation
+
+```bash
+helm repo add unxwares https://helm.unxwares.studio
+helm repo update
+helm install taiga unxwares/taiga --namespace taiga --create-namespace \
+  --set global.domain=taiga.example.com \
+  --set externalDatabase.enabled=false --set db.enabled=true
+```
+
+Then create the first administrator:
+
+```bash
+kubectl exec -it -n taiga deploy/taiga-backend -- python manage.py createsuperuser
+```
+
+Charts are signed: see [verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures).
+
+## Examples
+
+### External PostgreSQL and an Ingress with TLS
+
+```yaml
+global:
+  domain: taiga.example.com
+externalDatabase:
+  enabled: true
+  host: postgres.databases.svc
+  database: taiga
+  username: taiga
+  existingSecret: taiga-db   # keys: database-host, database-port, database-name, database-username, database-password
+  sslmode: require
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/proxy-body-size: 100m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+  hosts:
+    - host: taiga.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: taiga-example-com-tls
+      hosts:
+        - taiga.example.com
+```
+
+### OIDC (Authentik, Keycloak, ...)
+
+```yaml
+global:
+  oidc:
+    enabled: true
+    issuer: https://auth.example.com/application/o/taiga/
+    clientId: taiga
+    existingSecret: taiga-oidc   # keys: oidc-client-id, oidc-client-secret
+```
+
+### SMTP
+
+```yaml
+backend:
+  email:
+    backend: smtp
+    host: smtp.example.com
+    port: 587
+    useTLS: true
+    defaultFrom: taiga@example.com
+    existingSecret: taiga-smtp   # keys: EMAIL_HOST_USER, EMAIL_HOST_PASSWORD
+```
+
+## Notes
+
+- Without `global.persistence.media`, uploads stay in the backend container: they cannot be downloaded through the
+  gateway and are lost at the next restart. Keep it enabled.
+- Attachments are served by `taiga-protected`, which checks the signed token of each URL (valid `protected.maxAge`
+  seconds) before nginx streams the file.
+- RabbitMQ 4 refuses the transient non-exclusive queues Celery still declares by default: the chart ships a
+  `conf.d` file that re-allows them (`deprecated_features.permit.transient_nonexcl_queues = true`).
+
+## Upgrading
+
+### To 2026.10.1 (Taiga 6.9 → 6.10)
+
+Back up the database and the media volume first.
+
+- **PostgreSQL 12 → 17 (bundled `db` only)**: a major version cannot start on the old data directory, and the data
+  now lives in `PGDATA=/var/lib/postgresql/data/pgdata`. Taiga created an `array_agg_mult(anyarray)` aggregate that
+  cannot be restored on PostgreSQL 14 or later ([taiga-back#54](https://github.com/taigaio/taiga-back/issues/54)):
+  drop it, dump, upgrade, then restore.
+
+  ```bash
+  kubectl exec -n taiga deploy/taiga-db -- psql -U taiga -d taiga -c 'DROP AGGREGATE IF EXISTS array_agg_mult(anyarray);'
+  kubectl exec -n taiga deploy/taiga-db -- pg_dump -U taiga -Fc taiga > taiga.dump
+  # helm upgrade ..., wait for the new database pod, then:
+  kubectl exec -i -n taiga deploy/taiga-db -- pg_restore -U taiga -d taiga --clean --if-exists --no-owner < taiga.dump
+  kubectl rollout restart -n taiga deploy/taiga-backend deploy/taiga-async
+  ```
+
+  The previous release kept the bundled database without a volume by default: persistence is now enabled
+  (`db.persistence`).
+- **RabbitMQ 3.8 → 4.4**: brokers only hold transient task and event messages; they start fresh in a new `rabbitmq-4`
+  sub-path of their volume. `erlangCookie` is ignored (RabbitMQ 4 generates the cookie in its data volume).
+- **Secrets**: the former `changeme` defaults are gone. Empty values are generated once and kept; if you relied on
+  the defaults, existing sessions are invalidated (new `global.secretKey`). Set the old values explicitly to keep them.
+- **Static files**: `global.persistence.static` is removed; the gateway copies the static files from the backend image.
+  The former `<release>-static` PVC can be deleted.
+- **Media**: `global.persistence.media` is now enabled by default with `ReadWriteOnce`. Existing claims keep their
+  access mode.
+- **Gateway**: it listens on 8080 as uid 101. A custom `gateway.configMapName` must listen on 8080 too.
+- **Telemetry** is now disabled by default (`global.telemetry.enabled`).
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+## License
+
+The chart is released under the MIT license. Taiga is licensed under the MPL-2.0.

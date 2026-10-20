@@ -29,6 +29,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "taiga.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.global.serviceAccount.automount }}
       {{- with (default .Values.global.podSecurityContext .Values.events.podSecurityContext) }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -43,7 +44,10 @@ spec:
           imagePullPolicy: {{ .Values.events.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.events.service.port }}
+              containerPort: 8888
+              protocol: TCP
+            - name: health
+              containerPort: 3023
               protocol: TCP
           env:
             {{- include "taiga.eventsEnv" . | nindent 12 }}
@@ -58,6 +62,14 @@ spec:
             {{- with .Values.events.extraEnvFrom }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- end }}
+          {{- with .Values.events.livenessProbe }}
+          livenessProbe:
+            {{- include "taiga.probe" (dict "probe" . "defaults" $.Values.global.defaultProbes.liveness) | nindent 12 }}
+          {{- end }}
+          {{- with .Values.events.readinessProbe }}
+          readinessProbe:
+            {{- include "taiga.probe" (dict "probe" . "defaults" $.Values.global.defaultProbes.readiness) | nindent 12 }}
           {{- end }}
           {{- with (default .Values.global.resources .Values.events.resources) }}
           resources:

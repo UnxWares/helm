@@ -1,30 +1,86 @@
 apiVersion: v2
 name: taiga
-description: A helm chart for Taiga.io, an open-source project management platform for agile teams
+description: Taiga, the open-source agile project management platform (backend, async workers, events, front, protected media, bundled PostgreSQL and RabbitMQ), hardened for Kubernetes.
 type: application
-version: 2026.3.8
-appVersion: "6.9.0"
+version: 2026.10.1
+appVersion: "6.10.2"
+kubeVersion: ">=1.27.0-0"
+home: https://github.com/UnxWares/helm/tree/main/charts/taiga
 icon: https://avatars.githubusercontent.com/u/6905422?s=200&v=4
 
 sources:
-  - https://taiga.io/
+  - https://github.com/taigaio/taiga-back
+  - https://github.com/taigaio/taiga-front
   - https://github.com/taigaio/taiga-docker
+  - https://github.com/UnxWares/helm/tree/main/charts/taiga
 
 keywords:
   - taiga
   - kanban
-  - project
-  - management
-  - task
-  - board
+  - scrum
+  - agile
+  - project-management
+  - issue-tracker
   - collaboration
-  - live
 
 maintainers:
   - name: David Gheghea
     email: david.gheghea@unxwares.com
     url: https://github.com/UnxWares
+  - name: Baptiste Gosselin
+    email: baptiste.gosselin@unxwares.com
+    url: https://github.com/UnxWares
 
 annotations:
-  category: tools
-  artifacthub.io/license: "MIT"
+  artifacthub.io/displayName: Taiga
+  artifacthub.io/category: skip-prediction
+  artifacthub.io/license: MIT
+  artifacthub.io/links: |
+    - name: Chart source
+      url: https://github.com/UnxWares/helm/tree/main/charts/taiga
+    - name: Taiga documentation
+      url: https://docs.taiga.io/
+    - name: Support
+      url: https://github.com/UnxWares/helm/issues
+  artifacthub.io/images: |
+    - name: taiga-back
+      image: docker.io/taigaio/taiga-back:6.10.2
+    - name: taiga-front
+      image: docker.io/taigaio/taiga-front:6.10.3
+    - name: taiga-events
+      image: docker.io/taigaio/taiga-events:6.10.0
+    - name: taiga-protected
+      image: docker.io/taigaio/taiga-protected:6.10.1
+    - name: postgres
+      image: docker.io/library/postgres:17.11-alpine
+    - name: rabbitmq
+      image: docker.io/library/rabbitmq:4.4.0-management-alpine
+    - name: nginx-unprivileged
+      image: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine
+  artifacthub.io/containsSecurityUpdates: "true"
+  artifacthub.io/changes: |
+    - kind: changed
+      description: Taiga 6.10 (back 6.10.2, front 6.10.3, events 6.10.0, protected 6.10.1), pinned tags instead of latest.
+    - kind: security
+      description: "Bundled services upgraded from end-of-life releases: PostgreSQL 12.3 to 17.11, RabbitMQ 3.8 to 4.4.0, nginx 1.19 to nginx-unprivileged 1.30.6 (hundreds of CVEs removed)."
+    - kind: security
+      description: Secrets are generated and kept across upgrades (no more changeme defaults) and reach containers through secretKeyRef only; broker URLs are built with $(VAR) expansion.
+    - kind: security
+      description: Gateway, PostgreSQL and RabbitMQ run as non-root with a read-only root filesystem; Taiga containers keep only the capabilities their entrypoints need; no service account token.
+    - kind: fixed
+      description: The backend used the async broker credentials for the events broker.
+    - kind: fixed
+      description: Django static files (admin) are served without a ReadWriteMany volume, copied from the backend image by the gateway.
+    - kind: fixed
+      description: Media volume enabled by default and mounted by backend, async and gateway, so attachments and exports can be downloaded (pods co-located when the volume is ReadWriteOnce).
+    - kind: fixed
+      description: Duplicate probe keys when overriding probes; protected now honours the sub-path.
+    - kind: changed
+      description: Bundled PostgreSQL persistence enabled by default; RabbitMQ 4 data uses a new sub-path and the deprecated transient non-exclusive queues Celery needs are allowed.
+    - kind: changed
+      description: Telemetry disabled by default.
+    - kind: added
+      description: Gateway API HTTPRoute, startup probes, per-component security contexts and values schema.
+  artifacthub.io/signKey: |
+    fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+    url: https://helm.unxwares.studio/pgp-public-key.asc

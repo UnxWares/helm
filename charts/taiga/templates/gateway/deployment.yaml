@@ -13,10 +13,11 @@ spec:
       app.kubernetes.io/component: gateway
   template:
     metadata:
-      {{- with .Values.gateway.podAnnotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/gateway/configmap.yaml") . | sha256sum }}
+        {{- with .Values.gateway.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "taiga.labels" . | nindent 8 }}
         app.kubernetes.io/component: gateway
@@ -24,15 +25,35 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      {{- with .Values.global.imagePullSecrets }}
+      {{- with (concat .Values.global.imagePullSecrets .Values.backend.imagePullSecrets | uniq) }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "taiga.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.global.serviceAccount.automount }}
       {{- with (default .Values.global.podSecurityContext .Values.gateway.podSecurityContext) }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      initContainers:
+        # The Django static files (admin, API browser) are collected in the backend image: copy them next to nginx.
+        - name: copy-static
+          {{- with (default .Values.global.securityContext .Values.gateway.securityContext) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "taiga.backImage" (dict "ctx" . "image" .Values.backend.image) | quote }}
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          command: ["cp", "-R", "/taiga-back/static/.", "/static/"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: static
+              mountPath: /static
       containers:
         - name: gateway
           {{- with (default .Values.global.securityContext .Values.gateway.securityContext) }}
@@ -43,27 +64,15 @@ spec:
           imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.gateway.service.port }}
+              containerPort: 8080
               protocol: TCP
           {{- with .Values.gateway.livenessProbe }}
           livenessProbe:
-            {{- toYaml . | nindent 12 }}
-            {{- with $.Values.global.defaultProbes.liveness }}
-            initialDelaySeconds: {{ .initialDelaySeconds }}
-            periodSeconds: {{ .periodSeconds }}
-            timeoutSeconds: {{ .timeoutSeconds }}
-            failureThreshold: {{ .failureThreshold }}
-            {{- end }}
+            {{- include "taiga.probe" (dict "probe" . "defaults" $.Values.global.defaultProbes.liveness) | nindent 12 }}
           {{- end }}
           {{- with .Values.gateway.readinessProbe }}
           readinessProbe:
-            {{- toYaml . | nindent 12 }}
-            {{- with $.Values.global.defaultProbes.readiness }}
-            initialDelaySeconds: {{ .initialDelaySeconds }}
-            periodSeconds: {{ .periodSeconds }}
-            timeoutSeconds: {{ .timeoutSeconds }}
-            failureThreshold: {{ .failureThreshold }}
-            {{- end }}
+            {{- include "taiga.probe" (dict "probe" . "defaults" $.Values.global.defaultProbes.readiness) | nindent 12 }}
           {{- end }}
           {{- with (default .Values.global.resources .Values.gateway.resources) }}
           resources:
@@ -73,30 +82,35 @@ spec:
             - name: nginx-config
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: default.conf
-            {{- if .Values.global.persistence.static.enabled }}
+              readOnly: true
+            # pid file and temp paths of nginx-unprivileged
+            - name: tmp
+              mountPath: /tmp
             - name: static
               mountPath: /taiga/static
-            {{- end }}
+              readOnly: true
             {{- if .Values.global.persistence.media.enabled }}
             - name: media
               mountPath: /taiga/media
+              readOnly: true
             {{- end }}
             {{- with .Values.gateway.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
       volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
         - name: nginx-config
           configMap:
             name: {{ if .Values.gateway.configMapName }}{{ .Values.gateway.configMapName }}{{ else }}{{ include "taiga.fullname" . }}-gateway{{ end }}
-        {{- if .Values.global.persistence.static.enabled }}
         - name: static
-          persistentVolumeClaim:
-            claimName: {{ if .Values.global.persistence.static.existingClaim }}{{ .Values.global.persistence.static.existingClaim }}{{ else }}{{ include "taiga.fullname" . }}-static{{ end }}
-        {{- end }}
+          emptyDir:
+            sizeLimit: 64Mi
         {{- if .Values.global.persistence.media.enabled }}
         - name: media
           persistentVolumeClaim:
-            claimName: {{ if .Values.global.persistence.media.existingClaim }}{{ .Values.global.persistence.media.existingClaim }}{{ else }}{{ include "taiga.fullname" . }}-media{{ end }}
+            claimName: {{ include "taiga.mediaClaimName" . }}
         {{- end }}
         {{- with .Values.gateway.extraVolumes }}
         {{- toYaml . | nindent 8 }}
@@ -105,9 +119,9 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (default .Values.global.pod.affinity .Values.gateway.affinity) }}
+      {{- with (include "taiga.affinity" (dict "ctx" . "affinity" (default .Values.global.pod.affinity .Values.gateway.affinity) "media" true)) }}
       affinity:
-        {{- toYaml . | nindent 8 }}
+        {{- . | nindent 8 }}
       {{- end }}
       {{- with (default .Values.global.pod.tolerations .Values.gateway.tolerations) }}
       tolerations:
