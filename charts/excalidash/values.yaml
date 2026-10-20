@@ -1,300 +1,323 @@
 global:
   pod:
+    # -- Default node selector for every pod.
     nodeSelector: {}
+    # -- Default tolerations for every pod.
     tolerations: []
+    # -- Default affinity for every pod.
     affinity: {}
+  # -- Default image pull secrets for every pod.
   imagePullSecrets: []
 
 frontend:
+  # -- Frontend replicas (stateless nginx, can scale).
   replicaCount: 1
   image:
-    repository: zimengxiong/excalidash-frontend
-    # This sets the pull policy for images.
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.4.27"
+    # -- Frontend image repository. Keep the frontend and backend tags identical.
+    repository: docker.io/zimengxiong/excalidash-frontend
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
+    # -- Image tag (defaults to the chart appVersion).
+    tag: ""
+    # -- Image digest (takes precedence over the tag).
+    digest: ""
 
+  # -- Public URL of ExcaliDash (used by the backend for redirects, cookies and OIDC). An https URL makes the backend redirect plain HTTP requests.
   url: https://excalidash.example.com
 
+  # -- Image pull secrets (defaults to global.imagePullSecrets).
   imagePullSecrets: []
-  nameOverride: ""
-  fullnameOverride: ""
 
   service:
-    type: ClusterIP
+    # -- Frontend service type.
+    type: ClusterIP  # @schema enum:[ClusterIP, NodePort, LoadBalancer]
+    # -- Frontend service port (the container listens on 8080).
     port: 80
 
+  # -- Extra environment variables.
   extraEnv: []
-  # - name: ENABLE_SERVER_STORAGE
-  #   value: "false"
-
+  # -- Extra envFrom sources.
   extraEnvFrom: []
-  # - secretRef:
-  #     name: my-secret
-  # - configMapRef:
-  #     name: my-config
 
-  # This is for setting Kubernetes Annotations to a Pod.
-  # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  # -- Pod annotations.
   podAnnotations: {}
-  # This is for setting Kubernetes Labels to a Pod.
-  # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+  # -- Pod labels.
   podLabels: {}
 
-  podSecurityContext: {}
-    # fsGroup: 2000
+  # -- Pod security context. The image (nginx-unprivileged, uid 101) also listens on port 80, which needs the
+  # `net.ipv4.ip_unprivileged_port_start` sysctl (in the Kubernetes "safe" set) when running without capabilities.
+  podSecurityContext:  # @schema skipProperties:true
+    runAsNonRoot: true
+    runAsUser: 101
+    runAsGroup: 101
+    fsGroup: 101
+    seccompProfile:
+      type: RuntimeDefault
+    sysctls:
+      - name: net.ipv4.ip_unprivileged_port_start
+        value: "80"
 
-  securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+  # -- Container security context.
+  securityContext:  # @schema skipProperties:true
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
 
-  # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
-  livenessProbe:
+  # -- Resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+
+  # -- Liveness probe.
+  livenessProbe:  # @schema skipProperties:true
     httpGet:
       path: /
       port: http
-  readinessProbe:
+  # -- Readiness probe.
+  readinessProbe:  # @schema skipProperties:true
     httpGet:
       path: /
       port: http
 
-  # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
   autoscaling:
+    # -- Enable the frontend HorizontalPodAutoscaler.
     enabled: false
     minReplicas: 1
-    maxReplicas: 100
+    maxReplicas: 5
     targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
 
-  # Additional volumes on the output Deployment definition.
+  # -- Additional volumes.
   volumes: []
-    # - name: data
-    #   secret:
-    #   persistentVolumeClaim:
-    #     claimName: some-claim
-
-  # Additional volumeMounts on the output Deployment definition.
+  # -- Additional volume mounts.
   volumeMounts: []
-    # - name: data
-    #   mountPath: ""
-    #   readOnly: false
 
+  # -- Node selector (defaults to global.pod.nodeSelector).
   nodeSelector: {}
-
+  # -- Tolerations (defaults to global.pod.tolerations).
   tolerations: []
-
+  # -- Affinity (defaults to global.pod.affinity).
   affinity: {}
 
 backend:
+  # -- Backend replicas. Socket.IO keeps its state in memory: the chart only supports 1.
   replicaCount: 1
   image:
-    repository: zimengxiong/excalidash-backend
-    # This sets the pull policy for images.
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.4.27"
+    # -- Backend image repository.
+    repository: docker.io/zimengxiong/excalidash-backend
+    # -- Image pull policy.
+    pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
+    # -- Image tag (defaults to the chart appVersion).
+    tag: ""
+    # -- Image digest (takes precedence over the tag).
+    digest: ""
 
+  # -- Image pull secrets (defaults to global.imagePullSecrets).
   imagePullSecrets: []
-  nameOverride: ""
-  fullnameOverride: ""
 
+  # -- NODE_ENV.
   nodeEnv: production
 
   service:
-    type: ClusterIP
-    # This port will be used for the PORT environment variable
+    # -- Backend service type.
+    type: ClusterIP  # @schema enum:[ClusterIP, NodePort, LoadBalancer]
+    # -- Backend port (also used for the PORT environment variable).
     port: 8000
 
   database:
-    enabled: true
-
-    # This must be changed for production
+    # -- Database provider: `sqlite` (stored in the persistent volume) or `postgresql`.
+    provider: sqlite  # @schema enum:[sqlite, postgresql]
+    # -- Database URL. For sqlite keep a path under /app/prisma; for postgresql use a postgresql:// URL (stored in the chart secret).
     url: "file:/app/prisma/db.sqlite"
-
-    # If you want to pull values from an existing secret
-    # Using existingSecret will override database.url
-    # existingSecret: "existing-secret"
+    # -- Existing secret holding the database URL (overrides `url`).
+    existingSecret: ""
     secretKeys:
+      # -- Key of the URL in `existingSecret`.
       url: database-url
 
-  extraEnv:
-    # Keep disabled by default; only enable when a trusted proxy sanitizes forwarded headers. (can be enabled safely with traefik)
-    - name: TRUST_PROXY
-      value: "false"
-    # Optional for single-instance deployments:
-    # if unset, backend auto-generates and persists one in the volume.
-    # Recommended to set explicitly for portability and multi-instance setups.
-    # Recommended to generate with `openssl rand -hex 32`.
-    # - name: JWT_SECRET
-    #   value: "somedefaultsecret"
-    # - name: CSRF_SECRET
-    #   value: "someothersecret"
+  # Application secrets. Empty values are generated once and kept across upgrades.
+  secrets:
+    # -- JWT signing secret (32+ characters).
+    jwtSecret: ""
+    # -- CSRF secret.
+    csrfSecret: ""
+    # -- Pepper used to hash API keys. Never change it once API keys exist.
+    apiKeyHashPepper: ""
+    # -- Existing secret with the keys `jwt-secret`, `csrf-secret` and `api-key-hash-pepper` (overrides the values above).
+    existingSecret: ""
 
-    - name: AUTH_MODE
-      value: "local"
-    # Optional OIDC settings (required for AUTH_MODE=hybrid or oidc_enforced)
-    # - name: OIDC_PROVIDER_NAME
-    #   value: "Authentik"
-    # - name: OIDC_ISSUER_URL
-    #   value: "https://auth.example.com/application/o/excalidash/"
-    # - name: OIDC_CLIENT_ID
-    #   value: "your-client-id"
-    # - name: OIDC_CLIENT_SECRET
-    #   value: "your-client-secret"
-    # - name: OIDC_REDIRECT_URI
-    #   value: "https://excalidash.example.com/api/auth/oidc/callback"
+  auth:
+    # -- Authentication mode: `local`, `hybrid` (local + OIDC), `oidc_enforced` or `disabled`.
+    mode: local  # @schema enum:[local, hybrid, oidc_enforced, disabled]
+    oidc:
+      # -- Name shown on the login button.
+      providerName: ""
+      # -- OIDC issuer URL.
+      issuerUrl: ""
+      # -- OIDC client ID.
+      clientId: ""
+      # -- OIDC client secret (stored in the chart secret; ignored with `existingSecret`).
+      clientSecret: ""
+      # -- Existing secret holding the client secret.
+      existingSecret: ""
+      # -- Key of the client secret in `existingSecret`.
+      existingSecretKey: oidc-client-secret
+      # -- Redirect URI (defaults to `<frontend.url>/api/auth/oidc/callback`).
+      redirectUri: ""
 
-  # Everything above can be pulled by a secret
+  # -- Trust X-Forwarded-* headers. Only enable it when a trusted proxy (your ingress) sanitizes them.
+  trustProxy: "false"
+
+  # -- Extra environment variables (SMTP, S3 storage, backups, rate limits...). See the ExcaliDash docs.
+  extraEnv: []
+  # - name: FILE_UPLOAD_MAX_MB
+  #   value: "100"
+
+  # -- Extra envFrom sources (e.g. a secret with SMTP or S3 credentials).
   extraEnvFrom: []
-  # - secretRef:
-  #     name: my-secret
-  # - configMapRef:
-  #     name: my-config
 
-  # This is for setting Kubernetes Annotations to a Pod.
-  # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  persistence:
+    # -- Persist /app/prisma (SQLite database, migrations lock). Without it, data is lost when the pod restarts.
+    enabled: true
+    # -- Use an existing PVC.
+    existingClaim: ""
+    # -- Storage class (empty uses the cluster default).
+    storageClass: ""
+    # -- Access modes.
+    accessModes:
+      - ReadWriteOnce
+    # -- Volume size.
+    size: 1Gi
+    # -- PVC annotations.
+    annotations: {}
+
+  # -- Pod annotations.
   podAnnotations: {}
-  # This is for setting Kubernetes Labels to a Pod.
-  # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+  # -- Pod labels.
   podLabels: {}
 
-  podSecurityContext: {}
-    # fsGroup: 2000
+  # -- Pod security context (the image runs as `nodejs`, uid 1001).
+  podSecurityContext:  # @schema skipProperties:true
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    fsGroup: 1001
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
 
-  securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+  # -- Container security context. The entrypoint regenerates files under /app at every start, so the root filesystem stays writable.
+  securityContext:  # @schema skipProperties:true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
 
-  # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
-  livenessProbe:
+  # -- Resources.
+  resources:  # @schema skipProperties:true
+    requests:
+      cpu: 50m
+      memory: 192Mi
+    limits:
+      memory: 1Gi
+
+  # -- Liveness probe (`/health` checks the database).
+  livenessProbe:  # @schema skipProperties:true
     httpGet:
       path: /health
       port: http
-  readinessProbe:
+    periodSeconds: 30
+    timeoutSeconds: 10
+  # -- Readiness probe.
+  readinessProbe:  # @schema skipProperties:true
     httpGet:
       path: /health
       port: http
+    periodSeconds: 10
+    timeoutSeconds: 10
+  # -- Startup probe (database migrations run at startup, with a 120 s lock timeout).
+  startupProbe:  # @schema skipProperties:true
+    httpGet:
+      path: /health
+      port: http
+    periodSeconds: 5
+    failureThreshold: 60
 
-  # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
   autoscaling:
+    # -- Not supported (single backend replica); kept for compatibility, must stay false.
     enabled: false
     minReplicas: 1
-    maxReplicas: 100
+    maxReplicas: 1
     targetCPUUtilizationPercentage: 80
-    # targetMemoryUtilizationPercentage: 80
 
-  # Additional volumes on the output Deployment definition.
+  # -- Additional volumes.
   volumes: []
-    # - name: data
-    #   secret:
-    #   persistentVolumeClaim:
-    #     claimName: some-data
-
-  # Additional volumeMounts on the output Deployment definition.
+  # -- Additional volume mounts.
   volumeMounts: []
-    # - name: data
-    #   mountPath: "/some/path"
-    #   readOnly: false
 
+  # -- Node selector (defaults to global.pod.nodeSelector).
   nodeSelector: {}
-
+  # -- Tolerations (defaults to global.pod.tolerations).
   tolerations: []
-
+  # -- Affinity (defaults to global.pod.affinity).
   affinity: {}
 
 serviceAccount:
-  # Specifies whether a service account should be created.
+  # -- Create a dedicated service account.
   create: true
-  # Automatically mount a ServiceAccount's API credentials?
-  automount: true
-  # Annotations to add to the service account.
+  # -- ExcaliDash never talks to the Kubernetes API: the token is not mounted.
+  automount: false
+  # -- Service account annotations.
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template.
+  # -- Service account name (generated when empty).
   name: ""
 
+# -- Override the chart name.
+nameOverride: ""
+# -- Override the full resource names.
+fullnameOverride: ""
 
-# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
-
-# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
+  # -- Expose ExcaliDash through an Ingress (everything goes to the frontend, which proxies /api and /socket.io).
   enabled: false
+  # -- Ingress class name.
   className: ""
+  # -- Ingress annotations (WebSockets must be allowed for live collaboration).
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
+  # -- Ingress hosts.
   hosts:
     - host: chart-example.local
+  # -- Ingress TLS.
   tls: []
     # - secretName: chart-example-tls
     #   hosts:
     #     - chart-example.local
 
-# -- Expose the service via gateway-api HTTPRoute
-# Requires Gateway API resources and suitable controller installed within the cluster
-# (see: https://gateway-api.sigs.k8s.io/guides/)
 httpRoute:
-  # HTTPRoute enabled.
+  # -- Expose ExcaliDash through a Gateway API HTTPRoute.
   enabled: false
-  # HTTPRoute annotations.
+  # -- HTTPRoute annotations.
   annotations: {}
-  # Which Gateways this Route is attached to.
+  # -- Gateways this route is attached to.
   parentRefs:
-  - name: gateway
-    sectionName: http
-    # namespace: default
-  # Hostnames matching HTTP header.
+    - name: gateway
+      sectionName: http
+      # namespace: default
+  # -- Hostnames.
   hostnames:
-  - chart-example.local
-  # List of rules and filters applied.
+    - chart-example.local
+  # -- Rules (every rule is sent to the frontend service).
   rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /headers
-  #   filters:
-  #   - type: RequestHeaderModifier
-  #     requestHeaderModifier:
-  #       set:
-  #       - name: My-Overwrite-Header
-  #         value: this-is-the-only-value
-  #       remove:
-  #       - User-Agent
-  # - matches:
-  #   - path:
-  #       type: PathPrefix
-  #       value: /echo
-  #     headers:
-  #     - name: version
-  #       value: v2
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
 
+networkPolicy:
+  # -- Create NetworkPolicies: the backend only accepts traffic from the frontend.
+  enabled: false

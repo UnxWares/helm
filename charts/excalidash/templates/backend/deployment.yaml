@@ -1,3 +1,5 @@
+{{- $b := .Values.backend }}
+{{- $secret := include "excalidash.secretName" . }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,127 +8,176 @@ metadata:
     {{- include "excalidash.labels" . | nindent 4 }}
     app.kubernetes.io/component: backend
 spec:
-  {{- if not .Values.backend.autoscaling.enabled }}
-  replicas: {{ .Values.backend.replicaCount }}
-  {{- end }}
+  # Socket.IO state lives in memory: a single replica, replaced (not rolled) so two pods never share the SQLite volume.
+  replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "excalidash.backend.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.backend.podAnnotations }}
       annotations:
+        checksum/secret: {{ list $b.secrets $b.database.url $b.auth.oidc.clientSecret | toJson | sha256sum }}
+        {{- with $b.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "excalidash.backend.selectorLabels" . | nindent 8 }}
-        {{- with .Values.backend.podLabels }}
+        {{- with $b.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      {{- $ips := .Values.backend.imagePullSecrets | default .Values.global.imagePullSecrets }}
+      {{- $ips := $b.imagePullSecrets | default .Values.global.imagePullSecrets }}
       {{- if $ips }}
       imagePullSecrets:
         {{- toYaml $ips | nindent 8 }}
       {{- end }}
 
       serviceAccountName: {{ include "excalidash.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
 
-      {{- with .Values.backend.podSecurityContext }}
+      {{- with $b.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
 
       containers:
         - name: backend
-          {{- with .Values.backend.securityContext }}
+          {{- with $b.securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
 
-          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          image: {{ include "excalidash.image" (dict "image" $b.image "default" .Chart.AppVersion) | quote }}
+          imagePullPolicy: {{ $b.image.pullPolicy }}
 
           ports:
             - name: http
-              containerPort: {{ .Values.backend.service.port }}
+              containerPort: {{ $b.service.port }}
               protocol: TCP
 
           env:
             - name: PORT
-              value: "{{ .Values.backend.service.port }}"
+              value: "{{ $b.service.port }}"
             - name: NODE_ENV
-              value: "{{ .Values.backend.nodeEnv }}"
+              value: {{ $b.nodeEnv | quote }}
             - name: FRONTEND_URL
-              value: "{{ .Values.frontend.url }}"
-
-            {{- if .Values.backend.database.enabled }}
-
+              value: {{ .Values.frontend.url | quote }}
+            - name: TRUST_PROXY
+              value: {{ $b.trustProxy | quote }}
+            - name: DATABASE_PROVIDER
+              value: {{ $b.database.provider | quote }}
             - name: DATABASE_URL
-              {{- if .Values.backend.database.existingSecret }}
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.backend.database.existingSecret }}
-                  key: {{ .Values.backend.database.secretKeys.url }}
-              {{- else }}
-              value: {{ .Values.backend.database.url | quote }}
-              {{- end }}
-
+                  name: {{ $b.database.existingSecret | default $secret }}
+                  key: {{ ternary $b.database.secretKeys.url "database-url" (not (empty $b.database.existingSecret)) }}
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $b.secrets.existingSecret | default $secret }}
+                  key: jwt-secret
+            - name: CSRF_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $b.secrets.existingSecret | default $secret }}
+                  key: csrf-secret
+            - name: API_KEY_HASH_PEPPER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $b.secrets.existingSecret | default $secret }}
+                  key: api-key-hash-pepper
+            - name: AUTH_MODE
+              value: {{ $b.auth.mode | quote }}
+            {{- if has $b.auth.mode (list "hybrid" "oidc_enforced") }}
+            {{- with $b.auth.oidc }}
+            - name: OIDC_PROVIDER_NAME
+              value: {{ .providerName | default "SSO" | quote }}
+            - name: OIDC_ISSUER_URL
+              value: {{ .issuerUrl | quote }}
+            - name: OIDC_CLIENT_ID
+              value: {{ .clientId | quote }}
+            - name: OIDC_REDIRECT_URI
+              value: {{ .redirectUri | default (printf "%s/api/auth/oidc/callback" (trimSuffix "/" $.Values.frontend.url)) | quote }}
+            {{- if or .clientSecret .existingSecret }}
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .existingSecret | default $secret }}
+                  key: {{ ternary .existingSecretKey "oidc-client-secret" (not (empty .existingSecret)) }}
             {{- end }}
-
-            {{- with .Values.backend.extraEnv }}
+            {{- end }}
+            {{- end }}
+            {{- with $b.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
 
-          {{- if or .Values.backend.extraEnvFrom .Values.backend.database.existingSecret }}
+          {{- with $b.extraEnvFrom }}
           envFrom:
-            {{- if .Values.backend.database.existingSecret }}
-            - secretRef:
-                name: {{ .Values.backend.database.existingSecret }}
-            {{- end }}
-            {{- with .Values.backend.extraEnvFrom }}
             {{- toYaml . | nindent 12 }}
-            {{- end }}
           {{- end }}
 
-          {{- with .Values.backend.livenessProbe }}
+          {{- with $b.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-
-          {{- with .Values.backend.readinessProbe }}
+          {{- with $b.readinessProbe }}
           readinessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with $b.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
 
-          {{- with .Values.backend.resources }}
+          {{- with $b.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
 
-          {{- with .Values.backend.volumeMounts }}
           volumeMounts:
+            - name: data
+              mountPath: /app/prisma
+            - name: uploads
+              mountPath: /app/uploads
+            - name: tmp
+              mountPath: /tmp
+            {{- with $b.volumeMounts }}
             {{- toYaml . | nindent 12 }}
-          {{- end }}
+            {{- end }}
 
-      {{- with .Values.backend.volumes }}
       volumes:
+        - name: data
+          {{- if $b.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ $b.persistence.existingClaim | default (include "excalidash.backend.fullname" .) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: uploads
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
+        {{- with $b.volumes }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
 
-      {{- $ns := .Values.backend.nodeSelector | default .Values.global.pod.nodeSelector }}
+      {{- $ns := $b.nodeSelector | default .Values.global.pod.nodeSelector }}
       {{- if $ns }}
       nodeSelector:
         {{- toYaml $ns | nindent 8 }}
       {{- end }}
 
-      {{- $aff := .Values.backend.affinity | default .Values.global.pod.affinity }}
+      {{- $aff := $b.affinity | default .Values.global.pod.affinity }}
       {{- if $aff }}
       affinity:
         {{- toYaml $aff | nindent 8 }}
       {{- end }}
 
-      {{- $tol := .Values.backend.tolerations | default .Values.global.pod.tolerations }}
+      {{- $tol := $b.tolerations | default .Values.global.pod.tolerations }}
       {{- if $tol }}
       tolerations:
         {{- toYaml $tol | nindent 8 }}

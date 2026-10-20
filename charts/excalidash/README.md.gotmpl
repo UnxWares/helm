@@ -1,0 +1,96 @@
+# ExcaliDash Helm Chart
+
+{{ template "chart.badgesSection" . }}
+
+[ExcaliDash](https://github.com/ZimengXiong/ExcaliDash) is a self-hosted dashboard and organizer for
+[Excalidraw](https://excalidraw.com/) drawings, with live collaboration.
+
+## Features
+
+- Frontend (nginx) + backend (Node.js) with **persistent SQLite** storage (or PostgreSQL)
+- **Generated secrets** (JWT, CSRF, API key pepper) kept across upgrades, or your own Secret
+- Local, hybrid or enforced **OIDC** authentication
+- **Hardened**: non-root pods (frontend uid 101, backend uid 1001), no capabilities, seccomp `RuntimeDefault`,
+  read-only root filesystem for the frontend, no service account token, optional NetworkPolicy isolating the backend
+- Ingress or Gateway API HTTPRoute (WebSockets included), `helm test`
+
+## Installation
+
+```bash
+helm repo add unxwares https://helm.unxwares.studio
+helm repo update
+helm install excalidash unxwares/excalidash --namespace excalidash --create-namespace \
+  --set frontend.url=https://draw.example.com
+```
+
+In `local` auth mode, the first admin is created with a setup code printed in the backend logs (valid 15 minutes).
+Charts are signed: see [verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures).
+
+## Examples
+
+### Ingress with TLS
+
+```yaml
+frontend:
+  url: https://draw.example.com
+backend:
+  trustProxy: "2"   # two trusted hops: your ingress controller, then the frontend nginx
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+  hosts:
+    - host: draw.example.com
+  tls:
+    - secretName: draw-example-com-tls
+      hosts:
+        - draw.example.com
+```
+
+### OIDC (Authentik, Keycloak, ...)
+
+```yaml
+backend:
+  auth:
+    mode: oidc_enforced
+    oidc:
+      providerName: Authentik
+      issuerUrl: https://auth.example.com/application/o/excalidash/
+      clientId: excalidash
+      existingSecret: excalidash-oidc   # key: oidc-client-secret
+```
+
+### PostgreSQL
+
+```yaml
+backend:
+  database:
+    provider: postgresql
+    existingSecret: excalidash-db      # key: database-url = postgresql://user:pass@host:5432/excalidash
+```
+
+## Notes
+
+- The frontend image also listens on port 80 as an unprivileged user: the chart sets the
+  `net.ipv4.ip_unprivileged_port_start=80` pod sysctl, part of the Kubernetes "safe" set.
+- The backend runs a single replica (Socket.IO keeps its state in memory); the frontend can scale.
+
+## Upgrading
+
+### To 2026.10.1 (ExcaliDash 0.4.27 → 0.6.5)
+
+- The SQLite database now lives in a PVC mounted at `/app/prisma` (`backend.persistence`). Previous releases had no
+  volume, so their data was lost at each restart anyway; if you mounted your own volume through `backend.volumes`,
+  set `backend.persistence.existingClaim` to it instead.
+- `TRUST_PROXY` and `AUTH_MODE` moved from `backend.extraEnv` to `backend.trustProxy` and `backend.auth.mode`.
+- `backend.autoscaling` must stay disabled; `backend.database.enabled` is gone (the URL is always set).
+- The Ingress now sends every path to the frontend, which proxies `/api` and `/socket.io` to the backend.
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+## License
+
+The chart is released under the MIT license. ExcaliDash is licensed under the LGPL-3.0.

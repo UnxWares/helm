@@ -2,12 +2,15 @@ apiVersion: v2
 name: excalidash
 description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer for Excalidraw with live collaboration features
 type: application
-version: 2026.2.5
-appVersion: "0.4.27"
-icon: https://github.com/ZimengXiong/ExcaliDash/blob/main/readme-assets/logoExcaliDash.png?raw=true
+version: 2026.10.1
+appVersion: "0.6.5"
+kubeVersion: ">=1.27.0-0"
+home: https://github.com/UnxWares/helm/tree/main/charts/excalidash
+icon: https://raw.githubusercontent.com/ZimengXiong/ExcaliDash/v0.6.5/docs/public/images/logo.png
 
 sources:
   - https://github.com/ZimengXiong/ExcaliDash
+  - https://github.com/UnxWares/helm/tree/main/charts/excalidash
 
 keywords:
   - excalidraw
@@ -21,7 +24,44 @@ maintainers:
   - name: David Gheghea
     email: david.gheghea@unxwares.com
     url: https://github.com/UnxWares
+  - name: Baptiste Gosselin
+    email: baptiste.gosselin@unxwares.com
+    url: https://github.com/UnxWares
 
 annotations:
-  category: tools
-  artifacthub.io/license: "MIT"
+  artifacthub.io/displayName: ExcaliDash
+  artifacthub.io/category: skip-prediction
+  artifacthub.io/license: MIT
+  artifacthub.io/links: |
+    - name: Chart source
+      url: https://github.com/UnxWares/helm/tree/main/charts/excalidash
+    - name: ExcaliDash documentation
+      url: https://github.com/ZimengXiong/ExcaliDash/tree/main/docs
+    - name: Support
+      url: https://github.com/UnxWares/helm/issues
+  artifacthub.io/images: |
+    - name: excalidash-frontend
+      image: docker.io/zimengxiong/excalidash-frontend:0.6.5
+    - name: excalidash-backend
+      image: docker.io/zimengxiong/excalidash-backend:0.6.5
+  artifacthub.io/containsSecurityUpdates: "true"
+  artifacthub.io/changes: |
+    - kind: changed
+      description: ExcaliDash 0.6.5 (from 0.4.27); the images drop from 7 critical / 134 high CVEs to 2 / 27.
+    - kind: fixed
+      description: The SQLite database had no volume and was lost at every restart; /app/prisma is now persisted by default.
+    - kind: fixed
+      description: The Ingress sent /api straight to the backend without stripping the prefix; everything now goes through the frontend proxy, like upstream.
+    - kind: fixed
+      description: Enabling httpRoute failed (undefined service port, non-existent service) and its default rule only matched /headers.
+    - kind: security
+      description: JWT/CSRF secrets and the API key pepper are generated once and kept in a Secret; the database URL and OIDC client secret are no longer plain environment values.
+    - kind: security
+      description: Non-root pods (frontend uid 101, backend uid 1001), no capabilities, seccomp RuntimeDefault, read-only root filesystem for the frontend, no service account token.
+    - kind: added
+      description: Auth mode and OIDC settings, PostgreSQL provider, startup probe, NetworkPolicy isolating the backend, helm test, values schema.
+    - kind: removed
+      description: "BREAKING: backend autoscaling (Socket.IO state is in memory, the backend runs a single replica)."
+  artifacthub.io/signKey: |
+    fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+    url: https://helm.unxwares.studio/pgp-public-key.asc

@@ -62,7 +62,7 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Create the name of the backend service account to use
+Full name of the backend resources
 */}}
 {{- define "excalidash.backend.fullname" -}}
 {{ include "excalidash.fullname" . }}-backend
@@ -78,7 +78,7 @@ app.kubernetes.io/component: backend
 {{- end }}
 
 {{/*
-Create the name of the frontend service account to use
+Full name of the frontend resources
 */}}
 {{- define "excalidash.frontend.fullname" -}}
 {{ include "excalidash.fullname" . }}-frontend
@@ -91,4 +91,54 @@ Selector labels for the frontend
 app.kubernetes.io/name: {{ include "excalidash.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/component: frontend
+{{- end }}
+
+{{/*
+Render an image reference from {repository, tag, digest}.
+*/}}
+{{- define "excalidash.image" -}}
+{{- if .image.digest -}}
+{{- printf "%s@%s" .image.repository .image.digest -}}
+{{- else -}}
+{{- printf "%s:%s" .image.repository (.image.tag | default .default | toString) -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Name of the chart-managed secret.
+*/}}
+{{- define "excalidash.secretName" -}}
+{{- include "excalidash.fullname" . }}
+{{- end }}
+
+{{/*
+Value of a generated secret key: explicit value, else the value already stored in the release secret, else random.
+Usage: include "excalidash.generatedSecret" (dict "ctx" $ "key" "jwt-secret" "value" .Values.backend.secrets.jwtSecret "length" 64)
+*/}}
+{{- define "excalidash.generatedSecret" -}}
+{{- if .value -}}
+{{- .value -}}
+{{- else -}}
+{{- $secret := lookup "v1" "Secret" .ctx.Release.Namespace (include "excalidash.secretName" .ctx) -}}
+{{- if and $secret (index $secret.data .key) -}}
+{{- index $secret.data .key | b64dec -}}
+{{- else -}}
+{{- randAlphaNum (int .length) -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Validate values that would otherwise produce a broken deployment.
+*/}}
+{{- define "excalidash.validate" -}}
+{{- if or (gt (int .Values.backend.replicaCount) 1) .Values.backend.autoscaling.enabled }}
+{{- fail "the ExcaliDash backend keeps Socket.IO state in memory: backend.replicaCount must be 1 and backend.autoscaling.enabled false" }}
+{{- end }}
+{{- if and (eq .Values.backend.database.provider "postgresql") (not .Values.backend.database.existingSecret) (not (hasPrefix "postgres" .Values.backend.database.url)) }}
+{{- fail "backend.database.provider=postgresql needs a postgresql:// backend.database.url or backend.database.existingSecret" }}
+{{- end }}
+{{- if and (has .Values.backend.auth.mode (list "hybrid" "oidc_enforced")) (not .Values.backend.auth.oidc.issuerUrl) }}
+{{- fail "backend.auth.oidc.issuerUrl and clientId are required with backend.auth.mode hybrid or oidc_enforced" }}
+{{- end }}
 {{- end }}

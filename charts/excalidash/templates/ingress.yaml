@@ -30,17 +30,7 @@ spec:
     - host: {{ .host | quote }}
       http:
         paths:
-
-          # Backend
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ include "excalidash.backend.fullname" $ }}
-                port:
-                  number: {{ $.Values.backend.service.port }}
-
-          # Frontend
+          # The frontend nginx serves the app and proxies /api/ and /socket.io/ to the backend.
           - path: /
             pathType: Prefix
             backend:
@@ -48,6 +38,5 @@ spec:
                 name: {{ include "excalidash.frontend.fullname" $ }}
                 port:
                   number: {{ $.Values.frontend.service.port }}
-
     {{- end }}
 {{- end }}
