@@ -1,0 +1,323 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "affinity": {
+            "description": "Affinity rules.",
+            "type": "object"
+        },
+        "autoscaling": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Enable the HorizontalPodAutoscaler (only without server storage, or with a ReadWriteMany volume).",
+                    "type": "boolean"
+                },
+                "maxReplicas": {
+                    "type": "integer"
+                },
+                "minReplicas": {
+                    "type": "integer"
+                },
+                "targetCPUUtilizationPercentage": {
+                    "type": "integer"
+                }
+            }
+        },
+        "extraEnv": {
+            "description": "Extra environment variables. HTTP_AUTH_USER/HTTP_AUTH_PASSWORD are broken in the upstream image (OpenSSL 3 has no bcrypt): protect FossFLOW at the ingress level instead.",
+            "type": "array"
+        },
+        "extraEnvFrom": {
+            "description": "Extra envFrom sources.",
+            "type": "array"
+        },
+        "fullnameOverride": {
+            "description": "Override the full resource names.",
+            "type": "string"
+        },
+        "httpRoute": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "HTTPRoute annotations.",
+                    "type": "object"
+                },
+                "enabled": {
+                    "description": "Expose FossFLOW through a Gateway API HTTPRoute.",
+                    "type": "boolean"
+                },
+                "hostnames": {
+                    "description": "Hostnames.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "parentRefs": {
+                    "description": "Gateways this route is attached to.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "sectionName": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "rules": {
+                    "description": "Rules (every rule is sent to the FossFLOW service).",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "matches": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "path": {
+                                            "type": "object",
+                                            "properties": {
+                                                "type": {
+                                                    "type": "string"
+                                                },
+                                                "value": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "image": {
+            "type": "object",
+            "properties": {
+                "digest": {
+                    "description": "Image digest (`sha256:...`). When set, it takes precedence over the tag.",
+                    "type": "string"
+                },
+                "pullPolicy": {
+                    "description": "Image pull policy.",
+                    "type": "string",
+                    "enum": [
+                        "Always",
+                        "IfNotPresent",
+                        "Never"
+                    ]
+                },
+                "repository": {
+                    "description": "FossFLOW image. `abrar74774/fossflow` is built by the maintained continuation of FossFLOW (github.com/Abrar74774/FossFLOW).",
+                    "type": "string"
+                },
+                "tag": {
+                    "description": "Image tag. Upstream only publishes `master-\u003ccommit\u003e` tags: `master-2b3cee3` is release v1.0.5.",
+                    "type": "string"
+                }
+            }
+        },
+        "imagePullSecrets": {
+            "description": "Secrets for pulling images from a private registry.",
+            "type": "array"
+        },
+        "ingress": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "Ingress annotations (add authentication here, e.g. oauth2-proxy or basic auth).",
+                    "type": "object"
+                },
+                "className": {
+                    "description": "Ingress class name.",
+                    "type": "string"
+                },
+                "enabled": {
+                    "description": "Expose FossFLOW through an Ingress.",
+                    "type": "boolean"
+                },
+                "hosts": {
+                    "description": "Ingress hosts.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "host": {
+                                "type": "string"
+                            },
+                            "paths": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "path": {
+                                            "type": "string"
+                                        },
+                                        "pathType": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "tls": {
+                    "description": "Ingress TLS.",
+                    "type": "array"
+                }
+            }
+        },
+        "livenessProbe": {
+            "description": "Liveness probe (same `/api/storage/status` substitution as the readiness probe).",
+            "type": "object"
+        },
+        "nameOverride": {
+            "description": "Override the chart name.",
+            "type": "string"
+        },
+        "nodeSelector": {
+            "description": "Node selector.",
+            "type": "object"
+        },
+        "persistence": {
+            "type": "object",
+            "properties": {
+                "accessModes": {
+                    "description": "Access modes.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "annotations": {
+                    "description": "PVC annotations.",
+                    "type": "object"
+                },
+                "enabled": {
+                    "description": "Persist the diagrams (/data/diagrams) when `storage.enabled`.",
+                    "type": "boolean"
+                },
+                "existingClaim": {
+                    "description": "Use an existing PVC.",
+                    "type": "string"
+                },
+                "size": {
+                    "description": "Volume size.",
+                    "type": "string"
+                },
+                "storageClass": {
+                    "description": "Storage class (empty uses the cluster default).",
+                    "type": "string"
+                }
+            }
+        },
+        "podAnnotations": {
+            "description": "Pod annotations.",
+            "type": "object"
+        },
+        "podLabels": {
+            "description": "Pod labels.",
+            "type": "object"
+        },
+        "podSecurityContext": {
+            "description": "Pod security context.",
+            "type": "object"
+        },
+        "readinessProbe": {
+            "description": "Readiness probe. With `storage.enabled` and the default path `/`, the chart probes `/api/storage/status` instead, so a dead backend makes the pod unready.",
+            "type": "object"
+        },
+        "replicaCount": {
+            "description": "Number of replicas. With server storage on a ReadWriteOnce volume, keep 1.",
+            "type": "integer"
+        },
+        "resources": {
+            "description": "Resources.",
+            "type": "object"
+        },
+        "securityContext": {
+            "description": "Container security context. The image entrypoint must start as root (nginx binds port 80 and rewrites its config, the backend is started through su-exec): every capability is dropped except the five it needs.",
+            "type": "object"
+        },
+        "service": {
+            "type": "object",
+            "properties": {
+                "port": {
+                    "description": "Service port (the container listens on 80).",
+                    "type": "integer"
+                },
+                "type": {
+                    "description": "Service type.",
+                    "type": "string",
+                    "enum": [
+                        "ClusterIP",
+                        "NodePort",
+                        "LoadBalancer"
+                    ]
+                }
+            }
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "Service account annotations.",
+                    "type": "object"
+                },
+                "automount": {
+                    "description": "FossFLOW never talks to the Kubernetes API: the token is not mounted.",
+                    "type": "boolean"
+                },
+                "create": {
+                    "description": "Create a dedicated service account.",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "Service account name (generated when empty).",
+                    "type": "string"
+                }
+            }
+        },
+        "storage": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Save diagrams on the server (Node.js backend + volume). When false, diagrams only live in the browser.",
+                    "type": "boolean"
+                },
+                "gid": {
+                    "type": "integer"
+                },
+                "uid": {
+                    "description": "User and group the Node.js backend drops to (`PUID`/`PGID`). nginx keeps its own `nginx` user.",
+                    "type": "integer"
+                }
+            }
+        },
+        "terminationGracePeriodSeconds": {
+            "description": "The image entrypoint does not forward SIGTERM: keep the grace period short.",
+            "type": "integer"
+        },
+        "tolerations": {
+            "description": "Tolerations.",
+            "type": "array"
+        },
+        "volumeMounts": {
+            "description": "Additional volumeMounts on the output Deployment definition.",
+            "type": "array"
+        },
+        "volumes": {
+            "description": "Additional volumes on the output Deployment definition.",
+            "type": "array"
+        }
+    }
+}

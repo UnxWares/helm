@@ -2,12 +2,16 @@ apiVersion: v2
 name: fossflow
 description: A helm chart for FossFlow, powerful, open-source Progressive Web App (PWA) for creating beautiful isometric diagrams.
 type: application
-version: 2026.2.1
-appVersion: "latest"
+version: 2026.10.1
+appVersion: "1.0.5"
+kubeVersion: ">=1.27.0-0"
+home: https://github.com/UnxWares/helm/tree/main/charts/fossflow
+icon: https://raw.githubusercontent.com/Abrar74774/FossFLOW/v1.0.5/packages/fossflow-app/public/logo512.png
 
 sources:
-  - https://stan-smith.github.io/FossFLOW/
-  - https://github.com/stan-smith/FossFLOW
+  - https://github.com/Abrar74774/FossFLOW
+  - https://hub.docker.com/r/abrar74774/fossflow
+  - https://github.com/UnxWares/helm/tree/main/charts/fossflow
 
 keywords:
   - flow
@@ -20,7 +24,38 @@ maintainers:
   - name: David Gheghea
     email: david.gheghea@unxwares.com
     url: https://github.com/UnxWares
+  - name: Baptiste Gosselin
+    email: baptiste.gosselin@unxwares.com
+    url: https://github.com/UnxWares
 
 annotations:
-  category: tools
-  artifacthub.io/license: "MIT"
+  artifacthub.io/displayName: FossFLOW
+  artifacthub.io/category: skip-prediction
+  artifacthub.io/license: MIT
+  artifacthub.io/links: |
+    - name: Chart source
+      url: https://github.com/UnxWares/helm/tree/main/charts/fossflow
+    - name: FossFLOW (maintained continuation)
+      url: https://github.com/Abrar74774/FossFLOW
+    - name: Support
+      url: https://github.com/UnxWares/helm/issues
+  artifacthub.io/images: |
+    - name: fossflow
+      image: docker.io/abrar74774/fossflow:master-2b3cee3
+  artifacthub.io/containsSecurityUpdates: "true"
+  artifacthub.io/changes: |
+    - kind: security
+      description: "BREAKING: the image moves from stnsmith/fossflow:latest to abrar74774/fossflow:master-2b3cee3 (release v1.0.5). The original GitHub repository is gone and recent stnsmith/fossflow builds come from a private repository whose source cannot be verified; abrar74774/fossflow is built from the public, maintained continuation."
+    - kind: changed
+      description: The image is pinned to an immutable commit tag instead of latest (appVersion 1.0.5).
+    - kind: added
+      description: Server storage of the diagrams (ENABLE_SERVER_STORAGE) persisted in a PVC at /data/diagrams, backend running as uid 1000.
+    - kind: security
+      description: Every capability dropped except the five the entrypoint needs, seccomp RuntimeDefault, no service account token.
+    - kind: fixed
+      description: The httpRoute default rule only matched /headers; the container port no longer follows service.port.
+    - kind: added
+      description: Probes on the storage backend, image digests, Chart icon, helm test hardening, values schema, README.
+  artifacthub.io/signKey: |
+    fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+    url: https://helm.unxwares.studio/pgp-public-key.asc

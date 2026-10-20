@@ -60,3 +60,23 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Image reference (digest takes precedence over the tag).
+*/}}
+{{- define "fossflow.image" -}}
+{{- if .Values.image.digest -}}
+{{- printf "%s@%s" .Values.image.repository .Values.image.digest -}}
+{{- else -}}
+{{- printf "%s:%s" .Values.image.repository (.Values.image.tag | default .Chart.AppVersion | toString) -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Validate values that would otherwise produce a broken deployment.
+*/}}
+{{- define "fossflow.validate" -}}
+{{- if and .Values.storage.enabled .Values.persistence.enabled (has "ReadWriteOnce" .Values.persistence.accessModes) (or (gt (int .Values.replicaCount) 1) .Values.autoscaling.enabled) }}
+{{- fail "server storage on a ReadWriteOnce volume supports a single replica: use a ReadWriteMany volume or disable storage to scale" }}
+{{- end }}
+{{- end }}
