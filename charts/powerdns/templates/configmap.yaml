@@ -51,6 +51,9 @@ data:
     webserver=no
     {{- end }}
     api={{ ternary "yes" "no" .Values.api.enabled }}
+    {{- with include "powerdns.zoneCacheRefreshInterval" . }}
+    zone-cache-refresh-interval={{ . }}
+    {{- end }}
     {{- range $key, $value := .Values.config }}
     {{ $key }}={{ $value }}
     {{- end }}

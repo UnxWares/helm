@@ -615,6 +615,10 @@
                         }
                     }
                 },
+                "spreadAcrossNodes": {
+                    "description": "When `topologySpreadConstraints` is empty, spread the replicas across nodes, then zones (ScheduleAnyway).",
+                    "type": "boolean"
+                },
                 "tolerations": {
                     "description": "Tolerations.",
                     "type": "array"
@@ -743,6 +747,10 @@
                 }
             }
         },
+        "spreadAcrossNodes": {
+            "description": "When `topologySpreadConstraints` is empty, spread the replicas across nodes, then zones (ScheduleAnyway: never blocks scheduling).",
+            "type": "boolean"
+        },
         "startupProbe": {
             "description": "Startup probe.",
             "type": "object"
@@ -787,6 +795,13 @@
                     "type": "integer"
                 }
             }
+        },
+        "zoneCacheRefreshInterval": {
+            "description": "Seconds between refreshes of the list of known zones (`zone-cache-refresh-interval`). Each server only serves a zone created through another server's API after its next refresh (until then it answers REFUSED). Empty: PowerDNS default (300) with one replica, 30 with several replicas or the HPA. 0 disables the cache (a database query per uncached question).",
+            "type": [
+                "integer",
+                "null"
+            ]
         }
     }
 }

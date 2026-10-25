@@ -130,6 +130,12 @@ config:
 # -- Raw lines appended to pdns.conf.
 extraConfig: ""
 
+# -- (int) Seconds between refreshes of the list of known zones (`zone-cache-refresh-interval`). Each server only serves a
+# zone created through another server's API after its next refresh (until then it answers REFUSED). Empty: PowerDNS
+# default (300) with one replica, 30 with several replicas or the HPA. 0 disables the cache (a database query per
+# uncached question).
+zoneCacheRefreshInterval: null  # @schema type:[integer, null]
+
 service:
   # -- DNS service type. Use `LoadBalancer` to serve DNS outside the cluster.
   type: ClusterIP  # @schema enum:[ClusterIP, NodePort, LoadBalancer]
@@ -273,6 +279,8 @@ tolerations: []
 affinity: {}
 # -- Topology spread constraints.
 topologySpreadConstraints: []
+# -- When `topologySpreadConstraints` is empty, spread the replicas across nodes, then zones (ScheduleAnyway: never blocks scheduling).
+spreadAcrossNodes: true
 
 metrics:
   serviceMonitor:
@@ -429,6 +437,8 @@ recursor:
   affinity: {}
   # -- Topology spread constraints.
   topologySpreadConstraints: []
+  # -- When `topologySpreadConstraints` is empty, spread the replicas across nodes, then zones (ScheduleAnyway).
+  spreadAcrossNodes: true
 
   metrics:
     serviceMonitor:
