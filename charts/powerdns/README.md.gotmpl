@@ -38,7 +38,10 @@ config:
   default-soa-content: ns1.example.com. hostmaster.@ 0 10800 3600 604800 3600
 ```
 
-### PostgreSQL backend with 3 replicas
+### High availability (PostgreSQL backend, 3 replicas)
+
+The authoritative servers are stateless with `gpgsql` or `gmysql`: every replica reads the same database, so the
+deployment is as available as that database (use an HA PostgreSQL or MySQL, e.g. CloudNativePG or OpenEverest).
 
 ```yaml
 backend:
@@ -49,18 +52,32 @@ backend:
     user: pdns
     existingSecret: pdns-db        # key: password
     extraConnectionParameters: "sslmode=require"
-replicaCount: 3
+replicaCount: 3                    # or autoscaling.enabled: true
 podDisruptionBudget:
   enabled: true
-topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: kubernetes.io/hostname
-    whenUnsatisfiable: ScheduleAnyway
-    labelSelector:
-      matchLabels:
-        app.kubernetes.io/name: powerdns
-        app.kubernetes.io/component: authoritative
+recursor:
+  replicaCount: 2
+  podDisruptionBudget:
+    enabled: true
 ```
+
+What the chart takes care of:
+
+- replicas are spread across nodes, then zones, by default (`spreadAcrossNodes`, never blocks scheduling);
+- replicas starting together on an empty database do not fail on the schema creation (one creates it, the others wait);
+- the API key is generated once and shared by every replica, so the API answers the same on any of them;
+- with several replicas, each server refreshes its list of zones every 30 s instead of 300 s
+  (`zoneCacheRefreshInterval`).
+
+What to know:
+
+- a **zone** created through the API is served at once by the replica that received the call, and by the others
+  after their next zone cache refresh, plus the packet cache: about a minute with the defaults. Until then they
+  answer REFUSED for it. Lower `zoneCacheRefreshInterval`, or set it to `0` to disable the zone cache (one database
+  query per uncached question), if new zones must be served everywhere at once;
+- **records** changed in an existing zone are seen by every replica after their caches expire: 20 s
+  (`cache-ttl`, `query-cache-ttl`), 60 s for a name that did not exist (`negquery-cache-ttl`). Tune them in `config`;
+- the `gsqlite3` backend is single-replica only.
 
 ### ExternalDNS
 
@@ -102,7 +119,9 @@ recursor:
 
 ### Managing zones
 
-Zones created through the API are served immediately. With `pdnsutil`, ask the server to refresh its zone cache:
+Zones created through the API are served immediately by the replica that received the call (by the others after
+their next zone cache refresh, see above). With `pdnsutil`, ask the server to refresh its zone cache; with several
+replicas, the others pick the zone up at their next refresh:
 
 ```bash
 kubectl exec -n dns deploy/dns-powerdns -c pdns -- \
@@ -112,7 +131,8 @@ kubectl exec -n dns deploy/dns-powerdns -c pdns -- \
 ## Notes
 
 - **GitOps**: when the API key is generated, tools that render templates offline (Argo CD...) cannot read it back and would rotate it on every sync. Set `api.key` or `api.existingSecret`.
-- **gsqlite3** supports a single replica; the chart refuses `replicaCount > 1` or the HPA with it.
+- **gsqlite3** supports a single replica; the chart refuses `replicaCount > 1` or the HPA with it. Use `gpgsql` or
+  `gmysql` for high availability.
 - **IPv6**: remove `[::]` from `dns.listenAddresses` (and `::` from `recursor.listenAddresses`) if your pods have IPv6 disabled.
 - `webserver.allowFrom` and `recursor.allowFrom` default to private ranges; add your pod CIDR if it uses another range (e.g. `100.64.0.0/10`).
 

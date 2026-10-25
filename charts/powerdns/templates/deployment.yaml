@@ -124,11 +124,19 @@ spec:
                 [ "$(date +%s)" -lt "$deadline" ] || { echo "Timed out waiting for PostgreSQL"; exit 1; }
                 echo "Waiting for PostgreSQL at $DB_HOST:$DB_PORT..."; sleep 3
               done
-              if [ "$(psql -d "$conninfo" -tAc "SELECT to_regclass('domains') IS NOT NULL")" = "t" ]; then
+              present() { [ "$(psql -d "$conninfo" -tAc "SELECT to_regclass('domains') IS NOT NULL")" = "t" ]; }
+              if present; then
                 echo "PowerDNS schema already present"
               else
                 echo "Creating PowerDNS schema"
-                psql -d "$conninfo" -v ON_ERROR_STOP=1 --single-transaction -f /schema/schema.sql
+                if ! psql -d "$conninfo" -v ON_ERROR_STOP=1 --single-transaction -q -f /schema/schema.sql; then
+                  # Another replica created it at the same time; its transaction commits the whole schema.
+                  until present; do
+                    [ "$(date +%s)" -lt "$deadline" ] || { echo "PowerDNS schema creation failed"; exit 1; }
+                    sleep 2
+                  done
+                  echo "PowerDNS schema created by another replica"
+                fi
               fi
               {{- else }}
               printf '[client]\nhost=%s\nport=%s\nuser=%s\npassword="%s"\n' \
@@ -137,13 +145,23 @@ spec:
                 [ "$(date +%s)" -lt "$deadline" ] || { echo "Timed out waiting for MySQL"; exit 1; }
                 echo "Waiting for MySQL at $DB_HOST:$DB_PORT..."; sleep 3
               done
-              tables=$(mysql --defaults-extra-file=/tmp/client.cnf -N -B -e \
-                "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='domains'")
-              if [ "$tables" = "1" ]; then
+              has_table() {
+                [ "$(mysql --defaults-extra-file=/tmp/client.cnf -N -B -e \
+                  "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='$1'")" = "1" ]
+              }
+              if has_table domains; then
                 echo "PowerDNS schema already present"
               else
                 echo "Creating PowerDNS schema"
-                mysql --defaults-extra-file=/tmp/client.cnf "$DB_NAME" < /schema/schema.sql
+                if ! mysql --defaults-extra-file=/tmp/client.cnf "$DB_NAME" < /schema/schema.sql; then
+                  # Another replica is creating it (MySQL DDL is not transactional): wait for its last table.
+                  last=$(sed -n 's/^CREATE TABLE \([a-z_]*\).*/\1/p' /schema/schema.sql | tail -n 1)
+                  until has_table "$last"; do
+                    [ "$(date +%s)" -lt "$deadline" ] || { echo "PowerDNS schema creation failed"; exit 1; }
+                    sleep 2
+                  done
+                  echo "PowerDNS schema created by another replica"
+                fi
               fi
               {{- end }}
           env:
@@ -284,7 +302,10 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.topologySpreadConstraints }}
+      {{- if .Values.topologySpreadConstraints }}
       topologySpreadConstraints:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml .Values.topologySpreadConstraints | nindent 8 }}
+      {{- else if .Values.spreadAcrossNodes }}
+      topologySpreadConstraints:
+        {{- include "powerdns.defaultSpread" (include "powerdns.auth.selectorLabels" .) | trim | nindent 8 }}
       {{- end }}

@@ -2,7 +2,7 @@ apiVersion: v2
 name: powerdns
 description: PowerDNS Authoritative Server with its REST API, SQLite/PostgreSQL/MySQL backends and an optional PowerDNS Recursor, hardened for Kubernetes.
 type: application
-version: 2026.10.1
+version: 2026.10.2
 appVersion: "5.1.4"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/powerdns
@@ -52,8 +52,12 @@ annotations:
     - name: mysql-client
       image: docker.io/library/mysql:8.4.11
   artifacthub.io/changes: |
+    - kind: fixed
+      description: With several replicas, a zone created through one replica's API was refused by the others for five minutes; servers now refresh their zone list every 30 s (zoneCacheRefreshInterval).
+    - kind: fixed
+      description: Replicas starting together on an empty database no longer fail on the schema creation.
     - kind: added
-      description: First release of the PowerDNS chart (Authoritative 5.1.4, optional Recursor 5.4.7).
+      description: Replicas are spread across nodes, then zones, by default (spreadAcrossNodes); README section on high availability.
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

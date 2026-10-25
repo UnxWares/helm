@@ -14,7 +14,8 @@ API key:
   kubectl get secret -n {{ .Release.Namespace }} {{ include "powerdns.secretName" . }} -o jsonpath='{.data.api-key}' | base64 -d
 {{- end }}
 
-Create a first zone (through the API, or with pdnsutil + rediscover so the zone cache picks it up):
+Create a first zone (through the API, or with pdnsutil + rediscover so the zone cache picks it up;
+other replicas serve it after their next zone cache refresh):
   kubectl exec -n {{ .Release.Namespace }} deploy/{{ include "powerdns.fullname" . }} -c pdns -- \
     sh -c 'pdnsutil zone create example.com ns1.example.com && pdns_control rediscover'
 {{- end }}

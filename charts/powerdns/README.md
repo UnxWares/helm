@@ -1,6 +1,6 @@
 # PowerDNS Helm Chart
 
-![Version: 2026.10.1](https://img.shields.io/badge/Version-2026.10.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 5.1.4](https://img.shields.io/badge/AppVersion-5.1.4-informational?style=flat-square)
+![Version: 2026.10.2](https://img.shields.io/badge/Version-2026.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 5.1.4](https://img.shields.io/badge/AppVersion-5.1.4-informational?style=flat-square)
 
 [PowerDNS Authoritative Server](https://doc.powerdns.com/authoritative/) with its REST API, packaged for
 Kubernetes by UnxWares, with an optional [PowerDNS Recursor](https://doc.powerdns.com/recursor/).
@@ -38,7 +38,10 @@ config:
   default-soa-content: ns1.example.com. hostmaster.@ 0 10800 3600 604800 3600
 ```
 
-### PostgreSQL backend with 3 replicas
+### High availability (PostgreSQL backend, 3 replicas)
+
+The authoritative servers are stateless with `gpgsql` or `gmysql`: every replica reads the same database, so the
+deployment is as available as that database (use an HA PostgreSQL or MySQL, e.g. CloudNativePG or OpenEverest).
 
 ```yaml
 backend:
@@ -49,18 +52,32 @@ backend:
     user: pdns
     existingSecret: pdns-db        # key: password
     extraConnectionParameters: "sslmode=require"
-replicaCount: 3
+replicaCount: 3                    # or autoscaling.enabled: true
 podDisruptionBudget:
   enabled: true
-topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: kubernetes.io/hostname
-    whenUnsatisfiable: ScheduleAnyway
-    labelSelector:
-      matchLabels:
-        app.kubernetes.io/name: powerdns
-        app.kubernetes.io/component: authoritative
+recursor:
+  replicaCount: 2
+  podDisruptionBudget:
+    enabled: true
 ```
+
+What the chart takes care of:
+
+- replicas are spread across nodes, then zones, by default (`spreadAcrossNodes`, never blocks scheduling);
+- replicas starting together on an empty database do not fail on the schema creation (one creates it, the others wait);
+- the API key is generated once and shared by every replica, so the API answers the same on any of them;
+- with several replicas, each server refreshes its list of zones every 30 s instead of 300 s
+  (`zoneCacheRefreshInterval`).
+
+What to know:
+
+- a **zone** created through the API is served at once by the replica that received the call, and by the others
+  after their next zone cache refresh, plus the packet cache: about a minute with the defaults. Until then they
+  answer REFUSED for it. Lower `zoneCacheRefreshInterval`, or set it to `0` to disable the zone cache (one database
+  query per uncached question), if new zones must be served everywhere at once;
+- **records** changed in an existing zone are seen by every replica after their caches expire: 20 s
+  (`cache-ttl`, `query-cache-ttl`), 60 s for a name that did not exist (`negquery-cache-ttl`). Tune them in `config`;
+- the `gsqlite3` backend is single-replica only.
 
 ### ExternalDNS
 
@@ -102,7 +119,9 @@ recursor:
 
 ### Managing zones
 
-Zones created through the API are served immediately. With `pdnsutil`, ask the server to refresh its zone cache:
+Zones created through the API are served immediately by the replica that received the call (by the others after
+their next zone cache refresh, see above). With `pdnsutil`, ask the server to refresh its zone cache; with several
+replicas, the others pick the zone up at their next refresh:
 
 ```bash
 kubectl exec -n dns deploy/dns-powerdns -c pdns -- \
@@ -112,7 +131,8 @@ kubectl exec -n dns deploy/dns-powerdns -c pdns -- \
 ## Notes
 
 - **GitOps**: when the API key is generated, tools that render templates offline (Argo CD...) cannot read it back and would rotate it on every sync. Set `api.key` or `api.existingSecret`.
-- **gsqlite3** supports a single replica; the chart refuses `replicaCount > 1` or the HPA with it.
+- **gsqlite3** supports a single replica; the chart refuses `replicaCount > 1` or the HPA with it. Use `gpgsql` or
+  `gmysql` for high availability.
 - **IPv6**: remove `[::]` from `dns.listenAddresses` (and `::` from `recursor.listenAddresses`) if your pods have IPv6 disabled.
 - `webserver.allowFrom` and `recursor.allowFrom` default to private ranges; add your pod CIDR if it uses another range (e.g. `100.64.0.0/10`).
 
@@ -238,6 +258,7 @@ Kubernetes: `>=1.27.0-0`
 | recursor.service.loadBalancerSourceRanges | list | `[]` | Source ranges allowed by the load balancer. |
 | recursor.service.port | int | `53` | Recursor DNS port. |
 | recursor.service.type | string | `"ClusterIP"` | Recursor service type. |
+| recursor.spreadAcrossNodes | bool | `true` | When `topologySpreadConstraints` is empty, spread the replicas across nodes, then zones (ScheduleAnyway). |
 | recursor.tolerations | list | `[]` | Tolerations. |
 | recursor.topologySpreadConstraints | list | `[]` | Topology spread constraints. |
 | recursor.webserver.allowFrom | list | `["127.0.0.1/32","::1/128","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16","fc00::/7"]` | Networks allowed to reach the recursor webserver. |
@@ -261,6 +282,7 @@ Kubernetes: `>=1.27.0-0`
 | serviceAccount.automount | bool | `false` | PowerDNS never talks to the Kubernetes API: the token is not mounted. |
 | serviceAccount.create | bool | `true` | Create a dedicated service account. |
 | serviceAccount.name | string | `""` | Service account name (generated when empty). |
+| spreadAcrossNodes | bool | `true` | When `topologySpreadConstraints` is empty, spread the replicas across nodes, then zones (ScheduleAnyway: never blocks scheduling). |
 | startupProbe | object | `{"failureThreshold":30,"periodSeconds":5,"tcpSocket":{"port":"dns-tcp"}}` | Startup probe. |
 | tests.image | string | `""` | Image used by `helm test` (defaults to the authoritative server image, which ships Python). |
 | tolerations | list | `[]` | Tolerations. |
@@ -269,6 +291,7 @@ Kubernetes: `>=1.27.0-0`
 | webserver.allowFrom | list | `["127.0.0.1/32","::1/128","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16","fc00::/7"]` | Networks allowed to reach the webserver. Narrow it to your pod CIDR; the API also requires the key. |
 | webserver.enabled | bool | `true` | Enable the built-in webserver (needed by the API and by the Prometheus `/metrics` endpoint). |
 | webserver.port | int | `8081` | Webserver port. |
+| zoneCacheRefreshInterval | int | `nil` | Seconds between refreshes of the list of known zones (`zone-cache-refresh-interval`). Each server only serves a zone created through another server's API after its next refresh (until then it answers REFUSED). Empty: PowerDNS default (300) with one replica, 30 with several replicas or the HPA. 0 disables the cache (a database query per uncached question). |
 
 ## License
 
