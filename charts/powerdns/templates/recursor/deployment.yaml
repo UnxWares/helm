@@ -127,8 +127,11 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with $rec.topologySpreadConstraints }}
+      {{- if $rec.topologySpreadConstraints }}
       topologySpreadConstraints:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml $rec.topologySpreadConstraints | nindent 8 }}
+      {{- else if $rec.spreadAcrossNodes }}
+      topologySpreadConstraints:
+        {{- include "powerdns.defaultSpread" (include "powerdns.recursor.selectorLabels" .) | trim | nindent 8 }}
       {{- end }}
 {{- end }}

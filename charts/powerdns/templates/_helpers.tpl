@@ -165,6 +165,33 @@ Environment variables carrying secrets into the config templates rendered by the
 {{- end }}
 
 {{/*
+Default topology spread: replicas on different nodes, then zones, without ever blocking scheduling.
+Usage: include "powerdns.defaultSpread" (include "powerdns.auth.selectorLabels" .)
+*/}}
+{{- define "powerdns.defaultSpread" -}}
+{{- range list "kubernetes.io/hostname" "topology.kubernetes.io/zone" }}
+- maxSkew: 1
+  topologyKey: {{ . }}
+  whenUnsatisfiable: ScheduleAnyway
+  labelSelector:
+    matchLabels:
+      {{- $ | nindent 6 }}
+{{- end }}
+{{- end }}
+
+{{/*
+Zone cache refresh interval: every server only learns about a zone created through another server's API when
+its zone cache is refreshed, so several servers sharing the database refresh it more often.
+*/}}
+{{- define "powerdns.zoneCacheRefreshInterval" -}}
+{{- if not (kindIs "invalid" .Values.zoneCacheRefreshInterval) }}
+{{- .Values.zoneCacheRefreshInterval }}
+{{- else if or .Values.autoscaling.enabled (gt (int .Values.replicaCount) 1) }}
+{{- 30 }}
+{{- end }}
+{{- end }}
+
+{{/*
 Validate values that would otherwise produce a broken deployment.
 */}}
 {{- define "powerdns.validate" -}}
