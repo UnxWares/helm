@@ -1,10 +1,14 @@
 version: 2
 updates:
-    # Keep the SHA-pinned GitHub Actions up to date.
+    # Keep the SHA-pinned GitHub Actions up to date: one grouped PR a month,
+    # only for releases published at least 7 days ago (lets a broken or
+    # compromised release be caught upstream before it reaches the CI).
     - package-ecosystem: github-actions
       directory: /
       schedule:
-          interval: weekly
+          interval: monthly
+      cooldown:
+          default-days: 7
       groups:
           actions:
               patterns: ["*"]
