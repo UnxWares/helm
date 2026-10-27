@@ -3,7 +3,7 @@ name: bind9
 description: A flexible and production-ready Helm chart for running ISC Bind9 DNS server on Kubernetes.
 type: application
 
-version: 2026.10.1
+version: 2026.10.2
 appVersion: "9.20"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/bind9
@@ -49,30 +49,11 @@ annotations:
     - name: bind9
       image: docker.io/internetsystemsconsortium/bind9:9.20
     - name: bind-exporter
-      image: docker.io/prometheuscommunity/bind-exporter:v0.8.0
+      image: docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf
   artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/changes: |
     - kind: security
-      description: named now drops root privileges (`-u bind`, uid 53) after binding port 53; the chart's command override used to keep it running as root.
-    - kind: security
-      description: Read-only root filesystem, every capability dropped except NET_BIND_SERVICE/SETUID/SETGID, seccomp RuntimeDefault, no service account token.
-    - kind: changed
-      description: "BREAKING: default image moves from 9.21 (ISC development branch) to 9.20 (current stable/ESV). Set image.tag: \"9.21\" to stay on the development branch."
-    - kind: changed
-      description: "BREAKING: the rndc port is no longer exposed by the Service unless service.exposeRndc is true."
-    - kind: changed
-      description: The default named.conf is now a working authoritative-only configuration (no recursion, no transfers, version hidden); named runs from /var/cache/bind.
-    - kind: fixed
-      description: The ServiceMonitor was rendered even with metrics disabled and broke installs on clusters without the Prometheus Operator CRDs.
-    - kind: fixed
-      description: The metrics port reused the rndc NodePort (service.ports.metricsNodePort added).
-    - kind: added
-      description: Volumes, volumeMounts and service annotations (PR #6), PodDisruptionBudget, NetworkPolicy, topology spread, priority class, image digests, helm test, values schema.
-      links:
-        - name: PR #6
-          url: https://github.com/UnxWares/helm/pull/6
-    - kind: changed
-      description: bind_exporter collects the server and view groups by default (tasks is deprecated).
+      description: "bind_exporter: v0.8.0 (November 2024, its latest release) was built with a Go toolchain carrying 114 known vulnerabilities. The default is now the master build of 2026-10-14, pinned by digest: the same exporter code rebuilt with a current Go toolchain and dependencies (7 known vulnerabilities). Set metrics.image.tag: v0.8.0 to keep the release."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

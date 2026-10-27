@@ -151,8 +151,8 @@ metrics:
     repository: docker.io/prometheuscommunity/bind-exporter
     # -- Exporter image pull policy.
     pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
-    # -- Exporter image tag.
-    tag: v0.8.0
+    # -- Exporter image tag. v0.8.0 (November 2024) is the latest release, built with an old Go toolchain (114 known CVEs): the default is the master build of 2026-10-14, the same exporter code rebuilt with a current Go toolchain and dependencies, pinned by digest.
+    tag: "master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf"
     # -- Exporter image digest (takes precedence over the tag).
     digest: ""
 

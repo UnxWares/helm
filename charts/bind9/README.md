@@ -1,6 +1,6 @@
 # Bind9 Helm Chart
 
-![Version: 2026.10.1](https://img.shields.io/badge/Version-2026.10.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 9.20](https://img.shields.io/badge/AppVersion-9.20-informational?style=flat-square)
+![Version: 2026.10.2](https://img.shields.io/badge/Version-2026.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 9.20](https://img.shields.io/badge/AppVersion-9.20-informational?style=flat-square)
 
 A flexible and production-ready Helm chart for running the [ISC BIND 9](https://www.isc.org/bind/) DNS server on Kubernetes,
 with the official `internetsystemsconsortium/bind9` image.
@@ -206,7 +206,7 @@ Kubernetes: `>=1.27.0-0`
 | metrics.image.digest | string | `""` | Exporter image digest (takes precedence over the tag). |
 | metrics.image.pullPolicy | string | `"IfNotPresent"` | Exporter image pull policy. |
 | metrics.image.repository | string | `"docker.io/prometheuscommunity/bind-exporter"` | Exporter image repository. |
-| metrics.image.tag | string | `"v0.8.0"` | Exporter image tag. |
+| metrics.image.tag | string | `"master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf"` | Exporter image tag. v0.8.0 (November 2024) is the latest release, built with an old Go toolchain (114 known CVEs): the default is the master build of 2026-10-14, the same exporter code rebuilt with a current Go toolchain and dependencies, pinned by digest. |
 | metrics.livenessProbe | object | `{"failureThreshold":3,"httpGet":{"path":"/","port":"metrics","scheme":"HTTP"},"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1}` | Exporter liveness probe. |
 | metrics.readinessProbe | object | `{"failureThreshold":3,"httpGet":{"path":"/","port":"metrics","scheme":"HTTP"},"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1}` | Exporter readiness probe. |
 | metrics.resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"32Mi"}}` | Exporter resources. |
