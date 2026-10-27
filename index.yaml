@@ -5,6 +5,65 @@ entries:
       artifacthub.io/category: networking
       artifacthub.io/changes: |
         - kind: security
+          description: "bind_exporter: v0.8.0 (November 2024, its latest release) was built with a Go toolchain carrying 114 known vulnerabilities. The default is now the master build of 2026-10-14, pinned by digest: the same exporter code rebuilt with a current Go toolchain and dependencies (7 known vulnerabilities). Set metrics.image.tag: v0.8.0 to keep the release."
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: ISC Bind9
+      artifacthub.io/images: |
+        - name: bind9
+          image: docker.io/internetsystemsconsortium/bind9:9.20
+        - name: bind-exporter
+          image: docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/bind9
+        - name: Upstream
+          url: https://www.isc.org/bind/
+        - name: BIND 9 documentation
+          url: https://bind9.readthedocs.io/
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: "9.20"
+    created: "2026-10-27T21:22:16.937973702Z"
+    description: A flexible and production-ready Helm chart for running ISC Bind9
+      DNS server on Kubernetes.
+    digest: cb8fb578f54d13600ed0166c9c3db4af7fba0d1fcdf4af56505531278d13dbac
+    home: https://github.com/UnxWares/helm/tree/main/charts/bind9
+    icon: https://avatars.githubusercontent.com/u/3965132?v=4
+    keywords:
+    - dns
+    - bind
+    - bind9
+    - authoritative-dns
+    - kubernetes
+    - helm
+    - network
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: bind9
+    sources:
+    - https://gitlab.isc.org/isc-projects/bind9
+    - https://github.com/isc-projects/bind9-docker
+    - https://hub.docker.com/r/internetsystemsconsortium/bind9
+    - https://github.com/UnxWares/helm/tree/main/charts/bind9
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/bind9-2026.10.2/bind9-2026.10.2.tgz
+    version: 2026.10.2
+  - annotations:
+      artifacthub.io/category: networking
+      artifacthub.io/changes: |
+        - kind: security
           description: named now drops root privileges (`-u bind`, uid 53) after binding port 53; the chart's command override used to keep it running as root.
         - kind: security
           description: Read-only root filesystem, every capability dropped except NET_BIND_SERVICE/SETUID/SETGID, seccomp RuntimeDefault, no service account token.
@@ -842,6 +901,63 @@ entries:
   - annotations:
       artifacthub.io/category: skip-prediction
       artifacthub.io/changes: |
+        - kind: security
+          description: "ExcaliDash 0.6.6: Node.js 24.22.1, patched DOMPurify, follow-redirects, proxy-addr and Alpine packages, and no more npm, npx or Yarn in the backend image (55 known vulnerabilities down to 9)."
+          links:
+            - name: ExcaliDash 0.6.6
+              url: https://github.com/ZimengXiong/ExcaliDash/releases/tag/v0.6.6
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: ExcaliDash
+      artifacthub.io/images: |
+        - name: excalidash-frontend
+          image: docker.io/zimengxiong/excalidash-frontend:0.6.6
+        - name: excalidash-backend
+          image: docker.io/zimengxiong/excalidash-backend:0.6.6
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/excalidash
+        - name: ExcaliDash documentation
+          url: https://github.com/ZimengXiong/ExcaliDash/tree/main/docs
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 0.6.6
+    created: "2026-10-27T21:22:17.161526613Z"
+    description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer
+      for Excalidraw with live collaboration features
+    digest: d81846e847a309635e53e2fafa491aa807f267efbea1e46875004d86bb1a08c7
+    home: https://github.com/UnxWares/helm/tree/main/charts/excalidash
+    icon: https://raw.githubusercontent.com/ZimengXiong/ExcaliDash/v0.6.5/docs/public/images/logo.png
+    keywords:
+    - excalidraw
+    - excali
+    - dashboard
+    - collaboration
+    - board
+    - live
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: excalidash
+    sources:
+    - https://github.com/ZimengXiong/ExcaliDash
+    - https://github.com/UnxWares/helm/tree/main/charts/excalidash
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/excalidash-2026.10.2/excalidash-2026.10.2.tgz
+    version: 2026.10.2
+  - annotations:
+      artifacthub.io/category: skip-prediction
+      artifacthub.io/changes: |
         - kind: changed
           description: ExcaliDash 0.6.5 (from 0.4.27); the images drop from 7 critical / 134 high CVEs to 2 / 27.
         - kind: fixed
@@ -1141,6 +1257,75 @@ entries:
   - annotations:
       artifacthub.io/category: monitoring-logging
       artifacthub.io/changes: |
+        - kind: security
+          description: "Kener 4.1.10. 4.1.9 fixes an authentication bypass: from 4.0.0 to 4.1.8, a percent-encoded path such as /%61pi/v4/monitors reached every /api/v4 route without an API key. If your instance was reachable from an untrusted network, follow the steps of the upstream 4.1.9 changelog."
+          links:
+            - name: Kener 4.1.9 changelog
+              url: https://kener.ing/docs/v4/changelogs/v4.1.9
+        - kind: security
+          description: Kener 4.1.10 no longer signs sessions with a built-in fallback key when KENER_SECRET_KEY is empty. The chart always sets one (generated when kener.secretKey is empty), so there is nothing to change.
+        - kind: changed
+          description: Bundled Valkey 9.1.3.
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: Kener
+      artifacthub.io/images: |
+        - name: kener
+          image: docker.io/rajnandan1/kener:4.1.10-alpine
+        - name: kener-debian
+          image: docker.io/rajnandan1/kener:4.1.10
+        - name: kener-status
+          image: docker.io/rajnandan1/kener:4.1.10-status-alpine
+        - name: kener-status-debian
+          image: docker.io/rajnandan1/kener:4.1.10-status
+        - name: valkey
+          image: docker.io/valkey/valkey:9.1.3-alpine
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/kener
+        - name: Kener documentation
+          url: https://kener.ing/docs/v4/setup/environment-variables
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 4.1.10
+    created: "2026-10-27T21:22:17.358900373Z"
+    description: Kener 4 status page with SQLite/PostgreSQL/MySQL, a bundled hardened
+      Valkey for its queues, and secure defaults for Kubernetes.
+    digest: 132e35370f84006e142b5c87cd65a9625948b51aa64f2f615637c992a04501f9
+    home: https://github.com/UnxWares/helm/tree/main/charts/kener
+    icon: https://kener.ing/logo.png
+    keywords:
+    - kener
+    - status
+    - status-page
+    - uptime
+    - monitoring
+    - incident
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: kener
+    sources:
+    - https://github.com/rajnandan1/kener
+    - https://hub.docker.com/r/rajnandan1/kener
+    - https://github.com/valkey-io/valkey
+    - https://github.com/UnxWares/helm/tree/main/charts/kener
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/kener-2026.10.2/kener-2026.10.2.tgz
+    version: 2026.10.2
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/changes: |
         - kind: changed
           description: "BREAKING: Kener 3.2.19 -> 4.1.7. Database migrations run automatically, but heartbeat URLs, the REST API (/api/v4), uploads and subscriptions changed: read the Upgrading section of the README first."
           links:
@@ -1355,6 +1540,65 @@ entries:
   - annotations:
       artifacthub.io/category: skip-prediction
       artifacthub.io/changes: |
+        - kind: security
+          description: "The nginx sidecar uses nginx-unprivileged 1.30.6-alpine-slim: the same nginx without the optional njs, xslt, image-filter and geoip modules and their libraries (52 known vulnerabilities down to 3). Set workload.nginx.image.tag: 1.30.6-alpine if your configuration loads one of these modules."
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: Laravel (generic)
+      artifacthub.io/images: |
+        - name: nginx-unprivileged
+          image: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/laravel-generic
+        - name: Laravel deployment documentation
+          url: https://laravel.com/docs/12.x/deployment
+        - name: FrankenPHP documentation
+          url: https://frankenphp.dev/docs/
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 12.x
+    created: "2026-10-27T21:22:17.532292863Z"
+    description: Run your own Laravel application image on Kubernetes (FrankenPHP,
+      or PHP-FPM with an nginx sidecar) with queue workers, scheduler, migrations
+      and hardened defaults.
+    digest: 82e5f2ad130b6c0faf834aa21b717b65e4dad319cdaaf2adce48800839706916
+    home: https://github.com/UnxWares/helm/tree/main/charts/laravel-generic
+    icon: https://avatars.githubusercontent.com/u/958072?s=200&v=4
+    keywords:
+    - laravel
+    - php
+    - frankenphp
+    - php-fpm
+    - nginx
+    - framework
+    - web
+    - application
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: laravel-generic
+    sources:
+    - https://github.com/laravel/laravel
+    - https://github.com/php/frankenphp
+    - https://github.com/nginx/docker-nginx-unprivileged
+    - https://github.com/UnxWares/helm/tree/main/charts/laravel-generic
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/laravel-generic-2026.10.2/laravel-generic-2026.10.2.tgz
+    version: 2026.10.2
+  - annotations:
+      artifacthub.io/category: skip-prediction
+      artifacthub.io/changes: |
         - kind: fixed
           description: "image.repository and image.tag (or image.digest) are now required with a clear error, instead of rendering an invalid image (`:12.x`)."
         - kind: fixed
@@ -1515,6 +1759,69 @@ entries:
     - https://github.com/UnxWares/helm/releases/download/opencloud-0.2.3/opencloud-0.2.3.tgz
     version: 0.2.3
   openeverest-database-tools:
+  - annotations:
+      artifacthub.io/category: database
+      artifacthub.io/changes: |
+        - kind: security
+          description: kubectl v1.37.2 for the wait init containers (23 known vulnerabilities down to 9).
+        - kind: changed
+          description: MySQL client 8.4.13.
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: OpenEverest Database Tools
+      artifacthub.io/images: |
+        - name: postgres-client
+          image: docker.io/library/postgres:18.6-alpine
+        - name: mysql-client
+          image: docker.io/library/mysql:8.4.13
+        - name: mongodb-client
+          image: docker.io/library/mongo:8.0.34
+        - name: kubectl
+          image: registry.k8s.io/kubectl:v1.37.2
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/openeverest-database-tools
+        - name: OpenEverest documentation
+          url: https://openeverest.io/documentation/current/
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.17.0
+    created: "2026-10-27T21:22:17.770631524Z"
+    description: Jobs that wait for an OpenEverest DatabaseCluster to be ready, then
+      create PostgreSQL, MySQL and MongoDB databases, users, grants and run init scripts.
+    digest: f35e1261ebe5c251c34a2632f9f48b6ae76f7c8e1efd438dfe209b65dd3c701e
+    home: https://github.com/UnxWares/helm/tree/main/charts/openeverest-database-tools
+    icon: https://openeverest.io/images/brandkit/icon-full-color-white-min.png
+    keywords:
+    - database
+    - initialization
+    - openeverest
+    - everest
+    - percona
+    - postgresql
+    - mysql
+    - mongodb
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: openeverest-database-tools
+    sources:
+    - https://github.com/openeverest/openeverest
+    - https://github.com/openeverest/openeverest-operator
+    - https://github.com/UnxWares/helm/tree/main/charts/openeverest-database-tools
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.10.2/openeverest-database-tools-2026.10.2.tgz
+    version: 2026.10.2
   - annotations:
       artifacthub.io/category: database
       artifacthub.io/changes: |
@@ -1972,6 +2279,77 @@ entries:
   - annotations:
       artifacthub.io/category: networking
       artifacthub.io/changes: |
+        - kind: security
+          description: PowerDNS Authoritative 5.1.5 fixes PowerDNS Security Advisory 2026-13.
+          links:
+            - name: Authoritative 5.1 changelog
+              url: https://doc.powerdns.com/authoritative/changelog/5.1.html
+        - kind: security
+          description: PowerDNS Recursor 5.4.9 (5.4.8 fixes PowerDNS Security Advisory 2026-12, multiple issues).
+          links:
+            - name: Recursor 5.4 changelog
+              url: https://doc.powerdns.com/recursor/changelog/5.4.html
+        - kind: changed
+          description: MySQL client 8.4.13 for the gmysql schema initialisation.
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: PowerDNS
+      artifacthub.io/images: |
+        - name: pdns-auth
+          image: docker.io/powerdns/pdns-auth-51:5.1.5
+        - name: pdns-recursor
+          image: docker.io/powerdns/pdns-recursor-54:5.4.9
+        - name: postgres-client
+          image: docker.io/library/postgres:18.6-alpine
+        - name: mysql-client
+          image: docker.io/library/mysql:8.4.13
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/powerdns
+        - name: PowerDNS documentation
+          url: https://doc.powerdns.com/
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 5.1.5
+    created: "2026-10-27T21:22:17.99000936Z"
+    description: PowerDNS Authoritative Server with its REST API, SQLite/PostgreSQL/MySQL
+      backends and an optional PowerDNS Recursor, hardened for Kubernetes.
+    digest: 78c2dacd68143bb96d32df26dace54d1ce08786e8984bc6ca1fd5ae1f2de3f3e
+    home: https://github.com/UnxWares/helm/tree/main/charts/powerdns
+    icon: https://raw.githubusercontent.com/PowerDNS/pdns/master/docs/common/powerdns-logo-500px.png
+    keywords:
+    - dns
+    - powerdns
+    - pdns
+    - authoritative-dns
+    - recursor
+    - dnssec
+    - external-dns
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: powerdns
+    sources:
+    - https://github.com/PowerDNS/pdns
+    - https://hub.docker.com/r/powerdns/pdns-auth-51
+    - https://hub.docker.com/r/powerdns/pdns-recursor-54
+    - https://github.com/UnxWares/helm/tree/main/charts/powerdns
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/powerdns-2026.10.3/powerdns-2026.10.3.tgz
+    version: 2026.10.3
+  - annotations:
+      artifacthub.io/category: networking
+      artifacthub.io/changes: |
         - kind: fixed
           description: With several replicas, a zone created through one replica's API was refused by the others for five minutes; servers now refresh their zone list every 30 s (zoneCacheRefreshInterval).
         - kind: fixed
@@ -2094,6 +2472,74 @@ entries:
     - https://github.com/UnxWares/helm/releases/download/powerdns-2026.10.1/powerdns-2026.10.1.tgz
     version: 2026.10.1
   taiga:
+  - annotations:
+      artifacthub.io/category: skip-prediction
+      artifacthub.io/changes: |
+        - kind: security
+          description: "The gateway uses nginx-unprivileged 1.30.6-alpine-slim: the same nginx without the optional njs, xslt, image-filter and geoip modules and their libraries (52 known vulnerabilities down to 3)."
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: Taiga
+      artifacthub.io/images: |
+        - name: taiga-back
+          image: docker.io/taigaio/taiga-back:6.10.2
+        - name: taiga-front
+          image: docker.io/taigaio/taiga-front:6.10.3
+        - name: taiga-events
+          image: docker.io/taigaio/taiga-events:6.10.0
+        - name: taiga-protected
+          image: docker.io/taigaio/taiga-protected:6.10.1
+        - name: postgres
+          image: docker.io/library/postgres:17.11-alpine
+        - name: rabbitmq
+          image: docker.io/library/rabbitmq:4.4.0-management-alpine
+        - name: nginx-unprivileged
+          image: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/taiga
+        - name: Taiga documentation
+          url: https://docs.taiga.io/
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 6.10.2
+    created: "2026-10-27T21:22:18.238037222Z"
+    description: Taiga, the open-source agile project management platform (backend,
+      async workers, events, front, protected media, bundled PostgreSQL and RabbitMQ),
+      hardened for Kubernetes.
+    digest: 76d85aec1ba05136e6f5a9d2e7b484ad88410ec4bb4dec0f7c5ce825a38f63dd
+    home: https://github.com/UnxWares/helm/tree/main/charts/taiga
+    icon: https://avatars.githubusercontent.com/u/6905422?s=200&v=4
+    keywords:
+    - taiga
+    - kanban
+    - scrum
+    - agile
+    - project-management
+    - issue-tracker
+    - collaboration
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: taiga
+    sources:
+    - https://github.com/taigaio/taiga-back
+    - https://github.com/taigaio/taiga-front
+    - https://github.com/taigaio/taiga-docker
+    - https://github.com/UnxWares/helm/tree/main/charts/taiga
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/taiga-2026.10.2/taiga-2026.10.2.tgz
+    version: 2026.10.2
   - annotations:
       artifacthub.io/category: skip-prediction
       artifacthub.io/changes: |
@@ -2494,4 +2940,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-10-25T18:33:07.372420295Z"
+generated: "2026-10-27T21:22:18.238256182Z"
