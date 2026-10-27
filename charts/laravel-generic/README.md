@@ -1,6 +1,6 @@
 # Laravel (generic) Helm Chart
 
-![Version: 2026.10.1](https://img.shields.io/badge/Version-2026.10.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 12.x](https://img.shields.io/badge/AppVersion-12.x-informational?style=flat-square)
+![Version: 2026.10.2](https://img.shields.io/badge/Version-2026.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 12.x](https://img.shields.io/badge/AppVersion-12.x-informational?style=flat-square)
 
 Run **your own [Laravel](https://laravel.com) application image** on Kubernetes, packaged by UnxWares:
 web pods (FrankenPHP, or PHP-FPM with an nginx sidecar), queue workers, scheduler and database
@@ -393,7 +393,7 @@ Kubernetes: `>=1.27.0-0`
 | workload.nginx.image.digest | string | `""` | Image digest (takes precedence over the tag). |
 | workload.nginx.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | workload.nginx.image.repository | string | `"docker.io/nginxinc/nginx-unprivileged"` | nginx image repository (must run unprivileged). |
-| workload.nginx.image.tag | string | `"1.30.6-alpine"` | nginx image tag. |
+| workload.nginx.image.tag | string | `"1.30.6-alpine-slim"` | nginx image tag. |
 | workload.nginx.ipv6 | bool | `false` | Also listen on IPv6 (dual-stack clusters). nginx fails to start in pods without IPv6. |
 | workload.nginx.lifecycle | object | `{"preStop":{"exec":{"command":["sh","-c","sleep 5"]}}}` | Lifecycle hooks of the nginx container (the sleep lets endpoints drain before nginx stops). |
 | workload.nginx.port | int | `8080` | Port nginx listens on. |

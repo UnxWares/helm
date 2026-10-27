@@ -297,7 +297,7 @@ workload:
       # -- nginx image repository (must run unprivileged).
       repository: docker.io/nginxinc/nginx-unprivileged
       # -- nginx image tag.
-      tag: "1.30.6-alpine"
+      tag: "1.30.6-alpine-slim"
       # -- Image digest (takes precedence over the tag).
       digest: ""
       # -- Image pull policy.

@@ -2,7 +2,7 @@ apiVersion: v2
 name: laravel-generic
 description: Run your own Laravel application image on Kubernetes (FrankenPHP, or PHP-FPM with an nginx sidecar) with queue workers, scheduler, migrations and hardened defaults.
 type: application
-version: 2026.10.1
+version: 2026.10.2
 # Laravel version the chart targets (informational: the image tag is always yours, see image.tag).
 appVersion: "12.x"
 kubeVersion: ">=1.27.0-0"
@@ -48,36 +48,10 @@ annotations:
       url: https://github.com/UnxWares/helm/issues
   artifacthub.io/images: |
     - name: nginx-unprivileged
-      image: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine
+      image: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim
   artifacthub.io/changes: |
-    - kind: fixed
-      description: "image.repository and image.tag (or image.digest) are now required with a clear error, instead of rendering an invalid image (`:12.x`)."
-    - kind: fixed
-      description: The web container port now comes from the runtime (FrankenPHP 8000, PHP-FPM 9000); the Service maps service.port to it. workload.runtime.* was ignored before.
-    - kind: fixed
-      description: "BREAKING: nginx now runs as a sidecar of the web pod with the fpm runtime (fastcgi_pass 127.0.0.1, public files copied from the image). The separate nginx Deployment/Service, which could never reach PHP-FPM, is removed with workload.nginx.enabled/replicaCount/service."
-    - kind: fixed
-      description: The nginx ConfigMap rendered invalid YAML.
-    - kind: fixed
-      description: The migrations Job failed on first install (release service account and PVC missing at pre-install). It now uses a hook-scoped copy of the secret and no release resource; with SQLite the web pod migrates in an init container.
-    - kind: fixed
-      description: HTTPRoute default rule matched only /headers; it now routes PathPrefix / to the Service.
-    - kind: fixed
-      description: MAIL_FROM_NAME and VITE_APP_NAME defaults used `${APP_NAME}`, which is not expanded in real environment variables; they now use `$(APP_NAME)`. The S3 region is exported as AWS_DEFAULT_REGION (read by Laravel).
-    - kind: fixed
-      description: Invalid `monitoring` category annotation replaced by Artifact Hub's skip-prediction.
     - kind: security
-      description: "APP_KEY, DB/Redis/mail passwords and AWS keys are stored in a chart-managed Secret and injected with secretKeyRef (never plain env values). APP_KEY is generated when empty, kept across upgrades and on uninstall. No default database credentials."
-    - kind: security
-      description: "BREAKING: hardened defaults on every pod: non-root (uid 33), read-only root filesystem (writable emptyDir paths seeded from the image, persistent volume for storage/app and SQLite), all capabilities dropped (NET_BIND_SERVICE kept for the FrankenPHP binary), seccomp RuntimeDefault, no service account token."
-    - kind: security
-      description: nginx image is now docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine (nginx:1.27 had 11 critical / 169 high CVEs).
-    - kind: changed
-      description: "BREAKING: standard labels with app.kubernetes.io/component on every workload (selectors changed: delete the web and queue Deployments before upgrading, see README)."
-    - kind: changed
-      description: "LOG_CHANNEL defaults to stderr; the scheduler CronJob uses concurrencyPolicy Forbid and no retry; resources requests on every container."
-    - kind: added
-      description: "Persistence (PVC kept on uninstall), writablePaths/appPath/publicPath, PodDisruptionBudget, NetworkPolicy, scheduler deployment mode (schedule:work), extraVolumes/extraVolumeMounts, initContainers, sidecars, secretEnv, preStop hooks, helm test, values schema."
+      description: "The nginx sidecar uses nginx-unprivileged 1.30.6-alpine-slim: the same nginx without the optional njs, xslt, image-filter and geoip modules and their libraries (52 known vulnerabilities down to 3). Set workload.nginx.image.tag: 1.30.6-alpine if your configuration loads one of these modules."
   artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
