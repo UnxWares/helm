@@ -46,7 +46,7 @@ spec:
       {{- end }}
       containers:
         - name: valkey
-          image: {{ include "kener.image" (dict "image" .Values.redis.image "default" "9.1.2-alpine") | quote }}
+          image: {{ include "kener.image" (dict "image" .Values.redis.image "default" "9.1.3-alpine") | quote }}
           imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
           {{- with .Values.redis.securityContext }}
           securityContext:

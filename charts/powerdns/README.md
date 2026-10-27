@@ -1,6 +1,6 @@
 # PowerDNS Helm Chart
 
-![Version: 2026.10.2](https://img.shields.io/badge/Version-2026.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 5.1.4](https://img.shields.io/badge/AppVersion-5.1.4-informational?style=flat-square)
+![Version: 2026.10.3](https://img.shields.io/badge/Version-2026.10.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 5.1.5](https://img.shields.io/badge/AppVersion-5.1.5-informational?style=flat-square)
 
 [PowerDNS Authoritative Server](https://doc.powerdns.com/authoritative/) with its REST API, packaged for
 Kubernetes by UnxWares, with an optional [PowerDNS Recursor](https://doc.powerdns.com/recursor/).
@@ -174,7 +174,7 @@ Kubernetes: `>=1.27.0-0`
 | backend.gpgsql.user | string | `"pdns"` | Database user. |
 | backend.gsqlite3.database | string | `"/var/lib/powerdns/pdns.sqlite3"` | Path of the SQLite database inside the container. |
 | backend.schemaInit.enabled | bool | `true` | Run the schema init container. |
-| backend.schemaInit.mysqlImage | string | `"docker.io/library/mysql:8.4.11"` | Client image used for gmysql. |
+| backend.schemaInit.mysqlImage | string | `"docker.io/library/mysql:8.4.13"` | Client image used for gmysql. |
 | backend.schemaInit.postgresImage | string | `"docker.io/library/postgres:18.6-alpine"` | Client image used for gpgsql. |
 | backend.schemaInit.resources | object | `{}` | Resources of the schema init containers. |
 | backend.schemaInit.timeoutSeconds | int | `120` | Seconds to wait for the database to accept connections. |
@@ -235,7 +235,7 @@ Kubernetes: `>=1.27.0-0`
 | recursor.image.digest | string | `""` | Image digest (takes precedence over the tag). |
 | recursor.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | recursor.image.repository | string | `"docker.io/powerdns/pdns-recursor-54"` | Recursor image repository. |
-| recursor.image.tag | string | `"5.4.7"` | Recursor image tag. |
+| recursor.image.tag | string | `"5.4.9"` | Recursor image tag. |
 | recursor.listenAddresses | list | `["0.0.0.0","::"]` | Addresses to bind (the port is `recursor.containerPort`). |
 | recursor.livenessProbe | object | `{"failureThreshold":4,"periodSeconds":15,"tcpSocket":{"port":"dns-tcp"},"timeoutSeconds":3}` | Liveness probe. |
 | recursor.metrics.serviceMonitor.enabled | bool | `false` | Create a ServiceMonitor for the recursor. |

@@ -276,7 +276,7 @@
                     "type": "string"
                 },
                 "tag": {
-                    "description": "Image tag. Empty builds it from the chart appVersion, `kener.basePath` and `image.variant` (`4.1.7-alpine`, `4.1.7`, `4.1.7-status-alpine`...).",
+                    "description": "Image tag. Empty builds it from the chart appVersion, `kener.basePath` and `image.variant` (`4.1.10-alpine`, `4.1.10`, `4.1.10-status-alpine`...).",
                     "type": "string"
                 },
                 "variant": {

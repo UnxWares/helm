@@ -1,6 +1,6 @@
 # Taiga Helm Chart
 
-![Version: 2026.10.1](https://img.shields.io/badge/Version-2026.10.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 6.10.2](https://img.shields.io/badge/AppVersion-6.10.2-informational?style=flat-square)
+![Version: 2026.10.2](https://img.shields.io/badge/Version-2026.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 6.10.2](https://img.shields.io/badge/AppVersion-6.10.2-informational?style=flat-square)
 
 [Taiga](https://taiga.io/) is an open-source project management platform for agile teams (Scrum, Kanban, issues,
 wiki). This chart deploys the whole stack of [taiga-docker](https://github.com/taigaio/taiga-docker): backend API,
@@ -360,7 +360,7 @@ Kubernetes: `>=1.27.0-0`
 | gateway.extraVolumes | list | `[]` |  |
 | gateway.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | gateway.image.repository | string | `"docker.io/nginxinc/nginx-unprivileged"` | Gateway image (unprivileged nginx, listens on 8080). |
-| gateway.image.tag | string | `"1.30.6-alpine"` | Image tag (nginx stable branch). |
+| gateway.image.tag | string | `"1.30.6-alpine-slim"` | Image tag (nginx stable branch). |
 | gateway.livenessProbe.httpGet.path | string | `"/"` |  |
 | gateway.livenessProbe.httpGet.port | string | `"http"` |  |
 | gateway.nodeSelector | object | `{}` |  |

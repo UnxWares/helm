@@ -1,6 +1,6 @@
 # OpenEverest Database Tools Helm Chart
 
-![Version: 2026.10.1](https://img.shields.io/badge/Version-2026.10.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.17.0](https://img.shields.io/badge/AppVersion-1.17.0-informational?style=flat-square)
+![Version: 2026.10.2](https://img.shields.io/badge/Version-2026.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.17.0](https://img.shields.io/badge/AppVersion-1.17.0-informational?style=flat-square)
 
 Database initialization Jobs for [OpenEverest](https://openeverest.io) by UnxWares. Each Job waits until an
 OpenEverest `DatabaseCluster` is ready, then creates databases, users and grants and runs your init scripts on
@@ -292,13 +292,13 @@ Kubernetes: `>=1.27.0-0`
 | global.waitTimeoutSeconds | int | `300` | Timeout of each wait step (creation, then readiness), in seconds. |
 | image.kubectl.digest | string | `""` | kubectl image digest (`sha256:...`). |
 | image.kubectl.repository | string | `"registry.k8s.io/kubectl"` | kubectl image repository (distroless, used by the wait init containers). |
-| image.kubectl.tag | string | `"v1.37.1"` | kubectl image tag. |
+| image.kubectl.tag | string | `"v1.37.2"` | kubectl image tag. |
 | image.mongodb.digest | string | `""` | MongoDB client image digest (`sha256:...`). |
 | image.mongodb.repository | string | `"docker.io/library/mongo"` | MongoDB client image repository (mongosh). |
 | image.mongodb.tag | string | `"8.0.34"` | MongoDB client image tag. |
 | image.mysql.digest | string | `""` | MySQL client image digest (`sha256:...`). |
 | image.mysql.repository | string | `"docker.io/library/mysql"` | MySQL client image repository (mysql). |
-| image.mysql.tag | string | `"8.4.11"` | MySQL client image tag. |
+| image.mysql.tag | string | `"8.4.13"` | MySQL client image tag. |
 | image.postgresql.digest | string | `""` | PostgreSQL client image digest (`sha256:...`). |
 | image.postgresql.repository | string | `"docker.io/library/postgres"` | PostgreSQL client image repository (psql). |
 | image.postgresql.tag | string | `"18.6-alpine"` | PostgreSQL client image tag. |

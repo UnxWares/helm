@@ -82,7 +82,7 @@ backend:
     # -- Client image used for gpgsql.
     postgresImage: docker.io/library/postgres:18.6-alpine
     # -- Client image used for gmysql.
-    mysqlImage: docker.io/library/mysql:8.4.11
+    mysqlImage: docker.io/library/mysql:8.4.13
     # -- Resources of the schema init containers.
     resources: {}
 
@@ -313,7 +313,7 @@ recursor:
     # -- Recursor image repository.
     repository: docker.io/powerdns/pdns-recursor-54
     # -- Recursor image tag.
-    tag: "5.4.7"
+    tag: "5.4.9"
     # -- Image digest (takes precedence over the tag).
     digest: ""
     # -- Image pull policy.

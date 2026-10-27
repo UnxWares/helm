@@ -2,8 +2,8 @@ apiVersion: v2
 name: excalidash
 description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer for Excalidraw with live collaboration features
 type: application
-version: 2026.10.1
-appVersion: "0.6.5"
+version: 2026.10.2
+appVersion: "0.6.6"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/excalidash
 icon: https://raw.githubusercontent.com/ZimengXiong/ExcaliDash/v0.6.5/docs/public/images/logo.png
@@ -41,27 +41,16 @@ annotations:
       url: https://github.com/UnxWares/helm/issues
   artifacthub.io/images: |
     - name: excalidash-frontend
-      image: docker.io/zimengxiong/excalidash-frontend:0.6.5
+      image: docker.io/zimengxiong/excalidash-frontend:0.6.6
     - name: excalidash-backend
-      image: docker.io/zimengxiong/excalidash-backend:0.6.5
+      image: docker.io/zimengxiong/excalidash-backend:0.6.6
   artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/changes: |
-    - kind: changed
-      description: ExcaliDash 0.6.5 (from 0.4.27); the images drop from 7 critical / 134 high CVEs to 2 / 27.
-    - kind: fixed
-      description: The SQLite database had no volume and was lost at every restart; /app/prisma is now persisted by default.
-    - kind: fixed
-      description: The Ingress sent /api straight to the backend without stripping the prefix; everything now goes through the frontend proxy, like upstream.
-    - kind: fixed
-      description: Enabling httpRoute failed (undefined service port, non-existent service) and its default rule only matched /headers.
     - kind: security
-      description: JWT/CSRF secrets and the API key pepper are generated once and kept in a Secret; the database URL and OIDC client secret are no longer plain environment values.
-    - kind: security
-      description: Non-root pods (frontend uid 101, backend uid 1001), no capabilities, seccomp RuntimeDefault, read-only root filesystem for the frontend, no service account token.
-    - kind: added
-      description: Auth mode and OIDC settings, PostgreSQL provider, startup probe, NetworkPolicy isolating the backend, helm test, values schema.
-    - kind: removed
-      description: "BREAKING: backend autoscaling (Socket.IO state is in memory, the backend runs a single replica)."
+      description: "ExcaliDash 0.6.6: Node.js 24.22.1, patched DOMPurify, follow-redirects, proxy-addr and Alpine packages, and no more npm, npx or Yarn in the backend image (55 known vulnerabilities down to 9)."
+      links:
+        - name: ExcaliDash 0.6.6
+          url: https://github.com/ZimengXiong/ExcaliDash/releases/tag/v0.6.6
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

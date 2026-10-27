@@ -802,7 +802,7 @@ gateway:
     # -- Gateway image (unprivileged nginx, listens on 8080).
     repository: docker.io/nginxinc/nginx-unprivileged
     # -- Image tag (nginx stable branch).
-    tag: 1.30.6-alpine
+    tag: 1.30.6-alpine-slim
     # -- Image pull policy.
     pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
 

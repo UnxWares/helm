@@ -2,7 +2,7 @@ apiVersion: v2
 name: taiga
 description: Taiga, the open-source agile project management platform (backend, async workers, events, front, protected media, bundled PostgreSQL and RabbitMQ), hardened for Kubernetes.
 type: application
-version: 2026.10.1
+version: 2026.10.2
 appVersion: "6.10.2"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/taiga
@@ -56,33 +56,11 @@ annotations:
     - name: rabbitmq
       image: docker.io/library/rabbitmq:4.4.0-management-alpine
     - name: nginx-unprivileged
-      image: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine
+      image: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim
   artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/changes: |
-    - kind: changed
-      description: Taiga 6.10 (back 6.10.2, front 6.10.3, events 6.10.0, protected 6.10.1), pinned tags instead of latest.
     - kind: security
-      description: "Bundled services upgraded from end-of-life releases: PostgreSQL 12.3 to 17.11, RabbitMQ 3.8 to 4.4.0, nginx 1.19 to nginx-unprivileged 1.30.6 (hundreds of CVEs removed)."
-    - kind: security
-      description: Secrets are generated and kept across upgrades (no more changeme defaults) and reach containers through secretKeyRef only; broker URLs are built with $(VAR) expansion.
-    - kind: security
-      description: Gateway, PostgreSQL and RabbitMQ run as non-root with a read-only root filesystem; Taiga containers keep only the capabilities their entrypoints need; no service account token.
-    - kind: fixed
-      description: The backend used the async broker credentials for the events broker.
-    - kind: fixed
-      description: Django static files (admin) are served without a ReadWriteMany volume, copied from the backend image by the gateway.
-    - kind: fixed
-      description: Media volume enabled by default and mounted by backend, async and gateway, so attachments and exports can be downloaded (pods co-located when the volume is ReadWriteOnce).
-    - kind: fixed
-      description: Duplicate probe keys when overriding probes; protected now honours the sub-path.
-    - kind: fixed
-      description: taiga-events connects to RabbitMQ 4 (its client asked for a frame_max below the 8192 minimum) and honours the events broker vhost.
-    - kind: changed
-      description: Bundled PostgreSQL persistence enabled by default; RabbitMQ 4 data uses a new sub-path and the deprecated transient non-exclusive queues Celery needs are allowed.
-    - kind: changed
-      description: Telemetry disabled by default.
-    - kind: added
-      description: Gateway API HTTPRoute, startup probes, per-component security contexts and values schema.
+      description: "The gateway uses nginx-unprivileged 1.30.6-alpine-slim: the same nginx without the optional njs, xslt, image-filter and geoip modules and their libraries (52 known vulnerabilities down to 3)."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc
