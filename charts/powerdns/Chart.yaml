@@ -2,8 +2,8 @@ apiVersion: v2
 name: powerdns
 description: PowerDNS Authoritative Server with its REST API, SQLite/PostgreSQL/MySQL backends and an optional PowerDNS Recursor, hardened for Kubernetes.
 type: application
-version: 2026.10.2
-appVersion: "5.1.4"
+version: 2026.10.3
+appVersion: "5.1.5"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/powerdns
 icon: https://raw.githubusercontent.com/PowerDNS/pdns/master/docs/common/powerdns-logo-500px.png
@@ -44,20 +44,27 @@ annotations:
       url: https://github.com/UnxWares/helm/issues
   artifacthub.io/images: |
     - name: pdns-auth
-      image: docker.io/powerdns/pdns-auth-51:5.1.4
+      image: docker.io/powerdns/pdns-auth-51:5.1.5
     - name: pdns-recursor
-      image: docker.io/powerdns/pdns-recursor-54:5.4.7
+      image: docker.io/powerdns/pdns-recursor-54:5.4.9
     - name: postgres-client
       image: docker.io/library/postgres:18.6-alpine
     - name: mysql-client
-      image: docker.io/library/mysql:8.4.11
+      image: docker.io/library/mysql:8.4.13
+  artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/changes: |
-    - kind: fixed
-      description: With several replicas, a zone created through one replica's API was refused by the others for five minutes; servers now refresh their zone list every 30 s (zoneCacheRefreshInterval).
-    - kind: fixed
-      description: Replicas starting together on an empty database no longer fail on the schema creation.
-    - kind: added
-      description: Replicas are spread across nodes, then zones, by default (spreadAcrossNodes); README section on high availability.
+    - kind: security
+      description: PowerDNS Authoritative 5.1.5 fixes PowerDNS Security Advisory 2026-13.
+      links:
+        - name: Authoritative 5.1 changelog
+          url: https://doc.powerdns.com/authoritative/changelog/5.1.html
+    - kind: security
+      description: PowerDNS Recursor 5.4.9 (5.4.8 fixes PowerDNS Security Advisory 2026-12, multiple issues).
+      links:
+        - name: Recursor 5.4 changelog
+          url: https://doc.powerdns.com/recursor/changelog/5.4.html
+    - kind: changed
+      description: MySQL client 8.4.13 for the gmysql schema initialisation.
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc
