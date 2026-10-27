@@ -68,7 +68,7 @@ networkPolicy:
 ### Under `/status` with the Gateway API
 
 The base path is compiled into the Kener image: the chart picks the upstream `-status` image
-(`4.1.7-status-alpine`) when `kener.basePath` is `/status`. Any other path needs your own build
+(`4.1.10-status-alpine`) when `kener.basePath` is `/status`. Any other path needs your own build
 (`KENER_BASE_PATH` build argument) in `image.tag`.
 
 ```yaml
@@ -172,6 +172,14 @@ added under `restricted`). HTTP, TCP, DNS, SSL, SQL, gRPC and heartbeat monitors
   tolerates 2 minutes; raise `livenessProbe.failureThreshold` for very large databases.
 
 ## Upgrading
+
+### To 2026.10.2 (Kener 4.1.10)
+
+Security release, no value to change. Kener 4.1.9 fixes an authentication bypass: from 4.0.0 to 4.1.8, a
+percent-encoded path such as `/%61pi/v4/monitors` reached every `/api/v4` route without an API key. If the instance
+was reachable from an untrusted network, follow the steps of the
+[4.1.9 changelog](https://kener.ing/docs/v4/changelogs/v4.1.9): look for such requests in the access logs, review
+monitors, incidents and pages, and rotate the tokens stored in monitors.
 
 ### From 2026.2.x (Kener 3.2.19) to 2026.10.1 (Kener 4.1.7)
 

@@ -1,6 +1,6 @@
 # Kener Helm Chart
 
-![Version: 2026.10.1](https://img.shields.io/badge/Version-2026.10.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.1.7](https://img.shields.io/badge/AppVersion-4.1.7-informational?style=flat-square)
+![Version: 2026.10.2](https://img.shields.io/badge/Version-2026.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.1.10](https://img.shields.io/badge/AppVersion-4.1.10-informational?style=flat-square)
 
 [Kener](https://kener.ing) is an open source status page: monitors (HTTP, TCP, DNS, ping, SSL, SQL, gRPC,
 heartbeat...), incidents, maintenances and subscriptions. This chart, maintained by UnxWares, runs Kener 4 on
@@ -68,7 +68,7 @@ networkPolicy:
 ### Under `/status` with the Gateway API
 
 The base path is compiled into the Kener image: the chart picks the upstream `-status` image
-(`4.1.7-status-alpine`) when `kener.basePath` is `/status`. Any other path needs your own build
+(`4.1.10-status-alpine`) when `kener.basePath` is `/status`. Any other path needs your own build
 (`KENER_BASE_PATH` build argument) in `image.tag`.
 
 ```yaml
@@ -173,6 +173,14 @@ added under `restricted`). HTTP, TCP, DNS, SSL, SQL, gRPC and heartbeat monitors
 
 ## Upgrading
 
+### To 2026.10.2 (Kener 4.1.10)
+
+Security release, no value to change. Kener 4.1.9 fixes an authentication bypass: from 4.0.0 to 4.1.8, a
+percent-encoded path such as `/%61pi/v4/monitors` reached every `/api/v4` route without an API key. If the instance
+was reachable from an untrusted network, follow the steps of the
+[4.1.9 changelog](https://kener.ing/docs/v4/changelogs/v4.1.9): look for such requests in the access logs, review
+monitors, incidents and pages, and rotate the tokens stored in monitors.
+
 ### From 2026.2.x (Kener 3.2.19) to 2026.10.1 (Kener 4.1.7)
 
 Kener 4 is a major release. Back up the database first (the PVC mounted on `/app/database`, or your
@@ -263,7 +271,7 @@ Kubernetes: `>=1.27.0-0`
 | image.digest | string | `""` | Image digest (`sha256:...`). When set, it takes precedence over the tag. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | image.repository | string | `"docker.io/rajnandan1/kener"` | Kener image repository. |
-| image.tag | string | `""` | Image tag. Empty builds it from the chart appVersion, `kener.basePath` and `image.variant` (`4.1.7-alpine`, `4.1.7`, `4.1.7-status-alpine`...). |
+| image.tag | string | `""` | Image tag. Empty builds it from the chart appVersion, `kener.basePath` and `image.variant` (`4.1.10-alpine`, `4.1.10`, `4.1.10-status-alpine`...). |
 | image.variant | string | `"alpine"` | Base of the published image when `image.tag` is empty: `alpine` (node:24-alpine, far fewer known CVEs) or `debian` (node:24-slim, the upstream default). |
 | imagePullSecrets | list | `[]` | Secrets for pulling images from a private registry. |
 | ingress.annotations | object | `{}` | Ingress annotations. |
@@ -314,7 +322,7 @@ Kubernetes: `>=1.27.0-0`
 | redis.image.digest | string | `""` | Image digest (takes precedence over the tag). |
 | redis.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | redis.image.repository | string | `"docker.io/valkey/valkey"` | Valkey image repository. |
-| redis.image.tag | string | `"9.1.2-alpine"` | Valkey image tag. |
+| redis.image.tag | string | `"9.1.3-alpine"` | Valkey image tag. |
 | redis.livenessProbe | object | `{"failureThreshold":4,"periodSeconds":15,"tcpSocket":{"port":"redis"},"timeoutSeconds":3}` | Valkey liveness probe. |
 | redis.nodeSelector | object | `{}` | Node selector. |
 | redis.persistence.accessModes | list | `["ReadWriteOnce"]` | Access modes. |
