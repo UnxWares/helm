@@ -1,6 +1,6 @@
 # Kener Helm Chart
 
-![Version: 2026.10.2](https://img.shields.io/badge/Version-2026.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.1.10](https://img.shields.io/badge/AppVersion-4.1.10-informational?style=flat-square)
+![Version: 2026.10.3](https://img.shields.io/badge/Version-2026.10.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.1.10](https://img.shields.io/badge/AppVersion-4.1.10-informational?style=flat-square)
 
 [Kener](https://kener.ing) is an open source status page: monitors (HTTP, TCP, DNS, ping, SSL, SQL, gRPC,
 heartbeat...), incidents, maintenances and subscriptions. This chart, maintained by UnxWares, runs Kener 4 on
@@ -168,6 +168,9 @@ added under `restricted`). HTTP, TCP, DNS, SSL, SQL, gRPC and heartbeat monitors
   is embedded in `REDIS_URL`, so it is limited to `A-Z a-z 0-9 . _ ~ -`.
 - **`NODE_OPTIONS`**: the image sets `--experimental-strip-types`, which Kener needs to load its migrations. The chart
   refuses an `extraEnv` `NODE_OPTIONS` without it.
+- **Images**: a default install runs `docker.io/rajnandan1/kener:<appVersion>-alpine` and `docker.io/valkey/valkey`.
+  The Debian variant (`image.variant: debian`, `<appVersion>`) and the `/status` variants (`-status-alpine`,
+  `-status`) are only pulled when selected; the Artifact Hub security report covers the default images.
 - **Large SQLite upgrades**: migrations block the process at the first start of a new version. The liveness probe
   tolerates 2 minutes; raise `livenessProbe.failureThreshold` for very large databases.
 

@@ -2,7 +2,7 @@ apiVersion: v2
 name: kener
 description: Kener 4 status page with SQLite/PostgreSQL/MySQL, a bundled hardened Valkey for its queues, and secure defaults for Kubernetes.
 type: application
-version: 2026.10.2
+version: 2026.10.3
 appVersion: "4.1.10"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/kener
@@ -44,24 +44,11 @@ annotations:
   artifacthub.io/images: |
     - name: kener
       image: docker.io/rajnandan1/kener:4.1.10-alpine
-    - name: kener-debian
-      image: docker.io/rajnandan1/kener:4.1.10
-    - name: kener-status
-      image: docker.io/rajnandan1/kener:4.1.10-status-alpine
-    - name: kener-status-debian
-      image: docker.io/rajnandan1/kener:4.1.10-status
     - name: valkey
       image: docker.io/valkey/valkey:9.1.3-alpine
   artifacthub.io/changes: |
-    - kind: security
-      description: "Kener 4.1.10. 4.1.9 fixes an authentication bypass: from 4.0.0 to 4.1.8, a percent-encoded path such as /%61pi/v4/monitors reached every /api/v4 route without an API key. If your instance was reachable from an untrusted network, follow the steps of the upstream 4.1.9 changelog."
-      links:
-        - name: Kener 4.1.9 changelog
-          url: https://kener.ing/docs/v4/changelogs/v4.1.9
-    - kind: security
-      description: Kener 4.1.10 no longer signs sessions with a built-in fallback key when KENER_SECRET_KEY is empty. The chart always sets one (generated when kener.secretKey is empty), so there is nothing to change.
     - kind: changed
-      description: Bundled Valkey 9.1.3.
+      description: The Artifact Hub images annotation lists the images of a default install only (Kener Alpine and Valkey). The security report used to add up the Debian and /status variants, which are only pulled when selected; the README lists them.
   artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
