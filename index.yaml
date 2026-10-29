@@ -2336,6 +2336,70 @@ entries:
       artifacthub.io/category: networking
       artifacthub.io/changes: |
         - kind: changed
+          description: "Default images move to ghcr.io/unxwares/pdns-auth and pdns-recursor (imageProvider: unxwares): the same PowerDNS versions built from the release tarballs on current Alpine bases and rebuilt every week, with the same user, paths and startup script. imageProvider: upstream keeps the official Debian images."
+          links:
+            - name: UnxWares images
+              url: https://github.com/UnxWares/helm/tree/main/images
+        - kind: security
+          description: Known vulnerabilities of the images (Trivy) drop from 539 to 0 for the authoritative server and from 352 to 0 for the recursor.
+        - kind: fixed
+          description: "The recursor answered SERVFAIL (EDE 10, RRSIGs missing) for recursor.authoritativeZones without a public DNSSEC chain of trust: they are now negative trust anchors, unless recursor.validateAuthoritativeZones is true."
+        - kind: changed
+          description: "The PostgreSQL client of the gpgsql schema init follows imageProvider (ghcr.io/unxwares/postgres by default)."
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: PowerDNS
+      artifacthub.io/images: |
+        - name: pdns-auth
+          image: ghcr.io/unxwares/pdns-auth:5.1.5
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/powerdns
+        - name: PowerDNS documentation
+          url: https://doc.powerdns.com/
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 5.1.5
+    created: "2026-10-29T18:06:51.036610725Z"
+    description: PowerDNS Authoritative Server with its REST API, SQLite/PostgreSQL/MySQL
+      backends and an optional PowerDNS Recursor, hardened for Kubernetes.
+    digest: 374a77357fdc69f113e71fd904580090afb04636972a31e045e0bff3fd8a1702
+    home: https://github.com/UnxWares/helm/tree/main/charts/powerdns
+    icon: https://raw.githubusercontent.com/PowerDNS/pdns/master/docs/common/powerdns-logo-500px.png
+    keywords:
+    - dns
+    - powerdns
+    - pdns
+    - authoritative-dns
+    - recursor
+    - dnssec
+    - external-dns
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: powerdns
+    sources:
+    - https://github.com/PowerDNS/pdns
+    - https://hub.docker.com/r/powerdns/pdns-auth-51
+    - https://hub.docker.com/r/powerdns/pdns-recursor-54
+    - https://github.com/UnxWares/helm/tree/main/charts/powerdns
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/powerdns-2026.10.5/powerdns-2026.10.5.tgz
+    version: 2026.10.5
+  - annotations:
+      artifacthub.io/category: networking
+      artifacthub.io/changes: |
+        - kind: changed
           description: The Artifact Hub images annotation lists the images of a default install only (PowerDNS Authoritative with gsqlite3). The security report used to add up the Recursor and the PostgreSQL/MySQL client images, which are only pulled when enabled; the README lists them.
       artifacthub.io/containsSecurityUpdates: "true"
       artifacthub.io/displayName: PowerDNS
@@ -3132,4 +3196,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-10-29T16:39:47.664367941Z"
+generated: "2026-10-29T18:06:51.0367569Z"
