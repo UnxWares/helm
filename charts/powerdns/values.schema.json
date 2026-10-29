@@ -165,7 +165,7 @@
                             "type": "string"
                         },
                         "postgresImage": {
-                            "description": "Client image used for gpgsql.",
+                            "description": "Client image used for gpgsql. Empty: `ghcr.io/unxwares/postgres:18.6-alpine` or `docker.io/library/postgres:18.6-alpine`, from `imageProvider`.",
                             "type": "string"
                         },
                         "resources": {
@@ -258,7 +258,7 @@
                     ]
                 },
                 "repository": {
-                    "description": "Authoritative server image repository.",
+                    "description": "Authoritative server image repository. Empty: `ghcr.io/unxwares/pdns-auth` or `docker.io/powerdns/pdns-auth-51`, from `imageProvider`.",
                     "type": "string"
                 },
                 "tag": {
@@ -266,6 +266,14 @@
                     "type": "string"
                 }
             }
+        },
+        "imageProvider": {
+            "description": "Images used when `image.repository`, `recursor.image.repository` or `backend.schemaInit.postgresImage` are empty. `unxwares`: `ghcr.io/unxwares` images, PowerDNS built from the release tarballs on current Alpine bases and rebuilt every week (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the official `docker.io/powerdns` images (Debian) and `docker.io/library/postgres`. Both run as the same `pdns` user with the same paths and startup script.",
+            "type": "string",
+            "enum": [
+                "unxwares",
+                "upstream"
+            ]
         },
         "imagePullSecrets": {
             "description": "Secrets for pulling images from a private registry.",
@@ -491,7 +499,7 @@
                             ]
                         },
                         "repository": {
-                            "description": "Recursor image repository.",
+                            "description": "Recursor image repository. Empty: `ghcr.io/unxwares/pdns-recursor` or `docker.io/powerdns/pdns-recursor-54`, from `imageProvider`.",
                             "type": "string"
                         },
                         "tag": {
@@ -626,6 +634,10 @@
                 "topologySpreadConstraints": {
                     "description": "Topology spread constraints.",
                     "type": "array"
+                },
+                "validateAuthoritativeZones": {
+                    "description": "Validate the `authoritativeZones` with DNSSEC. Leave it off unless these zones are signed and delegated from the public root with a DS record: otherwise validation answers SERVFAIL for them, so the chart adds them as negative trust anchors.",
+                    "type": "boolean"
                 },
                 "webserver": {
                     "type": "object",

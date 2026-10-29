@@ -1,0 +1,8 @@
+# Same as default-values.yaml on the official powerdns images.
+imageProvider: upstream
+recursor:
+  enabled: true
+  authoritativeZones:
+    - example.test
+networkPolicy:
+  enabled: true

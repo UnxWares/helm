@@ -22,6 +22,15 @@
 {{- with $rec.forwardZonesRecurse }}
 {{- $_ := set $config.recursor "forward_zones_recurse" (list (dict "zone" "." "forwarders" .)) }}
 {{- end }}
+{{- /* Zones of the authoritative server have no DNSSEC chain of trust unless they are signed and delegated with a DS
+from the public root: without a negative trust anchor, validation answers SERVFAIL (EDE 10, RRSIGs missing). */}}
+{{- if and $rec.authoritativeZones (not $rec.validateAuthoritativeZones) }}
+{{- $anchors := list }}
+{{- range $rec.authoritativeZones }}
+{{- $anchors = append $anchors (dict "name" . "reason" "served by the PowerDNS authoritative server of this release") }}
+{{- end }}
+{{- $_ := set $config.dnssec "negative_trustanchors" $anchors }}
+{{- end }}
 {{- $config = mergeOverwrite $config (deepCopy $rec.config) }}
 apiVersion: v1
 kind: ConfigMap

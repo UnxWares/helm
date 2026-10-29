@@ -88,15 +88,27 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Render an image reference from {repository, tag, digest}. Usage:
-{{ include "powerdns.image" (dict "image" .Values.image "default" .Chart.AppVersion) }}
+Render an image reference from {repository, tag, digest}; an empty repository follows imageProvider. Usage:
+{{ include "powerdns.image" (dict "ctx" . "name" "pdns-auth" "image" .Values.image "default" .Chart.AppVersion) }}
 */}}
 {{- define "powerdns.image" -}}
-{{- if .image.digest -}}
-{{- printf "%s@%s" .image.repository .image.digest -}}
-{{- else -}}
-{{- printf "%s:%s" .image.repository (.image.tag | default .default | toString) -}}
+{{- $repository := .image.repository -}}
+{{- if not $repository -}}
+{{- $upstream := dict "pdns-auth" "docker.io/powerdns/pdns-auth-51" "pdns-recursor" "docker.io/powerdns/pdns-recursor-54" -}}
+{{- $repository = ternary (printf "ghcr.io/unxwares/%s" .name) (get $upstream .name) (eq .ctx.Values.imageProvider "unxwares") -}}
 {{- end -}}
+{{- if .image.digest -}}
+{{- printf "%s@%s" $repository .image.digest -}}
+{{- else -}}
+{{- printf "%s:%s" $repository (.image.tag | default .default | toString) -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+PostgreSQL client image of the gpgsql schema init container.
+*/}}
+{{- define "powerdns.postgresImage" -}}
+{{- .Values.backend.schemaInit.postgresImage | default (printf "%s:18.6-alpine" (ternary "ghcr.io/unxwares/postgres" "docker.io/library/postgres" (eq .Values.imageProvider "unxwares"))) -}}
 {{- end }}
 
 {{/*
