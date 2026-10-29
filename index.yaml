@@ -2586,6 +2586,87 @@ entries:
   - annotations:
       artifacthub.io/category: skip-prediction
       artifacthub.io/changes: |
+        - kind: changed
+          description: "Default images move to ghcr.io/unxwares (global.imageProvider: unxwares): the same Taiga versions rebuilt every week from the upstream sources on current Alpine bases. global.imageProvider: upstream keeps the official images."
+          links:
+            - name: UnxWares images
+              url: https://github.com/UnxWares/helm/tree/main/images
+        - kind: security
+          description: Known vulnerabilities of the images (Trivy) drop from about 1,200 to 18, Django 3.2 and bleach 4 in taiga-back, which need changes in Taiga itself.
+        - kind: security
+          description: "taiga-back includes the upstream security fixes not released yet: permissions of the filters data endpoints and of epic custom attribute values, password recovery tokens invalidated on password and email change and expiring, maximum password length, no account enumeration in password recovery."
+        - kind: security
+          description: With the UnxWares images every Taiga pod runs as non-root with a read-only root filesystem and no capability (the official images need CHOWN, DAC_OVERRIDE, FOWNER, SETUID and SETGID).
+        - kind: changed
+          description: "OIDC needs no override image with the UnxWares images (plugin built in): global.oidc.*.overrideImage now default to empty (the former latest-oidc images were Taiga 6.9)."
+        - kind: added
+          description: /tmp volumes for the Taiga containers, and a pod volume for media when global.persistence.media is disabled.
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: Taiga
+      artifacthub.io/images: |
+        - name: taiga-back
+          image: ghcr.io/unxwares/taiga-back:6.10.2
+        - name: taiga-front
+          image: ghcr.io/unxwares/taiga-front:6.10.3
+        - name: taiga-events
+          image: ghcr.io/unxwares/taiga-events:6.10.0
+        - name: taiga-protected
+          image: ghcr.io/unxwares/taiga-protected:6.10.1
+        - name: postgres
+          image: ghcr.io/unxwares/postgres:17.11-alpine
+        - name: rabbitmq
+          image: docker.io/library/rabbitmq:4.4.0-management-alpine
+        - name: nginx-unprivileged
+          image: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/taiga
+        - name: Taiga documentation
+          url: https://docs.taiga.io/
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 6.10.2
+    created: "2026-10-29T16:39:47.66420813Z"
+    description: Taiga, the open-source agile project management platform (backend,
+      async workers, events, front, protected media, bundled PostgreSQL and RabbitMQ),
+      hardened for Kubernetes.
+    digest: 0c64b62fe58ceb95581cdd2e7b6c5e6f7cc3461ec35a83466ad85c00f531f3c0
+    home: https://github.com/UnxWares/helm/tree/main/charts/taiga
+    icon: https://avatars.githubusercontent.com/u/6905422?s=200&v=4
+    keywords:
+    - taiga
+    - kanban
+    - scrum
+    - agile
+    - project-management
+    - issue-tracker
+    - collaboration
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: taiga
+    sources:
+    - https://github.com/taigaio/taiga-back
+    - https://github.com/taigaio/taiga-front
+    - https://github.com/taigaio/taiga-docker
+    - https://github.com/UnxWares/helm/tree/main/charts/taiga
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/taiga-2026.10.3/taiga-2026.10.3.tgz
+    version: 2026.10.3
+  - annotations:
+      artifacthub.io/category: skip-prediction
+      artifacthub.io/changes: |
         - kind: security
           description: "The gateway uses nginx-unprivileged 1.30.6-alpine-slim: the same nginx without the optional njs, xslt, image-filter and geoip modules and their libraries (52 known vulnerabilities down to 3)."
       artifacthub.io/containsSecurityUpdates: "true"
@@ -3051,4 +3132,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-10-29T10:58:55.364167132Z"
+generated: "2026-10-29T16:39:47.664367941Z"
