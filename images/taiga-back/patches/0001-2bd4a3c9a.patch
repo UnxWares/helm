@@ -1,0 +1,271 @@
+From 2bd4a3c9a63a41974425c4b58b40135f81a086b4 Mon Sep 17 00:00:00 2001
+From: seralot <sergioao@pm.me>
+Date: Mon, 13 Jul 2026 15:52:03 +0200
+Subject: [PATCH] fix: protect filters data endpoints
+
+---
+ taiga/projects/epics/api.py               |  1 +
+ taiga/projects/epics/permissions.py       |  2 +-
+ taiga/projects/issues/api.py              |  1 +
+ taiga/projects/issues/permissions.py      |  2 +-
+ taiga/projects/tasks/api.py               |  1 +
+ taiga/projects/tasks/permissions.py       |  2 +-
+ taiga/projects/userstories/api.py         |  1 +
+ taiga/projects/userstories/permissions.py |  2 +-
+ tests/integration/test_epics.py           | 20 ++++++++++++++
+ tests/integration/test_issues.py          | 32 ++++++++++++++---------
+ tests/integration/test_tasks.py           | 20 ++++++++++++++
+ tests/integration/test_userstories.py     | 21 ++++++++++++++-
+ 12 files changed, 88 insertions(+), 17 deletions(-)
+
+diff --git a/taiga/projects/epics/api.py b/taiga/projects/epics/api.py
+index 905692ace..2b8d6d04b 100644
+--- a/taiga/projects/epics/api.py
++++ b/taiga/projects/epics/api.py
+@@ -148,6 +148,7 @@ def update(self, request, *args, **kwargs):
+     def filters_data(self, request, *args, **kwargs):
+         project_id = request.QUERY_PARAMS.get("project", None)
+         project = get_object_or_error(Project, request.user, id=project_id)
++        self.check_permissions(request, "filters_data", project)
+ 
+         filter_backends = self.get_filter_backends()
+         statuses_filter_backends = (f for f in filter_backends if f != filters.StatusesFilter)
+diff --git a/taiga/projects/epics/permissions.py b/taiga/projects/epics/permissions.py
+index 6ef6c5f97..91a5b27a1 100644
+--- a/taiga/projects/epics/permissions.py
++++ b/taiga/projects/epics/permissions.py
+@@ -20,7 +20,7 @@ class EpicPermission(TaigaResourcePermission):
+     partial_update_perms = CommentAndOrUpdatePerm('modify_epic', 'comment_epic')
+     destroy_perms = HasProjectPerm('delete_epic')
+     list_perms = AllowAny()
+-    filters_data_perms = AllowAny()
++    filters_data_perms = HasProjectPerm('view_epics')
+     csv_perms = AllowAny()
+     bulk_create_perms = HasProjectPerm('add_epic')
+     upvote_perms = IsAuthenticated() & HasProjectPerm('view_epics')
+diff --git a/taiga/projects/issues/api.py b/taiga/projects/issues/api.py
+index a3a7a3876..ec367f1d5 100644
+--- a/taiga/projects/issues/api.py
++++ b/taiga/projects/issues/api.py
+@@ -183,6 +183,7 @@ def pre_conditions_on_save(self, obj):
+     def filters_data(self, request, *args, **kwargs):
+         project_id = request.QUERY_PARAMS.get("project", None)
+         project = get_object_or_error(Project, request.user, id=project_id)
++        self.check_permissions(request, "filters_data", project)
+ 
+         filter_backends = self.get_filter_backends()
+         types_filter_backends = (f for f in filter_backends if f != filters.IssueTypesFilter)
+diff --git a/taiga/projects/issues/permissions.py b/taiga/projects/issues/permissions.py
+index 9ec83dd1c..c2f5d1143 100644
+--- a/taiga/projects/issues/permissions.py
++++ b/taiga/projects/issues/permissions.py
+@@ -21,7 +21,7 @@ class IssuePermission(TaigaResourcePermission):
+     partial_update_perms = CommentAndOrUpdatePerm('modify_issue', 'comment_issue')
+     destroy_perms = HasProjectPerm('delete_issue')
+     list_perms = AllowAny()
+-    filters_data_perms = AllowAny()
++    filters_data_perms = HasProjectPerm('view_issues')
+     csv_perms = AllowAny()
+     bulk_create_perms = HasProjectPerm('add_issue')
+     bulk_update_milestone_perms = HasProjectPerm('modify_issue')
+diff --git a/taiga/projects/tasks/api.py b/taiga/projects/tasks/api.py
+index 34248ab35..fea57d862 100644
+--- a/taiga/projects/tasks/api.py
++++ b/taiga/projects/tasks/api.py
+@@ -210,6 +210,7 @@ def update(self, request, *args, **kwargs):
+     def filters_data(self, request, *args, **kwargs):
+         project_id = request.QUERY_PARAMS.get("project", None)
+         project = get_object_or_error(Project, request.user, id=project_id)
++        self.check_permissions(request, "filters_data", project)
+ 
+         filter_backends = self.get_filter_backends()
+         statuses_filter_backends = (f for f in filter_backends if f != filters.StatusesFilter)
+diff --git a/taiga/projects/tasks/permissions.py b/taiga/projects/tasks/permissions.py
+index 29a0a5d12..f20bc32f4 100644
+--- a/taiga/projects/tasks/permissions.py
++++ b/taiga/projects/tasks/permissions.py
+@@ -20,7 +20,7 @@ class TaskPermission(TaigaResourcePermission):
+     partial_update_perms = CommentAndOrUpdatePerm('modify_task', 'comment_task')
+     destroy_perms = HasProjectPerm('delete_task')
+     list_perms = AllowAny()
+-    filters_data_perms = AllowAny()
++    filters_data_perms = HasProjectPerm('view_tasks')
+     csv_perms = AllowAny()
+     bulk_create_perms = HasProjectPerm('add_task')
+     bulk_update_order_perms = HasProjectPerm('modify_task')
+diff --git a/taiga/projects/userstories/api.py b/taiga/projects/userstories/api.py
+index ea5ddf1ed..5f27e3a09 100644
+--- a/taiga/projects/userstories/api.py
++++ b/taiga/projects/userstories/api.py
+@@ -343,6 +343,7 @@ def update(self, request, *args, **kwargs):
+     def filters_data(self, request, *args, **kwargs):
+         project_id = request.QUERY_PARAMS.get("project", None)
+         project = get_object_or_error(Project, request.user, id=project_id)
++        self.check_permissions(request, "filters_data", project)
+ 
+         filter_backends = self.get_filter_backends()
+         statuses_filter_backends = (f for f in filter_backends if f != filters.UserStoryStatusesFilter)
+diff --git a/taiga/projects/userstories/permissions.py b/taiga/projects/userstories/permissions.py
+index 2932727d6..abdf5cebc 100644
+--- a/taiga/projects/userstories/permissions.py
++++ b/taiga/projects/userstories/permissions.py
+@@ -21,7 +21,7 @@ class UserStoryPermission(TaigaResourcePermission):
+     partial_update_perms = CommentAndOrUpdatePerm('modify_us', 'comment_us')
+     destroy_perms = HasProjectPerm('delete_us')
+     list_perms = AllowAny()
+-    filters_data_perms = AllowAny()
++    filters_data_perms = HasProjectPerm('view_us')
+     csv_perms = AllowAny()
+     bulk_create_perms = IsAuthenticated() & (HasProjectPerm('add_us_to_project') | HasProjectPerm('add_us'))
+     bulk_update_order_perms = HasProjectPerm('modify_us')
+diff --git a/tests/integration/test_epics.py b/tests/integration/test_epics.py
+index 9b96c5ff4..9c45a84ce 100644
+--- a/tests/integration/test_epics.py
++++ b/tests/integration/test_epics.py
+@@ -46,6 +46,26 @@ def test_get_valid_csv(client):
+     assert response.status_code == 200
+ 
+ 
++def test_api_filters_data_private_project_is_forbidden(client):
++    project = f.create_project(is_private=True, anon_permissions=[], public_permissions=[])
++
++    url = reverse("epics-filters-data") + "?project={}".format(project.id)
++    response = client.get(url)
++
++    assert response.status_code == 401
++
++
++def test_api_filters_data_public_project_is_accessible_anonymously(client):
++    project = f.create_project(is_private=False,
++                               anon_permissions=["view_epics"],
++                               public_permissions=["view_epics"])
++
++    url = reverse("epics-filters-data") + "?project={}".format(project.id)
++    response = client.get(url)
++
++    assert response.status_code == 200
++
++
+ def test_custom_fields_csv_generation():
+     project = f.ProjectFactory.create(epics_csv_uuid=uuid.uuid4().hex)
+     attr = f.EpicCustomAttributeFactory.create(project=project, name="attr1", description="desc")
+diff --git a/tests/integration/test_issues.py b/tests/integration/test_issues.py
+index 050fb56ff..536227c8d 100644
+--- a/tests/integration/test_issues.py
++++ b/tests/integration/test_issues.py
+@@ -527,18 +527,6 @@ def test_api_filters_data(client):
+ 
+     assert next(filter(lambda i: i['id'] == priority0.id, response.data["priorities"]))["count"] == 2
+     assert next(filter(lambda i: i['id'] == priority1.id, response.data["priorities"]))["count"] == 1
+-    assert next(filter(lambda i: i['id'] == priority2.id, response.data["priorities"]))["count"] == 4
+-    assert next(filter(lambda i: i['id'] == priority3.id, response.data["priorities"]))["count"] == 3
+-
+-    assert next(filter(lambda i: i['id'] == severity0.id, response.data["severities"]))["count"] == 1
+-    assert next(filter(lambda i: i['id'] == severity1.id, response.data["severities"]))["count"] == 4
+-    assert next(filter(lambda i: i['id'] == severity2.id, response.data["severities"]))["count"] == 3
+-    assert next(filter(lambda i: i['id'] == severity3.id, response.data["severities"]))["count"] == 2
+-
+-    assert next(filter(lambda i: i['name'] == tag0, response.data["tags"]))["count"] == 1
+-    assert next(filter(lambda i: i['name'] == tag1, response.data["tags"]))["count"] == 5
+-    assert next(filter(lambda i: i['name'] == tag2, response.data["tags"]))["count"] == 4
+-    assert next(filter(lambda i: i['name'] == tag3, response.data["tags"]))["count"] == 4
+ 
+     ## Filter ((status0 or status3) and type1)
+     response = client.get(url + "&status={},{}&type={}".format(status3.id, status0.id, type1.id))
+@@ -613,6 +601,26 @@ def test_api_filters_data(client):
+     assert next(filter(lambda i: i['name'] == tag3, response.data["tags"]))["count"] == 3
+ 
+ 
++def test_api_filters_data_private_project_is_forbidden(client):
++    project = f.create_project(is_private=True, anon_permissions=[], public_permissions=[])
++
++    url = reverse("issues-filters-data") + "?project={}".format(project.id)
++    response = client.get(url)
++
++    assert response.status_code == 401
++
++
++def test_api_filters_data_public_project_is_accessible_anonymously(client):
++    project = f.create_project(is_private=False,
++                               anon_permissions=["view_issues"],
++                               public_permissions=["view_issues"])
++
++    url = reverse("issues-filters-data") + "?project={}".format(project.id)
++    response = client.get(url)
++
++    assert response.status_code == 200
++
++
+ def test_get_invalid_csv(client):
+     url = reverse("issues-csv")
+     project = f.ProjectFactory.create(issues_csv_uuid=uuid.uuid4().hex)
+diff --git a/tests/integration/test_tasks.py b/tests/integration/test_tasks.py
+index 1f3164b69..19f31534e 100644
+--- a/tests/integration/test_tasks.py
++++ b/tests/integration/test_tasks.py
+@@ -968,6 +968,26 @@ def test_api_filters_data(client):
+     assert next(filter(lambda i: i['name'] == tag3, response.data["tags"]))["count"] == 3
+ 
+ 
++def test_api_filters_data_private_project_is_forbidden(client):
++    project = f.create_project(is_private=True, anon_permissions=[], public_permissions=[])
++
++    url = reverse("tasks-filters-data") + "?project={}".format(project.id)
++    response = client.get(url)
++
++    assert response.status_code == 401
++
++
++def test_api_filters_data_public_project_is_accessible_anonymously(client):
++    project = f.create_project(is_private=False,
++                               anon_permissions=["view_tasks"],
++                               public_permissions=["view_tasks"])
++
++    url = reverse("tasks-filters-data") + "?project={}".format(project.id)
++    response = client.get(url)
++
++    assert response.status_code == 200
++
++
+ def test_api_validator_assigned_to_when_update_tasks(client):
+     project = f.create_project(anon_permissions=list(map(lambda x: x[0], ANON_PERMISSIONS)),
+                                public_permissions=list(map(lambda x: x[0], ANON_PERMISSIONS)))
+diff --git a/tests/integration/test_userstories.py b/tests/integration/test_userstories.py
+index d9bc1f7e6..2e3a0ac06 100644
+--- a/tests/integration/test_userstories.py
++++ b/tests/integration/test_userstories.py
+@@ -852,7 +852,6 @@ def test_api_filters_data(client):
+     assert next(filter(lambda i: i['id'] == user1.id, response.data["assigned_to"]))["count"] == 3
+     assert next(filter(lambda i: i['id'] == user2.id, response.data["assigned_to"]))["count"] == 2
+     assert next(filter(lambda i: i['id'] == user3.id, response.data["assigned_to"]))["count"] == 1
+-
+     assert next(filter(lambda i: i['id'] == user1.id, response.data["assigned_users"]))["count"] == 5
+     assert next(filter(lambda i: i['id'] == user2.id, response.data["assigned_users"]))["count"] == 2
+ 
+@@ -956,6 +955,26 @@ def test_api_filters_data(client):
+     assert next(filter(lambda i: i['id'] == epic2.id, response.data["epics"]))["count"] == 2
+ 
+ 
++def test_api_filters_data_private_project_is_forbidden(client):
++    project = f.create_project(is_private=True, anon_permissions=[], public_permissions=[])
++
++    url = reverse("userstories-filters-data") + "?project={}".format(project.id)
++    response = client.get(url)
++
++    assert response.status_code == 401
++
++
++def test_api_filters_data_public_project_is_accessible_anonymously(client):
++    project = f.create_project(is_private=False,
++                               anon_permissions=["view_us"],
++                               public_permissions=["view_us"])
++
++    url = reverse("userstories-filters-data") + "?project={}".format(project.id)
++    response = client.get(url)
++
++    assert response.status_code == 200
++
++
+ 
+ @pytest.mark.parametrize("filter_name,collection,expected,exclude_expected,is_text", [
+     ('status', 'statuses', 3, 7, False),

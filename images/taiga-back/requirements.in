@@ -1,0 +1,58 @@
+# taiga-back top-level requirements (upstream requirements.in of 6.10.2, plus the contribs and the OIDC
+# plugin), resolved against the upstream lock (constraints.txt) except for the packages bumped below.
+# Regenerate requirements.txt with images/lock.sh.
+-c constraints.txt
+
+Django>=3.2.19,<4
+celery
+gunicorn
+psycopg2<2.10  # required by django, 2.9.10 was the latest
+redis
+django-sampledatahelper>=0.5
+django-sites>=0.11
+django-sr>=0.0.4
+djmail>=2.0.0
+bleach<5 # v6.0.0 has backwards incompatible changes https://github.com/mozilla/bleach/blob/main/CHANGES#L44
+diff-match-patch
+django-ipware>7
+django-jinja
+django-picklefield<3.3.0 # 3.3.0 dropped support for Django 3.2
+django-pglocks
+easy-thumbnails<2.9 # 2.9 released after Django 3.2 LTS EOL
+netaddr
+premailer>=3.10
+
+python-dateutil
+python-magic
+pytz
+requests>=2.33
+requests_oauthlib
+rudder-sdk-python==1.0.0b1 # it is a pre-release!
+sentry-sdk
+serpy
+webcolors
+cairosvg>=2.9.1
+Markdown
+pymdown-extensions>=11.0.1
+Pillow>=12.3
+Unidecode
+Pygments>=2.20
+oauthlib[signedtoken]>=4
+html5lib
+asana>=3.0,<4.0 # asana v4 is complete rewrite
+
+# Bumped for known vulnerabilities (transitive dependencies of the packages above).
+certifi>=2026.10.18
+cryptography>=46.0.7
+idna>=3.15
+lxml>=6.1
+pyjwt>=2.15
+sqlparse>=0.6
+urllib3>=2.8
+# psd-tools 1.17.4 fixes the parsing vulnerabilities reachable through uploaded PSD attachments; the
+# Dockerfile renames the one call that changed (PSDImage.compose() -> composite()).
+psd-tools>=1.17.4
+
+# UnxWares OIDC plugin (mozilla-django-oidc 5 needs Django 4.2).
+mozilla-django-oidc>=4,<5
+six

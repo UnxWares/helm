@@ -1,0 +1,76 @@
+From 801e7430b59a73d7207ae06f053d016d7e60e857 Mon Sep 17 00:00:00 2001
+From: seralot <56048614+seralot@users.noreply.github.com>
+Date: Mon, 26 Oct 2026 16:09:45 +0100
+Subject: [PATCH] test: cover enumeration in password recovery
+
+Add integration tests asserting password recovery responds
+with 200 and no email for non-existing accounts, and keeps
+the 400 for a missing field.
+
+The two enumeration tests fail against the current behavior
+(red phase of TDD); they will pass with the fix.
+---
+ tests/integration/test_users.py | 36 +++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/tests/integration/test_users.py b/tests/integration/test_users.py
+index 3891fc131..548c1c245 100644
+--- a/tests/integration/test_users.py
++++ b/tests/integration/test_users.py
+@@ -12,6 +12,7 @@
+ 
+ from django.conf import settings
+ from django.contrib.contenttypes.models import ContentType
++from django.core import mail
+ from django.urls import reverse
+ from django.core.files import File
+ from django.core.cache import cache as default_cache
+@@ -356,6 +357,7 @@ def test_password_recovery_sets_configured_expiration(client):
+     user.refresh_from_db()
+     assert user.token is not None
+     assert user.token_expires_at == now + settings.PASSWORD_RECOVERY_TOKEN_LIFETIME
++    assert len(mail.outbox) == 1
+ 
+ 
+ def test_password_recovery_replaces_token_and_expiration(client):
+@@ -391,6 +393,40 @@ def test_password_recovery_replaces_token_and_expiration(client):
+     assert response.status_code == 204
+ 
+ 
++def test_password_recovery_returns_200_for_unknown_username(client):
++    response = client.post(
++        reverse("users-password-recovery"),
++        json.dumps({"username": "unknown-user"}),
++        content_type="application/json",
++    )
++
++    assert response.status_code == 200
++    assert response.data == {"detail": "Mail sent successfully!"}
++    assert len(mail.outbox) == 0
++
++
++def test_password_recovery_returns_200_for_unknown_email(client):
++    response = client.post(
++        reverse("users-password-recovery"),
++        json.dumps({"username": "unknown@email.com"}),
++        content_type="application/json",
++    )
++
++    assert response.status_code == 200
++    assert response.data == {"detail": "Mail sent successfully!"}
++    assert len(mail.outbox) == 0
++
++
++def test_password_recovery_without_username_returns_400(client):
++    response = client.post(
++        reverse("users-password-recovery"),
++        json.dumps({}),
++        content_type="application/json",
++    )
++
++    assert response.status_code == 400
++
++
+ def test_validate_requested_email_change(client):
+     user = f.UserFactory.create(email="old@email.com", email_token="change_email_token", new_email="new@email.com")
+     url = reverse('users-change-email')

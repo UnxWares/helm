@@ -1,0 +1,41 @@
+From beec20ba79ba184ae5d302b6f1a1ca8f909d035d Mon Sep 17 00:00:00 2001
+From: seralot <56048614+seralot@users.noreply.github.com>
+Date: Mon, 26 Oct 2026 16:09:45 +0100
+Subject: [PATCH] fix: hide account existence in password recovery
+
+Return the same 200 response whether the account exists or not,
+without generating a token or sending email for unknown accounts.
+The 400 for a missing field is kept.
+---
+ taiga/users/api.py | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/taiga/users/api.py b/taiga/users/api.py
+index 92ed1aae3..6f97ac401 100644
+--- a/taiga/users/api.py
++++ b/taiga/users/api.py
+@@ -163,7 +163,14 @@ def password_recovery(self, request, pk=None):
+         if not username_or_email:
+             raise exc.WrongArguments(_("Invalid username or email"))
+ 
+-        user = get_user_by_username_or_email(username_or_email)
++        success_message = _("Mail sent successfully!")
++
++        try:
++            user = get_user_by_username_or_email(username_or_email)
++        except exc.WrongArguments:
++            # Do not reveal whether the account exists
++            return response.Ok({"detail": success_message})
++
+         user.token = str(uuid.uuid4())
+         user.token_expires_at = timezone.now() + settings.PASSWORD_RECOVERY_TOKEN_LIFETIME
+         user.save(update_fields=["token", "token_expires_at"])
+@@ -171,7 +178,7 @@ def password_recovery(self, request, pk=None):
+         email = mail_builder.password_recovery(user, {"user": user})
+         email.send()
+ 
+-        return response.Ok({"detail": _("Mail sent successfully!")})
++        return response.Ok({"detail": success_message})
+ 
+     @list_route(methods=["POST"])
+     def change_password_from_recovery(self, request, pk=None):

@@ -1,0 +1,103 @@
+From 9004f27dd7bccbb13a6d1e422a6a002f93fcdb8c Mon Sep 17 00:00:00 2001
+From: seralot <sergioao@pm.me>
+Date: Wed, 23 Sep 2026 11:45:39 +0200
+Subject: [PATCH] fix: enforce maximum password length
+
+---
+ taiga/auth/serializers.py       | 3 ++-
+ taiga/auth/settings.py          | 2 ++
+ taiga/users/api.py              | 5 ++++-
+ taiga/users/validators.py       | 3 ++-
+ tests/integration/test_users.py | 1 +
+ 5 files changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/taiga/auth/serializers.py b/taiga/auth/serializers.py
+index d1cde9d59..f05de67d8 100644
+--- a/taiga/auth/serializers.py
++++ b/taiga/auth/serializers.py
+@@ -38,6 +38,7 @@
+ from taiga.base.api import serializers
+ from taiga.base.exceptions import ValidationError
+ 
++from .settings import PASSWORD_MAX_LENGTH
+ from .services import login, refresh_token, verify_token
+ 
+ 
+@@ -73,7 +74,7 @@ class BaseRegisterSerializer(serializers.Serializer):
+     full_name = serializers.CharField(max_length=36)
+     email = serializers.EmailField(max_length=255)
+     username = serializers.CharField(max_length=255)
+-    password = serializers.CharField(min_length=6)
++    password = serializers.CharField(min_length=6, max_length=PASSWORD_MAX_LENGTH)
+ 
+     def validate_username(self, attrs, source):
+         value = attrs[source]
+diff --git a/taiga/auth/settings.py b/taiga/auth/settings.py
+index 5d1beacad..a611562b3 100644
+--- a/taiga/auth/settings.py
++++ b/taiga/auth/settings.py
+@@ -256,6 +256,8 @@
+ 
+ from .utils import format_lazy
+ 
++PASSWORD_MAX_LENGTH = 128
++
+ USER_SETTINGS = getattr(settings, 'SIMPLE_JWT', None)
+ 
+ DEFAULTS = {
+diff --git a/taiga/users/api.py b/taiga/users/api.py
+index 867a53721..c176577d0 100644
+--- a/taiga/users/api.py
++++ b/taiga/users/api.py
+@@ -15,7 +15,7 @@
+ 
+ from taiga.auth.exceptions import TokenError
+ from taiga.auth.tokens import CancelToken
+-from taiga.auth.settings import api_settings as auth_settings
++from taiga.auth.settings import PASSWORD_MAX_LENGTH, api_settings as auth_settings
+ from taiga.base import exceptions as exc
+ from taiga.base import filters
+ from taiga.base import response
+@@ -215,6 +215,9 @@ def change_password(self, request, pk=None):
+         if len(password) < 6:
+             raise exc.WrongArguments(_("Invalid password length at least 6 characters needed"))
+ 
++        if len(password) > PASSWORD_MAX_LENGTH:
++            raise exc.WrongArguments(_("Invalid password length at most 128 characters allowed"))
++
+         if current_password and not request.user.check_password(current_password):
+             raise exc.WrongArguments(_("Invalid current password"))
+ 
+diff --git a/taiga/users/validators.py b/taiga/users/validators.py
+index d20279842..13870ee8e 100644
+--- a/taiga/users/validators.py
++++ b/taiga/users/validators.py
+@@ -10,6 +10,7 @@
+ from django.core import validators as core_validators
+ from django.utils.translation import gettext_lazy as _
+ 
++from taiga.auth.settings import PASSWORD_MAX_LENGTH
+ from taiga.base.api import serializers
+ from taiga.base.api import validators
+ from taiga.base.exceptions import ValidationError
+@@ -80,7 +81,7 @@ def validate_read_new_terms(self, attrs, source):
+ 
+ class RecoveryValidator(validators.Validator):
+     token = serializers.CharField(required=True, max_length=200)
+-    password = serializers.CharField(required=True, min_length=6)
++    password = serializers.CharField(required=True, min_length=6, max_length=PASSWORD_MAX_LENGTH)
+ 
+ 
+ class ChangeEmailValidator(validators.Validator):
+diff --git a/tests/integration/test_users.py b/tests/integration/test_users.py
+index e0ec9beb9..e8e1e0687 100644
+--- a/tests/integration/test_users.py
++++ b/tests/integration/test_users.py
+@@ -219,6 +219,7 @@ def test_change_password_invalidates_password_recovery_token(client):
+     user.refresh_from_db()
+     assert user.check_password("new-password")
+ 
++
+ @pytest.mark.parametrize(("password_length", "status_code"), [(128, 204), (129, 400)])
+ def test_change_password_max_length(client, password_length, status_code):
+     user = f.UserFactory.create()

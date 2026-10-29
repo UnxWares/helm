@@ -45,6 +45,13 @@ Helm charts we run ourselves, maintained by UnxWares. Every chart follows the sa
 
 Each chart README lists every value, examples and the upgrade notes between releases.
 
+### Images
+
+Some charts use UnxWares images by default (`ghcr.io/unxwares`): the upstream applications rebuilt every week
+on current Alpine bases, run as non-root, scanned with Trivy and signed with cosign. Their sources and the
+differences from the upstream images are in [images/](images/README.md); each chart can still use the upstream
+images.
+
 ## Installation
 
 ```bash

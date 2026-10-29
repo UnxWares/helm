@@ -1,0 +1,83 @@
+From f95716d283aedfb3e2c5c65b704dbdb61cf74da9 Mon Sep 17 00:00:00 2001
+From: seralot <sergioao@pm.me>
+Date: Wed, 23 Sep 2026 11:42:10 +0200
+Subject: [PATCH] test: cover maximum password length
+
+---
+ tests/integration/test_auth.py  | 13 ++++++++++++-
+ tests/integration/test_users.py | 34 +++++++++++++++++++++++++++++++++
+ 2 files changed, 46 insertions(+), 1 deletion(-)
+
+diff --git a/tests/integration/test_auth.py b/tests/integration/test_auth.py
+index 2104df40a..56f233770 100644
+--- a/tests/integration/test_auth.py
++++ b/tests/integration/test_auth.py
+@@ -34,6 +34,18 @@ def test_respond_201_when_public_registration_is_enabled(client, settings, regis
+     assert response.status_code == 201
+ 
+ 
++@pytest.mark.parametrize(("password_length", "status_code"), [(128, 201), (129, 400)])
++def test_register_password_max_length(client, settings, register_form, password_length, status_code):
++    settings.PUBLIC_REGISTER_ENABLED = True
++    register_form["password"] = "p" * password_length
++
++    response = client.post(reverse("auth-register"), register_form)
++
++    assert response.status_code == status_code
++    if status_code == 400:
++        assert "password" in response.data
++
++
+ def test_respond_400_when_public_registration_is_disabled(client, register_form, settings):
+     settings.PUBLIC_REGISTER_ENABLED = False
+     response = client.post(reverse("auth-register"), register_form)
+@@ -492,4 +504,3 @@ def test_login_fail_throttling(client, settings):
+     assert response.status_code == 429, response.data
+ 
+     settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["login-fail"] = None
+-
+diff --git a/tests/integration/test_users.py b/tests/integration/test_users.py
+index fdda0a759..e0ec9beb9 100644
+--- a/tests/integration/test_users.py
++++ b/tests/integration/test_users.py
+@@ -219,6 +219,40 @@ def test_change_password_invalidates_password_recovery_token(client):
+     user.refresh_from_db()
+     assert user.check_password("new-password")
+ 
++@pytest.mark.parametrize(("password_length", "status_code"), [(128, 204), (129, 400)])
++def test_change_password_max_length(client, password_length, status_code):
++    user = f.UserFactory.create()
++    user.set_password("current-password")
++    user.save()
++    client.login(user)
++
++    response = client.post(
++        reverse('users-change-password'),
++        json.dumps({"current_password": "current-password", "password": "p" * password_length}),
++        content_type="application/json",
++    )
++
++    assert response.status_code == status_code
++    user.refresh_from_db()
++    assert user.check_password("p" * password_length if status_code == 204 else "current-password")
++
++
++@pytest.mark.parametrize(("password_length", "status_code"), [(128, 204), (129, 400)])
++def test_recovery_password_max_length(client, password_length, status_code):
++    user = f.UserFactory.create(token="recovery-token")
++    user.set_password("current-password")
++    user.save()
++
++    response = client.post(
++        reverse('users-change-password-from-recovery'),
++        json.dumps({"token": "recovery-token", "password": "p" * password_length}),
++        content_type="application/json",
++    )
++
++    assert response.status_code == status_code
++    user.refresh_from_db()
++    assert user.check_password("p" * password_length if status_code == 204 else "current-password")
++
+ 
+ def test_validate_requested_email_change(client):
+     user = f.UserFactory.create(email="old@email.com", email_token="change_email_token", new_email="new@email.com")

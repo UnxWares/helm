@@ -1,0 +1,67 @@
+From 4e1c81aa5d2607890cc5534ede1b2c73f0a64015 Mon Sep 17 00:00:00 2001
+From: seralot <sergioao@pm.me>
+Date: Mon, 21 Sep 2026 12:18:47 +0200
+Subject: [PATCH] fix(auth): invalidate recovery token on email change
+
+---
+ taiga/users/api.py              |  3 ++-
+ tests/integration/test_users.py | 31 +++++++++++++++++++++++++++++++
+ 2 files changed, 33 insertions(+), 1 deletion(-)
+
+diff --git a/taiga/users/api.py b/taiga/users/api.py
+index 4b9ba91eb..867a53721 100644
+--- a/taiga/users/api.py
++++ b/taiga/users/api.py
+@@ -280,8 +280,9 @@ def change_email(self, request, pk=None):
+         user.email = new_email
+         user.new_email = None
+         user.email_token = None
++        user.token = None
+         user.verified_email = True
+-        user.save(update_fields=["email", "new_email", "email_token", "verified_email"])
++        user.save(update_fields=["email", "new_email", "email_token", "token", "verified_email"])
+ 
+         user_change_email_signal.send(sender=user.__class__,
+                                       user=user,
+diff --git a/tests/integration/test_users.py b/tests/integration/test_users.py
+index fd43abb01..fdda0a759 100644
+--- a/tests/integration/test_users.py
++++ b/tests/integration/test_users.py
+@@ -235,6 +235,37 @@ def test_validate_requested_email_change(client):
+     assert user.email == "new@email.com"
+ 
+ 
++def test_validate_requested_email_change_invalidates_password_recovery_token(client):
++    user = f.UserFactory.create(
++        email="old@email.com",
++        email_token="change_email_token",
++        new_email="new@email.com",
++        token="recovery-token",
++    )
++    user.set_password("current-password")
++    user.save()
++
++    client.login(user)
++    url = reverse('users-change-email')
++    data = {"email_token": "change_email_token"}
++
++    response = client.post(url, json.dumps(data), content_type="application/json")
++
++    assert response.status_code == 204
++    user.refresh_from_db()
++    assert user.email == "new@email.com"
++    assert user.email_token is None
++    assert user.token is None
++
++    recovery_url = reverse('users-change-password-from-recovery')
++    recovery_data = {"token": "recovery-token", "password": "new-password"}
++    response = client.post(recovery_url, json.dumps(recovery_data), content_type="application/json")
++
++    assert response.status_code == 400
++    user.refresh_from_db()
++    assert user.check_password("current-password")
++
++
+ def test_validate_requested_email_change_for_anonymous_user(client):
+     user = f.UserFactory.create(email="old@email.com", email_token="change_email_token", new_email="new@email.com")
+     url = reverse('users-change-email')

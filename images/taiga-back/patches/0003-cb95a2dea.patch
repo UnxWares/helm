@@ -1,0 +1,64 @@
+From cb95a2dea0dbff00316d9dde66461707aa8ddaa1 Mon Sep 17 00:00:00 2001
+From: seralot <sergioao@pm.me>
+Date: Mon, 21 Sep 2026 12:16:01 +0200
+Subject: [PATCH] fix(auth): invalidate recovery token on password change
+
+---
+ taiga/users/api.py              |  3 ++-
+ tests/integration/test_users.py | 29 +++++++++++++++++++++++++++++
+ 2 files changed, 31 insertions(+), 1 deletion(-)
+
+diff --git a/taiga/users/api.py b/taiga/users/api.py
+index 5db4b3811..4b9ba91eb 100644
+--- a/taiga/users/api.py
++++ b/taiga/users/api.py
+@@ -219,7 +219,8 @@ def change_password(self, request, pk=None):
+             raise exc.WrongArguments(_("Invalid current password"))
+ 
+         request.user.set_password(password)
+-        request.user.save(update_fields=["password"])
++        request.user.token = None
++        request.user.save(update_fields=["password", "token"])
+         return response.NoContent()
+ 
+     @list_route(methods=["POST"])
+diff --git a/tests/integration/test_users.py b/tests/integration/test_users.py
+index d9d4d97f2..fd43abb01 100644
+--- a/tests/integration/test_users.py
++++ b/tests/integration/test_users.py
+@@ -191,6 +191,35 @@ def test_update_user_with_valid_email(client):
+     assert user.new_email == "new@email.com"
+ 
+ 
++def test_change_password_invalidates_password_recovery_token(client):
++    user = f.UserFactory.create()
++    user.set_password("current-password")
++    user.token = "recovery-token"
++    user.save()
++
++    client.login(user)
++    url = reverse('users-change-password')
++    data = {
++        "current_password": "current-password",
++        "password": "new-password",
++    }
++
++    response = client.post(url, json.dumps(data), content_type="application/json")
++
++    assert response.status_code == 204
++    user.refresh_from_db()
++    assert user.check_password("new-password")
++    assert user.token is None
++
++    recovery_url = reverse('users-change-password-from-recovery')
++    recovery_data = {"token": "recovery-token", "password": "another-password"}
++    response = client.post(recovery_url, json.dumps(recovery_data), content_type="application/json")
++
++    assert response.status_code == 400
++    user.refresh_from_db()
++    assert user.check_password("new-password")
++
++
+ def test_validate_requested_email_change(client):
+     user = f.UserFactory.create(email="old@email.com", email_token="change_email_token", new_email="new@email.com")
+     url = reverse('users-change-email')
