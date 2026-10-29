@@ -34,16 +34,12 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "taiga.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.global.serviceAccount.automount }}
-      {{- with (default .Values.global.podSecurityContext .Values.async.podSecurityContext) }}
       securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- include "taiga.podSecurityContext" (dict "ctx" . "values" .Values.async "component" "async") | nindent 8 }}
       containers:
         - name: async
-          {{- with (default .Values.global.securityContext .Values.async.securityContext) }}
           securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+            {{- include "taiga.securityContext" (dict "ctx" . "values" .Values.async "component" "async") | nindent 12 }}
           image: {{ include "taiga.backImage" (dict "ctx" . "image" .Values.async.image) | quote }}
           imagePullPolicy: {{ .Values.async.image.pullPolicy }}
           {{- with .Values.async.command }}
@@ -70,19 +66,25 @@ spec:
           {{- end }}
           # Exports and imports are written by the worker: it needs the media volume too.
           volumeMounts:
-            {{- if $media.enabled }}
             - name: media
               mountPath: /taiga-back/media
-            {{- end }}
+            - name: tmp
+              mountPath: /tmp
             {{- with .Values.async.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
       volumes:
-        {{- if $media.enabled }}
+        {{- /* Without persistence, uploads go to a volume of the pod (lost on restart): the UnxWares images have a
+        read-only root filesystem. */}}
         - name: media
+          {{- if $media.enabled }}
           persistentVolumeClaim:
             claimName: {{ include "taiga.mediaClaimName" . }}
-        {{- end }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: tmp
+          emptyDir: {}
         {{- with .Values.async.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

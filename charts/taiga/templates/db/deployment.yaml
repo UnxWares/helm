@@ -43,7 +43,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: "{{ .Values.db.image.repository }}:{{ .Values.db.image.tag }}"
+          image: {{ include "taiga.image" (dict "ctx" . "image" .Values.db.image "name" "postgres") | quote }}
           imagePullPolicy: {{ .Values.db.image.pullPolicy }}
           ports:
             - name: postgres

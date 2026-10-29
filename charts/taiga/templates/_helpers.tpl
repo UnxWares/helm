@@ -110,17 +110,101 @@ Usage: include "taiga.probe" (dict "probe" .Values.backend.livenessProbe "defaul
 {{- end }}
 
 {{/*
+Whether the components use the UnxWares images (global.imageProvider).
+*/}}
+{{- define "taiga.unxwaresImages" -}}
+{{- if eq .Values.global.imageProvider "unxwares" }}true{{ end }}
+{{- end }}
+
+{{/*
+Image of a component: image.repository, or the image of global.imageProvider when it is empty, and image.tag.
+Usage: include "taiga.image" (dict "ctx" . "image" .Values.events.image "name" "taiga-events")
+*/}}
+{{- define "taiga.image" -}}
+{{- $repository := .image.repository }}
+{{- if not $repository }}
+{{- if include "taiga.unxwaresImages" .ctx }}
+{{- $repository = printf "ghcr.io/unxwares/%s" .name }}
+{{- else if eq .name "postgres" }}
+{{- $repository = "docker.io/library/postgres" }}
+{{- else }}
+{{- $repository = printf "docker.io/taigaio/%s" .name }}
+{{- end }}
+{{- end }}
+{{- printf "%s:%s" $repository (.image.tag | toString) }}
+{{- end }}
+
+{{/*
 Image of the backend/async containers (OIDC override, with an optional digest).
 */}}
 {{- define "taiga.backImage" -}}
-{{- $img := .image }}
 {{- if and .ctx.Values.global.oidc.enabled .ctx.Values.global.oidc.backend.overrideImage.name }}
 {{- with .ctx.Values.global.oidc.backend.overrideImage }}
 {{- if .digest }}{{ printf "%s@%s" .name .digest }}{{ else }}{{ printf "%s:%s" .name .tag }}{{ end }}
 {{- end }}
 {{- else }}
-{{- printf "%s:%s" $img.repository ($img.tag | toString) }}
+{{- include "taiga.image" (dict "ctx" .ctx "image" .image "name" "taiga-back") }}
 {{- end }}
+{{- end }}
+
+{{/*
+Image of the frontend container (OIDC override, with an optional digest).
+*/}}
+{{- define "taiga.frontImage" -}}
+{{- if and .Values.global.oidc.enabled .Values.global.oidc.frontend.overrideImage.name }}
+{{- with .Values.global.oidc.frontend.overrideImage }}
+{{- if .digest }}{{ printf "%s@%s" .name .digest }}{{ else }}{{ printf "%s:%s" .name .tag }}{{ end }}
+{{- end }}
+{{- else }}
+{{- include "taiga.image" (dict "ctx" . "image" .Values.frontend.image "name" "taiga-front") }}
+{{- end }}
+{{- end }}
+
+{{/*
+Port of the frontend container: the UnxWares image runs nginx unprivileged on 8080, the upstream one on 80.
+*/}}
+{{- define "taiga.frontendPort" -}}
+{{- if include "taiga.unxwaresImages" . }}8080{{ else }}80{{ end }}
+{{- end }}
+
+{{/*
+Security contexts of a Taiga component: its own value, else the global one, else the defaults of the image
+provider. The UnxWares images run as a non-root user with a read-only root filesystem; the upstream images start
+as root, chown their files, then switch user, which needs a few capabilities.
+Usage: include "taiga.podSecurityContext" (dict "ctx" . "values" .Values.backend "component" "backend")
+*/}}
+{{- define "taiga.podSecurityContext" -}}
+{{- $sc := .values.podSecurityContext | default .ctx.Values.global.podSecurityContext }}
+{{- if not $sc }}
+{{- $sc = dict "seccompProfile" (dict "type" "RuntimeDefault") }}
+{{- if include "taiga.unxwaresImages" .ctx }}
+{{- $uid := ternary 101 999 (eq .component "frontend") }}
+{{- $_ := set $sc "runAsNonRoot" true }}
+{{- $_ := set $sc "runAsUser" $uid }}
+{{- $_ := set $sc "runAsGroup" $uid }}
+{{- end }}
+{{- if has .component (list "backend" "async") }}
+{{- $_ := set $sc "fsGroup" 999 }}
+{{- $_ := set $sc "fsGroupChangePolicy" "OnRootMismatch" }}
+{{- end }}
+{{- end }}
+{{- toYaml $sc }}
+{{- end }}
+
+{{- define "taiga.securityContext" -}}
+{{- $sc := .values.securityContext | default .ctx.Values.global.securityContext }}
+{{- if not $sc }}
+{{- if include "taiga.unxwaresImages" .ctx }}
+{{- $sc = dict "allowPrivilegeEscalation" false "readOnlyRootFilesystem" true "capabilities" (dict "drop" (list "ALL")) }}
+{{- else }}
+{{- $add := list "CHOWN" "DAC_OVERRIDE" "FOWNER" "SETUID" "SETGID" }}
+{{- if eq .component "frontend" }}
+{{- $add = list "CHOWN" "DAC_OVERRIDE" "SETUID" "SETGID" "NET_BIND_SERVICE" }}
+{{- end }}
+{{- $sc = dict "allowPrivilegeEscalation" false "capabilities" (dict "drop" (list "ALL") "add" $add) }}
+{{- end }}
+{{- end }}
+{{- toYaml $sc }}
 {{- end }}
 
 {{/*
@@ -529,6 +613,9 @@ Validate values that would otherwise produce a broken deployment.
 {{- end }}
 {{- if and .Values.global.oidc.enabled (not .Values.global.oidc.existingSecret) (not .Values.global.oidc.clientSecret) }}
 {{- fail "global.oidc.clientSecret or global.oidc.existingSecret is required when OIDC is enabled" }}
+{{- end }}
+{{- if and .Values.global.oidc.enabled (not (include "taiga.unxwaresImages" .)) (not (and .Values.global.oidc.backend.overrideImage.name .Values.global.oidc.frontend.overrideImage.name)) }}
+{{- fail "OIDC needs the UnxWares images (global.imageProvider: unxwares, the plugin is built in) or OIDC-enabled images in global.oidc.backend.overrideImage and global.oidc.frontend.overrideImage" }}
 {{- end }}
 {{- if and .Values.global.persistence.media.enabled (eq (include "taiga.mediaAccessMode" .) "ReadWriteOncePod") }}
 {{- fail "global.persistence.media.accessMode cannot be ReadWriteOncePod: backend, async and gateway mount the same volume" }}

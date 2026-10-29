@@ -30,17 +30,13 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "taiga.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.global.serviceAccount.automount }}
-      {{- with (default .Values.global.podSecurityContext .Values.events.podSecurityContext) }}
       securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- include "taiga.podSecurityContext" (dict "ctx" . "values" .Values.events "component" "events") | nindent 8 }}
       containers:
         - name: events
-          {{- with (default .Values.global.securityContext .Values.events.securityContext) }}
           securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          image: "{{ .Values.events.image.repository }}:{{ .Values.events.image.tag }}"
+            {{- include "taiga.securityContext" (dict "ctx" . "values" .Values.events "component" "events") | nindent 12 }}
+          image: {{ include "taiga.image" (dict "ctx" . "image" .Values.events.image "name" "taiga-events") | quote }}
           imagePullPolicy: {{ .Values.events.image.pullPolicy }}
           ports:
             - name: http
@@ -75,6 +71,12 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
       {{- with (default .Values.global.pod.nodeSelector .Values.events.nodeSelector) }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
