@@ -2,7 +2,7 @@ apiVersion: v2
 name: powerdns
 description: PowerDNS Authoritative Server with its REST API, SQLite/PostgreSQL/MySQL backends and an optional PowerDNS Recursor, hardened for Kubernetes.
 type: application
-version: 2026.10.4
+version: 2026.10.5
 appVersion: "5.1.5"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/powerdns
@@ -44,11 +44,20 @@ annotations:
       url: https://github.com/UnxWares/helm/issues
   artifacthub.io/images: |
     - name: pdns-auth
-      image: docker.io/powerdns/pdns-auth-51:5.1.5
+      image: ghcr.io/unxwares/pdns-auth:5.1.5
   artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/changes: |
     - kind: changed
-      description: The Artifact Hub images annotation lists the images of a default install only (PowerDNS Authoritative with gsqlite3). The security report used to add up the Recursor and the PostgreSQL/MySQL client images, which are only pulled when enabled; the README lists them.
+      description: "Default images move to ghcr.io/unxwares/pdns-auth and pdns-recursor (imageProvider: unxwares): the same PowerDNS versions built from the release tarballs on current Alpine bases and rebuilt every week, with the same user, paths and startup script. imageProvider: upstream keeps the official Debian images."
+      links:
+        - name: UnxWares images
+          url: https://github.com/UnxWares/helm/tree/main/images
+    - kind: security
+      description: Known vulnerabilities of the images (Trivy) drop from 539 to 0 for the authoritative server and from 352 to 0 for the recursor.
+    - kind: fixed
+      description: "The recursor answered SERVFAIL (EDE 10, RRSIGs missing) for recursor.authoritativeZones without a public DNSSEC chain of trust: they are now negative trust anchors, unless recursor.validateAuthoritativeZones is true."
+    - kind: changed
+      description: "The PostgreSQL client of the gpgsql schema init follows imageProvider (ghcr.io/unxwares/postgres by default)."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

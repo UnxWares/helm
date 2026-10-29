@@ -47,7 +47,7 @@ spec:
       {{- end }}
       containers:
         - name: recursor
-          image: {{ include "powerdns.image" (dict "image" $rec.image "default" $rec.image.tag) | quote }}
+          image: {{ include "powerdns.image" (dict "ctx" $ "name" "pdns-recursor" "image" $rec.image "default" $rec.image.tag) | quote }}
           imagePullPolicy: {{ $rec.image.pullPolicy }}
           {{- with .Values.securityContext }}
           securityContext:

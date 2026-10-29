@@ -1,12 +1,14 @@
 # PowerDNS Helm Chart
 
-![Version: 2026.10.4](https://img.shields.io/badge/Version-2026.10.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 5.1.5](https://img.shields.io/badge/AppVersion-5.1.5-informational?style=flat-square)
+![Version: 2026.10.5](https://img.shields.io/badge/Version-2026.10.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 5.1.5](https://img.shields.io/badge/AppVersion-5.1.5-informational?style=flat-square)
 
 [PowerDNS Authoritative Server](https://doc.powerdns.com/authoritative/) with its REST API, packaged for
 Kubernetes by UnxWares, with an optional [PowerDNS Recursor](https://doc.powerdns.com/recursor/).
 
 ## Features
 
+- **UnxWares images by default**: PowerDNS built from the release tarballs on current Alpine bases, rebuilt every
+  week; the official Debian images stay available with `imageProvider: upstream` (see [Images](#images)).
 - **Authoritative DNS** with DNSSEC, on SQLite (single replica + PVC), PostgreSQL or MySQL/MariaDB (scale out).
 - **Automatic schema creation**: the schema shipped in the PowerDNS image is applied when the database is empty (idempotent init container).
 - **REST API** for [ExternalDNS](https://kubernetes-sigs.github.io/external-dns/), PowerDNS-Admin, cert-manager webhooks... The API key is generated and kept across upgrades, or read from your own Secret.
@@ -14,6 +16,22 @@ Kubernetes by UnxWares, with an optional [PowerDNS Recursor](https://doc.powerdn
 - **Hardened by default**: non-root (uid 953), read-only root filesystem, every capability dropped, seccomp `RuntimeDefault`, no service account token. DNS listens on an unprivileged port inside the pod and the Service exposes it on 53.
 - **Secrets never land in ConfigMaps**: they are injected as environment variables and rendered at startup into a memory-backed volume.
 - **Prometheus** `/metrics` with optional ServiceMonitors, **NetworkPolicy** isolating the API, PodDisruptionBudget, HPA (SQL backends), topology spread.
+
+## Images
+
+| Component | `imageProvider: unxwares` (default) | `imageProvider: upstream` |
+|-----------|--------------------------------------|---------------------------|
+| Authoritative server | `ghcr.io/unxwares/pdns-auth` | `docker.io/powerdns/pdns-auth-51` |
+| Recursor (`recursor.enabled`) | `ghcr.io/unxwares/pdns-recursor` | `docker.io/powerdns/pdns-recursor-54` |
+| PostgreSQL client of the gpgsql schema init | `ghcr.io/unxwares/postgres` | `docker.io/library/postgres` |
+
+The MySQL client of the gmysql schema init is `docker.io/library/mysql` in both cases.
+
+The UnxWares images are the same PowerDNS versions, built from the release tarballs on current Alpine bases and
+rebuilt every week, with the backends the chart supports (bind, gsqlite3, gpgsql, gmysql) and without the tools of the
+Debian images (vim, curl...). They keep the `pdns` user (uid 953), the paths, the ports and the startup script that
+renders `/etc/powerdns/templates.d`, so the chart configures both image sets the same way. Sources and signature
+checks: [images/](https://github.com/UnxWares/helm/tree/main/images).
 
 ## Installation
 
@@ -117,6 +135,11 @@ recursor:
   # forwardZonesRecurse: ["9.9.9.9:53"]   # use an upstream resolver instead of the root servers
 ```
 
+DNSSEC validation stays on for everything else (`recursor.dnssecValidation`). The `authoritativeZones` are added as
+negative trust anchors: an internal zone has no chain of trust from the root, and validating it would answer SERVFAIL.
+If these zones are signed and delegated with a DS record from the public root, set
+`recursor.validateAuthoritativeZones: true`.
+
 ### Managing zones
 
 Zones created through the API are served immediately by the replica that received the call (by the others after
@@ -134,11 +157,24 @@ kubectl exec -n dns deploy/dns-powerdns -c pdns -- \
 - **gsqlite3** supports a single replica; the chart refuses `replicaCount > 1` or the HPA with it. Use `gpgsql` or
   `gmysql` for high availability.
 - **IPv6**: remove `[::]` from `dns.listenAddresses` (and `::` from `recursor.listenAddresses`) if your pods have IPv6 disabled.
-- **Images**: a default install runs `docker.io/powerdns/pdns-auth-51` only. `docker.io/powerdns/pdns-recursor-54`
-  (`recursor.enabled`) and the PostgreSQL/MySQL client images of the schema init (`backend.schemaInit.postgresImage`,
-  `backend.schemaInit.mysqlImage`, for gpgsql/gmysql) are only pulled when enabled; the Artifact Hub security report covers
-  the default image.
+- **Images**: a default install runs the authoritative server image only. The recursor (`recursor.enabled`) and the
+  PostgreSQL/MySQL client images of the schema init (gpgsql/gmysql) are only pulled when enabled; the Artifact Hub
+  security report covers the default image.
 - `webserver.allowFrom` and `recursor.allowFrom` default to private ranges; add your pod CIDR if it uses another range (e.g. `100.64.0.0/10`).
+
+## Upgrading
+
+### To 2026.10.5 (UnxWares images)
+
+The default images move to `ghcr.io/unxwares/pdns-auth` and `ghcr.io/unxwares/pdns-recursor` (see [Images](#images)):
+same PowerDNS versions, same user, paths and configuration. Nothing to change in your values, unless you set
+`image.repository` or `recursor.image.repository` to the official images explicitly. To keep the official images:
+`imageProvider: upstream`. The UnxWares authoritative image only has the bind, gsqlite3, gpgsql and gmysql backends: if
+you load another backend through extra configuration, keep `imageProvider: upstream`.
+
+The recursor now answers for the `recursor.authoritativeZones` that have no public chain of trust (internal zones),
+for which DNSSEC validation answered SERVFAIL: they are added as negative trust anchors
+(`recursor.validateAuthoritativeZones: false`).
 
 ## Requirements
 
@@ -179,7 +215,7 @@ Kubernetes: `>=1.27.0-0`
 | backend.gsqlite3.database | string | `"/var/lib/powerdns/pdns.sqlite3"` | Path of the SQLite database inside the container. |
 | backend.schemaInit.enabled | bool | `true` | Run the schema init container. |
 | backend.schemaInit.mysqlImage | string | `"docker.io/library/mysql:8.4.13"` | Client image used for gmysql. |
-| backend.schemaInit.postgresImage | string | `"docker.io/library/postgres:18.6-alpine"` | Client image used for gpgsql. |
+| backend.schemaInit.postgresImage | string | `""` | Client image used for gpgsql. Empty: `ghcr.io/unxwares/postgres:18.6-alpine` or `docker.io/library/postgres:18.6-alpine`, from `imageProvider`. |
 | backend.schemaInit.resources | object | `{}` | Resources of the schema init containers. |
 | backend.schemaInit.timeoutSeconds | int | `120` | Seconds to wait for the database to accept connections. |
 | backend.type | string | `"gsqlite3"` | Database backend: `gsqlite3` (single replica, PVC), `gpgsql` or `gmysql` (external database, can scale out). |
@@ -194,8 +230,9 @@ Kubernetes: `>=1.27.0-0`
 | fullnameOverride | string | `""` | Override the full resource names. |
 | image.digest | string | `""` | Image digest (`sha256:...`). When set, it takes precedence over the tag. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
-| image.repository | string | `"docker.io/powerdns/pdns-auth-51"` | Authoritative server image repository. |
+| image.repository | string | `""` | Authoritative server image repository. Empty: `ghcr.io/unxwares/pdns-auth` or `docker.io/powerdns/pdns-auth-51`, from `imageProvider`. |
 | image.tag | string | `""` | Image tag (defaults to the chart appVersion). |
+| imageProvider | string | `"unxwares"` | Images used when `image.repository`, `recursor.image.repository` or `backend.schemaInit.postgresImage` are empty. `unxwares`: `ghcr.io/unxwares` images, PowerDNS built from the release tarballs on current Alpine bases and rebuilt every week (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the official `docker.io/powerdns` images (Debian) and `docker.io/library/postgres`. Both run as the same `pdns` user with the same paths and startup script. |
 | imagePullSecrets | list | `[]` | Secrets for pulling images from a private registry. |
 | livenessProbe | object | `{"failureThreshold":4,"periodSeconds":15,"tcpSocket":{"port":"dns-tcp"},"timeoutSeconds":3}` | Liveness probe. |
 | metrics.serviceMonitor.enabled | bool | `false` | Create a Prometheus Operator ServiceMonitor scraping `/metrics` on the webserver (rendered only when the CRD exists). |
@@ -238,7 +275,7 @@ Kubernetes: `>=1.27.0-0`
 | recursor.forwardZonesRecurse | list | `[]` | Forward everything else to these resolvers instead of recursing from the root (e.g. `["9.9.9.9:53"]`). |
 | recursor.image.digest | string | `""` | Image digest (takes precedence over the tag). |
 | recursor.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
-| recursor.image.repository | string | `"docker.io/powerdns/pdns-recursor-54"` | Recursor image repository. |
+| recursor.image.repository | string | `""` | Recursor image repository. Empty: `ghcr.io/unxwares/pdns-recursor` or `docker.io/powerdns/pdns-recursor-54`, from `imageProvider`. |
 | recursor.image.tag | string | `"5.4.9"` | Recursor image tag. |
 | recursor.listenAddresses | list | `["0.0.0.0","::"]` | Addresses to bind (the port is `recursor.containerPort`). |
 | recursor.livenessProbe | object | `{"failureThreshold":4,"periodSeconds":15,"tcpSocket":{"port":"dns-tcp"},"timeoutSeconds":3}` | Liveness probe. |
@@ -265,6 +302,7 @@ Kubernetes: `>=1.27.0-0`
 | recursor.spreadAcrossNodes | bool | `true` | When `topologySpreadConstraints` is empty, spread the replicas across nodes, then zones (ScheduleAnyway). |
 | recursor.tolerations | list | `[]` | Tolerations. |
 | recursor.topologySpreadConstraints | list | `[]` | Topology spread constraints. |
+| recursor.validateAuthoritativeZones | bool | `false` | Validate the `authoritativeZones` with DNSSEC. Leave it off unless these zones are signed and delegated from the public root with a DS record: otherwise validation answers SERVFAIL for them, so the chart adds them as negative trust anchors. |
 | recursor.webserver.allowFrom | list | `["127.0.0.1/32","::1/128","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16","fc00::/7"]` | Networks allowed to reach the recursor webserver. |
 | recursor.webserver.enabled | bool | `true` | Enable the recursor webserver (API + `/metrics`). |
 | recursor.webserver.port | int | `8082` | Webserver port. |

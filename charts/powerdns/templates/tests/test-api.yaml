@@ -18,7 +18,7 @@ spec:
   {{- end }}
   containers:
     - name: api
-      image: {{ .Values.tests.image | default (include "powerdns.image" (dict "image" .Values.image "default" .Chart.AppVersion)) | quote }}
+      image: {{ .Values.tests.image | default (include "powerdns.image" (dict "ctx" . "name" "pdns-auth" "image" .Values.image "default" .Chart.AppVersion)) | quote }}
       {{- with .Values.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}

@@ -56,7 +56,7 @@ spec:
       initContainers:
         {{- if $sqlite }}
         - name: sqlite-init
-          image: {{ include "powerdns.image" (dict "image" .Values.image "default" .Chart.AppVersion) | quote }}
+          image: {{ include "powerdns.image" (dict "ctx" . "name" "pdns-auth" "image" .Values.image "default" .Chart.AppVersion) | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.securityContext }}
           securityContext:
@@ -84,7 +84,7 @@ spec:
               mountPath: {{ dir .Values.backend.gsqlite3.database }}
         {{- else if .Values.backend.schemaInit.enabled }}
         - name: copy-schema
-          image: {{ include "powerdns.image" (dict "image" .Values.image "default" .Chart.AppVersion) | quote }}
+          image: {{ include "powerdns.image" (dict "ctx" . "name" "pdns-auth" "image" .Values.image "default" .Chart.AppVersion) | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.securityContext }}
           securityContext:
@@ -103,7 +103,7 @@ spec:
               mountPath: /schema
         - name: schema-init
           {{- if eq .Values.backend.type "gpgsql" }}
-          image: {{ .Values.backend.schemaInit.postgresImage | quote }}
+          image: {{ include "powerdns.postgresImage" . | quote }}
           {{- else }}
           image: {{ .Values.backend.schemaInit.mysqlImage | quote }}
           {{- end }}
@@ -193,7 +193,7 @@ spec:
         {{- end }}
       containers:
         - name: pdns
-          image: {{ include "powerdns.image" (dict "image" .Values.image "default" .Chart.AppVersion) | quote }}
+          image: {{ include "powerdns.image" (dict "ctx" . "name" "pdns-auth" "image" .Values.image "default" .Chart.AppVersion) | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.securityContext }}
           securityContext:

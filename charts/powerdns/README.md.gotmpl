@@ -7,6 +7,8 @@ Kubernetes by UnxWares, with an optional [PowerDNS Recursor](https://doc.powerdn
 
 ## Features
 
+- **UnxWares images by default**: PowerDNS built from the release tarballs on current Alpine bases, rebuilt every
+  week; the official Debian images stay available with `imageProvider: upstream` (see [Images](#images)).
 - **Authoritative DNS** with DNSSEC, on SQLite (single replica + PVC), PostgreSQL or MySQL/MariaDB (scale out).
 - **Automatic schema creation**: the schema shipped in the PowerDNS image is applied when the database is empty (idempotent init container).
 - **REST API** for [ExternalDNS](https://kubernetes-sigs.github.io/external-dns/), PowerDNS-Admin, cert-manager webhooks... The API key is generated and kept across upgrades, or read from your own Secret.
@@ -14,6 +16,22 @@ Kubernetes by UnxWares, with an optional [PowerDNS Recursor](https://doc.powerdn
 - **Hardened by default**: non-root (uid 953), read-only root filesystem, every capability dropped, seccomp `RuntimeDefault`, no service account token. DNS listens on an unprivileged port inside the pod and the Service exposes it on 53.
 - **Secrets never land in ConfigMaps**: they are injected as environment variables and rendered at startup into a memory-backed volume.
 - **Prometheus** `/metrics` with optional ServiceMonitors, **NetworkPolicy** isolating the API, PodDisruptionBudget, HPA (SQL backends), topology spread.
+
+## Images
+
+| Component | `imageProvider: unxwares` (default) | `imageProvider: upstream` |
+|-----------|--------------------------------------|---------------------------|
+| Authoritative server | `ghcr.io/unxwares/pdns-auth` | `docker.io/powerdns/pdns-auth-51` |
+| Recursor (`recursor.enabled`) | `ghcr.io/unxwares/pdns-recursor` | `docker.io/powerdns/pdns-recursor-54` |
+| PostgreSQL client of the gpgsql schema init | `ghcr.io/unxwares/postgres` | `docker.io/library/postgres` |
+
+The MySQL client of the gmysql schema init is `docker.io/library/mysql` in both cases.
+
+The UnxWares images are the same PowerDNS versions, built from the release tarballs on current Alpine bases and
+rebuilt every week, with the backends the chart supports (bind, gsqlite3, gpgsql, gmysql) and without the tools of the
+Debian images (vim, curl...). They keep the `pdns` user (uid 953), the paths, the ports and the startup script that
+renders `/etc/powerdns/templates.d`, so the chart configures both image sets the same way. Sources and signature
+checks: [images/](https://github.com/UnxWares/helm/tree/main/images).
 
 ## Installation
 
@@ -117,6 +135,11 @@ recursor:
   # forwardZonesRecurse: ["9.9.9.9:53"]   # use an upstream resolver instead of the root servers
 ```
 
+DNSSEC validation stays on for everything else (`recursor.dnssecValidation`). The `authoritativeZones` are added as
+negative trust anchors: an internal zone has no chain of trust from the root, and validating it would answer SERVFAIL.
+If these zones are signed and delegated with a DS record from the public root, set
+`recursor.validateAuthoritativeZones: true`.
+
 ### Managing zones
 
 Zones created through the API are served immediately by the replica that received the call (by the others after
@@ -134,11 +157,24 @@ kubectl exec -n dns deploy/dns-powerdns -c pdns -- \
 - **gsqlite3** supports a single replica; the chart refuses `replicaCount > 1` or the HPA with it. Use `gpgsql` or
   `gmysql` for high availability.
 - **IPv6**: remove `[::]` from `dns.listenAddresses` (and `::` from `recursor.listenAddresses`) if your pods have IPv6 disabled.
-- **Images**: a default install runs `docker.io/powerdns/pdns-auth-51` only. `docker.io/powerdns/pdns-recursor-54`
-  (`recursor.enabled`) and the PostgreSQL/MySQL client images of the schema init (`backend.schemaInit.postgresImage`,
-  `backend.schemaInit.mysqlImage`, for gpgsql/gmysql) are only pulled when enabled; the Artifact Hub security report covers
-  the default image.
+- **Images**: a default install runs the authoritative server image only. The recursor (`recursor.enabled`) and the
+  PostgreSQL/MySQL client images of the schema init (gpgsql/gmysql) are only pulled when enabled; the Artifact Hub
+  security report covers the default image.
 - `webserver.allowFrom` and `recursor.allowFrom` default to private ranges; add your pod CIDR if it uses another range (e.g. `100.64.0.0/10`).
+
+## Upgrading
+
+### To 2026.10.5 (UnxWares images)
+
+The default images move to `ghcr.io/unxwares/pdns-auth` and `ghcr.io/unxwares/pdns-recursor` (see [Images](#images)):
+same PowerDNS versions, same user, paths and configuration. Nothing to change in your values, unless you set
+`image.repository` or `recursor.image.repository` to the official images explicitly. To keep the official images:
+`imageProvider: upstream`. The UnxWares authoritative image only has the bind, gsqlite3, gpgsql and gmysql backends: if
+you load another backend through extra configuration, keep `imageProvider: upstream`.
+
+The recursor now answers for the `recursor.authoritativeZones` that have no public chain of trust (internal zones),
+for which DNSSEC validation answered SERVFAIL: they are added as negative trust anchors
+(`recursor.validateAuthoritativeZones: false`).
 
 {{ template "chart.requirementsSection" . }}
 
