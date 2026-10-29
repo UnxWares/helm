@@ -2,8 +2,8 @@ apiVersion: v2
 name: excalidash
 description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer for Excalidraw with live collaboration features
 type: application
-version: 2026.10.2
-appVersion: "0.6.6"
+version: 2026.10.3
+appVersion: "0.6.7"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/excalidash
 icon: https://raw.githubusercontent.com/ZimengXiong/ExcaliDash/v0.6.5/docs/public/images/logo.png
@@ -41,16 +41,18 @@ annotations:
       url: https://github.com/UnxWares/helm/issues
   artifacthub.io/images: |
     - name: excalidash-frontend
-      image: docker.io/zimengxiong/excalidash-frontend:0.6.6
+      image: docker.io/zimengxiong/excalidash-frontend:0.6.7
     - name: excalidash-backend
-      image: docker.io/zimengxiong/excalidash-backend:0.6.6
+      image: docker.io/zimengxiong/excalidash-backend:0.6.7
   artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/changes: |
     - kind: security
-      description: "ExcaliDash 0.6.6: Node.js 24.22.1, patched DOMPurify, follow-redirects, proxy-addr and Alpine packages, and no more npm, npx or Yarn in the backend image (55 known vulnerabilities down to 9)."
+      description: "ExcaliDash 0.6.7: body-parser, multer, undici, zod, nodemailer and qs updated in the backend, curl updated in the frontend image (no known vulnerability left in either image)."
       links:
-        - name: ExcaliDash 0.6.6
-          url: https://github.com/ZimengXiong/ExcaliDash/releases/tag/v0.6.6
+        - name: ExcaliDash 0.6.7
+          url: https://github.com/ZimengXiong/ExcaliDash/releases/tag/v0.6.7
+        - name: Upstream pull request
+          url: https://github.com/ZimengXiong/ExcaliDash/pull/324
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

@@ -1,6 +1,6 @@
 # ExcaliDash Helm Chart
 
-![Version: 2026.10.2](https://img.shields.io/badge/Version-2026.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.6.6](https://img.shields.io/badge/AppVersion-0.6.6-informational?style=flat-square)
+![Version: 2026.10.3](https://img.shields.io/badge/Version-2026.10.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.6.7](https://img.shields.io/badge/AppVersion-0.6.7-informational?style=flat-square)
 
 [ExcaliDash](https://github.com/ZimengXiong/ExcaliDash) is a self-hosted dashboard and organizer for
 [Excalidraw](https://excalidraw.com/) drawings, with live collaboration.
