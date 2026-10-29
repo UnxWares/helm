@@ -2,7 +2,7 @@ apiVersion: v2
 name: taiga
 description: Taiga, the open-source agile project management platform (backend, async workers, events, front, protected media, bundled PostgreSQL and RabbitMQ), hardened for Kubernetes.
 type: application
-version: 2026.10.2
+version: 2026.10.3
 appVersion: "6.10.2"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/taiga
@@ -44,23 +44,36 @@ annotations:
       url: https://github.com/UnxWares/helm/issues
   artifacthub.io/images: |
     - name: taiga-back
-      image: docker.io/taigaio/taiga-back:6.10.2
+      image: ghcr.io/unxwares/taiga-back:6.10.2
     - name: taiga-front
-      image: docker.io/taigaio/taiga-front:6.10.3
+      image: ghcr.io/unxwares/taiga-front:6.10.3
     - name: taiga-events
-      image: docker.io/taigaio/taiga-events:6.10.0
+      image: ghcr.io/unxwares/taiga-events:6.10.0
     - name: taiga-protected
-      image: docker.io/taigaio/taiga-protected:6.10.1
+      image: ghcr.io/unxwares/taiga-protected:6.10.1
     - name: postgres
-      image: docker.io/library/postgres:17.11-alpine
+      image: ghcr.io/unxwares/postgres:17.11-alpine
     - name: rabbitmq
       image: docker.io/library/rabbitmq:4.4.0-management-alpine
     - name: nginx-unprivileged
       image: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim
   artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/changes: |
+    - kind: changed
+      description: "Default images move to ghcr.io/unxwares (global.imageProvider: unxwares): the same Taiga versions rebuilt every week from the upstream sources on current Alpine bases. global.imageProvider: upstream keeps the official images."
+      links:
+        - name: UnxWares images
+          url: https://github.com/UnxWares/helm/tree/main/images
     - kind: security
-      description: "The gateway uses nginx-unprivileged 1.30.6-alpine-slim: the same nginx without the optional njs, xslt, image-filter and geoip modules and their libraries (52 known vulnerabilities down to 3)."
+      description: Known vulnerabilities of the images (Trivy) drop from about 1,200 to 18, Django 3.2 and bleach 4 in taiga-back, which need changes in Taiga itself.
+    - kind: security
+      description: "taiga-back includes the upstream security fixes not released yet: permissions of the filters data endpoints and of epic custom attribute values, password recovery tokens invalidated on password and email change and expiring, maximum password length, no account enumeration in password recovery."
+    - kind: security
+      description: With the UnxWares images every Taiga pod runs as non-root with a read-only root filesystem and no capability (the official images need CHOWN, DAC_OVERRIDE, FOWNER, SETUID and SETGID).
+    - kind: changed
+      description: "OIDC needs no override image with the UnxWares images (plugin built in): global.oidc.*.overrideImage now default to empty (the former latest-oidc images were Taiga 6.9)."
+    - kind: added
+      description: /tmp volumes for the Taiga containers, and a pod volume for media when global.persistence.media is disabled.
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

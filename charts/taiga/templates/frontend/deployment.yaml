@@ -32,27 +32,17 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "taiga.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.global.serviceAccount.automount }}
-      {{- with (default .Values.global.podSecurityContext .Values.frontend.podSecurityContext) }}
       securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- include "taiga.podSecurityContext" (dict "ctx" . "values" .Values.frontend "component" "frontend") | nindent 8 }}
       containers:
         - name: frontend
-          {{- with (default .Values.global.securityContext .Values.frontend.securityContext) }}
           securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- if and .Values.global.oidc.enabled .Values.global.oidc.frontend.overrideImage.name }}
-          {{- with .Values.global.oidc.frontend.overrideImage }}
-          image: {{ ternary (printf "%s@%s" .name .digest) (printf "%s:%s" .name .tag) (not (empty .digest)) | quote }}
-          {{- end }}
-          {{- else }}
-          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
-          {{- end }}
+            {{- include "taiga.securityContext" (dict "ctx" . "values" .Values.frontend "component" "frontend") | nindent 12 }}
+          image: {{ include "taiga.frontImage" . | quote }}
           imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 80
+              containerPort: {{ include "taiga.frontendPort" . }}
               protocol: TCP
           env:
             {{- include "taiga.frontendEnv" . | nindent 12 }}
@@ -80,14 +70,18 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.frontend.extraVolumeMounts }}
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- with .Values.frontend.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
-          {{- end }}
-      {{- with .Values.frontend.extraVolumes }}
+            {{- end }}
       volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- with .Values.frontend.extraVolumes }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       {{- with (default .Values.global.pod.nodeSelector .Values.frontend.nodeSelector) }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

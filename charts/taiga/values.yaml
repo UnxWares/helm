@@ -11,6 +11,13 @@ global:
   imagePullSecrets: []
   # - name: my-registry-secret
 
+  # -- Images used by the components that leave `image.repository` empty. `unxwares`: `ghcr.io/unxwares` images
+  # rebuilt every week from the upstream sources on current Alpine bases, with the upstream security fixes not
+  # released yet, running as a non-root user with a read-only root filesystem, OIDC plugin built in
+  # (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the official `docker.io/taigaio` images and
+  # `docker.io/library/postgres`, which start as root and drop privileges.
+  imageProvider: unxwares  # @schema enum:[unxwares, upstream]
+
   # -- Public URL scheme (`http` or `https`).
   scheme: "https"  # @schema enum:[http, https]
   # -- Public domain of Taiga.
@@ -96,7 +103,8 @@ global:
   ## OIDC Authentication Configuration
   ## See: https://github.com/UnxWares/taiga-contrib-oidc-auth for more information
   oidc:
-    # -- Enable OIDC login (uses the UnxWares OIDC-enabled front/back images below).
+    # -- Enable OIDC login. The plugin is built into the UnxWares images; with `upstream` images, set OIDC-enabled
+    # images in `global.oidc.frontend.overrideImage` and `global.oidc.backend.overrideImage`.
     enabled: false
 
     # -- OIDC issuer URL.
@@ -123,12 +131,12 @@ global:
 
     frontend:
       overrideImage:
-        # -- OIDC-enabled frontend image.
-        name: ghcr.io/unxwares/taiga-front
+        # -- Image replacing the frontend image when OIDC is enabled (only needed with `upstream` images).
+        name: ""
         # -- Image tag.
-        tag: latest-oidc
-        # -- Image digest (pinned: the `latest-oidc` tag moves).
-        digest: "sha256:6e3a52da17b8f16d82b972ac47c1c8f14b0639aafc5a5d0957dd796359f72c83"
+        tag: ""
+        # -- Image digest (takes precedence over the tag).
+        digest: ""
       # -- Text of the SSO button.
       buttonText: "Login with SSO"
       # -- Keep the username/password login form.
@@ -136,12 +144,12 @@ global:
 
     backend:
       overrideImage:
-        # -- OIDC-enabled backend image (also used by async).
-        name: ghcr.io/unxwares/taiga-back
+        # -- Image replacing the backend (also used by async) image when OIDC is enabled (only needed with `upstream` images).
+        name: ""
         # -- Image tag.
-        tag: latest-oidc
-        # -- Image digest (pinned: the `latest-oidc` tag moves).
-        digest: "sha256:7724c7934a02d13c2d4f4ca0f04ba09614df2dc19243e1a762606463bc07a316"
+        tag: ""
+        # -- Image digest (takes precedence over the tag).
+        digest: ""
       # -- Enable if running behind reverse proxy with TLS termination.
       useXForwardedHost: false
 
@@ -179,8 +187,9 @@ db:
   enabled: false
 
   image:
-    # -- PostgreSQL image.
-    repository: docker.io/library/postgres
+    # -- PostgreSQL image. Empty: `ghcr.io/unxwares/postgres` or `docker.io/library/postgres`, from
+    # `global.imageProvider`.
+    repository: ""
     # -- Image tag.
     tag: "17.11-alpine"
     # -- Image pull policy.
@@ -265,9 +274,8 @@ backend:
   replicaCount: 1
 
   image:
-    ## NOTE: When global.oidc.enabled=true, the OIDC image from global.oidc.backend.overrideImage is used.
-    # -- Backend image repository.
-    repository: docker.io/taigaio/taiga-back
+    # -- Backend image repository. Empty: `ghcr.io/unxwares/taiga-back` or `docker.io/taigaio/taiga-back`, from `global.imageProvider`.
+    repository: ""
     # -- Image tag.
     tag: "6.10.2"
     # -- Image pull policy.
@@ -335,25 +343,11 @@ backend:
 
   podAnnotations: {}
   podLabels: {}
-  # -- Pod security context.
-  podSecurityContext:  # @schema skipProperties:true
-    fsGroup: 999
-    fsGroupChangePolicy: OnRootMismatch
-    seccompProfile:
-      type: RuntimeDefault
-  # -- Container security context. The image entrypoint runs migrations and `chown` as root, then switches to the
-  # `taiga` user (uid 999) with gosu: only the capabilities needed for that are kept.
-  securityContext:  # @schema skipProperties:true
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-      add:
-        - CHOWN
-        - DAC_OVERRIDE
-        - FOWNER
-        - SETUID
-        - SETGID
+  # -- Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see
+  # Security in the README).
+  podSecurityContext: {}  # @schema skipProperties:true
+  # -- Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`.
+  securityContext: {}  # @schema skipProperties:true
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -380,8 +374,8 @@ async:
   replicaCount: 1
 
   image:
-    # -- Async (celery) image repository.
-    repository: docker.io/taigaio/taiga-back
+    # -- Async (Celery) image repository. Empty: `ghcr.io/unxwares/taiga-back` or `docker.io/taigaio/taiga-back`, from `global.imageProvider`.
+    repository: ""
     # -- Image tag.
     tag: "6.10.2"
     # -- Image pull policy.
@@ -410,24 +404,11 @@ async:
 
   podAnnotations: {}
   podLabels: {}
-  # -- Pod security context.
-  podSecurityContext:  # @schema skipProperties:true
-    fsGroup: 999
-    fsGroupChangePolicy: OnRootMismatch
-    seccompProfile:
-      type: RuntimeDefault
-  # -- Container security context (same entrypoint model as the backend).
-  securityContext:  # @schema skipProperties:true
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-      add:
-        - CHOWN
-        - DAC_OVERRIDE
-        - FOWNER
-        - SETUID
-        - SETGID
+  # -- Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see
+  # Security in the README).
+  podSecurityContext: {}  # @schema skipProperties:true
+  # -- Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`.
+  securityContext: {}  # @schema skipProperties:true
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -597,9 +578,8 @@ frontend:
   replicaCount: 1
 
   image:
-    ## NOTE: When global.oidc.enabled=true, the OIDC image from global.oidc.frontend.overrideImage is used.
-    # -- Frontend image repository.
-    repository: docker.io/taigaio/taiga-front
+    # -- Frontend image repository. Empty: `ghcr.io/unxwares/taiga-front` or `docker.io/taigaio/taiga-front`, from `global.imageProvider`.
+    repository: ""
     # -- Image tag.
     tag: "6.10.3"
     # -- Image pull policy.
@@ -640,22 +620,11 @@ frontend:
 
   podAnnotations: {}
   podLabels: {}
-  # -- Pod security context.
-  podSecurityContext:  # @schema skipProperties:true
-    seccompProfile:
-      type: RuntimeDefault
-  # -- Container security context. The image (nginx as root) rewrites conf.json at startup and binds port 80.
-  securityContext:  # @schema skipProperties:true
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-      add:
-        - CHOWN
-        - DAC_OVERRIDE
-        - SETUID
-        - SETGID
-        - NET_BIND_SERVICE
+  # -- Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see
+  # Security in the README).
+  podSecurityContext: {}  # @schema skipProperties:true
+  # -- Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`.
+  securityContext: {}  # @schema skipProperties:true
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -675,8 +644,8 @@ events:
   replicaCount: 1
 
   image:
-    # -- Events image repository.
-    repository: docker.io/taigaio/taiga-events
+    # -- Events image repository. Empty: `ghcr.io/unxwares/taiga-events` or `docker.io/taigaio/taiga-events`, from `global.imageProvider`.
+    repository: ""
     # -- Image tag.
     tag: "6.10.0"
     # -- Image pull policy.
@@ -699,22 +668,11 @@ events:
 
   podAnnotations: {}
   podLabels: {}
-  # -- Pod security context.
-  podSecurityContext:  # @schema skipProperties:true
-    seccompProfile:
-      type: RuntimeDefault
-  # -- Container security context. The entrypoint renders .env and chowns as root, then switches to uid 99 with su-exec.
-  securityContext:  # @schema skipProperties:true
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-      add:
-        - CHOWN
-        - DAC_OVERRIDE
-        - FOWNER
-        - SETUID
-        - SETGID
+  # -- Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see
+  # Security in the README).
+  podSecurityContext: {}  # @schema skipProperties:true
+  # -- Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`.
+  securityContext: {}  # @schema skipProperties:true
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -735,8 +693,8 @@ protected:
   replicaCount: 1
 
   image:
-    # -- Protected image repository.
-    repository: docker.io/taigaio/taiga-protected
+    # -- Protected image repository. Empty: `ghcr.io/unxwares/taiga-protected` or `docker.io/taigaio/taiga-protected`, from `global.imageProvider`.
+    repository: ""
     # -- Image tag.
     tag: "6.10.1"
     # -- Image pull policy.
@@ -764,22 +722,11 @@ protected:
 
   podAnnotations: {}
   podLabels: {}
-  # -- Pod security context.
-  podSecurityContext:  # @schema skipProperties:true
-    seccompProfile:
-      type: RuntimeDefault
-  # -- Container security context (same entrypoint model as the backend: chown as root, then gosu to uid 999).
-  securityContext:  # @schema skipProperties:true
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-      add:
-        - CHOWN
-        - DAC_OVERRIDE
-        - FOWNER
-        - SETUID
-        - SETGID
+  # -- Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see
+  # Security in the README).
+  podSecurityContext: {}  # @schema skipProperties:true
+  # -- Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`.
+  securityContext: {}  # @schema skipProperties:true
   nodeSelector: {}
   tolerations: []
   affinity: {}

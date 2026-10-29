@@ -56,7 +56,7 @@
                             ]
                         },
                         "repository": {
-                            "description": "Async (celery) image repository.",
+                            "description": "Async (Celery) image repository. Empty: `ghcr.io/unxwares/taiga-back` or `docker.io/taigaio/taiga-back`, from `global.imageProvider`.",
                             "type": "string"
                         },
                         "tag": {
@@ -75,7 +75,7 @@
                     "type": "object"
                 },
                 "podSecurityContext": {
-                    "description": "Pod security context.",
+                    "description": "Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see Security in the README).",
                     "type": "object"
                 },
                 "replicaCount": {
@@ -87,7 +87,7 @@
                     "type": "object"
                 },
                 "securityContext": {
-                    "description": "Container security context (same entrypoint model as the backend).",
+                    "description": "Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`.",
                     "type": "object"
                 },
                 "tolerations": {
@@ -344,7 +344,7 @@
                             ]
                         },
                         "repository": {
-                            "description": "Backend image repository.",
+                            "description": "Backend image repository. Empty: `ghcr.io/unxwares/taiga-back` or `docker.io/taigaio/taiga-back`, from `global.imageProvider`.",
                             "type": "string"
                         },
                         "tag": {
@@ -370,7 +370,7 @@
                     "type": "object"
                 },
                 "podSecurityContext": {
-                    "description": "Pod security context.",
+                    "description": "Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see Security in the README).",
                     "type": "object"
                 },
                 "readinessProbe": {
@@ -385,7 +385,7 @@
                     "type": "object"
                 },
                 "securityContext": {
-                    "description": "Container security context. The image entrypoint runs migrations and `chown` as root, then switches to the `taiga` user (uid 999) with gosu: only the capabilities needed for that are kept.",
+                    "description": "Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`.",
                     "type": "object"
                 },
                 "service": {
@@ -484,7 +484,7 @@
                             ]
                         },
                         "repository": {
-                            "description": "PostgreSQL image.",
+                            "description": "PostgreSQL image. Empty: `ghcr.io/unxwares/postgres` or `docker.io/library/postgres`, from `global.imageProvider`.",
                             "type": "string"
                         },
                         "tag": {
@@ -586,7 +586,7 @@
                             ]
                         },
                         "repository": {
-                            "description": "Events image repository.",
+                            "description": "Events image repository. Empty: `ghcr.io/unxwares/taiga-events` or `docker.io/taigaio/taiga-events`, from `global.imageProvider`.",
                             "type": "string"
                         },
                         "tag": {
@@ -609,7 +609,7 @@
                     "type": "object"
                 },
                 "podSecurityContext": {
-                    "description": "Pod security context.",
+                    "description": "Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see Security in the README).",
                     "type": "object"
                 },
                 "readinessProbe": {
@@ -625,7 +625,7 @@
                     "type": "object"
                 },
                 "securityContext": {
-                    "description": "Container security context. The entrypoint renders .env and chowns as root, then switches to uid 99 with su-exec.",
+                    "description": "Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`.",
                     "type": "object"
                 },
                 "service": {
@@ -892,7 +892,7 @@
                             ]
                         },
                         "repository": {
-                            "description": "Frontend image repository.",
+                            "description": "Frontend image repository. Empty: `ghcr.io/unxwares/taiga-front` or `docker.io/taigaio/taiga-front`, from `global.imageProvider`.",
                             "type": "string"
                         },
                         "tag": {
@@ -918,7 +918,7 @@
                     "type": "object"
                 },
                 "podSecurityContext": {
-                    "description": "Pod security context.",
+                    "description": "Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see Security in the README).",
                     "type": "object"
                 },
                 "readinessProbe": {
@@ -933,7 +933,7 @@
                     "type": "object"
                 },
                 "securityContext": {
-                    "description": "Container security context. The image (nginx as root) rewrites conf.json at startup and binds port 80.",
+                    "description": "Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`.",
                     "type": "object"
                 },
                 "service": {
@@ -1099,6 +1099,14 @@
                     "description": "Extra envFrom sources for every Taiga service.",
                     "type": "array"
                 },
+                "imageProvider": {
+                    "description": "Images used by the components that leave `image.repository` empty. `unxwares`: `ghcr.io/unxwares` images rebuilt every week from the upstream sources on current Alpine bases, with the upstream security fixes not released yet, running as a non-root user with a read-only root filesystem, OIDC plugin built in (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the official `docker.io/taigaio` images and `docker.io/library/postgres`, which start as root and drop privileges.",
+                    "type": "string",
+                    "enum": [
+                        "unxwares",
+                        "upstream"
+                    ]
+                },
                 "imagePullSecrets": {
                     "description": "Image pull secrets for every pod.",
                     "type": "array"
@@ -1113,11 +1121,11 @@
                                     "type": "object",
                                     "properties": {
                                         "digest": {
-                                            "description": "Image digest (pinned: the `latest-oidc` tag moves).",
+                                            "description": "Image digest (takes precedence over the tag).",
                                             "type": "string"
                                         },
                                         "name": {
-                                            "description": "OIDC-enabled backend image (also used by async).",
+                                            "description": "Image replacing the backend (also used by async) image when OIDC is enabled (only needed with `upstream` images).",
                                             "type": "string"
                                         },
                                         "tag": {
@@ -1141,7 +1149,7 @@
                             "type": "string"
                         },
                         "enabled": {
-                            "description": "Enable OIDC login (uses the UnxWares OIDC-enabled front/back images below).",
+                            "description": "Enable OIDC login. The plugin is built into the UnxWares images; with `upstream` images, set OIDC-enabled images in `global.oidc.frontend.overrideImage` and `global.oidc.backend.overrideImage`.",
                             "type": "boolean"
                         },
                         "endpoints": {
@@ -1180,11 +1188,11 @@
                                     "type": "object",
                                     "properties": {
                                         "digest": {
-                                            "description": "Image digest (pinned: the `latest-oidc` tag moves).",
+                                            "description": "Image digest (takes precedence over the tag).",
                                             "type": "string"
                                         },
                                         "name": {
-                                            "description": "OIDC-enabled frontend image.",
+                                            "description": "Image replacing the frontend image when OIDC is enabled (only needed with `upstream` images).",
                                             "type": "string"
                                         },
                                         "tag": {
@@ -1452,7 +1460,7 @@
                             ]
                         },
                         "repository": {
-                            "description": "Protected image repository.",
+                            "description": "Protected image repository. Empty: `ghcr.io/unxwares/taiga-protected` or `docker.io/taigaio/taiga-protected`, from `global.imageProvider`.",
                             "type": "string"
                         },
                         "tag": {
@@ -1479,7 +1487,7 @@
                     "type": "object"
                 },
                 "podSecurityContext": {
-                    "description": "Pod security context.",
+                    "description": "Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see Security in the README).",
                     "type": "object"
                 },
                 "readinessProbe": {
@@ -1495,7 +1503,7 @@
                     "type": "object"
                 },
                 "securityContext": {
-                    "description": "Container security context (same entrypoint model as the backend: chown as root, then gosu to uid 999).",
+                    "description": "Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`.",
                     "type": "object"
                 },
                 "service": {

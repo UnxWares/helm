@@ -1,0 +1,16 @@
+# Same full stack on the official taigaio and postgres images.
+global:
+  imageProvider: upstream
+  scheme: http
+  websocketsScheme: ws
+  domain: localhost
+externalDatabase:
+  enabled: false
+db:
+  enabled: true
+asyncRabbitmq:
+  persistence:
+    size: 1Gi
+eventsRabbitmq:
+  persistence:
+    size: 1Gi

@@ -1,6 +1,6 @@
 # Taiga Helm Chart
 
-![Version: 2026.10.2](https://img.shields.io/badge/Version-2026.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 6.10.2](https://img.shields.io/badge/AppVersion-6.10.2-informational?style=flat-square)
+![Version: 2026.10.3](https://img.shields.io/badge/Version-2026.10.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 6.10.2](https://img.shields.io/badge/AppVersion-6.10.2-informational?style=flat-square)
 
 [Taiga](https://taiga.io/) is an open-source project management platform for agile teams (Scrum, Kanban, issues,
 wiki). This chart deploys the whole stack of [taiga-docker](https://github.com/taigaio/taiga-docker): backend API,
@@ -9,14 +9,15 @@ a bundled PostgreSQL.
 
 ## Features
 
-- **Taiga 6.10** with pinned images, optional **OIDC** login (UnxWares OIDC-enabled front/back images)
+- **Taiga 6.10 on UnxWares images by default**: rebuilt every week from the upstream sources on current Alpine bases,
+  with the upstream security fixes not released yet, OIDC plugin built in; the official images stay available with
+  `global.imageProvider: upstream` (see [Images](#images))
 - **Generated secrets** (Django key, database and broker passwords) kept across upgrades, or your own Secret;
   passwords reach containers through `secretKeyRef` only, broker URLs are assembled with Kubernetes `$(VAR)` expansion
 - **Supported versions**: PostgreSQL 17, RabbitMQ 4.4, nginx 1.30 (the previous release shipped PostgreSQL 12.3,
   RabbitMQ 3.8 and nginx 1.19, all end-of-life)
-- **Hardened**: gateway, PostgreSQL and RabbitMQ run as non-root with a read-only root filesystem; the Taiga images
-  must start as root (their entrypoints `chown` the volumes then drop to `taiga` with gosu), so they keep only the
-  capabilities this needs; seccomp `RuntimeDefault`, no service account token
+- **Hardened**: with the UnxWares images every pod runs as non-root with a read-only root filesystem and no
+  capability; seccomp `RuntimeDefault`, no service account token
 - **Media that works out of the box**: backend, async workers and gateway share one volume. With a ReadWriteOnce
   volume the chart schedules them on the same node; use ReadWriteMany to spread them
 - Ingress or Gateway API HTTPRoute (websockets included)
@@ -38,6 +39,30 @@ kubectl exec -it -n taiga deploy/taiga-backend -- python manage.py createsuperus
 ```
 
 Charts are signed: see [verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures).
+
+## Images
+
+| Component | `global.imageProvider: unxwares` (default) | `global.imageProvider: upstream` |
+|-----------|---------------------------------------------|----------------------------------|
+| backend, async | `ghcr.io/unxwares/taiga-back` | `docker.io/taigaio/taiga-back` |
+| front | `ghcr.io/unxwares/taiga-front` (port 8080) | `docker.io/taigaio/taiga-front` (port 80) |
+| events | `ghcr.io/unxwares/taiga-events` | `docker.io/taigaio/taiga-events` |
+| protected | `ghcr.io/unxwares/taiga-protected` | `docker.io/taigaio/taiga-protected` |
+| bundled PostgreSQL (`db.enabled`) | `ghcr.io/unxwares/postgres` | `docker.io/library/postgres` |
+
+The gateway (`nginxinc/nginx-unprivileged`) and the brokers (`library/rabbitmq`) use the official images in both
+cases.
+
+The UnxWares images are the same Taiga versions, rebuilt every week from the upstream release sources on current
+Alpine bases, with dependencies bumped for known vulnerabilities and the security fixes merged upstream but not
+released yet. They run as a non-root user with a read-only root filesystem and no capability, and are signed with
+cosign. Sources, differences from the upstream images and signature checks:
+[images/](https://github.com/UnxWares/helm/tree/main/images).
+
+With `upstream`, the chart gives the Taiga containers the capabilities their entrypoints need (they start as root,
+`chown` their files, then switch user). A component's `image.repository` (a mirror, your own build) replaces the
+provider's repository; the security contexts follow `global.imageProvider` unless you set them per component or in
+`global.podSecurityContext` / `global.securityContext`.
 
 ## Examples
 
@@ -82,6 +107,9 @@ global:
     existingSecret: taiga-oidc   # keys: oidc-client-id, oidc-client-secret
 ```
 
+The OIDC plugin is built into the UnxWares images. With `global.imageProvider: upstream`, also set OIDC-enabled
+images in `global.oidc.backend.overrideImage` and `global.oidc.frontend.overrideImage`.
+
 ### SMTP
 
 ```yaml
@@ -97,14 +125,30 @@ backend:
 
 ## Notes
 
-- Without `global.persistence.media`, uploads stay in the backend container: they cannot be downloaded through the
-  gateway and are lost at the next restart. Keep it enabled.
+- Without `global.persistence.media`, uploads go to a volume of the backend pod: they cannot be downloaded through
+  the gateway and are lost at the next restart. Keep it enabled.
 - Attachments are served by `taiga-protected`, which checks the signed token of each URL (valid `protected.maxAge`
   seconds) before nginx streams the file.
 - RabbitMQ 4 refuses the transient non-exclusive queues Celery still declares by default: the chart ships a
   `conf.d` file that re-allows them (`deprecated_features.permit.transient_nonexcl_queues = true`).
 
 ## Upgrading
+
+### To 2026.10.3 (UnxWares images)
+
+The default images move to `ghcr.io/unxwares` (see [Images](#images)): same Taiga versions, plus the upstream
+security fixes not released yet. One of them adds a nullable column (`users_user.token_expires_at`): the official
+6.10 images keep working on the migrated database, and the next upstream release ships the same migration.
+
+- The Taiga pods now run as non-root (uid 999, front 101) with a read-only root filesystem. The media files written
+  by the official images already belong to uid 999: nothing to change on the volume.
+- To keep the official images: `global.imageProvider: upstream`.
+- `global.oidc.backend.overrideImage` and `global.oidc.frontend.overrideImage` now default to empty: the UnxWares
+  images include the OIDC plugin, and the former `latest-oidc` images were Taiga 6.9. Remove them from your values
+  unless you build your own OIDC images.
+- If you set `podSecurityContext` or `securityContext` on the Taiga components, check them against the image
+  provider: the UnxWares images need no capability, the official ones need `CHOWN`, `DAC_OVERRIDE`, `FOWNER`,
+  `SETUID` and `SETGID`.
 
 ### To 2026.10.1 (Taiga 6.9 → 6.10)
 
@@ -155,15 +199,15 @@ Kubernetes: `>=1.27.0-0`
 | async.extraVolumeMounts | list | `[]` |  |
 | async.extraVolumes | list | `[]` |  |
 | async.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
-| async.image.repository | string | `"docker.io/taigaio/taiga-back"` | Async (celery) image repository. |
+| async.image.repository | string | `""` | Async (Celery) image repository. Empty: `ghcr.io/unxwares/taiga-back` or `docker.io/taigaio/taiga-back`, from `global.imageProvider`. |
 | async.image.tag | string | `"6.10.2"` | Image tag. |
 | async.nodeSelector | object | `{}` |  |
 | async.podAnnotations | object | `{}` |  |
 | async.podLabels | object | `{}` |  |
-| async.podSecurityContext | object | `{"fsGroup":999,"fsGroupChangePolicy":"OnRootMismatch","seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. |
+| async.podSecurityContext | object | `{}` | Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see Security in the README). |
 | async.replicaCount | int | `1` | Celery worker replicas. |
 | async.resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"50m","memory":"256Mi"}}` | Resources. |
-| async.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"add":["CHOWN","DAC_OVERRIDE","FOWNER","SETUID","SETGID"],"drop":["ALL"]}}` | Container security context (same entrypoint model as the backend). |
+| async.securityContext | object | `{}` | Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`. |
 | async.tolerations | list | `[]` |  |
 | asyncRabbitmq.affinity | object | `{}` |  |
 | asyncRabbitmq.auth.erlangCookie | string | `""` | Deprecated: RabbitMQ 4 ignores the RABBITMQ_ERLANG_COOKIE variable; a cookie is generated in the data volume. |
@@ -216,7 +260,7 @@ Kubernetes: `>=1.27.0-0`
 | backend.extraVolumeMounts | list | `[]` | Extra volume mounts. |
 | backend.extraVolumes | list | `[]` | Extra volumes. |
 | backend.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
-| backend.image.repository | string | `"docker.io/taigaio/taiga-back"` | Backend image repository. |
+| backend.image.repository | string | `""` | Backend image repository. Empty: `ghcr.io/unxwares/taiga-back` or `docker.io/taigaio/taiga-back`, from `global.imageProvider`. |
 | backend.image.tag | string | `"6.10.2"` | Image tag. |
 | backend.imagePullSecrets | list | `[]` | Image pull secrets (defaults to global.imagePullSecrets). |
 | backend.livenessProbe.httpGet.path | string | `"/api/v1/"` |  |
@@ -224,12 +268,12 @@ Kubernetes: `>=1.27.0-0`
 | backend.nodeSelector | object | `{}` |  |
 | backend.podAnnotations | object | `{}` |  |
 | backend.podLabels | object | `{}` |  |
-| backend.podSecurityContext | object | `{"fsGroup":999,"fsGroupChangePolicy":"OnRootMismatch","seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. |
+| backend.podSecurityContext | object | `{}` | Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see Security in the README). |
 | backend.readinessProbe.httpGet.path | string | `"/api/v1/"` |  |
 | backend.readinessProbe.httpGet.port | string | `"http"` |  |
 | backend.replicaCount | int | `1` | Backend replicas. |
 | backend.resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"100m","memory":"384Mi"}}` | Resources. |
-| backend.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"add":["CHOWN","DAC_OVERRIDE","FOWNER","SETUID","SETGID"],"drop":["ALL"]}}` | Container security context. The image entrypoint runs migrations and `chown` as root, then switches to the `taiga` user (uid 999) with gosu: only the capabilities needed for that are kept. |
+| backend.securityContext | object | `{}` | Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`. |
 | backend.service.port | int | `8000` |  |
 | backend.service.type | string | `"ClusterIP"` |  |
 | backend.startupProbe | object | `{"failureThreshold":60,"httpGet":{"path":"/api/v1/","port":"http"},"periodSeconds":10}` | Startup probe (the first start runs the database migrations). |
@@ -248,7 +292,7 @@ Kubernetes: `>=1.27.0-0`
 | db.healthcheck.startPeriod | string | `"5s"` |  |
 | db.healthcheck.timeout | string | `"5s"` |  |
 | db.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
-| db.image.repository | string | `"docker.io/library/postgres"` | PostgreSQL image. |
+| db.image.repository | string | `""` | PostgreSQL image. Empty: `ghcr.io/unxwares/postgres` or `docker.io/library/postgres`, from `global.imageProvider`. |
 | db.image.tag | string | `"17.11-alpine"` | Image tag. |
 | db.nodeSelector | object | `{}` |  |
 | db.persistence.accessMode | string | `"ReadWriteOnce"` | Access mode. |
@@ -269,17 +313,17 @@ Kubernetes: `>=1.27.0-0`
 | events.extraEnv | list | `[]` |  |
 | events.extraEnvFrom | list | `[]` |  |
 | events.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
-| events.image.repository | string | `"docker.io/taigaio/taiga-events"` | Events image repository. |
+| events.image.repository | string | `""` | Events image repository. Empty: `ghcr.io/unxwares/taiga-events` or `docker.io/taigaio/taiga-events`, from `global.imageProvider`. |
 | events.image.tag | string | `"6.10.0"` | Image tag. |
 | events.livenessProbe | object | `{"httpGet":{"path":"/healthz","port":"health"}}` | Liveness probe (health endpoint on port 3023). |
 | events.nodeSelector | object | `{}` |  |
 | events.podAnnotations | object | `{}` |  |
 | events.podLabels | object | `{}` |  |
-| events.podSecurityContext | object | `{"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. |
+| events.podSecurityContext | object | `{}` | Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see Security in the README). |
 | events.readinessProbe | object | `{"httpGet":{"path":"/healthz","port":"health"}}` | Readiness probe. |
 | events.replicaCount | int | `1` | Events (websockets) replicas. |
 | events.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"20m","memory":"96Mi"}}` | Resources. |
-| events.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"add":["CHOWN","DAC_OVERRIDE","FOWNER","SETUID","SETGID"],"drop":["ALL"]}}` | Container security context. The entrypoint renders .env and chowns as root, then switches to uid 99 with su-exec. |
+| events.securityContext | object | `{}` | Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`. |
 | events.service.port | int | `8888` |  |
 | events.service.type | string | `"ClusterIP"` |  |
 | events.tolerations | list | `[]` |  |
@@ -336,7 +380,7 @@ Kubernetes: `>=1.27.0-0`
 | frontend.extraVolumeMounts | list | `[]` |  |
 | frontend.extraVolumes | list | `[]` |  |
 | frontend.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
-| frontend.image.repository | string | `"docker.io/taigaio/taiga-front"` | Frontend image repository. |
+| frontend.image.repository | string | `""` | Frontend image repository. Empty: `ghcr.io/unxwares/taiga-front` or `docker.io/taigaio/taiga-front`, from `global.imageProvider`. |
 | frontend.image.tag | string | `"6.10.3"` | Image tag. |
 | frontend.imagePullSecrets | list | `[]` | Image pull secrets (defaults to global.imagePullSecrets). |
 | frontend.livenessProbe.httpGet.path | string | `"/"` |  |
@@ -344,12 +388,12 @@ Kubernetes: `>=1.27.0-0`
 | frontend.nodeSelector | object | `{}` |  |
 | frontend.podAnnotations | object | `{}` |  |
 | frontend.podLabels | object | `{}` |  |
-| frontend.podSecurityContext | object | `{"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. |
+| frontend.podSecurityContext | object | `{}` | Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see Security in the README). |
 | frontend.readinessProbe.httpGet.path | string | `"/"` |  |
 | frontend.readinessProbe.httpGet.port | string | `"http"` |  |
 | frontend.replicaCount | int | `1` | Frontend replicas. |
 | frontend.resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"32Mi"}}` | Resources. |
-| frontend.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"add":["CHOWN","DAC_OVERRIDE","SETUID","SETGID","NET_BIND_SERVICE"],"drop":["ALL"]}}` | Container security context. The image (nginx as root) rewrites conf.json at startup and binds port 80. |
+| frontend.securityContext | object | `{}` | Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`. |
 | frontend.service.port | int | `80` |  |
 | frontend.service.type | string | `"ClusterIP"` |  |
 | frontend.tolerations | list | `[]` |  |
@@ -387,14 +431,15 @@ Kubernetes: `>=1.27.0-0`
 | global.existingSecret | string | `""` | Existing secret used for every service. It must expose all the keys referenced in `secretKeys` (plus POSTGRES_USER/POSTGRES_PASSWORD and RABBITMQ_USER/RABBITMQ_PASS when the bundled services use it). |
 | global.extraEnv | list | `[]` | Extra environment variables for every Taiga service. |
 | global.extraEnvFrom | list | `[]` | Extra envFrom sources for every Taiga service. |
+| global.imageProvider | string | `"unxwares"` | Images used by the components that leave `image.repository` empty. `unxwares`: `ghcr.io/unxwares` images rebuilt every week from the upstream sources on current Alpine bases, with the upstream security fixes not released yet, running as a non-root user with a read-only root filesystem, OIDC plugin built in (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the official `docker.io/taigaio` images and `docker.io/library/postgres`, which start as root and drop privileges. |
 | global.imagePullSecrets | list | `[]` | Image pull secrets for every pod. |
-| global.oidc.backend.overrideImage.digest | string | `"sha256:7724c7934a02d13c2d4f4ca0f04ba09614df2dc19243e1a762606463bc07a316"` | Image digest (pinned: the `latest-oidc` tag moves). |
-| global.oidc.backend.overrideImage.name | string | `"ghcr.io/unxwares/taiga-back"` | OIDC-enabled backend image (also used by async). |
-| global.oidc.backend.overrideImage.tag | string | `"latest-oidc"` | Image tag. |
+| global.oidc.backend.overrideImage.digest | string | `""` | Image digest (takes precedence over the tag). |
+| global.oidc.backend.overrideImage.name | string | `""` | Image replacing the backend (also used by async) image when OIDC is enabled (only needed with `upstream` images). |
+| global.oidc.backend.overrideImage.tag | string | `""` | Image tag. |
 | global.oidc.backend.useXForwardedHost | bool | `false` | Enable if running behind reverse proxy with TLS termination. |
 | global.oidc.clientId | string | `""` | OIDC client ID. |
 | global.oidc.clientSecret | string | `""` | OIDC client secret (stored in the chart secret; ignored with `existingSecret`). |
-| global.oidc.enabled | bool | `false` | Enable OIDC login (uses the UnxWares OIDC-enabled front/back images below). |
+| global.oidc.enabled | bool | `false` | Enable OIDC login. The plugin is built into the UnxWares images; with `upstream` images, set OIDC-enabled images in `global.oidc.frontend.overrideImage` and `global.oidc.backend.overrideImage`. |
 | global.oidc.endpoints.authorization | string | `""` |  |
 | global.oidc.endpoints.jwks | string | `""` |  |
 | global.oidc.endpoints.token | string | `""` |  |
@@ -402,9 +447,9 @@ Kubernetes: `>=1.27.0-0`
 | global.oidc.existingSecret | string | `""` | Existing secret with the client ID and secret. |
 | global.oidc.frontend.buttonText | string | `"Login with SSO"` | Text of the SSO button. |
 | global.oidc.frontend.enableDefaultLogin | bool | `true` | Keep the username/password login form. |
-| global.oidc.frontend.overrideImage.digest | string | `"sha256:6e3a52da17b8f16d82b972ac47c1c8f14b0639aafc5a5d0957dd796359f72c83"` | Image digest (pinned: the `latest-oidc` tag moves). |
-| global.oidc.frontend.overrideImage.name | string | `"ghcr.io/unxwares/taiga-front"` | OIDC-enabled frontend image. |
-| global.oidc.frontend.overrideImage.tag | string | `"latest-oidc"` | Image tag. |
+| global.oidc.frontend.overrideImage.digest | string | `""` | Image digest (takes precedence over the tag). |
+| global.oidc.frontend.overrideImage.name | string | `""` | Image replacing the frontend image when OIDC is enabled (only needed with `upstream` images). |
+| global.oidc.frontend.overrideImage.tag | string | `""` | Image tag. |
 | global.oidc.issuer | string | `""` | OIDC issuer URL. |
 | global.oidc.scopes | string | `"openid profile email"` | OIDC scopes. |
 | global.oidc.secretKeys.clientId | string | `"oidc-client-id"` |  |
@@ -444,18 +489,18 @@ Kubernetes: `>=1.27.0-0`
 | protected.extraEnv | list | `[]` |  |
 | protected.extraEnvFrom | list | `[]` |  |
 | protected.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
-| protected.image.repository | string | `"docker.io/taigaio/taiga-protected"` | Protected image repository. |
+| protected.image.repository | string | `""` | Protected image repository. Empty: `ghcr.io/unxwares/taiga-protected` or `docker.io/taigaio/taiga-protected`, from `global.imageProvider`. |
 | protected.image.tag | string | `"6.10.1"` | Image tag. |
 | protected.livenessProbe | object | `{"tcpSocket":{"port":"http"}}` | Liveness probe. |
 | protected.maxAge | int | `360` | Validity of signed attachment URLs (seconds). |
 | protected.nodeSelector | object | `{}` |  |
 | protected.podAnnotations | object | `{}` |  |
 | protected.podLabels | object | `{}` |  |
-| protected.podSecurityContext | object | `{"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. |
+| protected.podSecurityContext | object | `{}` | Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see Security in the README). |
 | protected.readinessProbe | object | `{"tcpSocket":{"port":"http"}}` | Readiness probe. |
 | protected.replicaCount | int | `1` | Protected (signed attachment URLs) replicas. |
 | protected.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"20m","memory":"128Mi"}}` | Resources. |
-| protected.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"add":["CHOWN","DAC_OVERRIDE","FOWNER","SETUID","SETGID"],"drop":["ALL"]}}` | Container security context (same entrypoint model as the backend: chown as root, then gosu to uid 999). |
+| protected.securityContext | object | `{}` | Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`. |
 | protected.service.port | int | `8003` |  |
 | protected.service.type | string | `"ClusterIP"` |  |
 | protected.tolerations | list | `[]` |  |

@@ -9,14 +9,15 @@ a bundled PostgreSQL.
 
 ## Features
 
-- **Taiga 6.10** with pinned images, optional **OIDC** login (UnxWares OIDC-enabled front/back images)
+- **Taiga 6.10 on UnxWares images by default**: rebuilt every week from the upstream sources on current Alpine bases,
+  with the upstream security fixes not released yet, OIDC plugin built in; the official images stay available with
+  `global.imageProvider: upstream` (see [Images](#images))
 - **Generated secrets** (Django key, database and broker passwords) kept across upgrades, or your own Secret;
   passwords reach containers through `secretKeyRef` only, broker URLs are assembled with Kubernetes `$(VAR)` expansion
 - **Supported versions**: PostgreSQL 17, RabbitMQ 4.4, nginx 1.30 (the previous release shipped PostgreSQL 12.3,
   RabbitMQ 3.8 and nginx 1.19, all end-of-life)
-- **Hardened**: gateway, PostgreSQL and RabbitMQ run as non-root with a read-only root filesystem; the Taiga images
-  must start as root (their entrypoints `chown` the volumes then drop to `taiga` with gosu), so they keep only the
-  capabilities this needs; seccomp `RuntimeDefault`, no service account token
+- **Hardened**: with the UnxWares images every pod runs as non-root with a read-only root filesystem and no
+  capability; seccomp `RuntimeDefault`, no service account token
 - **Media that works out of the box**: backend, async workers and gateway share one volume. With a ReadWriteOnce
   volume the chart schedules them on the same node; use ReadWriteMany to spread them
 - Ingress or Gateway API HTTPRoute (websockets included)
@@ -38,6 +39,30 @@ kubectl exec -it -n taiga deploy/taiga-backend -- python manage.py createsuperus
 ```
 
 Charts are signed: see [verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures).
+
+## Images
+
+| Component | `global.imageProvider: unxwares` (default) | `global.imageProvider: upstream` |
+|-----------|---------------------------------------------|----------------------------------|
+| backend, async | `ghcr.io/unxwares/taiga-back` | `docker.io/taigaio/taiga-back` |
+| front | `ghcr.io/unxwares/taiga-front` (port 8080) | `docker.io/taigaio/taiga-front` (port 80) |
+| events | `ghcr.io/unxwares/taiga-events` | `docker.io/taigaio/taiga-events` |
+| protected | `ghcr.io/unxwares/taiga-protected` | `docker.io/taigaio/taiga-protected` |
+| bundled PostgreSQL (`db.enabled`) | `ghcr.io/unxwares/postgres` | `docker.io/library/postgres` |
+
+The gateway (`nginxinc/nginx-unprivileged`) and the brokers (`library/rabbitmq`) use the official images in both
+cases.
+
+The UnxWares images are the same Taiga versions, rebuilt every week from the upstream release sources on current
+Alpine bases, with dependencies bumped for known vulnerabilities and the security fixes merged upstream but not
+released yet. They run as a non-root user with a read-only root filesystem and no capability, and are signed with
+cosign. Sources, differences from the upstream images and signature checks:
+[images/](https://github.com/UnxWares/helm/tree/main/images).
+
+With `upstream`, the chart gives the Taiga containers the capabilities their entrypoints need (they start as root,
+`chown` their files, then switch user). A component's `image.repository` (a mirror, your own build) replaces the
+provider's repository; the security contexts follow `global.imageProvider` unless you set them per component or in
+`global.podSecurityContext` / `global.securityContext`.
 
 ## Examples
 
@@ -82,6 +107,9 @@ global:
     existingSecret: taiga-oidc   # keys: oidc-client-id, oidc-client-secret
 ```
 
+The OIDC plugin is built into the UnxWares images. With `global.imageProvider: upstream`, also set OIDC-enabled
+images in `global.oidc.backend.overrideImage` and `global.oidc.frontend.overrideImage`.
+
 ### SMTP
 
 ```yaml
@@ -97,14 +125,30 @@ backend:
 
 ## Notes
 
-- Without `global.persistence.media`, uploads stay in the backend container: they cannot be downloaded through the
-  gateway and are lost at the next restart. Keep it enabled.
+- Without `global.persistence.media`, uploads go to a volume of the backend pod: they cannot be downloaded through
+  the gateway and are lost at the next restart. Keep it enabled.
 - Attachments are served by `taiga-protected`, which checks the signed token of each URL (valid `protected.maxAge`
   seconds) before nginx streams the file.
 - RabbitMQ 4 refuses the transient non-exclusive queues Celery still declares by default: the chart ships a
   `conf.d` file that re-allows them (`deprecated_features.permit.transient_nonexcl_queues = true`).
 
 ## Upgrading
+
+### To 2026.10.3 (UnxWares images)
+
+The default images move to `ghcr.io/unxwares` (see [Images](#images)): same Taiga versions, plus the upstream
+security fixes not released yet. One of them adds a nullable column (`users_user.token_expires_at`): the official
+6.10 images keep working on the migrated database, and the next upstream release ships the same migration.
+
+- The Taiga pods now run as non-root (uid 999, front 101) with a read-only root filesystem. The media files written
+  by the official images already belong to uid 999: nothing to change on the volume.
+- To keep the official images: `global.imageProvider: upstream`.
+- `global.oidc.backend.overrideImage` and `global.oidc.frontend.overrideImage` now default to empty: the UnxWares
+  images include the OIDC plugin, and the former `latest-oidc` images were Taiga 6.9. Remove them from your values
+  unless you build your own OIDC images.
+- If you set `podSecurityContext` or `securityContext` on the Taiga components, check them against the image
+  provider: the UnxWares images need no capability, the official ones need `CHOWN`, `DAC_OVERRIDE`, `FOWNER`,
+  `SETUID` and `SETGID`.
 
 ### To 2026.10.1 (Taiga 6.9 → 6.10)
 
