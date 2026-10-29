@@ -8,7 +8,7 @@
 
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/unxwares)](https://artifacthub.io/packages/search?repo=unxwares)
 [![Release Charts](https://github.com/UnxWares/helm/actions/workflows/release.yaml/badge.svg)](https://github.com/UnxWares/helm/actions/workflows/release.yaml)
-[![Image scan](https://github.com/UnxWares/helm/actions/workflows/image-scan.yaml/badge.svg)](https://github.com/UnxWares/helm/actions/workflows/image-scan.yaml)
+[![CVE watch](https://github.com/UnxWares/helm/actions/workflows/cve-watch.yaml/badge.svg)](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
 [Charts](#available-charts) • [Installation](#installation) • [Signatures](#verifying-signatures) • [Contributing](#contributing) • [Support](#support)
@@ -19,8 +19,8 @@
 
 Helm charts we run ourselves, maintained by UnxWares. Every chart follows the same rules:
 
-- **Pinned, current images**, scanned weekly with Trivy; releases that only bump images for CVEs are flagged
-  `containsSecurityUpdates` on Artifact Hub.
+- **Pinned, current images**, scanned weekly with Trivy (the [CVE watch](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch)
+  issue); releases that only bump images for CVEs are flagged `containsSecurityUpdates` on Artifact Hub.
 - **No default passwords**: secrets are generated once and kept across upgrades, or read from your own Secret, and
   reach containers through `secretKeyRef` only.
 - **Hardened by default**: non-root wherever the image allows it, read-only root filesystem, capabilities dropped,
