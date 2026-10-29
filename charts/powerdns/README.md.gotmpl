@@ -134,6 +134,10 @@ kubectl exec -n dns deploy/dns-powerdns -c pdns -- \
 - **gsqlite3** supports a single replica; the chart refuses `replicaCount > 1` or the HPA with it. Use `gpgsql` or
   `gmysql` for high availability.
 - **IPv6**: remove `[::]` from `dns.listenAddresses` (and `::` from `recursor.listenAddresses`) if your pods have IPv6 disabled.
+- **Images**: a default install runs `docker.io/powerdns/pdns-auth-51` only. `docker.io/powerdns/pdns-recursor-54`
+  (`recursor.enabled`) and the PostgreSQL/MySQL client images of the schema init (`backend.schemaInit.postgresImage`,
+  `backend.schemaInit.mysqlImage`, for gpgsql/gmysql) are only pulled when enabled; the Artifact Hub security report covers
+  the default image.
 - `webserver.allowFrom` and `recursor.allowFrom` default to private ranges; add your pod CIDR if it uses another range (e.g. `100.64.0.0/10`).
 
 {{ template "chart.requirementsSection" . }}
