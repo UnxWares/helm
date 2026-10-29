@@ -47,6 +47,8 @@ jobs:
                     - { name: taiga-events, context: images/taiga-events, suffix: "" }
                     - { name: taiga-front, context: images/taiga-front, suffix: "" }
                     - { name: taiga-protected, context: images/taiga-protected, suffix: "" }
+                    - { name: pdns-auth, context: images/pdns-auth, suffix: "" }
+                    - { name: pdns-recursor, context: images/pdns-recursor, suffix: "" }
                 platform:
                     - { arch: amd64, runner: ubuntu-24.04, trivy: Linux-64bit }
                     - { arch: arm64, runner: ubuntu-24.04-arm, trivy: Linux-ARM64 }
@@ -123,6 +125,8 @@ jobs:
                     - { name: taiga-events, context: images/taiga-events, suffix: "" }
                     - { name: taiga-front, context: images/taiga-front, suffix: "" }
                     - { name: taiga-protected, context: images/taiga-protected, suffix: "" }
+                    - { name: pdns-auth, context: images/pdns-auth, suffix: "" }
+                    - { name: pdns-recursor, context: images/pdns-recursor, suffix: "" }
         runs-on: ubuntu-24.04
         permissions:
             contents: read

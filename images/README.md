@@ -12,9 +12,11 @@ the upstream images instead (see its README).
 | `taiga-front:6.10.3` | `docker.io/taigaio/taiga-front` | nginx-unprivileged slim, non-root, port 8080, read-only root filesystem, OIDC plugin built in |
 | `taiga-events:6.10.0` | `docker.io/taigaio/taiga-events` | Node.js 24, current dependencies, no npm, non-root, read-only root filesystem |
 | `taiga-protected:6.10.1` | `docker.io/taigaio/taiga-protected` | Python 3.12 Alpine, current gunicorn and Werkzeug, non-root, read-only root filesystem |
+| `pdns-auth:5.1.5` | `docker.io/powerdns/pdns-auth-51` | Alpine, built from the release tarball with the backends the chart uses (bind, gsqlite3, gpgsql, gmysql), no vim or curl |
+| `pdns-recursor:5.4.9` | `docker.io/powerdns/pdns-recursor-54` | Alpine, built from the release tarball |
 
-The images keep the upstream ports, paths and environment variables, except `taiga-front`, which listens on
-8080 instead of 80.
+The images keep the upstream ports, paths, users and environment variables (PowerDNS: the same `pdns` user,
+startup script and Jinja2 templates), except `taiga-front`, which listens on 8080 instead of 80.
 
 ## Tags and rebuilds
 
