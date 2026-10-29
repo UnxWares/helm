@@ -8,7 +8,7 @@ the upstream images instead (see its README).
 | Image | Upstream | Changes from upstream |
 |-------|----------|-----------------------|
 | `postgres:17.11-alpine`, `postgres:18.6-alpine` | `docker.io/library/postgres` | Alpine packages upgraded, `su-exec` instead of `gosu` (built with an old Go toolchain) |
-| `taiga-back:6.10.2` | `docker.io/taigaio/taiga-back` | Alpine, non-root (uid 999), dependencies bumped for known vulnerabilities, OIDC plugin built in |
+| `taiga-back:6.10.2` | `docker.io/taigaio/taiga-back` | Alpine, non-root (uid 999), dependencies bumped for known vulnerabilities, upstream security fixes not released yet (`patches/`), OIDC plugin built in |
 | `taiga-front:6.10.3` | `docker.io/taigaio/taiga-front` | nginx-unprivileged slim, non-root, port 8080, read-only root filesystem, OIDC plugin built in |
 | `taiga-events:6.10.0` | `docker.io/taigaio/taiga-events` | Node.js 24, current dependencies, no npm, non-root, read-only root filesystem |
 | `taiga-protected:6.10.1` | `docker.io/taigaio/taiga-protected` | Python 3.12 Alpine, current gunicorn and Werkzeug, non-root, read-only root filesystem |
@@ -42,6 +42,9 @@ cosign verify ghcr.io/unxwares/taiga-back:6.10.2 \
   Dockerfile (`ARG *_SHA256`).
 - Python dependencies are pinned with hashes in `requirements.txt`, generated from `requirements.in` with
   `images/lock.sh <image directory>` (pip-compile in the image's own base).
+- Security fixes merged upstream but not released yet are applied as `patches/*.patch`, taken as is from the
+  upstream commits (the file name keeps the commit hash) and applied in order; the build fails if one stops
+  applying. Drop them when the upstream release that contains them is out.
 - `taiga-events` uses its own `package.json` and `package-lock.json` (current versions of the upstream
   dependencies); `npm audit` reports no vulnerability.
 - To move to a new upstream version: update `ARG VERSION` and the source checksums, regenerate the locks,

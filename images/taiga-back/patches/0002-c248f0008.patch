@@ -1,0 +1,62 @@
+From c248f00089facdf458d7475be7d4d5d00993ac4d Mon Sep 17 00:00:00 2001
+From: seralot <sergioao@pm.me>
+Date: Fri, 17 Jul 2026 16:01:01 +0200
+Subject: [PATCH] fix: enforce epic permissions for custom attribute values
+
+---
+ .../projects/custom_attributes/permissions.py |  6 ++---
+ .../test_epics_custom_attributes_resource.py  | 27 +++++++++++++++++++
+ 2 files changed, 30 insertions(+), 3 deletions(-)
+
+diff --git a/taiga/projects/custom_attributes/permissions.py b/taiga/projects/custom_attributes/permissions.py
+index 7f366ab84..6f67cc939 100644
+--- a/taiga/projects/custom_attributes/permissions.py
++++ b/taiga/projects/custom_attributes/permissions.py
+@@ -71,9 +71,9 @@ class IssueCustomAttributePermission(TaigaResourcePermission):
+ class EpicCustomAttributesValuesPermission(TaigaResourcePermission):
+     enough_perms = IsProjectAdmin() | IsSuperUser()
+     global_perms = None
+-    retrieve_perms = HasProjectPerm('view_us')
+-    update_perms = HasProjectPerm('modify_us')
+-    partial_update_perms = HasProjectPerm('modify_us')
++    retrieve_perms = HasProjectPerm('view_epics')
++    update_perms = HasProjectPerm('modify_epic')
++    partial_update_perms = HasProjectPerm('modify_epic')
+ 
+ 
+ class UserStoryCustomAttributesValuesPermission(TaigaResourcePermission):
+diff --git a/tests/integration/resources_permissions/test_epics_custom_attributes_resource.py b/tests/integration/resources_permissions/test_epics_custom_attributes_resource.py
+index d4f2784d1..a472751a9 100644
+--- a/tests/integration/resources_permissions/test_epics_custom_attributes_resource.py
++++ b/tests/integration/resources_permissions/test_epics_custom_attributes_resource.py
+@@ -444,3 +444,30 @@ def test_epic_custom_attributes_values_patch(client, data):
+                              "version": data.blocked_epic.version})
+     results = helper_test_http_method(client, 'patch', blocked_url, patch_data, users)
+     assert results == [401, 403, 403, 451, 451]
++
++
++def test_epic_custom_attributes_values_retrieve_requires_view_epics(client, data):
++    user = f.UserFactory.create()
++    role = f.RoleFactory(project=data.private_project2, permissions=["view_us", "modify_us"])
++    f.MembershipFactory(project=data.private_project2, user=user, email=user.email, role=role)
++    url = reverse('epic-custom-attributes-values-detail', kwargs={"epic_id": data.private_epic2.pk})
++
++    client.login(user)
++    response = client.get(url)
++
++    assert response.status_code == 403
++
++
++def test_epic_custom_attributes_values_update_requires_modify_epic(client, data):
++    user = f.UserFactory.create()
++    role = f.RoleFactory(project=data.private_project2, permissions=["view_us", "modify_us"])
++    f.MembershipFactory(project=data.private_project2, user=user, email=user.email, role=role)
++    url = reverse('epic-custom-attributes-values-detail', kwargs={"epic_id": data.private_epic2.pk})
++    payload = serializers.EpicCustomAttributesValuesSerializer(data.private_epic_cav2).data
++    payload["attributes_values"] = {str(data.private_epic_ca2.pk): "unauthorized update"}
++    payload = json.dumps(payload)
++
++    client.login(user)
++    response = client.put(url, payload, content_type="application/json")
++
++    assert response.status_code == 403

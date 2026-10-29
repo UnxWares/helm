@@ -1,0 +1,57 @@
+From 4b6e2b76580403330bd4d7131491888af2399ae5 Mon Sep 17 00:00:00 2001
+From: seralot <56048614+seralot@users.noreply.github.com>
+Date: Tue, 27 Oct 2026 12:10:20 +0100
+Subject: [PATCH] fix: do not claim mail delivery in password recovery
+
+Change the response detail to a conditional message that stays
+true whether the account exists or not, instead of asserting
+that an email was sent.
+---
+ taiga/users/api.py              |  5 ++++-
+ tests/integration/test_users.py | 10 ++++++++--
+ 2 files changed, 12 insertions(+), 3 deletions(-)
+
+diff --git a/taiga/users/api.py b/taiga/users/api.py
+index 6f97ac401..9af60aa78 100644
+--- a/taiga/users/api.py
++++ b/taiga/users/api.py
+@@ -163,7 +163,10 @@ def password_recovery(self, request, pk=None):
+         if not username_or_email:
+             raise exc.WrongArguments(_("Invalid username or email"))
+ 
+-        success_message = _("Mail sent successfully!")
++        success_message = _(
++            "If an account exists for the given username or email, "
++            "you'll receive an email with a link to set a new password."
++        )
+ 
+         try:
+             user = get_user_by_username_or_email(username_or_email)
+diff --git a/tests/integration/test_users.py b/tests/integration/test_users.py
+index 548c1c245..e4eeefa96 100644
+--- a/tests/integration/test_users.py
++++ b/tests/integration/test_users.py
+@@ -401,7 +401,10 @@ def test_password_recovery_returns_200_for_unknown_username(client):
+     )
+ 
+     assert response.status_code == 200
+-    assert response.data == {"detail": "Mail sent successfully!"}
++    assert response.data == {
++        "detail": "If an account exists for the given username or email, "
++        "you'll receive an email with a link to set a new password."
++    }
+     assert len(mail.outbox) == 0
+ 
+ 
+@@ -413,7 +416,10 @@ def test_password_recovery_returns_200_for_unknown_email(client):
+     )
+ 
+     assert response.status_code == 200
+-    assert response.data == {"detail": "Mail sent successfully!"}
++    assert response.data == {
++        "detail": "If an account exists for the given username or email, "
++        "you'll receive an email with a link to set a new password."
++    }
+     assert len(mail.outbox) == 0
+ 
+ 

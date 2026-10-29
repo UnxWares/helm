@@ -1,5 +1,6 @@
 # taiga-back (API and Celery workers) on Alpine, run as a non-root user, with the dependencies of the
-# upstream lock except the ones bumped for known vulnerabilities (requirements.in). Bundles the Slack,
+# upstream lock except the ones bumped for known vulnerabilities (requirements.in), and the security fixes
+# merged upstream but not released yet (patches/, taken as is from taiga-back main). Bundles the Slack,
 # GitHub, GitLab, protected and UnxWares OIDC contribs (OIDC enabled with ENABLE_OIDC_AUTH=True). Same
 # port, paths (/taiga-back, docker/entrypoint.sh, docker/async_entrypoint.sh) and environment as
 # taigaio/taiga-back.
@@ -16,7 +17,7 @@ ARG PROTECTED_SHA256=2783d1cc7af3bb79495805d5f2a5354bc52fe0cc59632fcd7a0646b5454
 ARG OIDC_COMMIT=c3e346d54d4ff08057373bf4fb8f23c426a7eed9
 ARG OIDC_SHA256=a645d4531419f30b3d247d677da8e11ad6d3627fd3b2fa704efe603ef50c42b3
 
-RUN apk add --no-cache build-base libpq-dev libffi-dev gettext libmagic cairo
+RUN apk add --no-cache build-base libpq-dev libffi-dev gettext libmagic cairo patch
 
 WORKDIR /build
 COPY requirements.txt .
@@ -38,7 +39,10 @@ RUN set -eux; \
 WORKDIR /taiga-back
 ENV PATH="/opt/venv/bin:$PATH" \
     DJANGO_SETTINGS_MODULE=settings.config
+COPY patches/ /build/patches/
 RUN set -eux; \
+    # Upstream security fixes not released yet, in commit order; the build fails if one does not apply.
+    for p in /build/patches/*.patch; do patch -p1 --forward --no-backup-if-mismatch < "$p"; done; \
     cp docker/config.py settings/config.py; \
     cat /build/oidc/config.snippet.py >> settings/config.py; \
     cp /build/oidc/urls.py settings/urls.py; \
