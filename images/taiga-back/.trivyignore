@@ -1,0 +1,22 @@
+# Accepted in the pull request gate of .github/workflows/images.yaml (they still show in scans and on
+# Artifact Hub). Each one needs a change in Taiga itself, not in this image.
+#
+# Django 3.2.25: Taiga 6.10 (and taiga-back main) is pinned to Django 3.2, end of life since April 2024.
+# The fixes only exist in Django 4.2 and later.
+CVE-2024-45231
+CVE-2025-48432
+CVE-2025-57833
+CVE-2025-64458
+CVE-2025-64459
+CVE-2026-15307
+CVE-2026-15830
+CVE-2026-48587
+CVE-2026-48588
+CVE-2026-53877
+CVE-2026-53878
+CVE-2026-6873
+CVE-2026-8404
+# bleach 4.1.0: taiga/mdrender patches bleach 4 internals (ALLOWED_STYLES, mutable ALLOWED_TAGS) that
+# bleach 5+ removed. Neither issue is reachable with Taiga's allow list (no formaction attribute).
+GHSA-gj48-438w-jh9v
+GHSA-8rfp-98v4-mmr6

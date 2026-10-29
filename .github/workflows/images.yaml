@@ -1,0 +1,169 @@
+name: Container Images
+
+# Builds the images of images/ natively for amd64 and arm64 and scans them with Trivy. Outside pull requests,
+# pushes them to ghcr.io/unxwares as one multi-arch tag per version (plus a dated tag) and signs them with
+# cosign (keyless, GitHub OIDC identity). The weekly run rebuilds every image on the current base images and
+# Alpine packages.
+on:
+    pull_request:
+        branches:
+            - main
+        paths:
+            - images/**
+            - .github/workflows/images.yaml
+            - .github/scripts/image-tag.sh
+    push:
+        branches:
+            - main
+        paths:
+            - images/**
+            - .github/workflows/images.yaml
+            - .github/scripts/image-tag.sh
+    schedule:
+        - cron: "41 3 * * 1"
+    workflow_dispatch:
+
+concurrency:
+    group: images-${{ github.ref }}
+    cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions: {}
+
+env:
+    REGISTRY: ghcr.io/unxwares
+    TRIVY_VERSION: 0.76.0
+    COSIGN_VERSION: 3.1.4
+
+jobs:
+    build:
+        name: Build ${{ matrix.image.context }} (${{ matrix.platform.arch }})
+        strategy:
+            fail-fast: false
+            matrix:
+                image:
+                    - { name: postgres, context: images/postgres/17, suffix: -alpine }
+                    - { name: postgres, context: images/postgres/18, suffix: -alpine }
+                    - { name: taiga-back, context: images/taiga-back, suffix: "" }
+                    - { name: taiga-events, context: images/taiga-events, suffix: "" }
+                    - { name: taiga-front, context: images/taiga-front, suffix: "" }
+                    - { name: taiga-protected, context: images/taiga-protected, suffix: "" }
+                platform:
+                    - { arch: amd64, runner: ubuntu-24.04, trivy: Linux-64bit }
+                    - { arch: arm64, runner: ubuntu-24.04-arm, trivy: Linux-ARM64 }
+        runs-on: ${{ matrix.platform.runner }}
+        permissions:
+            contents: read
+            packages: write
+        env:
+            NAME: ${{ matrix.image.name }}
+            CONTEXT: ${{ matrix.image.context }}
+            SUFFIX: ${{ matrix.image.suffix }}
+            ARCH: ${{ matrix.platform.arch }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Image tag
+              run: echo "TAG=$(.github/scripts/image-tag.sh "$CONTEXT")${SUFFIX}" >> "$GITHUB_ENV"
+
+            - name: Set up Buildx
+              run: docker buildx create --use --driver docker-container --name images
+
+            - name: Build
+              run: docker buildx build --platform "linux/$ARCH" --pull --load --tag "local/$NAME:$TAG" "$CONTEXT"
+
+            # Installed from the release tarball with checksum verification rather than through a third-party action.
+            - name: Install Trivy
+              env:
+                  TRIVY_ASSET: trivy_${{ env.TRIVY_VERSION }}_${{ matrix.platform.trivy }}.tar.gz
+              run: |
+                  cd "$RUNNER_TEMP"
+                  curl -fsSLO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${TRIVY_ASSET}"
+                  curl -fsSLO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_checksums.txt"
+                  grep " ${TRIVY_ASSET}$" "trivy_${TRIVY_VERSION}_checksums.txt" | sha256sum -c -
+                  tar xzf "${TRIVY_ASSET}" trivy
+                  echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+            # Pull requests fail on a fixable CRITICAL or HIGH vulnerability, unless the image's .trivyignore
+            # documents why it is accepted. Pushes and the weekly rebuild only report, so that a new upstream
+            # vulnerability never blocks the rebuild that brings the fixes already available.
+            - name: Scan
+              env:
+                  EVENT: ${{ github.event_name }}
+              run: |
+                  args=(--scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --format table)
+                  [ -f "$CONTEXT/.trivyignore" ] && args+=(--ignorefile "$CONTEXT/.trivyignore")
+                  [ "$EVENT" = pull_request ] && args+=(--exit-code 1)
+                  { echo "### $NAME:$TAG ($ARCH)"; echo '```'; trivy image "${args[@]}" "local/$NAME:$TAG"; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"
+
+            - name: Log in to GHCR
+              if: github.event_name != 'pull_request'
+              env:
+                  TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  ACTOR: ${{ github.actor }}
+              run: echo "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+
+            - name: Push
+              if: github.event_name != 'pull_request'
+              run: docker buildx build --platform "linux/$ARCH" --push --provenance=false --sbom=false --tag "$REGISTRY/$NAME:$TAG-$ARCH" "$CONTEXT"
+
+    publish:
+        name: Publish ${{ matrix.image.context }}
+        needs: build
+        if: github.event_name != 'pull_request'
+        strategy:
+            fail-fast: false
+            matrix:
+                image:
+                    - { name: postgres, context: images/postgres/17, suffix: -alpine }
+                    - { name: postgres, context: images/postgres/18, suffix: -alpine }
+                    - { name: taiga-back, context: images/taiga-back, suffix: "" }
+                    - { name: taiga-events, context: images/taiga-events, suffix: "" }
+                    - { name: taiga-front, context: images/taiga-front, suffix: "" }
+                    - { name: taiga-protected, context: images/taiga-protected, suffix: "" }
+        runs-on: ubuntu-24.04
+        permissions:
+            contents: read
+            packages: write
+            id-token: write
+        env:
+            NAME: ${{ matrix.image.name }}
+            CONTEXT: ${{ matrix.image.context }}
+            SUFFIX: ${{ matrix.image.suffix }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Image tag
+              run: echo "TAG=$(.github/scripts/image-tag.sh "$CONTEXT")${SUFFIX}" >> "$GITHUB_ENV"
+
+            - name: Install cosign
+              run: |
+                  cd "$RUNNER_TEMP"
+                  curl -fsSLO "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64"
+                  curl -fsSLO "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign_checksums.txt"
+                  grep " cosign-linux-amd64$" cosign_checksums.txt | sha256sum -c -
+                  install -m 0755 cosign-linux-amd64 "$RUNNER_TEMP/cosign"
+                  echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+            - name: Log in to GHCR
+              env:
+                  TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  ACTOR: ${{ github.actor }}
+              run: |
+                  echo "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+                  echo "$TOKEN" | cosign login ghcr.io --username "$ACTOR" --password-stdin
+
+            - name: Publish and sign the multi-arch tag
+              run: |
+                  docker buildx imagetools create \
+                      --tag "$REGISTRY/$NAME:$TAG" \
+                      --tag "$REGISTRY/$NAME:$TAG-$(date -u +%Y%m%d)" \
+                      "$REGISTRY/$NAME:$TAG-amd64" "$REGISTRY/$NAME:$TAG-arm64"
+                  digest=$(docker buildx imagetools inspect "$REGISTRY/$NAME:$TAG" --format '{{json .Manifest}}' | jq -r .digest)
+                  cosign sign --yes "$REGISTRY/$NAME@$digest"
+                  echo "$REGISTRY/$NAME:$TAG → $digest (signed)" >> "$GITHUB_STEP_SUMMARY"

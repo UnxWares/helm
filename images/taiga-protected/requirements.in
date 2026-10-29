@@ -1,0 +1,6 @@
+# Runtime dependencies of taiga-protected (server.py). Upstream pins gunicorn 19.9, Werkzeug 0.15 and
+# python-dotenv 0.10 (2018-2019); server.py only uses APIs that are unchanged in the current releases.
+# Regenerate requirements.txt with images/lock.sh.
+gunicorn>=23
+python-dotenv>=1
+werkzeug>=3.1,<4
