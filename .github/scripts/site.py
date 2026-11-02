@@ -50,6 +50,8 @@ ICON = {
                     '4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>'
                     '<path d="m9 12 2 2 4-4"/>'),
     "code": _icon('<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>'),
+    "heart": _icon('<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 '
+                   '5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'),
 }
 
 # The footer of unxwares.com, with its markup: {year} is filled in.
@@ -526,12 +528,12 @@ class Site:
 <body>
 <div class="navbar-wrapper"><nav class="navbar" aria-label="Site"><div class="navbar-container">
 <a class="navbar-brand" href="https://unxwares.com"><picture><source srcset="assets/mark-dark.svg" media="(prefers-color-scheme: dark)"><img class="logo" src="assets/mark.svg" alt="UnxWares Logo" width="38" height="38"></picture><span class="brand-name">UnxWares</span></a>
-<div class="navbar-center"><a class="nav-link" href="#charts">Charts</a><a class="nav-link" href="#images">Images</a><a class="nav-link" href="#verify">Verify</a><a class="nav-link" href="{self.gh}">GitHub</a></div>
+<div class="navbar-center"><a class="nav-link" href="#charts">Charts</a><a class="nav-link" href="#images">Images</a><a class="nav-link" href="#verify">Verify</a><a class="nav-link" href="#open-source">Open source</a><a class="nav-link" href="{self.gh}">GitHub</a></div>
 <div class="navbar-actions"><a class="btn-primary" href="https://artifacthub.io/packages/search?repo=unxwares">Artifact Hub</a></div>
 </div></nav></div>
 <main>
 <section class="hero">
-<picture><source srcset="assets/logo-dark.svg" media="(prefers-color-scheme: dark)"><img class="logo" src="assets/logo.svg" alt="UnxWares" width="300" height="64"></picture>
+<picture><source srcset="assets/logo-dark.svg" media="(prefers-color-scheme: dark)"><img class="logo" src="assets/logo.svg" alt="UnxWares" width="306" height="64"></picture>
 <h1>Helm Repository</h1>
 <p class="lead">Helm charts maintained by UnxWares, tested on every change, with their images scanned every 6 hours.</p>
 <div class="code"><code id="repo-add">helm repo add unxwares {SITE}/</code><button type="button" class="copy" data-copy="repo-add" aria-label="Copy the command">{ICON["copy"]}</button></div>
@@ -577,6 +579,18 @@ helm install my-release unxwares/&lt;chart&gt; --verify \\
 <p>Every published image is signed with cosign, keyless, by the image workflow.</p>
 <pre><code>{e(self.cosign(sample))}</code></pre>
 </div>
+</div>
+</section>
+
+<div class="divider"><picture><source srcset="assets/mark-dark.svg" media="(prefers-color-scheme: dark)"><img src="assets/mark.svg" alt="" width="16" height="16"></picture></div>
+
+<section id="open-source">
+<h2><span class="icon">{ICON["heart"]}</span>Open source</h2>
+<p class="section-lead">These charts are part of <strong>UnxWares Open Source &amp; Community</strong> (UWOSC): the open source work that UnxWares supports and maintains, in the open and for everyone.</p>
+<div class="card uwosc">
+<picture><source srcset="assets/uwosc/badge-maintained-dark.svg" media="(prefers-color-scheme: dark)"><img src="assets/uwosc/badge-maintained.svg" alt="UnxWares Open Source &amp; Community: supported and maintained by UnxWares" width="308" height="44"></picture>
+<p><strong>Maintained</strong> means UnxWares answers for these charts: we keep them current, test every change and fix what breaks. Each chart README carries the badge.</p>
+<div class="code"><code id="uwosc-badge">[![UWOSC: maintained]({SITE}/assets/uwosc/mini-maintained.svg)]({SITE}/#open-source)</code><button type="button" class="copy" data-copy="uwosc-badge" aria-label="Copy the badge">{ICON["copy"]}</button></div>
 </div>
 </section>
 <p class="results">{updated} <a href="status.json">status.json</a> · <a href="index.yaml">index.yaml</a> · <a href="{self.cve_issue_url()}">CVE watch</a> · <a href="{self.gh}/blob/main/SECURITY.md">Security policy</a></p>

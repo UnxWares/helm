@@ -1,6 +1,7 @@
 # Cloudreve Helm Chart
 
-![Version: 2026.11.3](https://img.shields.io/badge/Version-2026.11.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.19.1](https://img.shields.io/badge/AppVersion-4.19.1-informational?style=flat-square)
+![Version: 2026.11.4](https://img.shields.io/badge/Version-2026.11.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.19.1](https://img.shields.io/badge/AppVersion-4.19.1-informational?style=flat-square)
+[![UWOSC: maintained](https://helm.unxwares.studio/assets/uwosc/mini-maintained.svg)](https://helm.unxwares.studio/#open-source)
 
 [Cloudreve](https://cloudreve.org/) is a self-hosted file management and sharing system: personal and shared files,
 public links, WebDAV, previews and thumbnails, with storage on the local disk or on remote providers (S3, OneDrive,
