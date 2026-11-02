@@ -229,13 +229,13 @@
         "runs": 1
        }
       ],
-      "commit": "227331f880e38f6143454eec789039771a0e694b",
-      "date": "2026-11-02T15:24:04Z",
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:39:12Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41469463513/job/125359323658",
-      "run_id": 41469463513,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41469463513",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41471829166/job/125367850252",
+      "run_id": 41471829166,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41471829166",
       "status": "passed",
       "steps": [
        {
@@ -488,11 +488,112 @@
    "page": "charts/excalidash.html",
    "results": {
     "e2e": {
-     "detail": "",
-     "note": "",
-     "result": null,
-     "status": "no result",
-     "summary": "No result yet"
+     "detail": "12 checks, all passed",
+     "note": "12 checks",
+     "result": {
+      "checks": [
+       {
+        "name": "the frontend proxies /api/health to the backend, which reaches its database",
+        "runs": 2
+       },
+       {
+        "name": "authentication is turned on at onboarding",
+        "runs": 1
+       },
+       {
+        "name": "the backend logs a one-time setup code",
+        "runs": 1
+       },
+       {
+        "name": "the first administrator registers with the setup code, not without it",
+        "runs": 1
+       },
+       {
+        "name": "the administrator logs in",
+        "runs": 1
+       },
+       {
+        "name": "cookies are Secure behind a TLS proxy, and not over plain HTTP",
+        "runs": 1
+       },
+       {
+        "name": "an invalid drawing is refused, a valid one is created, listed and read back",
+        "runs": 1
+       },
+       {
+        "name": "the export is an .excalidash archive that the import check accepts (staged in /app/uploads)",
+        "runs": 1
+       },
+       {
+        "name": "another pod reaches the frontend but not the backend (NetworkPolicy)",
+        "runs": 1
+       },
+       {
+        "name": "the session from before the reinstall is still valid (JWT secret kept)",
+        "runs": 1
+       },
+       {
+        "name": "the administrator logs in again with the same password (database kept)",
+        "runs": 1
+       },
+       {
+        "name": "the drawing created before the reinstall is still there",
+        "runs": 1
+       }
+      ],
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:39:12Z",
+      "event": "push",
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41471829166/job/125367850268",
+      "run_id": 41471829166,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41471829166",
+      "status": "passed",
+      "steps": [
+       {
+        "conclusion": "success",
+        "name": "Checkout"
+       },
+       {
+        "conclusion": "success",
+        "name": "Create kind cluster"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install Helm"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install the chart"
+       },
+       {
+        "conclusion": "success",
+        "name": "helm test"
+       },
+       {
+        "conclusion": "success",
+        "name": "Onboarding, log in, drawing, export, import check, cookies, NetworkPolicy"
+       },
+       {
+        "conclusion": "success",
+        "name": "Uninstall"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install the chart again"
+       },
+       {
+        "conclusion": "success",
+        "name": "Check what the reinstall kept"
+       },
+       {
+        "conclusion": "skipped",
+        "name": "Diagnostics"
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
     },
     "install": {
      "detail": "`ct lint` passed (version increment, YAML lint). Installed on kind with `default-values.yaml`; `helm test`: 1 of 1 test pod succeeded",
@@ -659,11 +760,112 @@
    "page": "charts/fossflow.html",
    "results": {
     "e2e": {
-     "detail": "",
-     "note": "",
-     "result": null,
-     "status": "no result",
-     "summary": "No result yet"
+     "detail": "13 checks, all passed",
+     "note": "13 checks",
+     "result": {
+      "checks": [
+       {
+        "name": "the web app and its 5 scripts are served through the Service",
+        "runs": 2
+       },
+       {
+        "name": "client-side routes serve the web app",
+        "runs": 2
+       },
+       {
+        "name": "server storage is enabled",
+        "runs": 1
+       },
+       {
+        "name": "a diagram is created",
+        "runs": 1
+       },
+       {
+        "name": "the diagram is listed with its name",
+        "runs": 1
+       },
+       {
+        "name": "the diagram reads back unchanged",
+        "runs": 1
+       },
+       {
+        "name": "an update is saved and read back",
+        "runs": 1
+       },
+       {
+        "name": "the API sends no CORS header to another site (reads and preflight)",
+        "runs": 1
+       },
+       {
+        "name": "the diagram is still there after the pod is replaced",
+        "runs": 1
+       },
+       {
+        "name": "the container runs as uid 1000 on a read-only root filesystem",
+        "runs": 2
+       },
+       {
+        "name": "from another pod, the web port answers and the backend port does not",
+        "runs": 2
+       },
+       {
+        "name": "browser-only mode: no backend answers behind /api/",
+        "runs": 1
+       },
+       {
+        "name": "the NetworkPolicy keeps out a pod that is not an allowed peer",
+        "runs": 1
+       }
+      ],
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:39:12Z",
+      "event": "push",
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41471829166/job/125367850335",
+      "run_id": 41471829166,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41471829166",
+      "status": "passed",
+      "steps": [
+       {
+        "conclusion": "success",
+        "name": "Checkout"
+       },
+       {
+        "conclusion": "success",
+        "name": "Build the FossFLOW image"
+       },
+       {
+        "conclusion": "success",
+        "name": "Create kind cluster"
+       },
+       {
+        "conclusion": "success",
+        "name": "Load the FossFLOW image"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install Helm"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install the chart in both modes"
+       },
+       {
+        "conclusion": "success",
+        "name": "helm test"
+       },
+       {
+        "conclusion": "success",
+        "name": "Diagrams through the Service, browser-only mode, backend and NetworkPolicy isolation"
+       },
+       {
+        "conclusion": "skipped",
+        "name": "Diagnostics"
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
     },
     "install": {
      "detail": "`ct lint` passed (version increment, YAML lint). Installed on kind with `browser-only-values.yaml` and `default-values.yaml` and `upstream-values.yaml`; `helm test`: 3 of 3 test pods succeeded",
@@ -858,11 +1060,108 @@
    "page": "charts/kener.html",
    "results": {
     "e2e": {
-     "detail": "",
-     "note": "",
-     "result": null,
-     "status": "no result",
-     "summary": "No result yet"
+     "detail": "11 checks, all passed",
+     "note": "11 checks",
+     "result": {
+      "checks": [
+       {
+        "name": "Kener answers and reaches its database and Redis ({\"status\":\"ok\",\"db\":true,\"redis\":true})",
+        "runs": 2
+       },
+       {
+        "name": "the first account signs up, a second one is refused",
+        "runs": 1
+       },
+       {
+        "name": "the account logs in, not with a wrong password",
+        "runs": 1
+       },
+       {
+        "name": "an API key is created; the API refuses requests without a valid key",
+        "runs": 1
+       },
+       {
+        "name": "a monitor and a status page are created through the REST API",
+        "runs": 1
+       },
+       {
+        "name": "the monitor ran from the queue and recorded UP",
+        "runs": 1
+       },
+       {
+        "name": "the public status page lists the monitor as operational, its page and badge answer",
+        "runs": 1
+       },
+       {
+        "name": "Valkey refuses commands without its password",
+        "runs": 1
+       },
+       {
+        "name": "another pod reaches Kener but not Valkey (NetworkPolicy)",
+        "runs": 1
+       },
+       {
+        "name": "the account logs in again with the same password (database kept)",
+        "runs": 1
+       },
+       {
+        "name": "the API key created before the reinstall still works (KENER_SECRET_KEY kept)",
+        "runs": 1
+       }
+      ],
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:39:12Z",
+      "event": "push",
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41471829166/job/125367850354",
+      "run_id": 41471829166,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41471829166",
+      "status": "passed",
+      "steps": [
+       {
+        "conclusion": "success",
+        "name": "Checkout"
+       },
+       {
+        "conclusion": "success",
+        "name": "Create kind cluster"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install Helm"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install the chart"
+       },
+       {
+        "conclusion": "success",
+        "name": "helm test"
+       },
+       {
+        "conclusion": "success",
+        "name": "Sign up, log in, API key, monitor, status page, NetworkPolicies"
+       },
+       {
+        "conclusion": "success",
+        "name": "Uninstall"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install the chart again"
+       },
+       {
+        "conclusion": "success",
+        "name": "Check what the reinstall kept"
+       },
+       {
+        "conclusion": "skipped",
+        "name": "Diagnostics"
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
     },
     "install": {
      "detail": "`ct lint` passed (version increment, YAML lint). Installed on kind with `default-values.yaml` and `status-debian-values.yaml`; `helm test`: 2 of 2 test pods succeeded",
@@ -1263,13 +1562,13 @@
         "runs": 2
        }
       ],
-      "commit": "227331f880e38f6143454eec789039771a0e694b",
-      "date": "2026-11-02T15:24:04Z",
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:39:12Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41469463513/job/125359323546",
-      "run_id": 41469463513,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41469463513",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41471829166/job/125367850454",
+      "run_id": 41471829166,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41471829166",
       "status": "passed",
       "steps": [
        {
@@ -1806,13 +2105,13 @@
         "runs": 1
        }
       ],
-      "commit": "227331f880e38f6143454eec789039771a0e694b",
-      "date": "2026-11-02T15:24:04Z",
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:39:12Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41469463513/job/125359323365",
-      "run_id": 41469463513,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41469463513",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41471829166/job/125367850676",
+      "run_id": 41471829166,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41471829166",
       "status": "passed",
       "steps": [
        {
@@ -3986,7 +4285,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-02T15:33:58Z",
+ "latest_result": "2026-11-02T15:39:12Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
