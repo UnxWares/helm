@@ -1,0 +1,127 @@
+name: End-to-end tests
+
+# Install a chart in kind next to real dependencies, then check what the application actually does, not only that
+# its pods start. Pull requests run the tests of what they change; main and the weekly run test everything, so that
+# a new upstream image or base layer that breaks a chart is caught before a user hits it.
+on:
+    pull_request:
+        branches:
+            - main
+    push:
+        branches:
+            - main
+    schedule:
+        - cron: "23 5 * * 2"
+    workflow_dispatch:
+
+concurrency:
+    group: e2e-${{ github.ref }}
+    cancel-in-progress: true
+
+permissions:
+    contents: read
+
+env:
+    HELM_VERSION: v3.22.1
+
+jobs:
+    changes:
+        name: Detect changes
+        runs-on: ubuntu-latest
+        outputs:
+            openeverest: ${{ steps.diff.outputs.openeverest }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Changed paths
+              id: diff
+              env:
+                  EVENT: ${{ github.event_name }}
+                  BASE: ${{ github.event.pull_request.base.sha }}
+                  HEAD: ${{ github.event.pull_request.head.sha }}
+              run: |
+                  matches() {
+                      [ "$EVENT" != pull_request ] && return 0
+                      git diff --name-only "$BASE" "$HEAD" | grep -qE "$1"
+                  }
+                  common='^\.github/workflows/e2e\.yaml$'
+                  if matches "$common|^charts/openeverest-database-tools/|^images/(postgresql-client|mysql-client|mongosh)/|^\.github/scripts/openeverest-test-"; then
+                      echo "openeverest=true" >> "$GITHUB_OUTPUT"
+                  fi
+
+    openeverest-database-tools:
+        name: openeverest-database-tools
+        needs: changes
+        if: needs.changes.outputs.openeverest == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        env:
+            CHART: charts/openeverest-database-tools
+            RELEASE: oedt
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            # The client images of this commit, so that a change to an image is tested before it is published.
+            - name: Build the client images
+              run: |
+                  for image in postgresql-client mysql-client mongosh; do
+                      docker build --tag "local/$image:e2e" "images/$image"
+                  done
+
+            - name: Create kind cluster
+              uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+
+            - name: Load the client images
+              run: |
+                  for image in postgresql-client mysql-client mongosh; do
+                      kind load docker-image "local/$image:e2e" --name chart-testing
+                  done
+
+            - name: Install Helm
+              uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+              with:
+                  version: ${{ env.HELM_VERSION }}
+
+            - name: Start PostgreSQL, MySQL, MongoDB and the DatabaseClusters
+              run: .github/scripts/openeverest-test-env.sh
+
+            # The client images were loaded into kind; the kubectl image of the wait containers is pulled (the pull
+            # policy applies to every container, so it stays IfNotPresent).
+            - name: Install the chart and run its Jobs
+              run: &install |
+                  helm upgrade --install "$RELEASE" "$CHART" --namespace "$RELEASE" --create-namespace \
+                      --values "$CHART/ci/e2e-values.yaml" \
+                      --set image.postgresql.repository=local/postgresql-client --set image.postgresql.tag=e2e \
+                      --set image.mysql.repository=local/mysql-client --set image.mysql.tag=e2e \
+                      --set image.mongodb.repository=local/mongosh --set image.mongodb.tag=e2e
+                  kubectl --namespace everest-databases wait --for=condition=complete job --all --timeout=600s
+
+            - name: Check the databases, users and grants
+              run: .github/scripts/openeverest-test-verify.sh
+
+            - name: Rotate the application passwords
+              run: .github/scripts/openeverest-test-rotate.sh
+
+            - name: Run the Jobs again
+              run: *install
+
+            - name: Check again with the new passwords
+              run: .github/scripts/openeverest-test-verify.sh
+
+            - name: Diagnostics
+              if: failure()
+              run: |
+                  kubectl get pods --all-namespaces -o wide
+                  kubectl --namespace everest-databases describe jobs
+                  for pod in $(kubectl --namespace everest-databases get pods -o name); do
+                      echo "::group::$pod"
+                      kubectl --namespace everest-databases logs "$pod" --all-containers --prefix || true
+                      echo "::endgroup::"
+                  done

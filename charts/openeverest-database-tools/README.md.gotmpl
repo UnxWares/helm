@@ -13,8 +13,11 @@ PostgreSQL, MySQL (Percona XtraDB Cluster) or MongoDB (Percona Server for MongoD
   `status.status: ready`, then the client retries until the admin user can log in.
 - **Idempotent**: databases and users are created when missing, grants are re-applied and user passwords are
   re-synced from their Secret. Running a Job twice is harmless.
-- **No runtime downloads**: pinned official client images (`postgres`, `mysql`, `mongo`) and the distroless
+- **Small, patched images**: the UnxWares client images (`psql`, `mysql` and `mongosh` alone, rebuilt every week,
+  signed, see [images/](https://github.com/UnxWares/helm/tree/main/images)) and the distroless
   `registry.k8s.io/kubectl`; nothing is installed when the Job starts, every image is scanned by Artifact Hub.
+- **Tested end to end**: in CI, the Jobs run against real PostgreSQL, MySQL and MongoDB servers, then the
+  application users log in and their rights and the init scripts are checked, before and after a password rotation.
 - **Injection-safe**: usernames and passwords stay in Secrets and environment variables, never in SQL or
   JavaScript text. Database, collection, role and privilege names are validated when rendering.
 - **Least privilege**: a dedicated ServiceAccount that can only read DatabaseClusters, its token mounted only into
@@ -29,7 +32,7 @@ PostgreSQL, MySQL (Percona XtraDB Cluster) or MongoDB (Percona Server for MongoD
 - The Jobs, their ConfigMaps and RBAC are created in `global.namespace` (default `everest-databases`), which must
   be a [namespace managed by OpenEverest](https://openeverest.io/documentation/current/administer/manage_namespaces.html)
   holding the DatabaseClusters and their credential Secrets. Leave it empty to use the release namespace.
-- The nodes must be able to pull from `docker.io` and `registry.k8s.io` (or your mirror, see `image.*`).
+- The nodes must be able to pull from `ghcr.io` and `registry.k8s.io` (or your mirror, see `image.*`).
 
 ## Installation
 
@@ -221,6 +224,20 @@ runs again. Either way the Job spec is never patched, so upgrades cannot fail on
   out of them.
 
 ## Upgrading
+
+### To 2026.11.1
+
+No value to change, unless you pin the client images:
+
+- The default client images are now `ghcr.io/unxwares/postgresql-client`, `ghcr.io/unxwares/mysql-client` and
+  `ghcr.io/unxwares/mongosh`: the clients alone instead of whole database server images (297 known vulnerabilities
+  down to 47). The official `postgres`, `mysql` and `mongo` images still work through `image.*`; allow pulls from
+  `ghcr.io` if your nodes go through a mirror.
+- PostgreSQL: the application user also gets the default privileges on sequences of the `public` schema. Before,
+  inserting into a table with a `serial` or identity column created by an init script failed with
+  `permission denied for sequence`. Default privileges only apply to objects created afterwards: for such tables
+  created by an earlier version, grant the sequences once, as the admin user
+  (`GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO "<user>";` in the application database).
 
 ### To 2026.10.1
 
