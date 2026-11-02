@@ -1,0 +1,25 @@
+name: Probe release 403 (temporary, not for merge)
+on: pull_request
+permissions: {}
+jobs:
+    probe:
+        permissions:
+            contents: write
+        runs-on: ubuntu-latest
+        steps:
+            - name: Same API calls as chart-releaser, with drafts only
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  REPO: ${{ github.repository }}
+              run: |
+                  echo "1. generate-notes (creates nothing)"
+                  gh api -X POST "repos/$REPO/releases/generate-notes" -f tag_name=kener-2026.11.1 \
+                      -f target_commitish=a5385ea716dfb805bed76a13d75d5fa608491376 -f previous_tag_name=kener-2026.10.3 --jq .name || echo "-> failed"
+                  echo "2. draft release without notes"
+                  if id=$(gh api -X POST "repos/$REPO/releases" -f tag_name=probe-403-a -F draft=true --jq .id); then
+                      echo "-> created draft $id"; gh api -X DELETE "repos/$REPO/releases/$id" && echo "-> draft deleted"
+                  else echo "-> failed"; fi
+                  echo "3. draft release with generated notes"
+                  if id=$(gh api -X POST "repos/$REPO/releases" -f tag_name=probe-403-b -F draft=true -F generate_release_notes=true --jq .id); then
+                      echo "-> created draft $id"; gh api -X DELETE "repos/$REPO/releases/$id" && echo "-> draft deleted"
+                  else echo "-> failed"; fi
