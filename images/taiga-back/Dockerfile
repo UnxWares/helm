@@ -1,6 +1,7 @@
 # taiga-back (API and Celery workers) on Alpine, run as a non-root user, with the dependencies of the
-# upstream lock except the ones bumped for known vulnerabilities (requirements.in), and the security fixes
-# merged upstream but not released yet (patches/, taken as is from taiga-back main). Bundles the Slack,
+# upstream lock except the ones bumped for known vulnerabilities (requirements.in), the security fixes
+# merged upstream but not released yet (patches/, taken as is from taiga-back main), and the Django 3.2 security
+# fixes backported by Debian bookworm (django-patches/). Bundles the Slack,
 # GitHub, GitLab, protected and UnxWares OIDC contribs (OIDC enabled with ENABLE_OIDC_AUTH=True). Same
 # port, paths (/taiga-back, docker/entrypoint.sh, docker/async_entrypoint.sh) and environment as
 # taigaio/taiga-back.
@@ -17,7 +18,7 @@ ARG PROTECTED_SHA256=2783d1cc7af3bb79495805d5f2a5354bc52fe0cc59632fcd7a0646b5454
 ARG OIDC_COMMIT=c3e346d54d4ff08057373bf4fb8f23c426a7eed9
 ARG OIDC_SHA256=a645d4531419f30b3d247d677da8e11ad6d3627fd3b2fa704efe603ef50c42b3
 
-RUN apk add --no-cache build-base libpq-dev libffi-dev gettext libmagic cairo patch
+RUN apk add --no-cache build-base libpq-dev libffi-dev gettext libmagic cairo patch patchutils
 
 WORKDIR /build
 COPY requirements.txt .
@@ -35,6 +36,19 @@ RUN set -eux; \
     /opt/venv/bin/pip install --no-cache-dir --no-deps \
         ./slack/back ./github-auth/back ./gitlab-auth/back ./protected ./oidc/back; \
     mv back /taiga-back
+
+# Django 3.2 is out of upstream support: apply the security fixes Debian backports to it (django-patches/README.md),
+# their django/ part only, in series order. The build fails if one does not apply.
+COPY django-patches/ /build/django-patches/
+RUN set -eux; \
+    site=$(/opt/venv/bin/python -c 'import django, os; print(os.path.dirname(os.path.dirname(django.__file__)))'); \
+    while read -r p; do \
+        filterdiff -p1 -i 'django/*' "/build/django-patches/$p" > /build/django.patch; \
+        if [ -s /build/django.patch ]; then \
+            patch -p1 --forward --no-backup-if-mismatch -d "$site" < /build/django.patch; \
+        fi; \
+    done < /build/django-patches/series; \
+    /opt/venv/bin/python -c 'import django; assert django.get_version() == "3.2.25"'
 
 WORKDIR /taiga-back
 ENV PATH="/opt/venv/bin:$PATH" \

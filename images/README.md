@@ -8,7 +8,7 @@ the upstream images instead (see its README).
 | Image | Upstream | Changes from upstream |
 |-------|----------|-----------------------|
 | `postgres:17.11-alpine`, `postgres:18.6-alpine` | `docker.io/library/postgres` | Alpine packages upgraded, `su-exec` instead of `gosu` (built with an old Go toolchain) |
-| `taiga-back:6.10.2` | `docker.io/taigaio/taiga-back` | Alpine, non-root (uid 999), dependencies bumped for known vulnerabilities, upstream security fixes not released yet (`patches/`), OIDC plugin built in |
+| `taiga-back:6.10.2` | `docker.io/taigaio/taiga-back` | Alpine, non-root (uid 999), dependencies bumped for known vulnerabilities, upstream security fixes not released yet (`patches/`), Django 3.2 security fixes backported by Debian (`django-patches/`), OIDC plugin built in |
 | `taiga-front:6.10.3` | `docker.io/taigaio/taiga-front` | nginx-unprivileged slim, non-root, port 8080, read-only root filesystem, OIDC plugin built in |
 | `taiga-events:6.10.0` | `docker.io/taigaio/taiga-events` | Node.js 24, current dependencies, no npm, non-root, read-only root filesystem |
 | `taiga-protected:6.10.1` | `docker.io/taigaio/taiga-protected` | Python 3.12 Alpine, current gunicorn and Werkzeug, non-root, read-only root filesystem |
@@ -37,8 +37,8 @@ The images of `cloudreve` and `openeverest-database-tools` are also built by the
 (`.github/workflows/e2e.yaml`), which run the chart on them in kind and check what the application does, so a change
 to one of these images is tested before it is published.
 Pull requests fail on a fixable CRITICAL or HIGH vulnerability, unless the image's `.trivyignore` says why it
-is accepted (for `taiga-back`: Django 3.2, which Taiga is pinned to; for `mongosh`: an FTP client it only uses
-for proxy auto-configuration files).
+is accepted (for `taiga-back`: the Django 3.2 vulnerabilities fixed by the Debian backports or not reachable in
+Taiga, each one documented; for `mongosh`: an FTP client it only uses for proxy auto-configuration files).
 
 ## Signatures
 
