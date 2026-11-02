@@ -1316,6 +1316,67 @@ entries:
   - annotations:
       artifacthub.io/category: monitoring-logging
       artifacthub.io/changes: |
+        - kind: security
+          description: "Kener 4.1.11: dependencies with known vulnerabilities updated (229 known vulnerabilities down to 47 in the Alpine image, 80 high down to 13), and monitor and trigger secrets masked in API and dashboard reads."
+          links:
+            - name: Kener 4.1.11
+              url: https://github.com/rajnandan1/kener/releases/tag/v4.1.11
+        - kind: changed
+          description: "Kener 4.1.11 checks the bodies of /api/v4 writes against the API specification: invalid requests now get a 400."
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: Kener
+      artifacthub.io/images: |
+        - name: kener
+          image: docker.io/rajnandan1/kener:4.1.11-alpine
+        - name: valkey
+          image: docker.io/valkey/valkey:9.1.3-alpine
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/kener
+        - name: Kener documentation
+          url: https://kener.ing/docs/v4/setup/environment-variables
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 4.1.11
+    created: "2026-11-02T12:20:38.72119089Z"
+    description: Kener 4 status page with SQLite/PostgreSQL/MySQL, a bundled hardened
+      Valkey for its queues, and secure defaults for Kubernetes.
+    digest: 648e3a2703c73f42aee7a97d3cc8490fd22c93ff2a1f429345abc02ef7988aeb
+    home: https://github.com/UnxWares/helm/tree/main/charts/kener
+    icon: https://kener.ing/logo.png
+    keywords:
+    - kener
+    - status
+    - status-page
+    - uptime
+    - monitoring
+    - incident
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: kener
+    sources:
+    - https://github.com/rajnandan1/kener
+    - https://hub.docker.com/r/rajnandan1/kener
+    - https://github.com/valkey-io/valkey
+    - https://github.com/UnxWares/helm/tree/main/charts/kener
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/kener-2026.11.1/kener-2026.11.1.tgz
+    version: 2026.11.1
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/changes: |
         - kind: changed
           description: The Artifact Hub images annotation lists the images of a default install only (Kener Alpine and Valkey). The security report used to add up the Debian and /status variants, which are only pulled when selected; the README lists them.
       artifacthub.io/containsSecurityUpdates: "true"
@@ -3255,4 +3316,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-10-29T21:56:50.304865489Z"
+generated: "2026-11-02T12:20:38.721383701Z"
