@@ -55,6 +55,7 @@ jobs:
                     - { name: mysql-client, context: images/mysql-client, suffix: "" }
                     - { name: mongosh, context: images/mongosh, suffix: "" }
                     - { name: cloudreve, context: images/cloudreve, suffix: "" }
+                    - { name: fossflow, context: images/fossflow, suffix: "" }
                 platform:
                     - { arch: amd64, runner: ubuntu-24.04, trivy: Linux-64bit }
                     - { arch: arm64, runner: ubuntu-24.04-arm, trivy: Linux-ARM64 }
@@ -137,6 +138,7 @@ jobs:
                     - { name: mysql-client, context: images/mysql-client, suffix: "" }
                     - { name: mongosh, context: images/mongosh, suffix: "" }
                     - { name: cloudreve, context: images/cloudreve, suffix: "" }
+                    - { name: fossflow, context: images/fossflow, suffix: "" }
         runs-on: ubuntu-24.04
         permissions:
             contents: read

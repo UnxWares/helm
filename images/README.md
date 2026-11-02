@@ -18,10 +18,13 @@ the upstream images instead (see its README).
 | `mysql-client:8.4` | `docker.io/library/mysql` (its `mysql`) | The MySQL client only, from the signed packages of the official MySQL repository on Oracle Linux 9 slim; latest 8.4.x at each rebuild |
 | `mongosh:2.14.1` | `docker.io/library/mongo` (its `mongosh`) | The official mongosh release, checked against its SHA-256, on a distroless base; its SBOM stays in the image so that scanners see the bundled dependencies |
 | `cloudreve:4.19.1` | `docker.io/cloudreve/cloudreve` | Built from the release sources with the Go module updates of `patches/` (cloudreve/cloudreve#3618), current Alpine, same thumbnail tools (libvips, FFmpeg, LibreOffice, libheif, libraw); no aria2 or supervisord, no default time zone, non-root (uid 1000) |
+| `fossflow:1.0.5` | `docker.io/abrar74774/fossflow` | Built from the upstream sources (commit `2b3cee3`, release v1.0.5) with the lockfile update of `patches/` (`npm audit fix`), current Alpine, no npm, su-exec or openssl; nginx on port 8080 and the backend run as uid 1000 with a read-only root filesystem, the backend listens on 127.0.0.1 only and its CORS headers (any origin) are dropped |
 
 The images keep the upstream ports, paths, users and environment variables (PowerDNS: the same `pdns` user,
 startup script and Jinja2 templates), except `taiga-front`, which listens on 8080 instead of 80, and `cloudreve`,
-whose entrypoint is the binary itself (the upstream one starts aria2 under supervisord as root). The client images
+whose entrypoint is the binary itself (the upstream one starts aria2 under supervisord as root). `fossflow` listens on
+8080 instead of 80, runs nginx and the backend as uid 1000 instead of starting as root, and refuses
+`HTTP_AUTH_USER`/`HTTP_AUTH_PASSWORD` (the upstream entrypoint cannot hash them with OpenSSL 3). The client images
 (`postgresql-client`, `mysql-client`, `mongosh`) run as uid 65532 with `HOME=/tmp`, for the Jobs of
 `openeverest-database-tools`.
 
@@ -61,5 +64,8 @@ cosign verify ghcr.io/unxwares/taiga-back:6.10.2 \
   applying. Drop them when the upstream release that contains them is out.
 - `taiga-events` uses its own `package.json` and `package-lock.json` (current versions of the upstream
   dependencies); `npm audit` reports no vulnerability.
+- `fossflow` builds with the upstream lockfile updated by `npm audit fix` (`patches/0001-d94654d.patch`, from the
+  `fix/vulnerable-dependencies` branch of [UnxWares/FossFLOW](https://github.com/UnxWares/FossFLOW)), and installs
+  the backend dependencies from that lockfile.
 - To move to a new upstream version: update `ARG VERSION` and the source checksums, regenerate the locks,
   build locally (`docker build images/<image>`), then bump the chart.
