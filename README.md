@@ -1,5 +1,8 @@
 <div align="center">
-  <img src="https://github.com/UnxWares/.github/blob/main/unxwares-logo.png?raw=true" align="center" height="" width="400" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://helm.unxwares.studio/assets/logo-dark.svg">
+    <img src="https://helm.unxwares.studio/assets/logo.svg" alt="UnxWares" width="400">
+  </picture>
 </div>
 
 # <div align="center">UnxWares Helm Charts</div>
@@ -11,8 +14,9 @@
 [![End-to-end tests](https://github.com/UnxWares/helm/actions/workflows/e2e.yaml/badge.svg)](https://github.com/UnxWares/helm/actions/workflows/e2e.yaml)
 [![CVE watch](https://github.com/UnxWares/helm/actions/workflows/cve-watch.yaml/badge.svg)](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+[![UWOSC: maintained](https://helm.unxwares.studio/assets/uwosc/mini-maintained.svg)](#open-source)
 
-[Charts](#available-charts) • [Images](#images) • [Testing](#how-the-charts-are-tested) • [Installation](#installation) • [Signatures](#verifying-signatures) • [Contributing](#contributing) • [Support](#support)
+[Charts](#available-charts) • [Images](#images) • [Testing](#how-the-charts-are-tested) • [Installation](#installation) • [Signatures](#verifying-signatures) • [Contributing](#contributing) • [Open source](#open-source) • [Support](#support)
 
 </div>
 
@@ -197,6 +201,17 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the conventions and the release proce
 `artifacthub-repo.yml` holds the Artifact Hub repository ID and owners; the release workflow publishes it next to
 `index.yaml`, together with the public signing key. Packages listed in its `ignore` section (the former `opencloud`
 chart) stay in `index.yaml` for existing users but are hidden on Artifact Hub.
+
+## Open source
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://helm.unxwares.studio/assets/uwosc/badge-maintained-dark.svg">
+  <img src="https://helm.unxwares.studio/assets/uwosc/badge-maintained.svg" alt="UnxWares Open Source &amp; Community: supported and maintained by UnxWares" width="308" height="44">
+</picture>
+
+These charts are part of **UnxWares Open Source & Community** (UWOSC), the open source work that UnxWares supports and
+maintains. *Maintained* means UnxWares answers for them: we keep them current, test every change and fix what breaks.
+Every chart README carries the badge.
 
 ## Support
 

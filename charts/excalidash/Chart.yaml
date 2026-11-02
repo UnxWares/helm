@@ -2,7 +2,7 @@ apiVersion: v2
 name: excalidash
 description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer for Excalidraw with live collaboration features
 type: application
-version: 2026.11.3
+version: 2026.11.4
 appVersion: "0.6.7"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/excalidash
@@ -46,10 +46,8 @@ annotations:
       image: docker.io/zimengxiong/excalidash-backend:0.6.7
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
-    - kind: added
-      description: "Unit tests (helm-unittest, 106 tests) of the security contexts, image selection, required values and their messages, the chart Secret (generated values, lookup reuse, keep policy), container env, probes, persistence, Services, the NetworkPolicy, the frontend HPA, the helm test pod, the release notes and the README examples, run in CI on every pull request and push to main; the values are unchanged."
-    - kind: fixed
-      description: "helm upgrade (or a new install over the kept Secret) no longer fails with \"index of untyped nil\" when the chart Secret has no data, which a release whose secrets all come from your own Secrets leaves behind: the chart now generates the values."
+    - kind: changed
+      description: "README: the UnxWares Open Source & Community (UWOSC) badge, the chart being maintained by UnxWares. The templates and values are unchanged."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

@@ -272,3 +272,9 @@ footer.uw-footer .copyright p a img{width:25px;height:25px;margin:0 4px}
   .code code { font-size: 13px; white-space: normal; overflow-wrap: anywhere; text-align: left; }
 }
 .note.scan { margin: -12px auto 24px; }
+
+/* UnxWares Open Source & Community */
+.card.uwosc { max-width: 680px; margin: 0 auto; text-align: center; }
+.card.uwosc picture img { display: block; margin: 0 auto 14px; max-width: 100%; height: auto; }
+.card.uwosc p { margin: 0 0 14px; color: var(--text-secondary); }
+.card.uwosc .code { justify-content: center; }

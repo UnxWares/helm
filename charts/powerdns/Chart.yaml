@@ -2,7 +2,7 @@ apiVersion: v2
 name: powerdns
 description: PowerDNS Authoritative Server with its REST API, SQLite/PostgreSQL/MySQL backends and an optional PowerDNS Recursor, hardened for Kubernetes.
 type: application
-version: 2026.11.4
+version: 2026.11.5
 appVersion: "5.1.5"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/powerdns
@@ -53,8 +53,8 @@ annotations:
       image: ghcr.io/unxwares/mysql-client:8.4
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
-    - kind: fixed
-      description: "An empty recursor.image.tag without recursor.image.digest rendered an image reference without tag (ghcr.io/unxwares/pdns-recursor:), which Kubernetes refuses: the chart now stops with the value to set (recursor.image.tag or recursor.image.digest). The other images were already right: an empty image.tag follows the chart appVersion, and empty client or helm test images fall back to their defaults."
+    - kind: changed
+      description: "README: the UnxWares Open Source & Community (UWOSC) badge, the chart being maintained by UnxWares. The templates and values are unchanged."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc
