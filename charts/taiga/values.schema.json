@@ -25,11 +25,22 @@
                         }
                     }
                 },
-                "command": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
+                "beat": {
+                    "type": "object",
+                    "properties": {
+                        "resources": {
+                            "description": "Resources of the Celery beat scheduler (Deployment `\u003crelease\u003e-async-beat`, one replica, `Recreate` strategy). It sends the periodic tasks (notification emails, token cleanup, telemetry when enabled) to the workers; it shares the other `async` values (image, environment, security contexts, scheduling).",
+                            "type": "object"
+                        }
                     }
+                },
+                "command": {
+                    "description": "Command of the worker container. Empty: the Celery worker without the beat scheduler, 4 processes, log level INFO (`celery -A taiga.celery worker`, through `gosu taiga` with the `upstream` images). The image's `docker/async_entrypoint.sh` is refused: it starts a beat scheduler in every worker.",
+                    "type": "array"
+                },
+                "extraArgs": {
+                    "description": "Arguments added to the worker command, for example `[\"--concurrency\", \"2\"]` (the last value of an option wins).",
+                    "type": "array"
                 },
                 "extraEnv": {
                     "type": "array"
@@ -79,7 +90,7 @@
                     "type": "object"
                 },
                 "replicaCount": {
-                    "description": "Celery worker replicas.",
+                    "description": "Celery worker replicas. The beat scheduler runs in its own pod (`async.beat`), so the workers can be scaled without running the periodic tasks more than once.",
                     "type": "integer"
                 },
                 "resources": {
@@ -354,7 +365,7 @@
                     }
                 },
                 "imagePullSecrets": {
-                    "description": "Image pull secrets (defaults to global.imagePullSecrets).",
+                    "description": "Image pull secrets of the backend pod (replace `global.imagePullSecrets`). The async, async beat and gateway pods, which also run the backend image, get both lists.",
                     "type": "array"
                 },
                 "livenessProbe": {
@@ -687,7 +698,7 @@
                             "type": "string"
                         },
                         "vhost": {
-                            "description": "Virtual host. taiga-events hard-codes `taiga`: do not change it.",
+                            "description": "Virtual host (used by backend, async and events).",
                             "type": "string"
                         }
                     }
@@ -799,7 +810,7 @@
                     "type": "boolean"
                 },
                 "existingSecret": {
-                    "description": "Existing secret holding the connection settings.",
+                    "description": "Existing secret holding the connection settings (host, port, database, user, password).",
                     "type": "string"
                 },
                 "host": {
@@ -1156,15 +1167,19 @@
                             "type": "object",
                             "properties": {
                                 "authorization": {
+                                    "description": "Authorization endpoint. Empty: `\u003cissuer\u003e/protocol/openid-connect/auth`.",
                                     "type": "string"
                                 },
                                 "jwks": {
+                                    "description": "JWKS endpoint. Empty: `\u003cissuer\u003e/protocol/openid-connect/certs`.",
                                     "type": "string"
                                 },
                                 "token": {
+                                    "description": "Token endpoint. Empty: `\u003cissuer\u003e/protocol/openid-connect/token`.",
                                     "type": "string"
                                 },
                                 "userinfo": {
+                                    "description": "Userinfo endpoint. Empty: `\u003cissuer\u003e/protocol/openid-connect/userinfo`.",
                                     "type": "string"
                                 }
                             }
@@ -1280,11 +1295,11 @@
                     }
                 },
                 "podSecurityContext": {
-                    "description": "Default pod security context (used when a component does not set its own).",
+                    "description": "Pod security context of the components whose `podSecurityContext` is empty: by default the Taiga components (backend, async, async beat, events, front, protected). The gateway, brokers and bundled database have their own defaults and use this one only when theirs is set to null or `{}`.",
                     "type": "object"
                 },
                 "resources": {
-                    "description": "Default resources (used when a component does not set its own).",
+                    "description": "Resources of the components whose `resources` is null or empty. Every component has its own defaults, so set `\u003ccomponent\u003e.resources: null` to use this one.",
                     "type": "object"
                 },
                 "scheme": {
@@ -1309,7 +1324,7 @@
                     }
                 },
                 "securityContext": {
-                    "description": "Default container security context (used when a component does not set its own).",
+                    "description": "Container security context of the components whose `securityContext` is empty (same rule as `podSecurityContext`).",
                     "type": "object"
                 },
                 "serviceAccount": {
@@ -1334,7 +1349,7 @@
                     }
                 },
                 "subPath": {
-                    "description": "Sub-path when Taiga is not served at the root of the domain.",
+                    "description": "Sub-path when Taiga is not served at the root of the domain (for example `/taiga`). It is passed to the backend, front and protected containers and used as the HTTPRoute path prefix, but the built-in gateway configuration serves Taiga at the root: a sub-path also needs your own `gateway.configMapName`.",
                     "type": "string"
                 },
                 "telemetry": {
@@ -1431,6 +1446,19 @@
                 },
                 "tls": {
                     "description": "Ingress TLS.",
+                    "type": "array"
+                }
+            }
+        },
+        "networkPolicy": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Create NetworkPolicies (ingress only, egress stays open): the gateway accepts `networkPolicy.ingressFrom` on its port; front, backend, protected and events accept the gateway only; the brokers accept the Taiga components that use them, the bundled database the backend and the workers; the workers and the beat accept nothing. Needs a network plugin that enforces NetworkPolicies.",
+                    "type": "boolean"
+                },
+                "ingressFrom": {
+                    "description": "Peers allowed to reach the gateway (for example your Ingress controller or Gateway). Empty allows any source on the gateway port; pods of this release (`helm test`) are always allowed.",
                     "type": "array"
                 }
             }

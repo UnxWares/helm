@@ -1,4 +1,5 @@
-# Full stack with the bundled PostgreSQL (fresh kind cluster, no ingress).
+# Full stack with the bundled PostgreSQL (fresh kind cluster, no ingress), with the NetworkPolicies (kind enforces
+# them): `helm test` and the end-to-end test go through them.
 global:
   scheme: http
   websocketsScheme: ws
@@ -13,3 +14,5 @@ asyncRabbitmq:
 eventsRabbitmq:
   persistence:
     size: 1Gi
+networkPolicy:
+  enabled: true
