@@ -1,0 +1,6 @@
+# Accepted in the pull request gate of .github/workflows/images.yaml (they still show in scans and on Artifact Hub).
+#
+# basic-ftp 5.3.1, bundled in mongosh (listed by its SBOM): an FTP client that mongosh only uses to download a proxy
+# auto-configuration file from an ftp:// URL (proxy-agent, get-uri). The Jobs configure no proxy. Fixed by a newer
+# mongosh release.
+CVE-2026-102990
