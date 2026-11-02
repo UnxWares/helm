@@ -33,6 +33,9 @@ whose entrypoint is the binary itself (the upstream one starts aria2 under super
 
 - `<version>`: the upstream version, rebuilt every Monday and Thursday on the current base image and Alpine packages. For
   `postgresql-client` and `mysql-client` it is a release series (`18`, `8.4`): each rebuild takes its latest client.
+  The CVE watch (`.github/workflows/cve-watch.yaml`) also starts a rebuild when it finds a critical or high
+  vulnerability that a rebuild fixes (OS package, Go standard library of the build image) and that the image's
+  `.trivyignore` does not accept, at most once every 20 hours (see [SECURITY.md](../SECURITY.md)).
 - `<version>-<YYYYMMDD>`: one immutable tag per build, to pin a build.
 - `<version>-amd64`, `<version>-arm64`: the per-architecture images behind the multi-arch tag.
 
