@@ -78,10 +78,11 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
 Render an image reference from {repository, tag, digest}.
 */}}
 {{- define "cloudreve.image" -}}
+{{- $repository := .Values.image.repository | default (ternary "ghcr.io/unxwares/cloudreve" "docker.io/cloudreve/cloudreve" (eq .Values.imageProvider "unxwares")) -}}
 {{- if .Values.image.digest -}}
-{{- printf "%s@%s" .Values.image.repository .Values.image.digest -}}
+{{- printf "%s@%s" $repository .Values.image.digest -}}
 {{- else -}}
-{{- printf "%s:%s" .Values.image.repository (.Values.image.tag | default .Chart.AppVersion | toString) -}}
+{{- printf "%s:%s" $repository (.Values.image.tag | default .Chart.AppVersion | toString) -}}
 {{- end -}}
 {{- end }}
 

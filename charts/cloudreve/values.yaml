@@ -1,8 +1,13 @@
 # Default values for cloudreve (Cloudreve v4).
 
+# -- Image provider. `unxwares`: `ghcr.io/unxwares/cloudreve`, Cloudreve built from its release sources with
+# current Go modules on a current Alpine, rebuilt twice a week, signed (https://github.com/UnxWares/helm/tree/main/images).
+# `upstream`: the official `docker.io/cloudreve/cloudreve` image.
+imageProvider: unxwares  # @schema enum:[unxwares, upstream]
+
 image:
-  # -- Cloudreve image repository.
-  repository: docker.io/cloudreve/cloudreve
+  # -- Cloudreve image repository. Empty: `ghcr.io/unxwares/cloudreve` or `docker.io/cloudreve/cloudreve`, from `imageProvider`.
+  repository: ""
   # -- Image pull policy.
   pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
   # -- Image tag (defaults to the chart appVersion).
@@ -147,7 +152,7 @@ affinity: {}
 # -- Priority class of the pod.
 priorityClassName: ""
 
-# -- Timezone of the container (the image defaults to Asia/Shanghai).
+# -- Timezone of the container (`TZ`). The upstream image would otherwise default to Asia/Shanghai.
 timezone: UTC
 
 # -- Extra environment variables. Do not put secrets in `CR_CONF_*` variables: Cloudreve logs their values.
