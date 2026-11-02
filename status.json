@@ -2652,9 +2652,9 @@
   }
  ],
  "cve_watch": {
-  "commit": "7561ecba707e26e3d34fdb6898cba4da3d84f93b",
-  "date": "2026-11-02T17:54:39Z",
-  "event": "workflow_run",
+  "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
+  "date": "2026-11-02T19:14:24Z",
+  "event": "workflow_dispatch",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
     "charts": [
@@ -4149,8 +4149,8 @@
     "total": 12
    }
   },
-  "run_id": 41495246472,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/41495246472",
+  "run_id": 41507685330,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/41507685330",
   "source": "report"
  },
  "files": [
@@ -4831,7 +4831,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-02T19:09:31Z",
+ "latest_result": "2026-11-02T19:14:24Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
