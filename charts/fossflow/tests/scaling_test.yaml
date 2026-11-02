@@ -1,0 +1,144 @@
+suite: replicas, autoscaling and the single-replica rule of ReadWriteOnce storage
+templates:
+  - deployment.yaml
+  - hpa.yaml
+release:
+  name: diagrams
+  namespace: tools
+tests:
+  - it: renders no HorizontalPodAutoscaler by default
+    template: hpa.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: scales the browser-only Deployment on CPU and leaves the replica count to the autoscaler
+    set:
+      storage:
+        enabled: false
+      autoscaling:
+        enabled: true
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+        template: hpa.yaml
+      - equal:
+          path: spec.scaleTargetRef
+          value:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: diagrams-fossflow
+        template: hpa.yaml
+      - equal:
+          path: spec.minReplicas
+          value: 1
+        template: hpa.yaml
+      - equal:
+          path: spec.maxReplicas
+          value: 5
+        template: hpa.yaml
+      - equal:
+          path: spec.metrics
+          value:
+            - type: Resource
+              resource:
+                name: cpu
+                target:
+                  type: Utilization
+                  averageUtilization: 80
+        template: hpa.yaml
+      - notExists:
+          path: spec.replicas
+        template: deployment.yaml
+
+  - it: adds a memory target when set
+    template: hpa.yaml
+    set:
+      storage:
+        enabled: false
+      autoscaling:
+        enabled: true
+        targetMemoryUtilizationPercentage: 75
+    asserts:
+      - lengthEqual:
+          path: spec.metrics
+          count: 2
+      - equal:
+          path: spec.metrics[1].resource
+          value:
+            name: memory
+            target:
+              type: Utilization
+              averageUtilization: 75
+
+  - it: autoscales server storage on a ReadWriteMany volume
+    template: hpa.yaml
+    set:
+      autoscaling:
+        enabled: true
+      persistence:
+        accessModes:
+          - ReadWriteMany
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: refuses several replicas with server storage on a ReadWriteOnce volume
+    template: deployment.yaml
+    set:
+      replicaCount: 2
+    asserts:
+      - failedTemplate:
+          errorMessage: "server storage on a ReadWriteOnce volume supports a single replica: use a ReadWriteMany volume or disable storage to scale"
+
+  - it: refuses autoscaling with server storage on a ReadWriteOnce volume
+    template: deployment.yaml
+    set:
+      autoscaling:
+        enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "server storage on a ReadWriteOnce volume supports a single replica: use a ReadWriteMany volume or disable storage to scale"
+
+  - it: refuses several replicas on a ReadWriteOncePod volume too
+    template: deployment.yaml
+    set:
+      replicaCount: 2
+      persistence:
+        accessModes:
+          - ReadWriteOncePod
+    asserts:
+      - failedTemplate:
+          errorMessage: "server storage on a ReadWriteOnce volume supports a single replica: use a ReadWriteMany volume or disable storage to scale"
+
+  - it: accepts several replicas on a ReadWriteMany volume (README example)
+    template: deployment.yaml
+    set:
+      replicaCount: 2
+      persistence:
+        storageClass: nfs-client
+        accessModes:
+          - ReadWriteMany
+    asserts:
+      - notFailedTemplate: {}
+      - equal:
+          path: spec.replicas
+          value: 2
+
+  - it: accepts several replicas in browser-only mode
+    template: deployment.yaml
+    set:
+      replicaCount: 2
+      storage:
+        enabled: false
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: accepts several replicas when persistence is disabled
+    template: deployment.yaml
+    set:
+      replicaCount: 2
+      persistence:
+        enabled: false
+    asserts:
+      - notFailedTemplate: {}

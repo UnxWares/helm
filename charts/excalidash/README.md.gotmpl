@@ -636,6 +636,14 @@ browser:
 
 It does not test live collaboration (Socket.IO), OIDC, PostgreSQL, S3 storage, email or scheduled backups.
 
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the security contexts of every container (the `copy-app` init container and the test pod
+included), the image selection (repository, tag, digest, pull secrets), the message of every required value, the
+chart Secret (generated values reused at upgrade, keep policy, keys left out for your own Secrets), secrets passed
+through `secretKeyRef` only, the OIDC variables of each authentication mode, the probes, persistence, the Services,
+Ingress, HTTPRoute, NetworkPolicy and frontend HPA, the release notes and the three examples of this README.
+
 ## Operations
 
 ### Backup and restore

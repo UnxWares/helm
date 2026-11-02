@@ -1,0 +1,17 @@
+# README example "Under /status with the Gateway API", as written in the README.
+kener:
+  origin: https://example.com      # origin only, never the /status path
+  basePath: /status
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: main-gateway
+      namespace: gateway-system
+      sectionName: https
+  hostnames:
+    - example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /status

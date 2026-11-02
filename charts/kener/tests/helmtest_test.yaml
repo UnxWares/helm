@@ -1,0 +1,71 @@
+suite: helm test pod
+templates:
+  - tests/test-healthcheck.yaml
+release:
+  name: status
+  namespace: status
+tests:
+  - it: is a helm test hook, deleted once it succeeds
+    asserts:
+      - isKind:
+          of: Pod
+      - equal:
+          path: metadata.name
+          value: status-kener-test-healthcheck
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/hook: test
+            helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+      - equal:
+          path: spec.restartPolicy
+          value: Never
+
+  - it: carries labels the Kener Service and NetworkPolicy selectors never match
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: kener-test
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: status
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: test
+
+  - it: only reads the strict health check through the Service, with retries
+    asserts:
+      - equal:
+          path: spec.containers[0].command
+          value:
+            - curl
+            - --fail
+            - --silent
+            - --show-error
+            - --max-time
+            - "10"
+            - --retry
+            - "6"
+            - --retry-delay
+            - "5"
+            - --retry-all-errors
+            - http://status-kener:3000/healthcheck?strict=1
+      - notExists:
+          path: spec.containers[0].args
+      - equal:
+          path: spec.containers[0].resources
+          value:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+
+  - it: follows the Service port and the base path
+    set:
+      service.port: 80
+      kener.basePath: /status
+    asserts:
+      - equal:
+          path: spec.containers[0].command[11]
+          value: http://status-kener:80/status/healthcheck?strict=1

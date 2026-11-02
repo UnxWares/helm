@@ -1,0 +1,169 @@
+suite: frontend and backend images
+templates:
+  - frontend/deployment.yaml
+  - backend/deployment.yaml
+  - tests/test-health.yaml
+release:
+  name: excalidash
+  namespace: excalidash
+chart:
+  appVersion: 0.6.7
+tests:
+  - it: defaults to the upstream images tagged with the chart appVersion, the same for the init container
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/zimengxiong/excalidash-frontend:0.6.7
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/zimengxiong/excalidash-backend:0.6.7
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: docker.io/zimengxiong/excalidash-backend:0.6.7
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+        template: backend/deployment.yaml
+
+  - it: follows the chart appVersion when the tags are empty
+    chart:
+      appVersion: 9.8.7
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/zimengxiong/excalidash-frontend:9.8.7
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/zimengxiong/excalidash-backend:9.8.7
+        template: backend/deployment.yaml
+
+  - it: lets an explicit repository and tag override the defaults
+    set:
+      frontend.image.repository: registry.example.com/mirror/excalidash-frontend
+      frontend.image.tag: 0.6.6
+      backend.image.repository: registry.example.com/mirror/excalidash-backend
+      backend.image.tag: 0.6.6
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/mirror/excalidash-frontend:0.6.6
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/mirror/excalidash-backend:0.6.6
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: registry.example.com/mirror/excalidash-backend:0.6.6
+        template: backend/deployment.yaml
+
+  - it: prefers the digest over the tag
+    set:
+      frontend.image.tag: 0.6.6
+      frontend.image.digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      backend.image.digest: sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/zimengxiong/excalidash-frontend@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/zimengxiong/excalidash-backend@sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: docker.io/zimengxiong/excalidash-backend@sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+        template: backend/deployment.yaml
+
+  - it: applies each pull policy, to the init container too
+    set:
+      frontend.image.pullPolicy: Always
+      backend.image.pullPolicy: Never
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Never
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].imagePullPolicy
+          value: Never
+        template: backend/deployment.yaml
+
+  - it: uses global.imagePullSecrets in every pod by default
+    set:
+      global.imagePullSecrets:
+        - name: registry-credentials
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: tests/test-health.yaml
+
+  - it: replaces the global pull secrets with the ones of a component
+    set:
+      global.imagePullSecrets:
+        - name: registry-credentials
+      backend.imagePullSecrets:
+        - name: backend-credentials
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: backend-credentials
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: frontend/deployment.yaml
+
+  - it: sets no pull secret by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.imagePullSecrets
+        template: frontend/deployment.yaml
+      - notExists:
+          path: spec.template.spec.imagePullSecrets
+        template: backend/deployment.yaml
+      - notExists:
+          path: spec.imagePullSecrets
+        template: tests/test-health.yaml
+
+  - it: runs the helm test with the frontend image, pull policy and pull secrets
+    template: tests/test-health.yaml
+    set:
+      frontend.image.digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      frontend.image.pullPolicy: Always
+      frontend.imagePullSecrets:
+        - name: frontend-credentials
+    asserts:
+      - equal:
+          path: spec.containers[0].image
+          value: docker.io/zimengxiong/excalidash-frontend@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      - equal:
+          path: spec.containers[0].imagePullPolicy
+          value: Always
+      - equal:
+          path: spec.imagePullSecrets
+          value:
+            - name: frontend-credentials

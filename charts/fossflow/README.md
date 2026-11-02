@@ -1,6 +1,6 @@
 # FossFLOW Helm Chart
 
-![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.5](https://img.shields.io/badge/AppVersion-1.0.5-informational?style=flat-square)
+![Version: 2026.11.3](https://img.shields.io/badge/Version-2026.11.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.5](https://img.shields.io/badge/AppVersion-1.0.5-informational?style=flat-square)
 
 [FossFLOW](https://github.com/Abrar74774/FossFLOW) is an open-source Progressive Web App for drawing isometric
 infrastructure diagrams. This chart deploys one container running nginx (the web app) and, optionally, a small
@@ -159,8 +159,9 @@ that group. With your own `podSecurityContext`, keep `fsGroup` equal to `storage
 
 ### Scaling
 
-- Server storage on a ReadWriteOnce volume supports one replica: rendering fails with `replicaCount > 1` or
-  `autoscaling.enabled`, and the Deployment uses the `Recreate` strategy (a short downtime on each upgrade).
+- Server storage on a ReadWriteOnce (or ReadWriteOncePod) volume supports one replica: rendering fails with
+  `replicaCount > 1` or `autoscaling.enabled`, and the Deployment uses the `Recreate` strategy (a short downtime on
+  each upgrade).
 - With a ReadWriteMany volume, several replicas share the same directory:
 
   ```yaml
@@ -467,6 +468,13 @@ After an install:
 ```bash
 helm test fossflow --namespace fossflow --logs
 ```
+
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the security contexts with both image providers, the image selection (`imageProvider`, repository,
+tag, digest), the single-replica rule of ReadWriteOnce storage and its message, the storage environment, the probes
+on `/api/storage/status`, persistence, the Service, Ingress and HTTPRoute, the NetworkPolicy, the `helm test` pod, the
+release notes and the two examples of this README.
 
 ## Operations
 

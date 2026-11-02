@@ -1,0 +1,258 @@
+suite: deployment, probes and scheduling
+templates:
+  - deployment.yaml
+release:
+  name: diagrams
+  namespace: tools
+tests:
+  - it: runs a single replica replaced with the Recreate strategy on the ReadWriteOnce volume
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: diagrams-fossflow
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: fossflow
+            app.kubernetes.io/instance: diagrams
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: fossflow
+
+  - it: uses the Recreate strategy on a ReadWriteOncePod volume too
+    set:
+      persistence:
+        accessModes:
+          - ReadWriteOncePod
+    asserts:
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+
+  - it: keeps the rolling update strategy on a ReadWriteMany volume
+    set:
+      replicaCount: 2
+      persistence:
+        accessModes:
+          - ReadWriteMany
+    asserts:
+      - notExists:
+          path: spec.strategy
+      - equal:
+          path: spec.replicas
+          value: 2
+
+  - it: keeps the rolling update strategy without server storage
+    set:
+      storage:
+        enabled: false
+    asserts:
+      - notExists:
+          path: spec.strategy
+
+  - it: keeps the rolling update strategy when persistence is disabled
+    set:
+      persistence:
+        enabled: false
+    asserts:
+      - notExists:
+          path: spec.strategy
+
+  - it: probes the storage backend through nginx when server storage is enabled
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /api/storage/status
+              port: http
+            periodSeconds: 20
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /api/storage/status
+              port: http
+            periodSeconds: 10
+
+  - it: probes the web app at / without server storage
+    set:
+      storage:
+        enabled: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /
+
+  - it: keeps a probe path other than /
+    set:
+      readinessProbe:
+        httpGet:
+          path: /index.html
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /index.html
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /api/storage/status
+
+  - it: leaves a probe without httpGet untouched
+    set:
+      livenessProbe:
+        httpGet: null
+        tcpSocket:
+          port: http
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            tcpSocket:
+              port: http
+            periodSeconds: 20
+
+  - it: leaves a probe out when it is set to null
+    set:
+      livenessProbe: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  - it: requests 20m CPU and 96Mi and limits memory to 512Mi by default
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 20m
+              memory: 96Mi
+            limits:
+              memory: 512Mi
+
+  - it: gives the pod a 10-second grace period by default
+    asserts:
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 10
+
+  - it: places the pod with nodeSelector, tolerations and affinity
+    set:
+      terminationGracePeriodSeconds: 30
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: tools
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: disk
+                    operator: In
+                    values: [ssd]
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: arm64
+      - equal:
+          path: spec.template.spec.tolerations[0].value
+          value: tools
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: disk
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 30
+
+  - it: sets no scheduling constraint by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.nodeSelector
+      - notExists:
+          path: spec.template.spec.tolerations
+      - notExists:
+          path: spec.template.spec.affinity
+
+  - it: adds pod labels and annotations next to the selector labels
+    set:
+      podLabels:
+        team: platform
+      podAnnotations:
+        backup.velero.io/backup-volumes: data
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/name: fossflow
+            app.kubernetes.io/instance: diagrams
+            team: platform
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            backup.velero.io/backup-volumes: data
+
+  - it: adds extra volumes and mounts
+    set:
+      volumes:
+        - name: icons
+          configMap:
+            name: icons
+      volumeMounts:
+        - name: icons
+          mountPath: /usr/share/nginx/html/icons
+          readOnly: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: icons
+            configMap:
+              name: icons
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: icons
+            mountPath: /usr/share/nginx/html/icons
+            readOnly: true
+
+  - it: uses the release name alone when it contains the chart name
+    release:
+      name: fossflow
+    asserts:
+      - equal:
+          path: metadata.name
+          value: fossflow
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: fossflow
+
+  - it: uses the full name override
+    set:
+      fullnameOverride: drawings
+    asserts:
+      - equal:
+          path: metadata.name
+          value: drawings
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: drawings

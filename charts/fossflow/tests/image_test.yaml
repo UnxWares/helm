@@ -1,0 +1,160 @@
+suite: image provider and image reference
+templates:
+  - deployment.yaml
+  - tests/test-connection.yaml
+release:
+  name: diagrams
+  namespace: tools
+chart:
+  appVersion: 1.0.5
+tests:
+  - it: defaults to the UnxWares image tagged with the chart appVersion
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/fossflow:1.0.5
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: follows the chart appVersion when the tag is empty
+    template: deployment.yaml
+    chart:
+      appVersion: 9.8.7
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/fossflow:9.8.7
+
+  - it: switches to the upstream image and its master-2b3cee3 tag (release v1.0.5) with imageProvider upstream
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/abrar74774/fossflow:master-2b3cee3
+
+  - it: listens on 8080 with the UnxWares image
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+  - it: listens on 80 with the upstream image
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+
+  - it: lets an explicit repository and tag override the provider
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+      image:
+        repository: registry.example.com/mirror/fossflow
+        tag: master-abcdef0
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/mirror/fossflow:master-abcdef0
+
+  - it: keeps the default tag of the provider with an explicit repository
+    set:
+      image:
+        repository: registry.example.com/mirror/fossflow
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/mirror/fossflow:1.0.5
+        template: deployment.yaml
+      - equal:
+          path: spec.containers[0].image
+          value: registry.example.com/mirror/fossflow:1.0.5
+        template: tests/test-connection.yaml
+
+  - it: keeps the upstream tag with an explicit repository and imageProvider upstream
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+      image:
+        repository: registry.example.com/mirror/fossflow
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/mirror/fossflow:master-2b3cee3
+
+  - it: prefers the digest over the tag
+    set:
+      image:
+        tag: 1.0.4
+        digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/fossflow@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        template: deployment.yaml
+      - equal:
+          path: spec.containers[0].image
+          value: ghcr.io/unxwares/fossflow@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        template: tests/test-connection.yaml
+
+  - it: uses the image of the provider for the helm test pod too
+    template: tests/test-connection.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.containers[0].image
+          value: docker.io/abrar74774/fossflow:master-2b3cee3
+
+  - it: applies the pull policy and pull secrets to the pod and to the helm test pod
+    set:
+      image:
+        pullPolicy: Always
+      imagePullSecrets:
+        - name: registry-credentials
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: deployment.yaml
+      - equal:
+          path: spec.containers[0].imagePullPolicy
+          value: Always
+        template: tests/test-connection.yaml
+      - equal:
+          path: spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: tests/test-connection.yaml
+
+  - it: sets no pull secret by default
+    template: deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.imagePullSecrets
+
+  - it: rejects an unknown image provider through the values schema
+    template: deployment.yaml
+    set:
+      imageProvider: dockerhub
+    asserts:
+      - failedTemplate:
+          errorPattern: imageProvider

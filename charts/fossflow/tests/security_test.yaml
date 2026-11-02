@@ -1,0 +1,232 @@
+suite: security contexts and service account
+templates:
+  - deployment.yaml
+  - serviceaccount.yaml
+  - tests/test-connection.yaml
+release:
+  name: diagrams
+  namespace: tools
+tests:
+  - it: runs the pod as storage.uid and storage.gid (1000), non-root, with fsGroup and the RuntimeDefault seccomp profile
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: hardens the FossFLOW container (read-only root, no privilege escalation, no capability)
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: follows storage.uid and storage.gid in the pod security context
+    template: deployment.yaml
+    set:
+      storage:
+        uid: 2000
+        gid: 3000
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 2000
+      - equal:
+          path: spec.template.spec.securityContext.runAsGroup
+          value: 3000
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 3000
+
+  - it: lets the upstream image start as root, with fsGroup and seccomp only in the pod security context
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: drops every capability but the five the upstream entrypoint needs, and leaves its root filesystem writable
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+                - DAC_OVERRIDE
+                - SETUID
+                - SETGID
+                - NET_BIND_SERVICE
+
+  - it: replaces the security contexts with the given ones
+    template: deployment.yaml
+    set:
+      podSecurityContext:
+        runAsUser: 4000
+        fsGroup: 4000
+      securityContext:
+        runAsUser: 4000
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsUser: 4000
+            fsGroup: 4000
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            runAsUser: 4000
+
+  - it: does not mount the service account token nor inject Service environment variables
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.template.spec.enableServiceLinks
+          value: false
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: diagrams-fossflow
+
+  - it: creates a dedicated service account without token automount
+    template: serviceaccount.yaml
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: diagrams-fossflow
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: mounts the token only when serviceAccount.automount is true
+    set:
+      serviceAccount:
+        automount: true
+        annotations:
+          owner: ops
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: true
+        template: deployment.yaml
+      - equal:
+          path: automountServiceAccountToken
+          value: true
+        template: serviceaccount.yaml
+      - equal:
+          path: metadata.annotations.owner
+          value: ops
+        template: serviceaccount.yaml
+
+  - it: uses an existing service account when creation is disabled
+    set:
+      serviceAccount:
+        create: false
+        name: shared
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: serviceaccount.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: shared
+        template: deployment.yaml
+
+  - it: falls back to the default service account when creation is disabled without a name
+    template: deployment.yaml
+    set:
+      serviceAccount:
+        create: false
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: default
+
+  - it: gives /tmp a size-limited emptyDir for the read-only root filesystem
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir:
+              sizeLimit: 256Mi
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp
+
+  - it: runs the helm test pod as nobody with a read-only root filesystem, without token or Service variables
+    template: tests/test-connection.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/hook: test
+            helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+      - equal:
+          path: spec.restartPolicy
+          value: Never
+      - equal:
+          path: spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.enableServiceLinks
+          value: false
+      - equal:
+          path: spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+      - equal:
+          path: spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: keeps the helm test pod hardened with the upstream image
+    template: tests/test-connection.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.securityContext.runAsUser
+          value: 65534
+      - equal:
+          path: spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true

@@ -1,6 +1,6 @@
 # OpenEverest Database Tools Helm Chart
 
-![Version: 2026.11.3](https://img.shields.io/badge/Version-2026.11.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.17.0](https://img.shields.io/badge/AppVersion-1.17.0-informational?style=flat-square)
+![Version: 2026.11.4](https://img.shields.io/badge/Version-2026.11.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.17.0](https://img.shields.io/badge/AppVersion-1.17.0-informational?style=flat-square)
 
 Database initialization Jobs for [OpenEverest](https://openeverest.io) by UnxWares. Each Job waits until an
 OpenEverest `DatabaseCluster` is ready, then creates databases, users and grants and runs your init scripts on
@@ -105,7 +105,8 @@ scanners also see the dependencies mongosh bundles. Known vulnerabilities are tr
 [CVE watch](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch) issue.
 
 Each image is a `{repository, tag, digest}` object; the digest takes precedence over the tag. An entry can override
-its engine image with `image`:
+its engine image with `image`; an entry that sets its own `repository` or `tag` without a `digest` does not inherit
+the digest of the engine image:
 
 ```yaml
 image:

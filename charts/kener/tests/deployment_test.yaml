@@ -1,0 +1,296 @@
+suite: Kener Deployment, probes and scheduling
+templates:
+  - deployment.yaml
+release:
+  name: status
+  namespace: status
+tests:
+  - it: runs a single replica replaced with the Recreate strategy with SQLite on a volume
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: status-kener
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: web
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.strategy
+          value:
+            type: Recreate
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: kener
+            app.kubernetes.io/instance: status
+
+  - it: keeps Recreate with SQLite even when another strategy is given
+    set:
+      updateStrategy:
+        type: RollingUpdate
+    asserts:
+      - equal:
+          path: spec.strategy
+          value:
+            type: Recreate
+
+  - it: uses updateStrategy with an external database
+    set:
+      database.existingSecret: kener-database
+      replicaCount: 2
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+      - equal:
+          path: spec.strategy
+          value:
+            type: RollingUpdate
+            rollingUpdate:
+              maxUnavailable: 0
+
+  - it: leaves the replica count to the HPA, and the strategy to Kubernetes without updateStrategy
+    set:
+      database.existingSecret: kener-database
+      autoscaling.enabled: true
+    asserts:
+      - notExists:
+          path: spec.replicas
+      - notExists:
+          path: spec.strategy
+
+  - it: listens on port 3000 and probes /healthcheck, strict for readiness
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /healthcheck
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /healthcheck?strict=1
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            httpGet:
+              path: /healthcheck
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+
+  - it: probes under the base path
+    set:
+      kener.basePath: /status
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /status/healthcheck
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /status/healthcheck?strict=1
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.path
+          value: /status/healthcheck
+
+  - it: removes a probe with enabled false
+    set:
+      livenessProbe.enabled: false
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  - it: keeps a probe handler given in the values instead of adding the httpGet
+    set:
+      readinessProbe:
+        tcpSocket:
+          port: http
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+  - it: requests 100m CPU and 256Mi and limits memory to 1Gi by default
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+
+  - it: gives /tmp a size-limited emptyDir for the read-only root filesystem
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir:
+              sizeLimit: 64Mi
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp
+
+  - it: places the pods with nodeSelector, tolerations, affinity, spread constraints and priority class
+    set:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: monitoring
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: disk
+                    operator: In
+                    values: [ssd]
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: kener
+      priorityClassName: high
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: arm64
+      - equal:
+          path: spec.template.spec.tolerations[0].value
+          value: monitoring
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: disk
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].topologyKey
+          value: topology.kubernetes.io/zone
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: high
+
+  - it: adds common labels, pod labels and pod annotations, next to the secret checksum
+    set:
+      commonLabels:
+        team: ops
+      podLabels:
+        tier: web
+      podAnnotations:
+        scrape: "false"
+    asserts:
+      - equal:
+          path: metadata.labels.team
+          value: ops
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/name: kener
+            app.kubernetes.io/instance: status
+            app.kubernetes.io/component: web
+            team: ops
+            tier: web
+      - equal:
+          path: spec.template.metadata.annotations.scrape
+          value: "false"
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/secret"]
+          pattern: ^[0-9a-f]{64}$
+
+  - it: adds extra volumes and mounts, the deprecated volumes and volumeMounts included
+    set:
+      extraVolumes:
+        - name: internal-ca
+          configMap:
+            name: internal-ca
+      extraVolumeMounts:
+        - name: internal-ca
+          mountPath: /etc/kener/ca
+          readOnly: true
+      volumes:
+        - name: legacy
+          emptyDir: {}
+      volumeMounts:
+        - name: legacy
+          mountPath: /legacy
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: internal-ca
+            configMap:
+              name: internal-ca
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: legacy
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: internal-ca
+            mountPath: /etc/kener/ca
+            readOnly: true
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: legacy
+            mountPath: /legacy
+
+  - it: uses the full name override
+    set:
+      fullnameOverride: uptime
+    asserts:
+      - equal:
+          path: metadata.name
+          value: uptime
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: uptime
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_URL
+            value: redis://:$(REDIS_PASSWORD)@uptime-valkey:6379

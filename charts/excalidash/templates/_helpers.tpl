@@ -120,7 +120,8 @@ Usage: include "excalidash.generatedSecret" (dict "ctx" $ "key" "jwt-secret" "va
 {{- .value -}}
 {{- else -}}
 {{- $secret := lookup "v1" "Secret" .ctx.Release.Namespace (include "excalidash.secretName" .ctx) -}}
-{{- if and $secret (index $secret.data .key) -}}
+{{- /* The kept Secret has no data when every secret came from the user's Secrets (see secret.yaml). */}}
+{{- if and $secret $secret.data (index $secret.data .key) -}}
 {{- index $secret.data .key | b64dec -}}
 {{- else -}}
 {{- randAlphaNum (int .length) -}}

@@ -1,6 +1,6 @@
 # ExcaliDash Helm Chart
 
-![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.6.7](https://img.shields.io/badge/AppVersion-0.6.7-informational?style=flat-square)
+![Version: 2026.11.3](https://img.shields.io/badge/Version-2026.11.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.6.7](https://img.shields.io/badge/AppVersion-0.6.7-informational?style=flat-square)
 
 [ExcaliDash](https://github.com/ZimengXiong/ExcaliDash) is a self-hosted dashboard and organizer for
 [Excalidraw](https://excalidraw.com/) drawings, with live collaboration. This chart, maintained by UnxWares, deploys
@@ -637,6 +637,14 @@ browser:
   administrator logs in with the same password and the drawing is still there (kept PVC).
 
 It does not test live collaboration (Socket.IO), OIDC, PostgreSQL, S3 storage, email or scheduled backups.
+
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the security contexts of every container (the `copy-app` init container and the test pod
+included), the image selection (repository, tag, digest, pull secrets), the message of every required value, the
+chart Secret (generated values reused at upgrade, keep policy, keys left out for your own Secrets), secrets passed
+through `secretKeyRef` only, the OIDC variables of each authentication mode, the probes, persistence, the Services,
+Ingress, HTTPRoute, NetworkPolicy and frontend HPA, the release notes and the three examples of this README.
 
 ## Operations
 

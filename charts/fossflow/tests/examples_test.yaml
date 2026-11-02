@@ -1,0 +1,115 @@
+suite: README examples
+templates:
+  - deployment.yaml
+  - pvc.yaml
+  - hpa.yaml
+  - ingress.yaml
+  - httproute.yaml
+  - networkpolicy.yaml
+release:
+  name: diagrams
+  namespace: tools
+tests:
+  - it: "Server storage behind ingress-nginx, HTTPS and basic auth: one pod on a 2Gi longhorn volume"
+    values:
+      - values/readme-server-storage-ingress-basic-auth.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+        template: deployment.yaml
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /api/storage/status
+        template: deployment.yaml
+      - equal:
+          path: spec.storageClassName
+          value: longhorn
+        template: pvc.yaml
+      - equal:
+          path: spec.resources.requests.storage
+          value: 2Gi
+        template: pvc.yaml
+
+  - it: "Server storage behind ingress-nginx, HTTPS and basic auth: the Ingress asks for basic auth and terminates TLS"
+    values:
+      - values/readme-server-storage-ingress-basic-auth.yaml
+    template: ingress.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/auth-type"]
+          value: basic
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/auth-secret"]
+          value: fossflow-basic-auth
+      - equal:
+          path: spec.rules[0].host
+          value: diagrams.example.com
+      - equal:
+          path: spec.tls[0].secretName
+          value: fossflow-tls
+
+  - it: "Server storage behind ingress-nginx, HTTPS and basic auth: only the ingress controller and the release reach the pod"
+    values:
+      - values/readme-server-storage-ingress-basic-auth.yaml
+    template: networkpolicy.yaml
+    asserts:
+      - equal:
+          path: spec.ingress[0].from[1].namespaceSelector.matchLabels
+          value:
+            kubernetes.io/metadata.name: ingress-nginx
+      - equal:
+          path: spec.egress
+          value: []
+
+  - it: "Browser-only, autoscaled, behind a Gateway: stateless pods scaled from 2 to 4"
+    values:
+      - values/readme-browser-only-gateway.yaml
+    asserts:
+      - notExists:
+          path: spec.replicas
+        template: deployment.yaml
+      - notExists:
+          path: spec.strategy
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: ENABLE_SERVER_STORAGE
+              value: "false"
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 128Mi
+        template: deployment.yaml
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - equal:
+          path: spec.minReplicas
+          value: 2
+        template: hpa.yaml
+      - equal:
+          path: spec.maxReplicas
+          value: 4
+        template: hpa.yaml
+
+  - it: "Browser-only, autoscaled, behind a Gateway: the HTTPRoute sends every path to the Service"
+    values:
+      - values/readme-browser-only-gateway.yaml
+    template: httproute.yaml
+    asserts:
+      - equal:
+          path: spec.parentRefs[0].name
+          value: public-gateway
+      - equal:
+          path: spec.hostnames
+          value:
+            - diagrams.example.com
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: diagrams-fossflow

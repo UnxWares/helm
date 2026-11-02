@@ -1,0 +1,267 @@
+suite: NetworkPolicies
+templates:
+  - networkpolicy.yaml
+release:
+  name: taiga
+  namespace: taiga
+tests:
+  - it: renders no NetworkPolicy by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders one ingress-only NetworkPolicy per component, nine with the external database
+    set:
+      networkPolicy:
+        enabled: true
+    asserts:
+      - hasDocuments:
+          count: 9
+      - equal:
+          path: spec.policyTypes
+          value:
+            - Ingress
+      - notExists:
+          path: spec.egress
+
+  - it: adds the bundled database as a tenth NetworkPolicy
+    values:
+      - values/bundled-database.yaml
+    set:
+      networkPolicy:
+        enabled: true
+    asserts:
+      - hasDocuments:
+          count: 10
+
+  - it: opens the gateway port to any source when ingressFrom is empty
+    set:
+      networkPolicy:
+        enabled: true
+    documentSelector:
+      path: metadata.name
+      value: taiga-gateway
+    asserts:
+      - equal:
+          path: spec
+          value:
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/name: taiga
+                app.kubernetes.io/instance: taiga
+                app.kubernetes.io/component: gateway
+            policyTypes:
+              - Ingress
+            ingress:
+              - ports:
+                  - port: http
+                    protocol: TCP
+
+  - it: lets only the release pods and the listed peers reach the gateway (README example)
+    set:
+      networkPolicy:
+        enabled: true
+        ingressFrom:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: ingress-nginx
+    documentSelector:
+      path: metadata.name
+      value: taiga-gateway
+    asserts:
+      - equal:
+          path: spec.ingress
+          value:
+            - ports:
+                - port: http
+                  protocol: TCP
+              from:
+                - podSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: taiga
+                      app.kubernetes.io/instance: taiga
+                - namespaceSelector:
+                    matchLabels:
+                      kubernetes.io/metadata.name: ingress-nginx
+
+  - it: lets only the gateway reach the backend on its http port
+    set:
+      networkPolicy:
+        enabled: true
+    documentSelector:
+      path: metadata.name
+      value: taiga-backend
+    asserts:
+      - equal:
+          path: spec
+          value:
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/name: taiga
+                app.kubernetes.io/instance: taiga
+                app.kubernetes.io/component: backend
+            policyTypes:
+              - Ingress
+            ingress:
+              - from:
+                  - podSelector:
+                      matchLabels:
+                        app.kubernetes.io/name: taiga
+                        app.kubernetes.io/instance: taiga
+                      matchExpressions:
+                        - key: app.kubernetes.io/component
+                          operator: In
+                          values:
+                            - gateway
+                ports:
+                  - port: http
+                    protocol: TCP
+
+  - it: lets only the gateway reach the front, taiga-protected and taiga-events on their http port
+    set:
+      networkPolicy:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.ingress[0].from[0].podSelector.matchExpressions[0].values
+          value:
+            - gateway
+        documentSelector:
+          path: metadata.name
+          value: taiga-frontend
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: http
+              protocol: TCP
+        documentSelector:
+          path: metadata.name
+          value: taiga-frontend
+      - equal:
+          path: spec.ingress[0].from[0].podSelector.matchExpressions[0].values
+          value:
+            - gateway
+        documentSelector:
+          path: metadata.name
+          value: taiga-protected
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: http
+              protocol: TCP
+        documentSelector:
+          path: metadata.name
+          value: taiga-protected
+      - equal:
+          path: spec.ingress[0].from[0].podSelector.matchExpressions[0].values
+          value:
+            - gateway
+        documentSelector:
+          path: metadata.name
+          value: taiga-events
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: http
+              protocol: TCP
+        documentSelector:
+          path: metadata.name
+          value: taiga-events
+
+  - it: lets the backend, the workers and the beat scheduler reach the async broker on AMQP only
+    set:
+      networkPolicy:
+        enabled: true
+    documentSelector:
+      path: metadata.name
+      value: taiga-async-rabbitmq
+    asserts:
+      - equal:
+          path: spec.podSelector.matchLabels["app.kubernetes.io/component"]
+          value: async-rabbitmq
+      - equal:
+          path: spec.ingress[0].from[0].podSelector.matchExpressions[0].values
+          value:
+            - backend
+            - async
+            - async-beat
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: amqp
+              protocol: TCP
+
+  - it: also lets taiga-events reach the events broker
+    set:
+      networkPolicy:
+        enabled: true
+    documentSelector:
+      path: metadata.name
+      value: taiga-events-rabbitmq
+    asserts:
+      - equal:
+          path: spec.ingress[0].from[0].podSelector.matchExpressions[0].values
+          value:
+            - backend
+            - async
+            - async-beat
+            - events
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: amqp
+              protocol: TCP
+
+  - it: lets nothing reach the workers and the beat scheduler
+    set:
+      networkPolicy:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.ingress
+          value: []
+        documentSelector:
+          path: metadata.name
+          value: taiga-async
+      - equal:
+          path: spec.podSelector.matchLabels["app.kubernetes.io/component"]
+          value: async
+        documentSelector:
+          path: metadata.name
+          value: taiga-async
+      - equal:
+          path: spec.ingress
+          value: []
+        documentSelector:
+          path: metadata.name
+          value: taiga-async-beat
+      - equal:
+          path: spec.podSelector.matchLabels["app.kubernetes.io/component"]
+          value: async-beat
+        documentSelector:
+          path: metadata.name
+          value: taiga-async-beat
+
+  - it: lets the backend and the workers reach the bundled database on its port
+    values:
+      - values/bundled-database.yaml
+    set:
+      networkPolicy:
+        enabled: true
+    documentSelector:
+      path: metadata.name
+      value: taiga-db
+    asserts:
+      - equal:
+          path: spec.podSelector.matchLabels["app.kubernetes.io/component"]
+          value: db
+      - equal:
+          path: spec.ingress[0].from[0].podSelector.matchExpressions[0].values
+          value:
+            - backend
+            - async
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: postgres
+              protocol: TCP

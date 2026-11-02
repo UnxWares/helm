@@ -1,0 +1,13 @@
+# README example "PostgreSQL, external Redis and two replicas", as written in the README.
+kener:
+  origin: https://status.example.com
+  existingSecret: kener            # key: secret-key
+database:
+  existingSecret: kener            # key: database-url = postgresql://kener:<password>@db-rw.databases.svc:5432/kener
+redis:
+  enabled: false
+  external:
+    existingSecret: kener          # key: redis-url = rediss://default:<password>@redis.example.com:6379
+replicaCount: 2
+podDisruptionBudget:
+  enabled: true

@@ -1,0 +1,4 @@
+# External database password shared by the suites: the default values have none, and the chart refuses to render
+# without it.
+externalDatabase:
+  password: ci-db-password

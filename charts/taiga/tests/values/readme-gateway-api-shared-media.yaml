@@ -1,0 +1,24 @@
+# README example "Gateway API, shared media and several replicas", as written in the README.
+global:
+  domain: taiga.example.com
+  persistence:
+    media:
+      storageClass: nfs-client
+      accessMode: ReadWriteMany
+      size: 50Gi
+externalDatabase:
+  enabled: true
+  existingSecret: taiga-db   # keys: database-host, database-port, database-name, database-username, database-password
+  sslmode: require
+backend:
+  replicaCount: 2
+frontend:
+  replicaCount: 2
+gateway:
+  replicaCount: 2
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: public
+      namespace: gateway-system
+      sectionName: https

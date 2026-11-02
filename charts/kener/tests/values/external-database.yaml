@@ -1,0 +1,3 @@
+# External PostgreSQL from an existing Secret: what scaling out (replicas, HPA, PDB) needs.
+database:
+  existingSecret: kener-database

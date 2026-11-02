@@ -1,0 +1,96 @@
+suite: autoscaling and disruption budget
+templates:
+  - hpa.yaml
+  - pdb.yaml
+release:
+  name: status
+  namespace: status
+values:
+  - values/external-database.yaml
+tests:
+  - it: renders neither by default
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: hpa.yaml
+      - hasDocuments:
+          count: 0
+        template: pdb.yaml
+
+  - it: scales the Kener Deployment between 2 and 4 replicas on CPU
+    template: hpa.yaml
+    set:
+      autoscaling.enabled: true
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - equal:
+          path: spec.scaleTargetRef
+          value:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: status-kener
+      - equal:
+          path: spec.minReplicas
+          value: 2
+      - equal:
+          path: spec.maxReplicas
+          value: 4
+      - equal:
+          path: spec.metrics
+          value:
+            - type: Resource
+              resource:
+                name: cpu
+                target:
+                  type: Utilization
+                  averageUtilization: 80
+
+  - it: adds a memory target when set
+    template: hpa.yaml
+    set:
+      autoscaling.enabled: true
+      autoscaling.targetMemoryUtilizationPercentage: 75
+    asserts:
+      - lengthEqual:
+          path: spec.metrics
+          count: 2
+      - equal:
+          path: spec.metrics[1].resource
+          value:
+            name: memory
+            target:
+              type: Utilization
+              averageUtilization: 75
+
+  - it: keeps one Kener pod available by default
+    template: pdb.yaml
+    set:
+      replicaCount: 2
+      podDisruptionBudget.enabled: true
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+      - equal:
+          path: spec.minAvailable
+          value: 1
+      - notExists:
+          path: spec.maxUnavailable
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: kener
+            app.kubernetes.io/instance: status
+
+  - it: uses maxUnavailable instead of minAvailable when set
+    template: pdb.yaml
+    set:
+      replicaCount: 2
+      podDisruptionBudget.enabled: true
+      podDisruptionBudget.maxUnavailable: 25%
+    asserts:
+      - equal:
+          path: spec.maxUnavailable
+          value: 25%
+      - notExists:
+          path: spec.minAvailable

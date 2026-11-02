@@ -1,0 +1,112 @@
+suite: README examples
+templates:
+  - backend/deployment.yaml
+  - secret.yaml
+  - ingress.yaml
+  - networkpolicy.yaml
+release:
+  name: excalidash
+  namespace: excalidash
+tests:
+  - it: "Ingress with TLS: the public URL, two trusted proxies, TLS for the host and the backend closed to other pods"
+    values:
+      - values/readme-ingress-tls.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: FRONTEND_URL
+            value: https://draw.example.com
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TRUST_PROXY
+            value: "2"
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.tls
+          value:
+            - hosts:
+                - draw.example.com
+              secretName: draw-example-com-tls
+        template: ingress.yaml
+      - equal:
+          path: spec.ingressClassName
+          value: nginx
+        template: ingress.yaml
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/proxy-body-size"]
+          value: 50m
+        template: ingress.yaml
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service
+          value:
+            name: excalidash-frontend
+            port:
+              number: 80
+        template: ingress.yaml
+      - equal:
+          path: spec.podSelector.matchLabels["app.kubernetes.io/component"]
+          value: backend
+        template: networkpolicy.yaml
+
+  - it: "OIDC: only OIDC logins, the client secret from your Secret, the redirect URI under the public URL"
+    values:
+      - values/readme-oidc.yaml
+    asserts:
+      - notFailedTemplate: {}
+        template: secret.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AUTH_MODE
+            value: oidc_enforced
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_PROVIDER_NAME
+            value: Authentik
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_REDIRECT_URI
+            value: https://excalidash.example.com/api/auth/oidc/callback
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: excalidash-oidc
+                key: oidc-client-secret
+        template: backend/deployment.yaml
+      - notExists:
+          path: data["oidc-client-secret"]
+        template: secret.yaml
+
+  - it: "PostgreSQL: the provider and the URL from your Secret, no URL in the chart Secret"
+    values:
+      - values/readme-postgresql.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_PROVIDER
+            value: postgresql
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: excalidash-db
+                key: database-url
+        template: backend/deployment.yaml
+      - notExists:
+          path: data["database-url"]
+        template: secret.yaml

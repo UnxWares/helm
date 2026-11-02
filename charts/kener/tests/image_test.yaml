@@ -1,0 +1,177 @@
+suite: Kener and Valkey images
+templates:
+  - deployment.yaml
+  # valkey-deployment.yaml includes valkey-configmap.yaml for its checksum annotation
+  - valkey-configmap.yaml
+  - valkey-deployment.yaml
+  - tests/test-healthcheck.yaml
+release:
+  name: status
+  namespace: status
+chart:
+  appVersion: 4.1.11
+tests:
+  - it: defaults to the Alpine variant of the upstream image, tagged with the chart appVersion
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/rajnandan1/kener:4.1.11-alpine
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: follows the chart appVersion when the tag is empty
+    template: deployment.yaml
+    chart:
+      appVersion: 9.8.7
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/rajnandan1/kener:9.8.7-alpine
+
+  - it: uses the Debian variant, which has no suffix
+    template: deployment.yaml
+    set:
+      image.variant: debian
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/rajnandan1/kener:4.1.11
+
+  - it: picks the -status image for the /status base path
+    template: deployment.yaml
+    set:
+      kener.basePath: /status
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/rajnandan1/kener:4.1.11-status-alpine
+
+  - it: picks the Debian -status image for the /status base path
+    template: deployment.yaml
+    set:
+      kener.basePath: /status
+      image.variant: debian
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/rajnandan1/kener:4.1.11-status
+
+  - it: lets an explicit repository and tag override the variant and the base path
+    template: deployment.yaml
+    set:
+      kener.basePath: /status
+      image.repository: registry.example.com/mirror/kener
+      image.tag: 4.1.10-status
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/mirror/kener:4.1.10-status
+
+  - it: prefers the digest over the tag
+    template: deployment.yaml
+    set:
+      image.tag: 4.1.10-alpine
+      image.digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/rajnandan1/kener@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+  - it: rejects an unknown image variant through the values schema
+    template: deployment.yaml
+    set:
+      image.variant: ubuntu
+    asserts:
+      - failedTemplate:
+          errorPattern: "/image/variant"
+
+  - it: runs the bundled Valkey image with its tag as version label
+    template: valkey-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Deployment
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/valkey/valkey:9.1.3-alpine
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: 9.1.3-alpine
+
+  - it: pins Valkey by digest, without a tag
+    template: valkey-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      redis.image.tag: ""
+      redis.image.digest: sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/valkey/valkey@sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+
+  - it: applies each pull policy, and the pull secrets to the Kener, Valkey and test pods
+    set:
+      image.pullPolicy: Always
+      redis.image.pullPolicy: Never
+      imagePullSecrets:
+        - name: registry-credentials
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Never
+        template: valkey-deployment.yaml
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: valkey-deployment.yaml
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.containers[0].imagePullPolicy
+          value: Always
+        template: tests/test-healthcheck.yaml
+      - equal:
+          path: spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: tests/test-healthcheck.yaml
+
+  - it: runs the helm test with the Kener image by default
+    template: tests/test-healthcheck.yaml
+    set:
+      kener.basePath: /status
+      image.variant: debian
+    asserts:
+      - equal:
+          path: spec.containers[0].image
+          value: docker.io/rajnandan1/kener:4.1.11-status
+
+  - it: runs the helm test with tests.image when set
+    template: tests/test-healthcheck.yaml
+    set:
+      tests.image: docker.io/curlimages/curl:8.17.0
+    asserts:
+      - equal:
+          path: spec.containers[0].image
+          value: docker.io/curlimages/curl:8.17.0

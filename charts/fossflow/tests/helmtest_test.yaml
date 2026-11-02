@@ -1,0 +1,46 @@
+suite: helm test pod
+templates:
+  - tests/test-connection.yaml
+release:
+  name: diagrams
+  namespace: tools
+tests:
+  - it: reads the storage status through the Service, and nothing else
+    asserts:
+      - isKind:
+          of: Pod
+      - equal:
+          path: metadata.name
+          value: diagrams-fossflow-test-connection
+      - equal:
+          path: spec.containers[0].command
+          value:
+            - wget
+            - -qO-
+            - http://diagrams-fossflow:80/api/storage/status
+
+  - it: reads the web app at / in browser-only mode, on the Service port
+    set:
+      storage:
+        enabled: false
+      service:
+        port: 8080
+    asserts:
+      - equal:
+          path: spec.containers[0].command
+          value:
+            - wget
+            - -qO-
+            - http://diagrams-fossflow:8080/
+
+  - it: carries the release instance but not the labels selected by the Service and the NetworkPolicy
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: fossflow-test
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: diagrams
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: test

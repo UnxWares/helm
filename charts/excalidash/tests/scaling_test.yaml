@@ -1,0 +1,58 @@
+suite: frontend autoscaling
+templates:
+  - frontend/hpa.yaml
+release:
+  name: excalidash
+  namespace: excalidash
+tests:
+  - it: renders no HPA by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: scales the frontend Deployment between 1 and 5 replicas on CPU
+    set:
+      frontend.autoscaling.enabled: true
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - equal:
+          path: spec.scaleTargetRef
+          value:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: excalidash-frontend
+      - equal:
+          path: spec.minReplicas
+          value: 1
+      - equal:
+          path: spec.maxReplicas
+          value: 5
+      - equal:
+          path: spec.metrics
+          value:
+            - type: Resource
+              resource:
+                name: cpu
+                target:
+                  type: Utilization
+                  averageUtilization: 80
+
+  - it: adds the memory target of the README example
+    set:
+      frontend.autoscaling.enabled: true
+      frontend.autoscaling.minReplicas: 2
+      frontend.autoscaling.targetMemoryUtilizationPercentage: 80
+    asserts:
+      - equal:
+          path: spec.minReplicas
+          value: 2
+      - equal:
+          path: spec.metrics[1]
+          value:
+            type: Resource
+            resource:
+              name: memory
+              target:
+                type: Utilization
+                averageUtilization: 80

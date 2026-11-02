@@ -1,0 +1,41 @@
+suite: release notes
+templates:
+  - NOTES.txt
+release:
+  name: diagrams
+  namespace: tools
+tests:
+  - it: explains the port-forward to the container port with the default ClusterIP Service
+    asserts:
+      - matchRegexRaw:
+          pattern: 'kubectl --namespace tools port-forward \$POD_NAME 8080:\$CONTAINER_PORT'
+      - matchRegexRaw:
+          pattern: '-l "app.kubernetes.io/name=fossflow,app.kubernetes.io/instance=diagrams"'
+
+  - it: gives the HTTPS address of each Ingress host and path
+    set:
+      ingress:
+        enabled: true
+        hosts:
+          - host: diagrams.example.com
+            paths:
+              - path: /
+        tls:
+          - secretName: fossflow-tls
+            hosts:
+              - diagrams.example.com
+    asserts:
+      - matchRegexRaw:
+          pattern: 'https://diagrams.example.com/'
+
+  - it: gives the address of the first HTTPRoute hostname
+    set:
+      httpRoute:
+        enabled: true
+        hostnames:
+          - diagrams.example.com
+    asserts:
+      - matchRegexRaw:
+          pattern: 'export APP_HOSTNAME=diagrams.example.com'
+      - matchRegexRaw:
+          pattern: 'Visit http://\$APP_HOSTNAME/ to use your application'

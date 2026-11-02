@@ -1,0 +1,313 @@
+suite: container environment and secret references
+templates:
+  - backend/deployment.yaml
+  - frontend/deployment.yaml
+release:
+  name: excalidash
+  namespace: excalidash
+tests:
+  - it: passes the settings as values and every secret of the backend through secretKeyRef
+    template: backend/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: PORT
+              value: "8000"
+            - name: NODE_ENV
+              value: production
+            - name: FRONTEND_URL
+              value: https://excalidash.example.com
+            - name: TRUST_PROXY
+              value: "1"
+            - name: DATABASE_PROVIDER
+              value: sqlite
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: excalidash
+                  key: database-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: excalidash
+                  key: jwt-secret
+            - name: CSRF_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: excalidash
+                  key: csrf-secret
+            - name: API_KEY_HASH_PEPPER
+              valueFrom:
+                secretKeyRef:
+                  name: excalidash
+                  key: api-key-hash-pepper
+            - name: AUTH_MODE
+              value: local
+      - notExists:
+          path: spec.template.spec.containers[0].envFrom
+
+  - it: sets the public URL, NODE_ENV and the trusted proxies
+    template: backend/deployment.yaml
+    set:
+      frontend.url: https://draw.example.com
+      backend.nodeEnv: development
+      backend.trustProxy: "false"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: FRONTEND_URL
+            value: https://draw.example.com
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NODE_ENV
+            value: development
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TRUST_PROXY
+            value: "false"
+
+  - it: follows the backend port in PORT, the container port and the frontend BACKEND_URL
+    set:
+      backend.service.port: 9000
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PORT
+            value: "9000"
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: BACKEND_URL
+              value: excalidash-backend:9000
+        template: frontend/deployment.yaml
+
+  - it: reads the database URL from an existing Secret with a custom key
+    template: backend/deployment.yaml
+    set:
+      backend.database.provider: postgresql
+      backend.database.existingSecret: excalidash-db
+      backend.database.secretKeys.url: url
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_PROVIDER
+            value: postgresql
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: excalidash-db
+                key: url
+
+  - it: reads the three application secrets from backend.secrets.existingSecret
+    template: backend/deployment.yaml
+    set:
+      backend.secrets.existingSecret: excalidash-app
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: excalidash-app
+                key: jwt-secret
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CSRF_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: excalidash-app
+                key: csrf-secret
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: API_KEY_HASH_PEPPER
+            valueFrom:
+              secretKeyRef:
+                name: excalidash-app
+                key: api-key-hash-pepper
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: excalidash
+                key: database-url
+
+  - it: passes no OIDC variable in local mode, even with OIDC values set
+    template: backend/deployment.yaml
+    set:
+      backend.auth.oidc.issuerUrl: https://auth.example.com/application/o/excalidash/
+      backend.auth.oidc.clientId: excalidash
+      backend.auth.oidc.clientSecret: oidc-secret
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name =~ /^OIDC_/)]
+
+  - it: passes the OIDC settings in hybrid mode, with the default provider name and redirect URI
+    template: backend/deployment.yaml
+    set:
+      frontend.url: https://draw.example.com/
+      backend.auth.mode: hybrid
+      backend.auth.oidc.issuerUrl: https://sso.example.com/realms/main
+      backend.auth.oidc.clientId: excalidash
+      backend.auth.oidc.clientSecret: oidc-secret
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AUTH_MODE
+            value: hybrid
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_PROVIDER_NAME
+            value: SSO
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_ISSUER_URL
+            value: https://sso.example.com/realms/main
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_ID
+            value: excalidash
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_REDIRECT_URI
+            value: https://draw.example.com/api/auth/oidc/callback
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: excalidash
+                key: oidc-client-secret
+
+  - it: reads the OIDC client secret from an existing Secret and keeps the given redirect URI
+    template: backend/deployment.yaml
+    set:
+      backend.auth.mode: oidc_enforced
+      backend.auth.oidc.providerName: Authentik
+      backend.auth.oidc.issuerUrl: https://auth.example.com/application/o/excalidash/
+      backend.auth.oidc.clientId: excalidash
+      backend.auth.oidc.existingSecret: excalidash-oidc
+      backend.auth.oidc.existingSecretKey: client-secret
+      backend.auth.oidc.redirectUri: https://draw.example.com/oidc
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_PROVIDER_NAME
+            value: Authentik
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_REDIRECT_URI
+            value: https://draw.example.com/oidc
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: excalidash-oidc
+                key: client-secret
+
+  - it: passes no OIDC client secret when none is given (public client)
+    template: backend/deployment.yaml
+    set:
+      backend.auth.mode: oidc_enforced
+      backend.auth.oidc.issuerUrl: https://auth.example.com/application/o/excalidash/
+      backend.auth.oidc.clientId: excalidash
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_SECRET
+          any: true
+
+  - it: never passes a secret as a plain value
+    template: backend/deployment.yaml
+    set:
+      backend.secrets.jwtSecret: s3cret-jwt
+      backend.secrets.csrfSecret: s3cret-csrf
+      backend.secrets.apiKeyHashPepper: s3cret-pepper
+      backend.database.provider: postgresql
+      backend.database.url: postgresql://excalidash:s3cret@db:5432/excalidash
+      backend.auth.mode: hybrid
+      backend.auth.oidc.issuerUrl: https://auth.example.com/application/o/excalidash/
+      backend.auth.oidc.clientId: excalidash
+      backend.auth.oidc.clientSecret: s3cret-oidc
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers[0].env
+          count: 15
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.value =~ /s3cret/)]
+      - notExists:
+          path: spec.template.spec.initContainers[0].env
+
+  - it: appends extraEnv and extraEnvFrom to each container
+    set:
+      backend.extraEnv:
+        - name: FILE_UPLOAD_MAX_MB
+          value: "100"
+      backend.extraEnvFrom:
+        - secretRef:
+            name: excalidash-s3
+      frontend.extraEnv:
+        - name: NGINX_WORKER_PROCESSES
+          value: "2"
+      frontend.extraEnvFrom:
+        - configMapRef:
+            name: frontend-settings
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[10]
+          value:
+            name: FILE_UPLOAD_MAX_MB
+            value: "100"
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].envFrom
+          value:
+            - secretRef:
+                name: excalidash-s3
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: BACKEND_URL
+              value: excalidash-backend:8000
+            - name: NGINX_WORKER_PROCESSES
+              value: "2"
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].envFrom
+          value:
+            - configMapRef:
+                name: frontend-settings
+        template: frontend/deployment.yaml

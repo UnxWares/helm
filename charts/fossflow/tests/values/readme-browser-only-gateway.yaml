@@ -1,0 +1,21 @@
+# README example "Browser-only, autoscaled, behind a Gateway", as written in the README.
+storage:
+  enabled: false
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: public-gateway
+      namespace: gateway-system
+      sectionName: https
+  hostnames:
+    - diagrams.example.com
+resources:
+  requests:
+    cpu: 20m
+    memory: 64Mi
+  limits:
+    memory: 128Mi

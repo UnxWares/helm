@@ -1,6 +1,6 @@
 # Laravel (generic) Helm Chart
 
-![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 12.x](https://img.shields.io/badge/AppVersion-12.x-informational?style=flat-square)
+![Version: 2026.11.3](https://img.shields.io/badge/Version-2026.11.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 12.x](https://img.shields.io/badge/AppVersion-12.x-informational?style=flat-square)
 
 Run **your own [Laravel](https://laravel.com) application image** on Kubernetes, packaged by UnxWares:
 web pods (FrankenPHP, or PHP-FPM with an nginx sidecar), queue workers, scheduler and database
@@ -1025,7 +1025,7 @@ kubectl -n shop delete pod shop-laravel-generic-test-http --ignore-not-found
 | autoscaling.enabled | bool | `false` | Enable the web HorizontalPodAutoscaler (not with SQLite or a ReadWriteOnce volume). |
 | autoscaling.maxReplicas | int | `10` | Maximum replicas. |
 | autoscaling.minReplicas | int | `2` | Minimum replicas. |
-| autoscaling.targetCPUUtilizationPercentage | int | `80` | Target CPU utilization. |
+| autoscaling.targetCPUUtilizationPercentage | int | `80` | Target CPU utilization (percent). With neither target set, Kubernetes scales on 80% average CPU utilization. |
 | command | list | `[]` | Command of the web container (empty: the image entrypoint), e.g. `["php", "artisan", "octane:frankenphp", "--port=8000"]`. |
 | commonLabels | object | `{}` | Labels added to every resource. |
 | emptyDirSizeLimit | string | `"1Gi"` | Size limit of the emptyDir volumes (`/tmp`, writable paths, public files copy, Caddy state). Empty: no limit. |

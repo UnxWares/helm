@@ -1,0 +1,497 @@
+suite: media, database and broker volumes
+templates:
+  # the pods include secret.yaml, rabbitmq-configmap.yaml and gateway/configmap.yaml for their checksum annotations
+  - secret.yaml
+  - rabbitmq-configmap.yaml
+  - gateway/configmap.yaml
+  - pvcs.yaml
+  - db/pvc.yaml
+  - backend/deployment.yaml
+  - async/deployment.yaml
+  - gateway/deployment.yaml
+  - db/deployment.yaml
+  - asyncRabbitmq/statefulset.yaml
+  - eventsRabbitmq/statefulset.yaml
+release:
+  name: taiga
+  namespace: taiga
+values:
+  - values/external-database.yaml
+tests:
+  - it: creates a 5Gi ReadWriteOnce media claim kept on uninstall
+    template: pvcs.yaml
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+      - equal:
+          path: metadata.name
+          value: taiga-media
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/resource-policy: keep
+      - equal:
+          path: spec.accessModes
+          value:
+            - ReadWriteOnce
+      - equal:
+          path: spec.resources.requests.storage
+          value: 5Gi
+      - notExists:
+          path: spec.storageClassName
+
+  - it: mounts the media volume in the backend and the workers, and read-only in the gateway
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: media
+            persistentVolumeClaim:
+              claimName: taiga-media
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: media
+            mountPath: /taiga-back/media
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: media
+            mountPath: /taiga-back/media
+        template: async/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: media
+            persistentVolumeClaim:
+              claimName: taiga-media
+        template: gateway/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: media
+            mountPath: /taiga/media
+            readOnly: true
+        template: gateway/deployment.yaml
+
+  - it: keeps the backend, the workers and the gateway on the node of a backend pod with a ReadWriteOnce media volume
+    asserts:
+      - equal:
+          path: spec.template.spec.affinity
+          value:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: taiga
+                      app.kubernetes.io/instance: taiga
+                      app.kubernetes.io/component: backend
+                  topologyKey: kubernetes.io/hostname
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution[0].labelSelector.matchLabels["app.kubernetes.io/component"]
+          value: backend
+        template: async/deployment.yaml
+      - equal:
+          path: spec.template.spec.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution[0].topologyKey
+          value: kubernetes.io/hostname
+        template: gateway/deployment.yaml
+
+  - it: adds no pod affinity with a ReadWriteMany media volume (README example)
+    set:
+      global:
+        persistence:
+          media:
+            storageClass: nfs-client
+            accessMode: ReadWriteMany
+            size: 20Gi
+            annotations:
+              backup: daily
+    asserts:
+      - equal:
+          path: spec.accessModes
+          value:
+            - ReadWriteMany
+        template: pvcs.yaml
+      - equal:
+          path: spec.storageClassName
+          value: nfs-client
+        template: pvcs.yaml
+      - equal:
+          path: spec.resources.requests.storage
+          value: 20Gi
+        template: pvcs.yaml
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/resource-policy: keep
+            backup: daily
+        template: pvcs.yaml
+      - notExists:
+          path: spec.template.spec.affinity
+        template: backend/deployment.yaml
+      - notExists:
+          path: spec.template.spec.affinity
+        template: async/deployment.yaml
+      - notExists:
+          path: spec.template.spec.affinity
+        template: gateway/deployment.yaml
+
+  - it: replaces the pod affinity rule with the affinity of the component or the global one
+    set:
+      global:
+        pod:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: zone
+                        operator: In
+                        values: [a]
+      async:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: workers
+                      operator: Exists
+    asserts:
+      - notExists:
+          path: spec.template.spec.affinity.podAffinity
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: zone
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: workers
+        template: async/deployment.yaml
+
+  - it: keeps the access mode of a media claim created ReadWriteMany by a previous release
+    kubernetesProvider:
+      scheme:
+        "v1/PersistentVolumeClaim":
+          gvr:
+            version: v1
+            resource: persistentvolumeclaims
+          namespaced: true
+      objects:
+        - apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: taiga-media
+            namespace: taiga
+          spec:
+            accessModes:
+              - ReadWriteMany
+    asserts:
+      - equal:
+          path: spec.accessModes
+          value:
+            - ReadWriteMany
+        template: pvcs.yaml
+      - notExists:
+          path: spec.template.spec.affinity
+        template: gateway/deployment.yaml
+
+  - it: uses an existing media claim without creating one, and reads its access mode
+    set:
+      global:
+        persistence:
+          media:
+            existingClaim: taiga-files
+    kubernetesProvider:
+      scheme:
+        "v1/PersistentVolumeClaim":
+          gvr:
+            version: v1
+            resource: persistentvolumeclaims
+          namespaced: true
+      objects:
+        - apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: taiga-files
+            namespace: taiga
+          spec:
+            accessModes:
+              - ReadWriteMany
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: pvcs.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: media
+            persistentVolumeClaim:
+              claimName: taiga-files
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: media
+            persistentVolumeClaim:
+              claimName: taiga-files
+        template: async/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: media
+            persistentVolumeClaim:
+              claimName: taiga-files
+        template: gateway/deployment.yaml
+      - notExists:
+          path: spec.template.spec.affinity
+        template: backend/deployment.yaml
+
+  - it: keeps uploads in a pod volume, not served by the gateway, when media persistence is disabled
+    set:
+      global:
+        persistence:
+          media:
+            enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: pvcs.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: media
+            emptyDir: {}
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: media
+            emptyDir: {}
+        template: async/deployment.yaml
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: media
+          any: true
+        template: gateway/deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: media
+          any: true
+        template: gateway/deployment.yaml
+      - notExists:
+          path: spec.template.spec.affinity
+        template: backend/deployment.yaml
+
+  - it: creates no database claim with the external database
+    template: db/pvc.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: creates an 8Gi claim for the bundled database, kept on uninstall, mounted on the PostgreSQL data directory
+    values:
+      - values/bundled-database.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: taiga-db
+        template: db/pvc.yaml
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: db
+        template: db/pvc.yaml
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/resource-policy: keep
+        template: db/pvc.yaml
+      - equal:
+          path: spec.accessModes
+          value:
+            - ReadWriteOnce
+        template: db/pvc.yaml
+      - equal:
+          path: spec.resources.requests.storage
+          value: 8Gi
+        template: db/pvc.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: taiga-db
+        template: db/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /var/lib/postgresql/data
+        template: db/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PGDATA
+            value: /var/lib/postgresql/data/pgdata
+        template: db/deployment.yaml
+
+  - it: sets the storage class and size of the database claim (README example)
+    template: db/pvc.yaml
+    values:
+      - values/bundled-database.yaml
+    set:
+      db:
+        persistence:
+          storageClass: fast-ssd
+          size: 20Gi
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: fast-ssd
+      - equal:
+          path: spec.resources.requests.storage
+          value: 20Gi
+
+  - it: uses an existing database claim without creating one
+    values:
+      - values/bundled-database.yaml
+    set:
+      db:
+        persistence:
+          existingClaim: taiga-postgres-data
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: db/pvc.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: taiga-postgres-data
+        template: db/deployment.yaml
+
+  - it: keeps the bundled database in an emptyDir when its persistence is disabled
+    values:
+      - values/bundled-database.yaml
+    set:
+      db:
+        persistence:
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: db/pvc.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            emptyDir: {}
+        template: db/deployment.yaml
+
+  - it: gives each broker a 5Gi claim template and mounts its rabbitmq-4 sub-path
+    template: asyncRabbitmq/statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates
+          value:
+            - metadata:
+                name: data
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 5Gi
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /var/lib/rabbitmq
+            subPath: rabbitmq-4
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+          any: true
+
+  - it: mounts the conf.d file that re-allows the queues of Celery in both brokers
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: config
+            mountPath: /etc/rabbitmq/conf.d/20-taiga.conf
+            subPath: 20-taiga.conf
+            readOnly: true
+        template: asyncRabbitmq/statefulset.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: config
+            configMap:
+              name: taiga-rabbitmq
+        template: eventsRabbitmq/statefulset.yaml
+      - equal:
+          path: data["20-taiga.conf"]
+          value: |
+            deprecated_features.permit.transient_nonexcl_queues = true
+        template: rabbitmq-configmap.yaml
+
+  - it: sets the storage class, size and annotations of the broker claims, uses an existing claim or an emptyDir (README example)
+    set:
+      asyncRabbitmq:
+        persistence:
+          size: 1Gi
+          storageClass: fast-ssd
+          annotations:
+            backup: none
+      eventsRabbitmq:
+        persistence:
+          enabled: false
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0]
+          value:
+            metadata:
+              name: data
+              annotations:
+                backup: none
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              storageClassName: fast-ssd
+              resources:
+                requests:
+                  storage: 1Gi
+        template: asyncRabbitmq/statefulset.yaml
+      - notExists:
+          path: spec.volumeClaimTemplates
+        template: eventsRabbitmq/statefulset.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            emptyDir: {}
+        template: eventsRabbitmq/statefulset.yaml
+
+  - it: uses an existing claim for a broker without a claim template
+    template: eventsRabbitmq/statefulset.yaml
+    set:
+      eventsRabbitmq:
+        persistence:
+          existingClaim: taiga-events-broker-data
+    asserts:
+      - notExists:
+          path: spec.volumeClaimTemplates
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: taiga-events-broker-data

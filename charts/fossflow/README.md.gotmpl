@@ -157,8 +157,9 @@ that group. With your own `podSecurityContext`, keep `fsGroup` equal to `storage
 
 ### Scaling
 
-- Server storage on a ReadWriteOnce volume supports one replica: rendering fails with `replicaCount > 1` or
-  `autoscaling.enabled`, and the Deployment uses the `Recreate` strategy (a short downtime on each upgrade).
+- Server storage on a ReadWriteOnce (or ReadWriteOncePod) volume supports one replica: rendering fails with
+  `replicaCount > 1` or `autoscaling.enabled`, and the Deployment uses the `Recreate` strategy (a short downtime on
+  each upgrade).
 - With a ReadWriteMany volume, several replicas share the same directory:
 
   ```yaml
@@ -465,6 +466,13 @@ After an install:
 ```bash
 helm test fossflow --namespace fossflow --logs
 ```
+
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the security contexts with both image providers, the image selection (`imageProvider`, repository,
+tag, digest), the single-replica rule of ReadWriteOnce storage and its message, the storage environment, the probes
+on `/api/storage/status`, persistence, the Service, Ingress and HTTPRoute, the NetworkPolicy, the `helm test` pod, the
+release notes and the two examples of this README.
 
 ## Operations
 

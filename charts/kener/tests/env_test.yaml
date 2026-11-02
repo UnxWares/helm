@@ -1,0 +1,489 @@
+suite: Kener container environment and secret references
+templates:
+  - deployment.yaml
+release:
+  name: status
+  namespace: status
+tests:
+  - it: passes the settings as values and every secret through secretKeyRef (SQLite, bundled Valkey)
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: ORIGIN
+              value: http://localhost:3000
+            - name: KENER_BASE_PATH
+              value: ""
+            - name: NODE_ENV
+              value: production
+            - name: BODY_SIZE_LIMIT
+              value: 3M
+            - name: KENER_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: status-kener
+                  key: secret-key
+            - name: DATABASE_URL
+              value: sqlite://./database/kener.sqlite.db
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: status-kener
+                  key: redis-password
+            - name: REDIS_URL
+              value: redis://:$(REDIS_PASSWORD)@status-kener-valkey:6379
+      - notExists:
+          path: spec.template.spec.containers[0].envFrom
+
+  - it: sets the public URL, base path, body size, NODE_ENV and the forced local login
+    template: deployment.yaml
+    set:
+      kener.origin: https://example.com
+      kener.basePath: /status
+      kener.bodySizeLimit: 10M
+      kener.nodeEnv: development
+      kener.forceLocalLogin: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ORIGIN
+            value: https://example.com
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KENER_BASE_PATH
+            value: /status
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NODE_ENV
+            value: development
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: BODY_SIZE_LIMIT
+            value: 10M
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KENER_FORCE_LOCAL_LOGIN
+            value: "true"
+
+  - it: reads the secret key from an existing Secret with a custom key
+    template: deployment.yaml
+    set:
+      kener.existingSecret: kener
+      kener.existingSecretKey: key
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KENER_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: kener
+                key: key
+
+  - it: still reads the secret key from the deprecated kener.keyFrom values
+    template: deployment.yaml
+    set:
+      kener.keyFrom.secretRef: legacy-kener
+      kener.keyFrom.secretKey: legacy-key
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KENER_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: legacy-kener
+                key: legacy-key
+
+  - it: keeps a sqlite:// URL as a plain value
+    template: deployment.yaml
+    set:
+      database.url: sqlite://./database/kener-restored.db
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            value: sqlite://./database/kener-restored.db
+
+  - it: reads an external database URL from the chart Secret, without pool settings by default
+    template: deployment.yaml
+    set:
+      database.url: postgresql://kener:pw@db-rw.databases.svc:5432/kener
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: status-kener
+                key: database-url
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_POOL_MAX
+          any: true
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_KEEPALIVE
+          any: true
+
+  - it: reads the database URL from an existing Secret with a custom key
+    template: deployment.yaml
+    set:
+      database.existingSecret: kener-database
+      database.existingSecretKey: url
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: kener-database
+                key: url
+
+  - it: still reads the key from the deprecated database.secretKeys.url
+    template: deployment.yaml
+    set:
+      database.existingSecret: kener-database
+      database.secretKeys.url: legacy-url
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: kener-database
+                key: legacy-url
+
+  - it: still treats the deprecated database.enabled=false as SQLite
+    template: deployment.yaml
+    set:
+      database.enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            value: sqlite://./database/kener.sqlite.db
+
+  - it: passes the pool settings that are set, zero and false included
+    template: deployment.yaml
+    set:
+      database.url: mysql://kener:pw@mysql.databases.svc:3306/kener
+      database.pool.min: 0
+      database.pool.max: 20
+      database.pool.workerMax: 4
+      database.pool.acquireTimeoutMs: 30000
+      database.pool.createTimeoutMs: 20000
+      database.pool.idleTimeoutMs: 60000
+      database.keepAlive: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: status-kener
+                key: database-url
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_POOL_MIN
+            value: "0"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_POOL_MAX
+            value: "20"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_WORKER_POOL_MAX
+            value: "4"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_ACQUIRE_TIMEOUT_MS
+            value: "30000"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_CREATE_TIMEOUT_MS
+            value: "20000"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_IDLE_TIMEOUT_MS
+            value: "60000"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_KEEPALIVE
+            value: "false"
+
+  - it: ignores the pool settings with SQLite
+    template: deployment.yaml
+    set:
+      database.pool.max: 20
+      database.keepAlive: true
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_POOL_MAX
+          any: true
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_KEEPALIVE
+          any: true
+
+  - it: builds REDIS_URL from the Valkey password of an existing Secret and the Valkey Service port
+    template: deployment.yaml
+    set:
+      redis.auth.existingSecret: kener-valkey
+      redis.auth.existingSecretPasswordKey: password
+      redis.service.port: 6380
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: kener-valkey
+                key: password
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_URL
+            value: redis://:$(REDIS_PASSWORD)@status-kener-valkey:6380
+
+  - it: reads the URL of an external Redis from the chart Secret
+    template: deployment.yaml
+    set:
+      redis.enabled: false
+      redis.external.url: rediss://default:pw@redis.example.com:6379
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_URL
+            valueFrom:
+              secretKeyRef:
+                name: status-kener
+                key: redis-url
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_PASSWORD
+          any: true
+
+  - it: reads the URL of an external Redis from an existing Secret with a custom key
+    template: deployment.yaml
+    set:
+      redis.enabled: false
+      redis.external.existingSecret: kener-redis
+      redis.external.existingSecretKey: url
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_URL
+            valueFrom:
+              secretKeyRef:
+                name: kener-redis
+                key: url
+
+  - it: passes the SMTP settings, with implicit TLS and the password of the chart Secret
+    template: deployment.yaml
+    set:
+      email.smtp.host: smtp.example.com
+      email.smtp.port: 465
+      email.smtp.user: status@example.com
+      email.smtp.password: smtp-pass
+      email.smtp.fromEmail: Status <status@example.com>
+      email.smtp.secure: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_HOST
+            value: smtp.example.com
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_PORT
+            value: "465"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_USER
+            value: status@example.com
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_FROM_EMAIL
+            value: Status <status@example.com>
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_SECURE
+            value: "1"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_PASS
+            valueFrom:
+              secretKeyRef:
+                name: status-kener
+                key: smtp-password
+
+  - it: passes no SMTP variable without an SMTP host
+    template: deployment.yaml
+    set:
+      email.smtp.user: status@example.com
+      email.smtp.password: smtp-pass
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_PASS
+          any: true
+      - lengthEqual:
+          path: spec.template.spec.containers[0].env
+          count: 8
+
+  - it: passes the Resend API key from an existing Secret and the sender
+    template: deployment.yaml
+    set:
+      email.resend.existingSecret: kener-resend
+      email.resend.existingSecretKey: api-key
+      email.resend.senderEmail: Status <status@example.com>
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RESEND_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: kener-resend
+                key: api-key
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RESEND_SENDER_EMAIL
+            value: Status <status@example.com>
+
+  - it: passes only the proxy URLs that are set, from the chart Secret, and NO_PROXY as a value
+    template: deployment.yaml
+    set:
+      proxy.httpsProxy: http://proxy.example.com:3128
+      proxy.noProxy: localhost,.svc
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HTTPS_PROXY
+            valueFrom:
+              secretKeyRef:
+                name: status-kener
+                key: https-proxy
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NO_PROXY
+            value: localhost,.svc
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HTTP_PROXY
+          any: true
+
+  - it: reads both proxy URLs from an existing Secret, as optional keys, and ignores the values
+    template: deployment.yaml
+    set:
+      proxy.httpProxy: http://ignored:3128
+      proxy.existingSecret: kener-proxy
+      proxy.existingSecretHttpsProxyKey: secure-proxy
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HTTP_PROXY
+            valueFrom:
+              secretKeyRef:
+                name: kener-proxy
+                key: http-proxy
+                optional: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HTTPS_PROXY
+            valueFrom:
+              secretKeyRef:
+                name: kener-proxy
+                key: secure-proxy
+                optional: true
+
+  - it: never passes a secret as a plain value
+    template: deployment.yaml
+    set:
+      kener.secretKey: s3cret-0123456789-0123456789-0123456789
+      database.url: postgresql://kener:s3cret@db:5432/kener
+      redis.auth.password: s3cret-valkey
+      email.smtp.host: smtp.example.com
+      email.smtp.user: status@example.com
+      email.smtp.fromEmail: status@example.com
+      email.smtp.password: s3cret-smtp
+      email.resend.apiKey: s3cret-resend
+      email.resend.senderEmail: status@example.com
+      proxy.httpProxy: http://user:s3cret@proxy.example.com:3128
+      proxy.httpsProxy: http://user:s3cret@proxy.example.com:3128
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers[0].env
+          count: 18
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.value =~ /s3cret/)]
+      - notExists:
+          path: spec.template.spec.containers[0].args
+
+  - it: appends extraEnv and extraEnvFrom
+    template: deployment.yaml
+    set:
+      extraEnv:
+        - name: API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kener-monitor-secrets
+              key: api-token
+      extraEnvFrom:
+        - secretRef:
+            name: kener-monitor-secrets
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[8]
+          value:
+            name: API_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: kener-monitor-secrets
+                key: api-token
+      - equal:
+          path: spec.template.spec.containers[0].envFrom
+          value:
+            - secretRef:
+                name: kener-monitor-secrets

@@ -1,6 +1,6 @@
 # Kener Helm Chart
 
-![Version: 2026.11.3](https://img.shields.io/badge/Version-2026.11.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.1.11](https://img.shields.io/badge/AppVersion-4.1.11-informational?style=flat-square)
+![Version: 2026.11.4](https://img.shields.io/badge/Version-2026.11.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.1.11](https://img.shields.io/badge/AppVersion-4.1.11-informational?style=flat-square)
 
 [Kener](https://kener.ing) is an open source status page: monitors (HTTP, TCP, DNS, ping, SSL, SQL, gRPC,
 heartbeat...), incidents, maintenances and subscriptions. This chart, maintained by UnxWares, runs Kener 4 on
@@ -751,6 +751,14 @@ that change the chart, on every push to main and every week. It installs the cha
 
 It does not test notifications (email, webhooks), ping monitors, the Debian or `/status` images (installed by
 `ct install` only), PostgreSQL or MySQL, an external Redis, or several replicas.
+
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the security contexts of Kener, Valkey and the test pod (with and without `pingMonitors.enabled`),
+the image tag built from the variant and the base path, the message of every required value, the chart Secret
+(generated values reused at upgrade, keep policy, keys left out for your own Secrets), secrets passed through
+`secretKeyRef` only, the probes, persistence, the Valkey configuration, the Services, Ingress, HTTPRoute,
+NetworkPolicies, HPA and PDB, the release notes and the four examples of this README.
 
 ## Operations
 

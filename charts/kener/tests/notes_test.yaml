@@ -1,0 +1,57 @@
+suite: release notes
+templates:
+  - templates/NOTES.txt
+release:
+  name: status
+  namespace: status
+chart:
+  appVersion: 4.1.11
+tests:
+  - it: gives the image, the port-forward command and the sign-in page to visit first
+    asserts:
+      - matchRegexRaw:
+          pattern: 'Kener 4\.1\.11 is deployed \(docker\.io/rajnandan1/kener:4\.1\.11-alpine\)\.'
+      - matchRegexRaw:
+          pattern: 'kubectl port-forward -n status svc/status-kener 3000:3000'
+      - matchRegexRaw:
+          pattern: 'Create the administrator account now at http://localhost:3000/account/signin:\nuntil one exists, anyone who reaches Kener can create it\.'
+
+  - it: says the secret key was generated and is kept, and what GitOps users must do
+    asserts:
+      - matchRegexRaw:
+          pattern: 'NOTE: KENER_SECRET_KEY was generated and is kept across upgrades, and on uninstall \(Secret\nstatus-kener, delete it yourself with the data\)'
+
+  - it: warns that the origin is still localhost behind an Ingress
+    set:
+      ingress.enabled: true
+    asserts:
+      - matchRegexRaw:
+          pattern: 'WARNING: kener.origin is still http://localhost:3000: set it to the public URL'
+
+  - it: warns that the SQLite database is lost without persistence
+    set:
+      persistence.enabled: false
+    asserts:
+      - matchRegexRaw:
+          pattern: 'WARNING: persistence is disabled, the SQLite database is lost when the pod restarts\.'
+
+  - it: warns about a secret key shorter than 32 characters
+    set:
+      kener.secretKey: too-short
+    asserts:
+      - matchRegexRaw:
+          pattern: 'WARNING: kener.secretKey is shorter than 32 characters\.'
+      - notMatchRegexRaw:
+          pattern: 'KENER_SECRET_KEY was generated'
+
+  - it: lists the deprecated values still in use
+    set:
+      kener.keyFrom.secretRef: legacy-kener
+    asserts:
+      - matchRegexRaw:
+          pattern: 'DEPRECATED values in use: kener.key -> kener.secretKey'
+
+  - it: says ping monitors need pingMonitors.enabled
+    asserts:
+      - matchRegexRaw:
+          pattern: 'Ping \(ICMP\) monitors need pingMonitors.enabled=true'

@@ -1,0 +1,272 @@
+suite: required values and their error messages
+templates:
+  # The checks run in deployment.yaml.
+  - deployment.yaml
+release:
+  name: status
+  namespace: status
+tests:
+  - it: renders with the default values (SQLite, bundled Valkey)
+    asserts:
+      - notFailedTemplate: {}
+      - isKind:
+          of: Deployment
+
+  - it: requires the public URL
+    set:
+      kener.origin: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: "kener.origin is required: the public URL of Kener, e.g. https://status.example.com (http://localhost:3000 for a port-forward test)"
+
+  - it: refuses an origin with a path
+    set:
+      kener.origin: https://example.com/status
+    asserts:
+      - failedTemplate:
+          errorMessage: 'kener.origin must be scheme + host + optional port, without path or trailing slash (got "https://example.com/status"). With kener.basePath, keep the base path out of the origin.'
+
+  - it: refuses an origin with a trailing slash
+    set:
+      kener.origin: https://status.example.com/
+    asserts:
+      - failedTemplate:
+          errorMessage: 'kener.origin must be scheme + host + optional port, without path or trailing slash (got "https://status.example.com/"). With kener.basePath, keep the base path out of the origin.'
+
+  - it: accepts an origin with a port
+    set:
+      kener.origin: https://status.example.com:8443
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: refuses a base path without its leading slash, or with a trailing one
+    set:
+      kener.basePath: status/
+    asserts:
+      - failedTemplate:
+          errorMessage: 'kener.basePath must start with / and have no trailing slash, e.g. /status (got "status/")'
+
+  - it: refuses a base path that no published image has, without an image of your own
+    set:
+      kener.basePath: /uptime
+    asserts:
+      - failedTemplate:
+          errorMessage: 'kener.basePath "/uptime" is compiled into the image: published images only exist for "" and /status. Build Kener with KENER_BASE_PATH=/uptime and set image.tag (or image.digest).'
+
+  - it: accepts any base path with your own image tag or digest
+    set:
+      kener.basePath: /uptime
+      image.digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: refuses the previous chart default secret key
+    set:
+      kener.secretKey: thesuperprivatekeytonotshare
+    asserts:
+      - failedTemplate:
+          errorMessage: 'the secret key "thesuperprivatekeytonotshare" (previous chart default) or "DUMMY_SECRET" is public: anyone could forge Kener sessions. Leave kener.secretKey empty to generate one, or set a random value of 32+ characters (see Upgrading in the chart README).'
+
+  - it: refuses the upstream example secret key, also through the deprecated kener.key
+    set:
+      kener.key: DUMMY_SECRET
+    asserts:
+      - failedTemplate:
+          errorPattern: 'the secret key "thesuperprivatekeytonotshare" \(previous chart default\) or "DUMMY_SECRET" is public'
+
+  - it: refuses a postgres:// URL, which Kener does not accept
+    set:
+      database.url: postgres://kener:pw@db:5432/kener
+    asserts:
+      - failedTemplate:
+          errorMessage: "database.url must start with postgresql:// (Kener exits on postgres://)"
+
+  - it: refuses an unknown database scheme
+    set:
+      database.url: mongodb://kener:pw@db:27017/kener
+    asserts:
+      - failedTemplate:
+          errorMessage: "database.url must start with postgresql://, mysql:// or sqlite:// (leave it empty for SQLite on the persistent volume)"
+
+  - it: refuses a sqlite:// URL outside the persistent volume
+    set:
+      database.url: sqlite:///tmp/kener.db
+    asserts:
+      - failedTemplate:
+          errorMessage: "a sqlite:// database.url must point into /app/database (the persistent volume), e.g. sqlite://./database/kener.sqlite.db"
+
+  - it: accepts a sqlite:// URL inside /app/database (a restored copy)
+    set:
+      database.url: sqlite:///app/database/kener-restored.db
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: does not check the URL when it comes from an existing Secret
+    set:
+      database.url: postgres://ignored
+      database.existingSecret: kener-database
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: refuses several replicas with SQLite
+    set:
+      replicaCount: 2
+    asserts:
+      - failedTemplate:
+          errorMessage: "SQLite supports a single Kener replica: use PostgreSQL or MySQL (database.url / database.existingSecret) to scale out"
+
+  - it: refuses the HPA with SQLite
+    set:
+      autoscaling.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "SQLite supports a single Kener replica: use PostgreSQL or MySQL (database.url / database.existingSecret) to scale out"
+
+  - it: refuses a PodDisruptionBudget with SQLite
+    set:
+      podDisruptionBudget.enabled: true
+      podDisruptionBudget.maxUnavailable: 1
+    asserts:
+      - failedTemplate:
+          errorMessage: "podDisruptionBudget.enabled is refused with SQLite: with its single Kener pod, the budget would block node drains (minAvailable) or protect nothing (maxUnavailable). Disable it, or use PostgreSQL/MySQL with 2+ replicas"
+
+  - it: refuses a minAvailable that is not lower than the number of replicas
+    set:
+      database.existingSecret: kener-database
+      podDisruptionBudget.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "podDisruptionBudget.minAvailable (1) must be lower than the number of Kener replicas (1), or the budget blocks node drains: raise replicaCount (autoscaling.minReplicas with the HPA), lower minAvailable or set maxUnavailable"
+
+  - it: compares minAvailable with autoscaling.minReplicas when the HPA is on
+    set:
+      database.existingSecret: kener-database
+      replicaCount: 5
+      autoscaling.enabled: true
+      autoscaling.minReplicas: 2
+      podDisruptionBudget.enabled: true
+      podDisruptionBudget.minAvailable: 2
+    asserts:
+      - failedTemplate:
+          errorMessage: "podDisruptionBudget.minAvailable (2) must be lower than the number of Kener replicas (2), or the budget blocks node drains: raise replicaCount (autoscaling.minReplicas with the HPA), lower minAvailable or set maxUnavailable"
+
+  - it: accepts a budget with fewer pods than replicas, or with maxUnavailable
+    set:
+      database.existingSecret: kener-database
+      replicaCount: 2
+      podDisruptionBudget.enabled: true
+      podDisruptionBudget.minAvailable: 5
+      podDisruptionBudget.maxUnavailable: 1
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: refuses a mount on /app/database with SQLite
+    set:
+      extraVolumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: kener-data
+      extraVolumeMounts:
+        - name: data
+          mountPath: /app/database/
+    asserts:
+      - failedTemplate:
+          errorMessage: "/app/database is mounted by the chart with SQLite: set persistence.existingClaim to your PVC instead of mounting it through volumes/volumeMounts or extraVolumes/extraVolumeMounts"
+
+  - it: refuses the same mount through the deprecated volumeMounts
+    set:
+      volumeMounts:
+        - name: data
+          mountPath: /app/database
+    asserts:
+      - failedTemplate:
+          errorPattern: "^/app/database is mounted by the chart with SQLite"
+
+  - it: requires a Valkey tag or digest with the bundled Valkey
+    set:
+      redis.image.tag: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: "redis.image.tag or redis.image.digest is required with the bundled Valkey (redis.enabled)"
+
+  - it: refuses an external Redis next to the bundled Valkey
+    set:
+      redis.external.url: redis://redis.example.com:6379
+    asserts:
+      - failedTemplate:
+          errorMessage: "redis.external is only used with redis.enabled=false: pick the bundled Valkey or your own Redis"
+
+  - it: refuses Valkey password characters that would break REDIS_URL
+    set:
+      redis.auth.password: p@ss/word
+    asserts:
+      - failedTemplate:
+          errorMessage: "redis.auth.password is embedded in REDIS_URL: use only A-Z a-z 0-9 . _ ~ - (or leave it empty to generate one)"
+
+  - it: accepts the unreserved characters in the Valkey password
+    set:
+      redis.auth.password: Az09._~-
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: ignores redis.auth.password when the password comes from an existing Secret
+    set:
+      redis.auth.password: p@ss/word
+      redis.auth.existingSecret: kener-valkey
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: requires a Redis when the bundled Valkey is disabled
+    set:
+      redis.enabled: false
+    asserts:
+      - failedTemplate:
+          errorMessage: "Kener 4 requires Redis: keep redis.enabled=true (bundled Valkey) or set redis.external.url / redis.external.existingSecret"
+
+  - it: refuses an external Redis URL with another scheme
+    set:
+      redis.enabled: false
+      redis.external.url: valkey://redis.example.com:6379
+    asserts:
+      - failedTemplate:
+          errorMessage: "redis.external.url must start with redis:// or rediss://"
+
+  - it: accepts a rediss:// URL for an external Redis over TLS
+    set:
+      redis.enabled: false
+      redis.external.url: rediss://default:pw@redis.example.com:6379/0
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: refuses an incomplete SMTP setup, which Kener would ignore
+    set:
+      email.smtp.host: smtp.example.com
+      email.smtp.user: status@example.com
+      email.smtp.fromEmail: status@example.com
+    asserts:
+      - failedTemplate:
+          errorMessage: "email.smtp needs host, port, user, fromEmail and a password (password or existingSecret): Kener ignores an incomplete SMTP environment"
+
+  - it: requires the Resend sender address
+    set:
+      email.resend.existingSecret: kener-resend
+    asserts:
+      - failedTemplate:
+          errorMessage: "email.resend.senderEmail is required with a Resend API key"
+
+  - it: refuses a NODE_OPTIONS that drops --experimental-strip-types
+    set:
+      extraEnv:
+        - name: NODE_OPTIONS
+          value: --max-old-space-size=768
+    asserts:
+      - failedTemplate:
+          errorMessage: "NODE_OPTIONS in extraEnv must keep --experimental-strip-types: Kener loads its TypeScript migrations at runtime"
+
+  - it: accepts a NODE_OPTIONS that keeps it
+    set:
+      extraEnv:
+        - name: NODE_OPTIONS
+          value: --experimental-strip-types --max-old-space-size=768
+    asserts:
+      - notFailedTemplate: {}

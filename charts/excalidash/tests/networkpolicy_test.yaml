@@ -1,0 +1,48 @@
+suite: NetworkPolicy
+templates:
+  - networkpolicy.yaml
+release:
+  name: excalidash
+  namespace: excalidash
+tests:
+  - it: renders no NetworkPolicy by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: lets only the frontend pods and the test pod of the release reach the backend port
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: NetworkPolicy
+      - equal:
+          path: metadata.name
+          value: excalidash-backend
+      - equal:
+          path: spec
+          value:
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/name: excalidash
+                app.kubernetes.io/instance: excalidash
+                app.kubernetes.io/component: backend
+            policyTypes:
+              - Ingress
+            ingress:
+              - from:
+                  - podSelector:
+                      matchLabels:
+                        app.kubernetes.io/name: excalidash
+                        app.kubernetes.io/instance: excalidash
+                        app.kubernetes.io/component: frontend
+                  - podSelector:
+                      matchLabels:
+                        app.kubernetes.io/name: excalidash
+                        app.kubernetes.io/instance: excalidash
+                        app.kubernetes.io/component: test
+                ports:
+                  - port: http
+                    protocol: TCP

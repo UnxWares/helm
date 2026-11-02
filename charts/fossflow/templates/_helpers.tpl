@@ -121,10 +121,19 @@ nginx configuration, binds port 80 and starts the backend through su-exec, which
 {{- end }}
 
 {{/*
+Whether the diagrams are on a volume that one node (ReadWriteOnce) or one pod (ReadWriteOncePod) mounts at a time:
+one replica, replaced with the Recreate strategy.
+*/}}
+{{- define "fossflow.singleNodeStorage" -}}
+{{- $modes := .Values.persistence.accessModes }}
+{{- if and .Values.storage.enabled .Values.persistence.enabled (or (has "ReadWriteOnce" $modes) (has "ReadWriteOncePod" $modes)) }}true{{ end }}
+{{- end }}
+
+{{/*
 Validate values that would otherwise produce a broken deployment.
 */}}
 {{- define "fossflow.validate" -}}
-{{- if and .Values.storage.enabled .Values.persistence.enabled (has "ReadWriteOnce" .Values.persistence.accessModes) (or (gt (int .Values.replicaCount) 1) .Values.autoscaling.enabled) }}
+{{- if and (include "fossflow.singleNodeStorage" .) (or (gt (int .Values.replicaCount) 1) .Values.autoscaling.enabled) }}
 {{- fail "server storage on a ReadWriteOnce volume supports a single replica: use a ReadWriteMany volume or disable storage to scale" }}
 {{- end }}
 {{- end }}

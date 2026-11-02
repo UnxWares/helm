@@ -1,0 +1,5 @@
+# The bundled PostgreSQL instead of the external database, as in ci/default-values.yaml.
+externalDatabase:
+  enabled: false
+db:
+  enabled: true

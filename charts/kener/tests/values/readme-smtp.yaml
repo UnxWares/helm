@@ -1,0 +1,8 @@
+# README example "Email through SMTP", as written in the README.
+email:
+  smtp:
+    host: smtp.example.com
+    port: 587
+    user: status@example.com
+    existingSecret: kener-smtp     # key: smtp-password
+    fromEmail: Status <status@example.com>

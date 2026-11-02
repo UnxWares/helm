@@ -2,7 +2,7 @@ apiVersion: v2
 name: fossflow
 description: FossFLOW, an open source web app to draw isometric infrastructure diagrams, with optional server-side storage of the diagrams.
 type: application
-version: 2026.11.2
+version: 2026.11.3
 appVersion: "1.0.5"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/fossflow
@@ -42,22 +42,12 @@ annotations:
   artifacthub.io/images: |
     - name: fossflow
       image: ghcr.io/unxwares/fossflow:1.0.5
-  artifacthub.io/containsSecurityUpdates: "true"
+  artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
-    - kind: security
-      description: "Default image moves to ghcr.io/unxwares/fossflow (imageProvider: unxwares): FossFLOW 1.0.5 built from the upstream sources with updated npm dependencies on a current Alpine, without npm, su-exec or openssl at runtime. It runs as uid 1000 on port 8080 with a read-only root filesystem and no capability. imageProvider: upstream keeps abrar74774/fossflow:master-2b3cee3."
-    - kind: security
-      description: "The storage backend listens on 127.0.0.1 only (BACKEND_HOST), with both images: other pods can no longer read or change the diagrams on port 3001 without going through nginx."
-    - kind: security
-      description: "The UnxWares image drops the CORS headers of the backend (any origin allowed): another site can no longer read or change the diagrams through a visitor's browser."
     - kind: added
-      description: "Optional NetworkPolicy (networkPolicy.enabled, networkPolicy.ingressFrom): only the HTTP port is open, and the pods open no connection."
-    - kind: added
-      description: "End-to-end test in CI on the image of the commit: diagrams created, listed, read back, updated and kept across a pod replacement through the Service, browser-only mode, and the backend port and the NetworkPolicy checked from other pods."
-    - kind: changed
-      description: "podSecurityContext and securityContext are empty by default: the chart applies the defaults of imageProvider, with fsGroup taken from storage.gid."
+      description: "Unit tests (helm-unittest, 89 tests) of the security contexts with both image providers, image selection, the single-replica rule, persistence, probes, container env, Service, Ingress, HTTPRoute, NetworkPolicy, the helm test pod and the README examples, run in CI on every pull request and push to main. The values are unchanged."
     - kind: fixed
-      description: "autoscaling.targetMemoryUtilizationPercentage is a documented value; the helm test pod no longer carries the labels the Service selects; Service environment variables are no longer injected (a Service named backend would have set BACKEND_PORT)."
+      description: "Server storage on a ReadWriteOncePod volume is handled like ReadWriteOnce: the Deployment uses the Recreate strategy (a rolling update could not start the new pod while the old one held the volume) and more than one replica is refused."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

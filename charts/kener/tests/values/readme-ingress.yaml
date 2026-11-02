@@ -1,0 +1,23 @@
+# README example "Public status page behind an Ingress", as written in the README.
+kener:
+  origin: https://status.example.com
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+  hosts:
+    - host: status.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: status-example-com-tls
+      hosts:
+        - status.example.com
+networkPolicy:
+  enabled: true
+  ingressFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx

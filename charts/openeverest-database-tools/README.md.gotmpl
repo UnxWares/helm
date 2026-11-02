@@ -103,7 +103,8 @@ scanners also see the dependencies mongosh bundles. Known vulnerabilities are tr
 [CVE watch](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch) issue.
 
 Each image is a `{repository, tag, digest}` object; the digest takes precedence over the tag. An entry can override
-its engine image with `image`:
+its engine image with `image`; an entry that sets its own `repository` or `tag` without a `digest` does not inherit
+the digest of the engine image:
 
 ```yaml
 image:

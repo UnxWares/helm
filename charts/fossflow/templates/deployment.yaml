@@ -10,7 +10,7 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
-  {{- if and .Values.storage.enabled .Values.persistence.enabled (has "ReadWriteOnce" .Values.persistence.accessModes) }}
+  {{- if include "fossflow.singleNodeStorage" . }}
   strategy:
     type: Recreate
   {{- end }}

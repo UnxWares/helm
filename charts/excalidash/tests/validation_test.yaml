@@ -1,0 +1,125 @@
+suite: required values and their error messages
+templates:
+  # The checks run in secret.yaml.
+  - secret.yaml
+release:
+  name: excalidash
+  namespace: excalidash
+tests:
+  - it: renders with the default values (SQLite, local accounts)
+    asserts:
+      - notFailedTemplate: {}
+      - isKind:
+          of: Secret
+
+  - it: refuses several backend replicas
+    set:
+      backend.replicaCount: 2
+    asserts:
+      - failedTemplate:
+          errorMessage: "the ExcaliDash backend keeps Socket.IO state in memory: backend.replicaCount must be 1 and backend.autoscaling.enabled false"
+
+  - it: refuses backend autoscaling
+    set:
+      backend.autoscaling.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "the ExcaliDash backend keeps Socket.IO state in memory: backend.replicaCount must be 1 and backend.autoscaling.enabled false"
+
+  - it: requires a PostgreSQL URL or Secret with the postgresql provider
+    set:
+      backend.database.provider: postgresql
+    asserts:
+      - failedTemplate:
+          errorMessage: "backend.database.provider=postgresql needs a postgresql:// backend.database.url or backend.database.existingSecret"
+
+  - it: accepts a PostgreSQL URL given as a value
+    set:
+      backend.database.provider: postgresql
+      backend.database.url: postgresql://excalidash:pw@db:5432/excalidash
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: accepts an existing database Secret without checking its content
+    set:
+      backend.database.provider: postgresql
+      backend.database.existingSecret: excalidash-db
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: rejects an unknown database provider through the values schema
+    set:
+      backend.database.provider: mysql
+    asserts:
+      - failedTemplate:
+          errorPattern: "/backend/database/provider"
+
+  - it: rejects an unknown authentication mode through the values schema
+    set:
+      backend.auth.mode: saml
+    asserts:
+      - failedTemplate:
+          errorPattern: "/backend/auth/mode"
+
+  - it: requires the OIDC issuer in oidc_enforced mode
+    set:
+      backend.auth.mode: oidc_enforced
+      backend.auth.oidc.clientId: excalidash
+    asserts:
+      - failedTemplate:
+          errorMessage: "backend.auth.oidc.issuerUrl and backend.auth.oidc.clientId are required with backend.auth.mode hybrid or oidc_enforced"
+
+  - it: requires the OIDC client ID in hybrid mode
+    set:
+      backend.auth.mode: hybrid
+      backend.auth.oidc.issuerUrl: https://auth.example.com/application/o/excalidash/
+    asserts:
+      - failedTemplate:
+          errorMessage: "backend.auth.oidc.issuerUrl and backend.auth.oidc.clientId are required with backend.auth.mode hybrid or oidc_enforced"
+
+  - it: refuses an http:// OIDC redirect URI in production
+    set:
+      frontend.url: http://draw.example.com/
+      backend.auth.mode: hybrid
+      backend.auth.oidc.issuerUrl: https://auth.example.com/application/o/excalidash/
+      backend.auth.oidc.clientId: excalidash
+    asserts:
+      - failedTemplate:
+          errorMessage: "the OIDC redirect URI http://draw.example.com/api/auth/oidc/callback must be https:// (the backend refuses to start otherwise in production): set frontend.url, or backend.auth.oidc.redirectUri, to an https:// URL"
+
+  - it: refuses an http:// redirect URI given explicitly
+    set:
+      backend.auth.mode: oidc_enforced
+      backend.auth.oidc.issuerUrl: https://auth.example.com/application/o/excalidash/
+      backend.auth.oidc.clientId: excalidash
+      backend.auth.oidc.redirectUri: http://draw.example.com/api/auth/oidc/callback
+    asserts:
+      - failedTemplate:
+          errorPattern: "^the OIDC redirect URI http://draw.example.com/api/auth/oidc/callback must be https://"
+
+  - it: accepts an https:// redirect URI behind an http:// frontend URL
+    set:
+      frontend.url: http://localhost:8080
+      backend.auth.mode: oidc_enforced
+      backend.auth.oidc.issuerUrl: https://auth.example.com/application/o/excalidash/
+      backend.auth.oidc.clientId: excalidash
+      backend.auth.oidc.redirectUri: HTTPS://draw.example.com/api/auth/oidc/callback
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: accepts an http:// redirect URI outside production
+    set:
+      frontend.url: http://localhost:8080
+      backend.nodeEnv: development
+      backend.auth.mode: hybrid
+      backend.auth.oidc.issuerUrl: https://auth.example.com/application/o/excalidash/
+      backend.auth.oidc.clientId: excalidash
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: needs no OIDC setting in local and disabled modes
+    set:
+      frontend.url: http://localhost:8080
+      backend.auth.mode: disabled
+    asserts:
+      - notFailedTemplate: {}

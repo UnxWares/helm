@@ -1,0 +1,184 @@
+suite: persistence of /app/database and of the Valkey data
+templates:
+  - deployment.yaml
+  - pvc.yaml
+  # valkey-deployment.yaml includes valkey-configmap.yaml for its checksum annotation
+  - valkey-configmap.yaml
+  - valkey-deployment.yaml
+release:
+  name: status
+  namespace: status
+tests:
+  - it: creates a 2Gi ReadWriteOnce claim for SQLite, kept on uninstall
+    template: pvc.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: PersistentVolumeClaim
+      - equal:
+          path: metadata.name
+          value: status-kener
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/resource-policy: keep
+      - equal:
+          path: spec.accessModes
+          value:
+            - ReadWriteOnce
+      - equal:
+          path: spec.resources.requests.storage
+          value: 2Gi
+      - notExists:
+          path: spec.storageClassName
+
+  - it: mounts the claim on /app/database
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: status-kener
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /app/database
+
+  - it: sets the storage class, size, access modes and annotations
+    template: pvc.yaml
+    set:
+      persistence.storageClass: fast-ssd
+      persistence.size: 5Gi
+      persistence.accessModes:
+        - ReadWriteOncePod
+      persistence.annotations:
+        backup: daily
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: fast-ssd
+      - equal:
+          path: spec.resources.requests.storage
+          value: 5Gi
+      - equal:
+          path: spec.accessModes
+          value:
+            - ReadWriteOncePod
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/resource-policy: keep
+            backup: daily
+
+  - it: uses an existing claim without creating one
+    set:
+      persistence.existingClaim: kener-data
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: kener-data
+        template: deployment.yaml
+
+  - it: falls back to an emptyDir when persistence is disabled
+    set:
+      persistence.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            emptyDir: {}
+        template: deployment.yaml
+
+  - it: creates no claim and mounts nothing on /app/database with an external database
+    set:
+      database.url: postgresql://kener:pw@db:5432/kener
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+          any: true
+        template: deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+          any: true
+        template: deployment.yaml
+
+  - it: creates a 1Gi claim for the Valkey data with redis.persistence, kept on uninstall
+    set:
+      redis.persistence.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 2
+        template: pvc.yaml
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+        template: pvc.yaml
+        documentSelector:
+          path: metadata.name
+          value: status-kener-valkey
+      - equal:
+          path: spec.resources.requests.storage
+          value: 1Gi
+        template: pvc.yaml
+        documentSelector:
+          path: metadata.name
+          value: status-kener-valkey
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: kener-valkey
+        template: pvc.yaml
+        documentSelector:
+          path: metadata.name
+          value: status-kener-valkey
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: status-kener-valkey
+        template: valkey-deployment.yaml
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: creates no Valkey claim with an existing one
+    set:
+      persistence.enabled: false
+      redis.persistence.enabled: true
+      redis.persistence.existingClaim: valkey-data
+    template: pvc.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: creates no Valkey claim with an external Redis
+    set:
+      persistence.enabled: false
+      redis.enabled: false
+      redis.external.url: redis://redis.example.com:6379
+      redis.persistence.enabled: true
+    template: pvc.yaml
+    asserts:
+      - hasDocuments:
+          count: 0

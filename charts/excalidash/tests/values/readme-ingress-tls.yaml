@@ -1,0 +1,19 @@
+# README example "Ingress with TLS", as written in the README.
+frontend:
+  url: https://draw.example.com
+backend:
+  trustProxy: "2"   # two trusted hops: your ingress controller, then the frontend nginx
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/proxy-body-size: 50m
+  hosts:
+    - host: draw.example.com
+  tls:
+    - secretName: draw-example-com-tls
+      hosts:
+        - draw.example.com
+networkPolicy:
+  enabled: true

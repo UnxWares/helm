@@ -1,0 +1,56 @@
+suite: release notes
+templates:
+  - templates/NOTES.txt
+release:
+  name: excalidash
+  namespace: excalidash
+chart:
+  appVersion: 0.6.7
+tests:
+  - it: gives the URL and the port-forward command without an Ingress or HTTPRoute
+    asserts:
+      - matchRegexRaw:
+          pattern: 'ExcaliDash 0\.6\.7 is deployed\.\n\nURL: https://excalidash\.example\.com'
+      - matchRegexRaw:
+          pattern: 'kubectl --namespace excalidash port-forward svc/excalidash-frontend 8080:80'
+
+  - it: tells how the first administrator gets the setup code in local mode
+    asserts:
+      - matchRegexRaw:
+          pattern: 'kubectl --namespace excalidash logs deploy/excalidash-backend \| grep -i setup'
+
+  - it: tells that the first OIDC login becomes administrator, and that hybrid mode prints no setup code
+    set:
+      backend.auth.mode: hybrid
+      backend.auth.oidc.providerName: Keycloak
+    asserts:
+      - matchRegexRaw:
+          pattern: 'the first user to log in through Keycloak becomes administrator'
+      - matchRegexRaw:
+          pattern: 'In hybrid mode ExcaliDash 0\.6\.7 prints no local setup code on a new database'
+
+  - it: warns that the disabled mode has no login at all
+    set:
+      backend.auth.mode: disabled
+    asserts:
+      - matchRegexRaw:
+          pattern: 'WARNING: backend.auth.mode is disabled: no login at all, every visitor is the same user\. Never expose it\.'
+
+  - it: warns that drawings are lost without persistence
+    set:
+      backend.persistence.enabled: false
+    asserts:
+      - matchRegexRaw:
+          pattern: 'WARNING: backend.persistence is disabled, drawings are lost when the backend restarts\.'
+
+  - it: says where the generated secrets are kept
+    asserts:
+      - matchRegexRaw:
+          pattern: 'NOTE: JWT/CSRF secrets and the API key pepper are generated and kept in the excalidash secret\.'
+
+  - it: says nothing about generated secrets with your own Secret
+    set:
+      backend.secrets.existingSecret: excalidash-app
+    asserts:
+      - notMatchRegexRaw:
+          pattern: 'are generated and kept'

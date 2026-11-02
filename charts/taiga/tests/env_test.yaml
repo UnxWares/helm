@@ -1,0 +1,1122 @@
+suite: container environment and secret references
+templates:
+  # the pods include secret.yaml and rabbitmq-configmap.yaml for their checksum annotations
+  - secret.yaml
+  - rabbitmq-configmap.yaml
+  - backend/deployment.yaml
+  - async/deployment.yaml
+  - async/beat-deployment.yaml
+  - events/deployment.yaml
+  - protected/deployment.yaml
+  - frontend/deployment.yaml
+  - db/deployment.yaml
+  - asyncRabbitmq/statefulset.yaml
+  - eventsRabbitmq/statefulset.yaml
+release:
+  name: taiga
+  namespace: taiga
+values:
+  - values/external-database.yaml
+tests:
+  - it: gives the backend the Django key and the public URL
+    template: backend/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0]
+          value:
+            name: TAIGA_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: taiga
+                key: secret-key
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TAIGA_SITES_SCHEME
+            value: https
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TAIGA_SITES_DOMAIN
+            value: taiga.example.com
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TAIGA_SUBPATH
+            value: ""
+
+  - it: connects the backend to the external database, with the password through secretKeyRef (README example)
+    template: backend/deployment.yaml
+    set:
+      externalDatabase:
+        host: postgres.databases.svc
+        port: 5432
+        database: taiga
+        username: taiga
+        password: change-me
+        sslmode: require
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_HOST
+            value: postgres.databases.svc
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PORT
+            value: "5432"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_DB
+            value: taiga
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_USER
+            value: taiga
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: taiga
+                key: postgres-password
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_SSLMODE
+            value: require
+
+  - it: reads every connection setting of the external database from its existing Secret, sslmode included
+    template: backend/deployment.yaml
+    set:
+      externalDatabase:
+        host: ignored.example.com
+        existingSecret: taiga-db
+        secretKeys:
+          host: host
+          port: port
+          database: dbname
+          username: user
+          password: password
+        sslmode: verify-full
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_HOST
+            valueFrom:
+              secretKeyRef:
+                name: taiga-db
+                key: host
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PORT
+            valueFrom:
+              secretKeyRef:
+                name: taiga-db
+                key: port
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_DB
+            valueFrom:
+              secretKeyRef:
+                name: taiga-db
+                key: dbname
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: taiga-db
+                key: user
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: taiga-db
+                key: password
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_SSLMODE
+            value: verify-full
+
+  - it: connects the backend to the bundled database with the generated password
+    template: backend/deployment.yaml
+    values:
+      - values/bundled-database.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_HOST
+            value: taiga-db
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PORT
+            value: "5432"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_DB
+            value: taiga
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_USER
+            value: taiga
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: taiga
+                key: db-password
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_SSLMODE
+          any: true
+
+  - it: reads the bundled database user and password from db.auth.existingSecret, which wins over global.existingSecret
+    template: backend/deployment.yaml
+    values:
+      - values/bundled-database.yaml
+    set:
+      global:
+        existingSecret: taiga-secrets
+      db:
+        auth:
+          existingSecret: taiga-postgres
+          secretKeys:
+            user: username
+            password: password
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: taiga-postgres
+                key: username
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: taiga-postgres
+                key: password
+
+  - it: reads the key, the bundled database and the broker credentials from global.existingSecret
+    template: backend/deployment.yaml
+    values:
+      - values/bundled-database.yaml
+    set:
+      global:
+        existingSecret: taiga-secrets
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TAIGA_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: taiga-secrets
+                key: SECRET_KEY
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: taiga-secrets
+                key: POSTGRES_USER
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: taiga-secrets
+                key: POSTGRES_PASSWORD
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ASYNC_RABBITMQ_USER
+            valueFrom:
+              secretKeyRef:
+                name: taiga-secrets
+                key: RABBITMQ_USER
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ASYNC_RABBITMQ_PASS
+            valueFrom:
+              secretKeyRef:
+                name: taiga-secrets
+                key: RABBITMQ_PASS
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EVENTS_RABBITMQ_PASS
+            valueFrom:
+              secretKeyRef:
+                name: taiga-secrets
+                key: RABBITMQ_PASS
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ASYNC_RABBITMQ_VHOST
+            value: taiga
+
+  - it: reads the Django key under the key name of global.secretKeys
+    template: protected/deployment.yaml
+    set:
+      global:
+        existingSecret: taiga-secrets
+        secretKeys:
+          secretKey: django-key
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: taiga-secrets
+                key: django-key
+
+  - it: builds the broker URLs from the credential variables and the Service ports, without any password
+    template: backend/deployment.yaml
+    set:
+      asyncRabbitmq:
+        service:
+          port: 5674
+      eventsRabbitmq:
+        auth:
+          vhost: events
+        service:
+          port: 5673
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ASYNC_RABBITMQ_USER
+            value: taiga
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ASYNC_RABBITMQ_PASS
+            valueFrom:
+              secretKeyRef:
+                name: taiga
+                key: async-rabbitmq-password
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EVENTS_RABBITMQ_VHOST
+            value: events
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CELERY_BROKER_URL
+            value: amqp://$(ASYNC_RABBITMQ_USER):$(ASYNC_RABBITMQ_PASS)@taiga-async-rabbitmq:5674/$(ASYNC_RABBITMQ_VHOST)
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EVENTS_PUSH_BACKEND_URL
+            value: amqp://$(EVENTS_RABBITMQ_USER):$(EVENTS_RABBITMQ_PASS)@taiga-events-rabbitmq:5673/$(EVENTS_RABBITMQ_VHOST)
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TAIGA_ASYNC_RABBITMQ_HOST
+            value: taiga-async-rabbitmq
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TAIGA_EVENTS_RABBITMQ_HOST
+            value: taiga-events-rabbitmq
+
+  - it: reads the user, password and vhost of a broker from its existing Secret (README example)
+    template: async/deployment.yaml
+    set:
+      asyncRabbitmq:
+        auth:
+          existingSecret: taiga-async-broker
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ASYNC_RABBITMQ_USER
+            valueFrom:
+              secretKeyRef:
+                name: taiga-async-broker
+                key: RABBITMQ_USER
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ASYNC_RABBITMQ_PASS
+            valueFrom:
+              secretKeyRef:
+                name: taiga-async-broker
+                key: RABBITMQ_PASS
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ASYNC_RABBITMQ_VHOST
+            valueFrom:
+              secretKeyRef:
+                name: taiga-async-broker
+                key: RABBITMQ_VHOST
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EVENTS_RABBITMQ_PASS
+            valueFrom:
+              secretKeyRef:
+                name: taiga
+                key: events-rabbitmq-password
+
+  - it: never passes a password as a plain value, even when every password is given inline
+    template: backend/deployment.yaml
+    set:
+      global:
+        secretKey: django-key
+        oidc:
+          enabled: true
+          clientId: taiga
+          clientSecret: oidc-secret
+      asyncRabbitmq:
+        auth:
+          password: async-pass
+      eventsRabbitmq:
+        auth:
+          password: events-pass
+      backend:
+        email:
+          backend: smtp
+          user: taiga
+          password: smtp-pass
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.value == "ci-db-password")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.value == "django-key")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.value == "oidc-secret")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.value == "async-pass")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.value == "events-pass")]
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.value == "smtp-pass")]
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "EMAIL_HOST_PASSWORD")].valueFrom.secretKeyRef
+          value:
+            name: taiga
+            key: email-password
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "OIDC_CLIENT_SECRET")].valueFrom.secretKeyRef
+          value:
+            name: taiga
+            key: oidc-client-secret
+
+  - it: prints the emails in the logs by default, with no SMTP password
+    template: backend/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_BACKEND
+            value: django.core.mail.backends.console.EmailBackend
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DEFAULT_FROM_EMAIL
+            value: no-reply@taiga.example.com
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_HOST_PASSWORD
+          any: true
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_USE_TLS
+          any: true
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_USE_SSL
+          any: true
+
+  - it: sends emails through SMTP with STARTTLS and the credentials of an existing Secret (README example)
+    template: backend/deployment.yaml
+    set:
+      backend:
+        email:
+          backend: smtp
+          host: smtp.example.com
+          port: 587
+          useTLS: true
+          defaultFrom: taiga@example.com
+          existingSecret: taiga-smtp
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_BACKEND
+            value: django.core.mail.backends.smtp.EmailBackend
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_HOST
+            value: smtp.example.com
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_PORT
+            value: "587"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_USE_TLS
+            value: "True"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DEFAULT_FROM_EMAIL
+            value: taiga@example.com
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_HOST_USER
+            valueFrom:
+              secretKeyRef:
+                name: taiga-smtp
+                key: EMAIL_HOST_USER
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_HOST_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: taiga-smtp
+                key: EMAIL_HOST_PASSWORD
+
+  - it: uses implicit TLS with useSSL, and a plain SMTP user with an inline password
+    template: backend/deployment.yaml
+    set:
+      backend:
+        email:
+          backend: smtp
+          useSSL: true
+          user: taiga
+          password: smtp-pass
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_USE_SSL
+            value: "True"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_HOST_USER
+            value: taiga
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_HOST_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: taiga
+                key: email-password
+
+  - it: keeps telemetry off by default and passes it when enabled
+    template: backend/deployment.yaml
+    set:
+      global:
+        telemetry:
+          enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ENABLE_TELEMETRY
+            value: "true"
+
+  - it: sets no OIDC variable while OIDC is disabled
+    template: backend/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ENABLE_TELEMETRY
+            value: "false"
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ENABLE_OIDC_AUTH
+          any: true
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_ID
+          any: true
+
+  - it: configures OIDC for Keycloak with an existing Secret, endpoints derived from the issuer (README example)
+    template: backend/deployment.yaml
+    set:
+      global:
+        oidc:
+          enabled: true
+          issuer: https://keycloak.example.com/realms/example
+          existingSecret: taiga-oidc
+          frontend:
+            buttonText: Log in with Keycloak
+          backend:
+            useXForwardedHost: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ENABLE_OIDC_AUTH
+            value: "True"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_ISSUER
+            value: https://keycloak.example.com/realms/example
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: taiga-oidc
+                key: oidc-client-id
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: taiga-oidc
+                key: oidc-client-secret
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_SCOPES
+            value: openid profile email
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: USE_X_FORWARDED_HOST
+            value: "True"
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_AUTHORIZATION_ENDPOINT
+          any: true
+
+  - it: passes the four endpoints of a provider without the Keycloak layout (README Authentik example)
+    template: backend/deployment.yaml
+    set:
+      global:
+        oidc:
+          enabled: true
+          issuer: https://auth.example.com/application/o/taiga/
+          clientId: taiga
+          clientSecret: change-me
+          endpoints:
+            authorization: https://auth.example.com/application/o/authorize/
+            token: https://auth.example.com/application/o/token/
+            userinfo: https://auth.example.com/application/o/userinfo/
+            jwks: https://auth.example.com/application/o/taiga/jwks/
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_ID
+            value: taiga
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: taiga
+                key: oidc-client-secret
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_AUTHORIZATION_ENDPOINT
+            value: https://auth.example.com/application/o/authorize/
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_TOKEN_ENDPOINT
+            value: https://auth.example.com/application/o/token/
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_USERINFO_ENDPOINT
+            value: https://auth.example.com/application/o/userinfo/
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_JWKS_ENDPOINT
+            value: https://auth.example.com/application/o/taiga/jwks/
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: USE_X_FORWARDED_HOST
+          any: true
+
+  - it: gives the async workers and the beat scheduler the environment of the backend
+    set:
+      backend:
+        email:
+          backend: smtp
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CELERY_BROKER_URL
+            value: amqp://$(ASYNC_RABBITMQ_USER):$(ASYNC_RABBITMQ_PASS)@taiga-async-rabbitmq:5672/$(ASYNC_RABBITMQ_VHOST)
+        template: async/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: taiga
+                key: postgres-password
+        template: async/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_BACKEND
+            value: django.core.mail.backends.smtp.EmailBackend
+        template: async/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CELERY_BROKER_URL
+            value: amqp://$(ASYNC_RABBITMQ_USER):$(ASYNC_RABBITMQ_PASS)@taiga-async-rabbitmq:5672/$(ASYNC_RABBITMQ_VHOST)
+        template: async/beat-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TAIGA_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: taiga
+                key: secret-key
+        template: async/beat-deployment.yaml
+
+  - it: gives taiga-events the key, its broker credentials and a complete broker URL
+    template: events/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: TAIGA_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: taiga
+                  key: secret-key
+            - name: TAIGA_EVENTS_RABBITMQ_HOST
+              value: taiga-events-rabbitmq
+            - name: RABBITMQ_USER
+              value: taiga
+            - name: RABBITMQ_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: taiga
+                  key: events-rabbitmq-password
+            - name: RABBITMQ_VHOST
+              value: taiga
+            - name: RABBITMQ_URL
+              value: amqp://$(RABBITMQ_USER):$(RABBITMQ_PASS)@taiga-events-rabbitmq:5672/$(RABBITMQ_VHOST)?frameMax=131072&heartbeat=60#
+
+  - it: points taiga-events to the port and vhost of the events broker and its existing Secret
+    template: events/deployment.yaml
+    set:
+      eventsRabbitmq:
+        auth:
+          existingSecret: taiga-events-broker
+        service:
+          port: 5673
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RABBITMQ_USER
+            valueFrom:
+              secretKeyRef:
+                name: taiga-events-broker
+                key: RABBITMQ_USER
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RABBITMQ_PASS
+            valueFrom:
+              secretKeyRef:
+                name: taiga-events-broker
+                key: RABBITMQ_PASS
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RABBITMQ_VHOST
+            valueFrom:
+              secretKeyRef:
+                name: taiga-events-broker
+                key: RABBITMQ_VHOST
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RABBITMQ_URL
+            value: amqp://$(RABBITMQ_USER):$(RABBITMQ_PASS)@taiga-events-rabbitmq:5673/$(RABBITMQ_VHOST)?frameMax=131072&heartbeat=60#
+
+  - it: reads the events broker credentials from global.existingSecret
+    template: events/deployment.yaml
+    set:
+      global:
+        existingSecret: taiga-secrets
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RABBITMQ_USER
+            valueFrom:
+              secretKeyRef:
+                name: taiga-secrets
+                key: RABBITMQ_USER
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RABBITMQ_PASS
+            valueFrom:
+              secretKeyRef:
+                name: taiga-secrets
+                key: RABBITMQ_PASS
+
+  - it: gives the front its API and websocket URLs
+    template: frontend/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: TAIGA_URL
+              value: https://taiga.example.com
+            - name: TAIGA_WEBSOCKETS_URL
+              value: wss://taiga.example.com
+            - name: TAIGA_SUBPATH
+              value: ""
+
+  - it: follows the public scheme, domain and sub-path in the front and the backend
+    set:
+      global:
+        scheme: http
+        websocketsScheme: ws
+        domain: localhost
+        subPath: /taiga
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: TAIGA_URL
+              value: http://localhost
+            - name: TAIGA_WEBSOCKETS_URL
+              value: ws://localhost
+            - name: TAIGA_SUBPATH
+              value: /taiga
+        template: frontend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TAIGA_SITES_DOMAIN
+            value: localhost
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TAIGA_SUBPATH
+            value: /taiga
+        template: protected/deployment.yaml
+
+  - it: shows the SSO button in the front when OIDC is enabled
+    template: frontend/deployment.yaml
+    set:
+      global:
+        oidc:
+          enabled: true
+          existingSecret: taiga-oidc
+          frontend:
+            buttonText: Log in with Authentik
+            enableDefaultLogin: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ENABLE_OIDC_AUTH
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_BUTTON_TEXT
+            value: Log in with Authentik
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DEFAULT_LOGIN_ENABLED
+            value: "false"
+
+  - it: gives taiga-protected the URL validity, the sub-path and the key
+    template: protected/deployment.yaml
+    set:
+      protected:
+        maxAge: 900
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: MAX_AGE
+              value: "900"
+            - name: TAIGA_SUBPATH
+              value: ""
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: taiga
+                  key: secret-key
+
+  - it: adds global.extraEnv to every Taiga container and a component's extraEnv to its own only
+    set:
+      global:
+        extraEnv:
+          - name: GLOBAL_SETTING
+            value: everywhere
+      backend:
+        extraEnv:
+          - name: PUBLIC_REGISTER_ENABLED
+            value: "True"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GLOBAL_SETTING
+            value: everywhere
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PUBLIC_REGISTER_ENABLED
+            value: "True"
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GLOBAL_SETTING
+            value: everywhere
+        template: async/deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PUBLIC_REGISTER_ENABLED
+          any: true
+        template: async/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GLOBAL_SETTING
+            value: everywhere
+        template: async/beat-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GLOBAL_SETTING
+            value: everywhere
+        template: events/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GLOBAL_SETTING
+            value: everywhere
+        template: protected/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GLOBAL_SETTING
+            value: everywhere
+        template: frontend/deployment.yaml
+
+  - it: appends the front extraEnv of the README after the chart variables
+    template: frontend/deployment.yaml
+    set:
+      frontend:
+        extraEnv:
+          - name: PUBLIC_REGISTER_ENABLED
+            value: "true"
+          - name: DEFAULT_LANGUAGE
+            value: fr
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[3]
+          value:
+            name: PUBLIC_REGISTER_ENABLED
+            value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[4]
+          value:
+            name: DEFAULT_LANGUAGE
+            value: fr
+
+  - it: sets envFrom from the global then the component sources, and none by default
+    set:
+      global:
+        extraEnvFrom:
+          - secretRef:
+              name: taiga-extra
+      backend:
+        extraEnvFrom:
+          - configMapRef:
+              name: taiga-back-extra
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].envFrom
+          value:
+            - secretRef:
+                name: taiga-extra
+            - configMapRef:
+                name: taiga-back-extra
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].envFrom
+          value:
+            - secretRef:
+                name: taiga-extra
+        template: events/deployment.yaml
+
+  - it: sets no envFrom by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].envFrom
+        template: backend/deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].envFrom
+        template: frontend/deployment.yaml
+
+  - it: creates the default user of each broker from its values and the generated password
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: RABBITMQ_DEFAULT_USER
+              value: taiga
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: taiga
+                  key: async-rabbitmq-password
+            - name: RABBITMQ_DEFAULT_VHOST
+              value: taiga
+        template: asyncRabbitmq/statefulset.yaml
+      - equal:
+          path: spec.template.spec.containers[0].env[1]
+          value:
+            name: RABBITMQ_DEFAULT_PASS
+            valueFrom:
+              secretKeyRef:
+                name: taiga
+                key: events-rabbitmq-password
+        template: eventsRabbitmq/statefulset.yaml
+
+  - it: creates the default user of a broker from its existing Secret, or the user and password from global.existingSecret
+    set:
+      global:
+        existingSecret: taiga-secrets
+      asyncRabbitmq:
+        auth:
+          existingSecret: taiga-async-broker
+          secretKeys:
+            user: user
+            password: pass
+            vhost: vhost
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: taiga-async-broker
+                  key: user
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: taiga-async-broker
+                  key: pass
+            - name: RABBITMQ_DEFAULT_VHOST
+              valueFrom:
+                secretKeyRef:
+                  name: taiga-async-broker
+                  key: vhost
+        template: asyncRabbitmq/statefulset.yaml
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: taiga-secrets
+                  key: RABBITMQ_USER
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: taiga-secrets
+                  key: RABBITMQ_PASS
+            - name: RABBITMQ_DEFAULT_VHOST
+              value: taiga
+        template: eventsRabbitmq/statefulset.yaml
+
+  - it: initializes the bundled database from db.auth, with the generated password
+    template: db/deployment.yaml
+    values:
+      - values/bundled-database.yaml
+    set:
+      db:
+        auth:
+          database: taiga_prod
+          user: taiga_app
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: POSTGRES_DB
+              value: taiga_prod
+            - name: POSTGRES_USER
+              value: taiga_app
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: taiga
+                  key: db-password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata

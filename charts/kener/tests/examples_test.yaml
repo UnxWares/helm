@@ -1,0 +1,191 @@
+suite: README examples
+templates:
+  - deployment.yaml
+  - secret.yaml
+  - pvc.yaml
+  - pdb.yaml
+  - ingress.yaml
+  - httproute.yaml
+  - networkpolicy.yaml
+  # valkey-deployment.yaml includes valkey-configmap.yaml for its checksum annotation
+  - valkey-configmap.yaml
+  - valkey-deployment.yaml
+  - tests/test-healthcheck.yaml
+release:
+  name: status
+  namespace: status
+chart:
+  appVersion: 4.1.11
+tests:
+  - it: "Public status page behind an Ingress: the public URL, TLS for the host, and only the controller allowed in"
+    values:
+      - values/readme-ingress.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ORIGIN
+            value: https://status.example.com
+        template: deployment.yaml
+      - equal:
+          path: spec.tls
+          value:
+            - hosts:
+                - status.example.com
+              secretName: status-example-com-tls
+        template: ingress.yaml
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service
+          value:
+            name: status-kener
+            port:
+              name: http
+        template: ingress.yaml
+      - equal:
+          path: spec.ingress[0].from
+          value:
+            - podSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: status
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: ingress-nginx
+        template: networkpolicy.yaml
+        documentSelector:
+          path: metadata.name
+          value: status-kener
+
+  - it: "Under /status with the Gateway API: the -status image, probes, route and helm test under /status"
+    values:
+      - values/readme-status-gateway.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/rajnandan1/kener:4.1.11-status-alpine
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KENER_BASE_PATH
+            value: /status
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ORIGIN
+            value: https://example.com
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /status/healthcheck?strict=1
+        template: deployment.yaml
+      - equal:
+          path: spec.rules
+          value:
+            - backendRefs:
+                - name: status-kener
+                  port: 3000
+                  weight: 1
+              matches:
+                - path:
+                    type: PathPrefix
+                    value: /status
+        template: httproute.yaml
+      - equal:
+          path: spec.parentRefs
+          value:
+            - name: main-gateway
+              namespace: gateway-system
+              sectionName: https
+        template: httproute.yaml
+      - equal:
+          path: spec.containers[0].command[11]
+          value: http://status-kener:3000/status/healthcheck?strict=1
+        template: tests/test-healthcheck.yaml
+
+  - it: "PostgreSQL, external Redis and two replicas: every secret from your Secret, no Valkey, no claim"
+    values:
+      - values/readme-postgresql-external-redis.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: secret.yaml
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - hasDocuments:
+          count: 0
+        template: valkey-deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 2
+        template: deployment.yaml
+      - notExists:
+          path: spec.strategy
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: ORIGIN
+              value: https://status.example.com
+            - name: KENER_BASE_PATH
+              value: ""
+            - name: NODE_ENV
+              value: production
+            - name: BODY_SIZE_LIMIT
+              value: 3M
+            - name: KENER_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: kener
+                  key: secret-key
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: kener
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: kener
+                  key: redis-url
+        template: deployment.yaml
+      - equal:
+          path: spec.minAvailable
+          value: 1
+        template: pdb.yaml
+
+  - it: "Email through SMTP: the settings as values, the password from your Secret"
+    values:
+      - values/readme-smtp.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_HOST
+            value: smtp.example.com
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_FROM_EMAIL
+            value: Status <status@example.com>
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_SECURE
+            value: "0"
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_PASS
+            valueFrom:
+              secretKeyRef:
+                name: kener-smtp
+                key: smtp-password
+        template: deployment.yaml
+      - notExists:
+          path: data["smtp-password"]
+        template: secret.yaml

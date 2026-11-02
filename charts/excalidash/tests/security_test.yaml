@@ -1,0 +1,170 @@
+suite: security contexts and service account
+templates:
+  - frontend/deployment.yaml
+  - backend/deployment.yaml
+  - serviceaccount.yaml
+  - tests/test-health.yaml
+release:
+  name: excalidash
+  namespace: excalidash
+tests:
+  - it: runs the frontend as uid and gid 101, non-root, with port 80 opened by a safe sysctl instead of a capability
+    template: frontend/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            fsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
+            sysctls:
+              - name: net.ipv4.ip_unprivileged_port_start
+                value: "80"
+
+  - it: hardens the frontend container (read-only root, no privilege escalation, no capability)
+    template: frontend/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: runs the backend as uid and gid 1001, non-root, with fsGroup 1001 and the RuntimeDefault seccomp profile
+    template: backend/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            fsGroup: 1001
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: hardens the backend container and its copy-app init container the same way
+    template: backend/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value: &locked
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: copy-app
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext
+          value: *locked
+
+  - it: applies the given backend security context to both backend containers
+    template: backend/deployment.yaml
+    set:
+      backend.securityContext.runAsUser: 2000
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsUser
+          value: 2000
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.runAsUser
+          value: 2000
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.readOnlyRootFilesystem
+          value: true
+
+  - it: does not mount the service account token in either pod
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: excalidash
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: excalidash
+        template: backend/deployment.yaml
+
+  - it: creates a dedicated service account without token automount
+    template: serviceaccount.yaml
+    set:
+      serviceAccount.annotations:
+        team: tools
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: excalidash
+      - equal:
+          path: metadata.annotations.team
+          value: tools
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: uses an existing service account when creation is disabled
+    set:
+      serviceAccount.create: false
+      serviceAccount.name: shared
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: serviceaccount.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: shared
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: shared
+        template: backend/deployment.yaml
+
+  - it: falls back to the default service account when creation is disabled without a name
+    template: backend/deployment.yaml
+    set:
+      serviceAccount.create: false
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: default
+
+  - it: hardens the helm test pod and does not mount its token
+    template: tests/test-health.yaml
+    asserts:
+      - equal:
+          path: spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
+      - equal:
+          path: spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL

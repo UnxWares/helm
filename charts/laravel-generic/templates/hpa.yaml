@@ -13,6 +13,8 @@ spec:
     name: {{ include "laravel-generic.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  {{- /* Without any target, metrics is left out and Kubernetes scales on 80% average CPU utilization. */}}
+  {{- if or .Values.autoscaling.targetCPUUtilizationPercentage .Values.autoscaling.targetMemoryUtilizationPercentage }}
   metrics:
     {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
     - type: Resource
@@ -30,4 +32,5 @@ spec:
           type: Utilization
           averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
+  {{- end }}
 {{- end }}

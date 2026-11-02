@@ -1,0 +1,5 @@
+# README example "PostgreSQL", as written in the README.
+backend:
+  database:
+    provider: postgresql
+    existingSecret: excalidash-db      # key: database-url = postgresql://user:pass@host:5432/excalidash
