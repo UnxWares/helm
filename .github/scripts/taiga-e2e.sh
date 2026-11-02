@@ -204,14 +204,18 @@ ok "the attachment is refused without its token or with a forged one"
 slug=$(api "$API/projects/$project_id" | jq -r .slug)
 export_id=$(api "$API/exporter/$project_id" | jq -r .export_id)
 [ -n "$export_id" ] && [ "$export_id" != null ] || fail "the export request returned no export id"
+# The file appears as soon as the worker starts writing it: wait until it is complete JSON.
 code=000
 for _ in $(seq 60); do
   code=$(curl -sS -o "$WORK/export.json" -w '%{http_code}' "$BASE/media/exports/$project_id/$slug-$export_id.json")
-  [ "$code" = 200 ] && break
+  if [ "$code" = 200 ] && jq -e . "$WORK/export.json" >/dev/null 2>&1; then
+    break
+  fi
   sleep 2
 done
 [ "$code" = 200 ] || fail "the project export is not served on /media/exports/ (HTTP $code)"
-[ "$(jq -r .slug "$WORK/export.json")" = "$slug" ] || fail "the export is not the project's: $(head -c 200 "$WORK/export.json")"
+[ "$(jq -r .slug "$WORK/export.json" 2>/dev/null)" = "$slug" ] ||
+  fail "the export is not the project's: $(head -c 200 "$WORK/export.json")"
 ok "a project export is written by the worker and downloaded through the gateway"
 
 # --- Celery beat -----------------------------------------------------------------------------------------------------
