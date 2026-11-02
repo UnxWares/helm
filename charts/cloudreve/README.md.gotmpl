@@ -311,6 +311,13 @@ After an install or upgrade:
 helm test my-storage --namespace storage
 ```
 
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the security contexts of every container with both image providers, the image selection
+(`imageProvider`, repository, tag, digest), the session secret generated once and reused at upgrade, secrets passed
+through `secretKeyRef` only, the `conf.ini` template for each database, the messages of the required values, the
+probes, persistence, Service, Ingress and HTTPRoute, and the two examples of this README.
+
 ## Operations
 
 - **Backup**: with SQLite and the local storage policy, everything is in the PVC: back up the volume (or

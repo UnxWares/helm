@@ -12,7 +12,7 @@ on:
 
 # Never run two releases at the same time: both would push to gh-pages.
 concurrency:
-    group: release
+    group: gh-pages
     cancel-in-progress: false
 
 permissions: {}

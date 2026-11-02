@@ -1,0 +1,19 @@
+# README example "FrankenPHP with SQLite (defaults)".
+image:
+  repository: registry.example.com/acme/shop
+  tag: "1.4.2"
+laravel:
+  name: Shop
+  url: https://shop.example.com
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: shop.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: shop-tls
+      hosts:
+        - shop.example.com

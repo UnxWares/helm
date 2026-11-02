@@ -1,0 +1,317 @@
+suite: values that would produce a broken or unsafe Job are refused
+# The checks run in templates/rbac.yaml (always rendered); names end up in SQL, JavaScript and kubectl arguments.
+templates:
+  - templates/rbac.yaml
+release:
+  name: oedt
+  namespace: apps
+tests:
+  - it: renders with no entry at all
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: requires the name of an entry (schema)
+    set:
+      databases.postgresql:
+        - clusterName: pg
+          adminCredentialsSecret: s
+    asserts:
+      - failedTemplate:
+          errorPattern: "at '/databases/postgresql/0': missing property 'name'"
+
+  - it: requires the clusterName of an entry (schema)
+    set:
+      databases.mysql:
+        - name: mysql-init
+          adminCredentialsSecret: s
+    asserts:
+      - failedTemplate:
+          errorPattern: "at '/databases/mysql/0': missing property 'clusterName'"
+
+  - it: refuses a restartPolicy other than OnFailure or Never (schema)
+    set:
+      global.restartPolicy: Always
+    asserts:
+      - failedTemplate:
+          errorPattern: "at '/global/restartPolicy': value must be one of 'OnFailure', 'Never'"
+
+  - it: refuses an empty entry name
+    set:
+      databases.postgresql:
+        - name: ""
+          clusterName: pg
+          adminCredentialsSecret: s
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.postgresql[0].name "" is required and must be a DNS label (lowercase letters, digits and '-', 63 characters max)
+
+  - it: refuses an entry name that is not a DNS label
+    set:
+      databases.mongodb:
+        - name: App_Init
+          clusterName: mongo
+          adminCredentialsSecret: s
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.mongodb[0].name "App_Init" is required and must be a DNS label (lowercase letters, digits and '-', 63 characters max)
+
+  - it: refuses an entry name longer than 63 characters
+    set:
+      databases.postgresql:
+        - name: a-name-of-sixty-four-characters-is-one-too-many-for-a-dns-label1
+          clusterName: pg
+          adminCredentialsSecret: s
+    asserts:
+      - failedTemplate:
+          errorPattern: '^databases\.postgresql\[0\]\.name "a-name-of-sixty-four-characters-is-one-too-many-for-a-dns-label1" is required and must be a DNS label'
+
+  - it: refuses the same entry name twice, even across engines
+    set:
+      databases.postgresql:
+        - name: shared
+          clusterName: pg
+          adminCredentialsSecret: s
+      databases.mysql:
+        - name: shared
+          clusterName: mysql
+          adminCredentialsSecret: s
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.mysql[0].name "shared" is used by several entries
+
+  - it: refuses an empty clusterName
+    set:
+      databases.mongodb:
+        - name: mongo-init
+          clusterName: ""
+          adminCredentialsSecret: s
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.mongodb[0].clusterName is required and must be the name of a DatabaseCluster
+
+  - it: requires the admin credentials Secret
+    set:
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.postgresql[0].adminCredentialsSecret is required (Secret holding the admin user and password)
+
+  - it: accepts credentialsSecret as an alias of adminCredentialsSecret
+    set:
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          credentialsSecret: legacy
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: refuses a port that is not a number
+    set:
+      databases.mysql:
+        - name: mysql-init
+          clusterName: mysql
+          adminCredentialsSecret: s
+          port: "3306; rm"
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.mysql[0].port must be a port number
+
+  - it: refuses an entry restartPolicy other than OnFailure or Never
+    set:
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: s
+          restartPolicy: Always
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.postgresql[0].restartPolicy must be OnFailure or Never
+
+  - it: refuses an invalid global.namespace
+    set:
+      global.namespace: Everest_DBs
+    asserts:
+      - failedTemplate:
+          errorMessage: global.namespace "Everest_DBs" is not a valid namespace name
+
+  - it: refuses databases given as a string instead of a list
+    set:
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: s
+          databases: app
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.postgresql[0].databases must be a list
+
+  - it: refuses a database name that could break out of a statement
+    set:
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: s
+          databases:
+            - app'; DROP DATABASE postgres; --
+    asserts:
+      - failedTemplate:
+          errorMessage: "databases.postgresql[0].databases: \"app'; DROP DATABASE postgres; --\" is not a valid database name (letters, digits, '_' and '-', 63 characters max)"
+
+  - it: refuses an invalid initScriptsDatabase
+    set:
+      databases.mysql:
+        - name: mysql-init
+          clusterName: mysql
+          adminCredentialsSecret: s
+          initScriptsDatabase: app`x
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.mysql[0].initScriptsDatabase "app`x" is not a valid database name
+
+  - it: refuses an invalid adminDatabase
+    set:
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: s
+          adminDatabase: post gres
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.postgresql[0].adminDatabase "post gres" is not a valid database name
+
+  - it: refuses an unknown PostgreSQL sslMode
+    set:
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: s
+          sslMode: REQUIRED
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.postgresql[0].sslMode must be disable, allow, prefer, require, verify-ca or verify-full
+
+  - it: refuses an unknown MySQL sslMode
+    set:
+      databases.mysql:
+        - name: mysql-init
+          clusterName: mysql
+          adminCredentialsSecret: s
+          sslMode: require
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.mysql[0].sslMode must be DISABLED, PREFERRED, REQUIRED, VERIFY_CA or VERIFY_IDENTITY
+
+  - it: requires the credentials Secret of every user
+    set:
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: s
+          users:
+            - databases: [app]
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.postgresql[0].users[0].credentialsSecret is required
+
+  - it: refuses an invalid database name in a user
+    set:
+      databases.mongodb:
+        - name: mongo-init
+          clusterName: mongo
+          adminCredentialsSecret: s
+          users:
+            - credentialsSecret: u
+              databases: [app.db]
+    asserts:
+      - failedTemplate:
+          errorMessage: 'databases.mongodb[0].users[0].databases: "app.db" is not a valid database name'
+
+  - it: refuses a MySQL privilege that is not a plain privilege name
+    set:
+      databases.mysql:
+        - name: mysql-init
+          clusterName: mysql
+          adminCredentialsSecret: s
+          users:
+            - credentialsSecret: u
+              databases: [app]
+              privileges: ["ALL PRIVILEGES ON *.* TO x; --"]
+    asserts:
+      - failedTemplate:
+          errorMessage: 'databases.mysql[0].users[0].privileges: "ALL PRIVILEGES ON *.* TO x; --" is not a privilege name'
+
+  - it: refuses a MongoDB role that is not a role name
+    set:
+      databases.mongodb:
+        - name: mongo-init
+          clusterName: mongo
+          adminCredentialsSecret: s
+          users:
+            - credentialsSecret: u
+              databases: [app]
+              roles: ["readWrite'}); db.dropDatabase(); ({'"]
+    asserts:
+      - failedTemplate:
+          errorPattern: '^databases\.mongodb\[0\]\.users\[0\]\.roles: ".*" is not a role name$'
+
+  - it: refuses a system collection
+    set:
+      databases.mongodb:
+        - name: mongo-init
+          clusterName: mongo
+          adminCredentialsSecret: s
+          collections:
+            - name: system.users
+              database: admin
+    asserts:
+      - failedTemplate:
+          errorMessage: "databases.mongodb[0].collections[0].name is required (letters, digits, '_', '.', '-'; not system.*)"
+
+  - it: requires the database of a collection
+    set:
+      databases.mongodb:
+        - name: mongo-init
+          clusterName: mongo
+          adminCredentialsSecret: s
+          collections:
+            - name: users
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.mongodb[0].collections[0].database is required and must be a valid database name
+
+  - it: refuses an invalid authDatabase
+    set:
+      databases.mongodb:
+        - name: mongo-init
+          clusterName: mongo
+          adminCredentialsSecret: s
+          authDatabase: "admin?x"
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.mongodb[0].authDatabase "admin?x" is not a valid database name
+
+  - it: refuses uriOptions that are not key=value pairs
+    set:
+      databases.mongodb:
+        - name: mongo-init
+          clusterName: mongo
+          adminCredentialsSecret: s
+          uriOptions: "@evil.example.com/?x"
+    asserts:
+      - failedTemplate:
+          errorMessage: databases.mongodb[0].uriOptions must look like key=value&key=value
+
+  - it: accepts several uriOptions
+    set:
+      databases.mongodb:
+        - name: mongo-init
+          clusterName: mongo
+          adminCredentialsSecret: s
+          uriOptions: replicaSet=rs0&tls=true
+    asserts:
+      - hasDocuments:
+          count: 2

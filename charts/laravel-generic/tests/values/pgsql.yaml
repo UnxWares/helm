@@ -1,0 +1,9 @@
+# External PostgreSQL with a password stored in the chart Secret.
+laravel:
+  database:
+    connection: pgsql
+    host: shop-db.databases.svc
+    port: 5432
+    database: shop
+    username: shop
+    password: ci-db-password

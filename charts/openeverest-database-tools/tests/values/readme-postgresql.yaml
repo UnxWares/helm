@@ -1,0 +1,16 @@
+# README example "PostgreSQL".
+databases:
+  postgresql:
+    - name: laravel-db-init
+      clusterName: my-pg
+      adminCredentialsSecret: everest-secrets-my-pg
+      databases:
+        - laravel-app
+      users:
+        - credentialsSecret: laravel-app-db   # keys: username, password
+          databases:
+            - laravel-app
+      initScriptsDatabase: laravel-app
+      initScripts:
+        - CREATE EXTENSION IF NOT EXISTS pg_trgm;
+        - CREATE EXTENSION IF NOT EXISTS pgcrypto;

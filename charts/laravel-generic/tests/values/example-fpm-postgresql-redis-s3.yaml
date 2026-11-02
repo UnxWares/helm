@@ -1,0 +1,51 @@
+# README example "PHP-FPM + nginx, PostgreSQL, Redis and S3, scaled out".
+image:
+  repository: registry.example.com/acme/shop-fpm
+  tag: "1.4.2"
+appPath: /var/www/html
+workload:
+  runtime:
+    type: fpm
+  scheduler:
+    mode: deployment        # schedule:work, no pod per minute
+replicaCount: 3
+persistence:
+  enabled: false            # files on S3: no shared volume needed
+podDisruptionBudget:
+  enabled: true
+laravel:
+  key:
+    existingSecret: shop-app-key   # key: key
+  database:
+    connection: pgsql
+    # CloudNativePG application secret: host, port, dbname, user, password
+    existingSecret: shop-db-app
+    secretKeys:
+      host: host
+      port: port
+      database: dbname
+      username: user
+      password: password
+  redis:
+    enabled: true
+    host: shop-redis.databases.svc
+    existingSecret: shop-redis
+    secretKeys:
+      host: ""                     # keep the plain value
+      port: ""
+      password: password
+  session:
+    driver: redis
+  cache:
+    store: redis
+  queue_connection: redis
+  filesystem_disk: s3
+  aws:
+    enabled: true
+    bucket: shop
+    region: eu-west-3
+    existingSecret: shop-s3        # aws-access-key-id, aws-secret-access-key
+    secretKeys:
+      region: ""
+      bucket: ""
+      use_path_style_endpoint: ""

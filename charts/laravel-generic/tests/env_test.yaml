@@ -1,0 +1,437 @@
+suite: environment of the Laravel containers
+templates:
+  - deployment.yaml
+  - workload/queue-worker.yaml
+release:
+  name: shop
+  namespace: shop
+values:
+  - values/image.yaml
+tests:
+  - it: renders the APP_* defaults and reads APP_KEY from the chart Secret
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0]
+          value:
+            name: APP_NAME
+            value: Laravel
+      - equal:
+          path: spec.template.spec.containers[0].env[1]
+          value:
+            name: APP_ENV
+            value: production
+      - equal:
+          path: spec.template.spec.containers[0].env[2]
+          value:
+            name: APP_KEY
+            valueFrom:
+              secretKeyRef:
+                name: shop-laravel-generic
+                key: app-key
+      - equal:
+          path: spec.template.spec.containers[0].env[3]
+          value:
+            name: APP_DEBUG
+            value: "false"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: LOG_CHANNEL
+            value: stderr
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SESSION_DRIVER
+            value: database
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: QUEUE_CONNECTION
+            value: database
+
+  - it: points DB_DATABASE at the SQLite file on the persistent volume
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_CONNECTION
+            value: sqlite
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_DATABASE
+            value: /app/storage/database/database.sqlite
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_HOST
+          any: true
+
+  - it: does not render empty values, so that Laravel keeps its own defaults
+    template: deployment.yaml
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_URL
+          any: true
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_MAINTENANCE_STORE
+          any: true
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CACHE_PREFIX
+          any: true
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_HOST
+          any: true
+
+  - it: keeps false and 0 as values
+    template: deployment.yaml
+    set:
+      laravel.session.lifetime: 0
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SESSION_LIFETIME
+            value: "0"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SESSION_ENCRYPT
+            value: "false"
+
+  - it: derives APP_URL from the first Ingress host, in https when it has TLS
+    template: deployment.yaml
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: shop.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+      ingress.tls:
+        - secretName: shop-tls
+          hosts:
+            - shop.example.com
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_URL
+            value: https://shop.example.com
+
+  - it: derives an http APP_URL from an Ingress host without TLS
+    template: deployment.yaml
+    set:
+      ingress.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_URL
+            value: http://chart-example.local
+
+  - it: prefers laravel.url over the Ingress host
+    template: deployment.yaml
+    set:
+      ingress.enabled: true
+      laravel.url: https://www.example.com
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_URL
+            value: https://www.example.com
+
+  - it: reads APP_KEY from an existing Secret
+    template: deployment.yaml
+    set:
+      laravel.key.existingSecret: shop-app-key
+      laravel.key.existingSecretKey: key
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_KEY
+            valueFrom:
+              secretKeyRef:
+                name: shop-app-key
+                key: key
+
+  - it: passes the external database settings and the password through secretKeyRef only
+    template: deployment.yaml
+    values:
+      - values/pgsql.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_HOST
+            value: shop-db.databases.svc
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_PORT
+            value: "5432"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_USERNAME
+            value: shop
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: shop-laravel-generic
+                key: db-password
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_PASSWORD
+            value: ci-db-password
+
+  - it: reads every connection setting from an existing Secret
+    template: deployment.yaml
+    set:
+      laravel.database.connection: pgsql
+      laravel.database.existingSecret: shop-db-app
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_HOST
+            valueFrom:
+              secretKeyRef:
+                name: shop-db-app
+                key: database-host
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: shop-db-app
+                key: database-name
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: shop-db-app
+                key: database-password
+
+  - it: keeps the plain value of a secretKeys entry set to an empty string
+    template: deployment.yaml
+    values:
+      - values/pgsql.yaml
+    set:
+      laravel.database.existingSecret: shop-db-app
+      laravel.database.secretKeys.host: ""
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_HOST
+            value: shop-db.databases.svc
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_PORT
+            valueFrom:
+              secretKeyRef:
+                name: shop-db-app
+                key: database-port
+
+  - it: renders no DB_* variable when the database section is off
+    template: deployment.yaml
+    set:
+      laravel.database.enabled: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_CONNECTION
+          any: true
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_DATABASE
+          any: true
+
+  - it: renders the Redis, mail and S3 settings with their passwords through secretKeyRef
+    template: deployment.yaml
+    set:
+      laravel.redis.enabled: true
+      laravel.redis.host: redis.shop.svc
+      laravel.redis.password: ci-redis-password
+      laravel.mail.enabled: true
+      laravel.mail.mailer: smtp
+      laravel.mail.host: smtp.example.com
+      laravel.mail.port: 587
+      laravel.mail.username: shop
+      laravel.mail.password: ci-mail-password
+      laravel.aws.enabled: true
+      laravel.aws.access_key_id: ci-access-key
+      laravel.aws.secret_access_key: ci-secret-key
+      laravel.aws.bucket: shop
+      laravel.aws.endpoint: https://s3.example.com
+      laravel.aws.use_path_style_endpoint: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_HOST
+            value: redis.shop.svc
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_PORT
+            value: "6379"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: shop-laravel-generic
+                key: redis-password
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MAIL_HOST
+            value: smtp.example.com
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MAIL_PORT
+            value: "587"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MAIL_FROM_NAME
+            value: $(APP_NAME)
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MAIL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: shop-laravel-generic
+                key: mail-password
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: shop-laravel-generic
+                key: aws-access-key-id
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: shop-laravel-generic
+                key: aws-secret-access-key
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AWS_USE_PATH_STYLE_ENDPOINT
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AWS_ENDPOINT
+            value: https://s3.example.com
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_PASSWORD
+            value: ci-redis-password
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AWS_SECRET_ACCESS_KEY
+            value: ci-secret-key
+
+  - it: injects secretEnv through secretKeyRef
+    template: deployment.yaml
+    set:
+      laravel.secretEnv:
+        STRIPE_SECRET: sk_live_xxx
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: STRIPE_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: shop-laravel-generic
+                key: STRIPE_SECRET
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: STRIPE_SECRET
+            value: sk_live_xxx
+
+  - it: appends extraEnv last, so it overrides the chart variables, and adds extraEnvFrom
+    template: deployment.yaml
+    set:
+      laravel.extraEnv:
+        - name: TRUSTED_PROXIES
+          value: "*"
+      laravel.extraEnvFrom:
+        - secretRef:
+            name: shop-env
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[-1:]
+          value:
+            name: TRUSTED_PROXIES
+            value: "*"
+      - equal:
+          path: spec.template.spec.containers[0].envFrom
+          value:
+            - secretRef:
+                name: shop-env
+
+  - it: gives the queue workers the same environment without SERVER_NAME
+    template: workload/queue-worker.yaml
+    set:
+      laravel.secretEnv:
+        STRIPE_SECRET: sk_live_xxx
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_KEY
+            valueFrom:
+              secretKeyRef:
+                name: shop-laravel-generic
+                key: app-key
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: STRIPE_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: shop-laravel-generic
+                key: STRIPE_SECRET
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SERVER_NAME
+          any: true

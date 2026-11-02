@@ -1,0 +1,24 @@
+# README example "MySQL (Percona XtraDB Cluster)".
+databases:
+  mysql:
+    - name: wordpress-db-init
+      clusterName: my-mysql
+      adminCredentialsSecret: everest-secrets-my-mysql
+      host: my-mysql-haproxy
+      adminUser: root
+      passwordKey: root
+      databases:
+        - wordpress
+      users:
+        - credentialsSecret: wordpress-db
+          databases:
+            - wordpress
+          privileges:       # default: ALL PRIVILEGES
+            - SELECT
+            - INSERT
+            - UPDATE
+            - DELETE
+            - CREATE
+            - ALTER
+            - INDEX
+            - DROP

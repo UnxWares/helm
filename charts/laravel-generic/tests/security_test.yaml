@@ -1,0 +1,302 @@
+suite: security contexts, service account token and read-only root filesystem
+templates:
+  - deployment.yaml
+  # included by deployment.yaml with the fpm runtime (checksum/config)
+  - configmap-nginx.yaml
+  - workload/queue-worker.yaml
+  - workload/scheduler.yaml
+  - workload/migrations.yaml
+  - serviceaccount.yaml
+  - tests/test-http.yaml
+release:
+  name: shop
+  namespace: shop
+values:
+  - values/image.yaml
+tests:
+  - it: runs the web pod as uid/gid 33, non-root, with the RuntimeDefault seccomp profile
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 33
+            runAsGroup: 33
+            fsGroup: 33
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: does not mount the service account token in any pod
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: workload/queue-worker.yaml
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.automountServiceAccountToken
+          value: false
+        template: workload/scheduler.yaml
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+        template: serviceaccount.yaml
+      - equal:
+          path: spec.automountServiceAccountToken
+          value: false
+        template: tests/test-http.yaml
+
+  - it: mounts the token only when serviceAccount.automount is true
+    set:
+      serviceAccount.automount: true
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: true
+        template: deployment.yaml
+      - equal:
+          path: automountServiceAccountToken
+          value: true
+        template: serviceaccount.yaml
+
+  - it: hardens the FrankenPHP container and keeps only NET_BIND_SERVICE in its bounding set
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "app")].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_BIND_SERVICE
+
+  - it: drops NET_BIND_SERVICE too when keepNetBindService is false
+    template: deployment.yaml
+    set:
+      workload.runtime.frankenphp.keepNetBindService: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "app")].securityContext.capabilities
+          value:
+            drop:
+              - ALL
+
+  - it: never adds NET_BIND_SERVICE twice when the user already adds it
+    template: deployment.yaml
+    set:
+      securityContext.capabilities.add: [NET_BIND_SERVICE]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "app")].securityContext.capabilities.add
+          value:
+            - NET_BIND_SERVICE
+
+  - it: gives no added capability to the init containers of the web pod
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[?(@.name == "prepare")].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      - equal:
+          path: spec.template.spec.initContainers[?(@.name == "migrate")].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: gives no added capability to PHP-FPM and runs nginx as uid 101
+    template: deployment.yaml
+    set:
+      workload.runtime.type: fpm
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "app")].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "nginx")].securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: hardens the queue worker, the scheduler and the migrations without extra capabilities
+    values:
+      - values/pgsql.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        template: workload/queue-worker.yaml
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        template: workload/scheduler.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        template: workload/migrations.yaml
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+        template: workload/migrations.yaml
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+        template: workload/scheduler.yaml
+
+  - it: backs /tmp and the writable paths with size-limited emptyDir volumes
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir:
+              sizeLimit: 1Gi
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: writable
+            emptyDir:
+              sizeLimit: 1Gi
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: caddy
+            emptyDir:
+              sizeLimit: 1Gi
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "app")].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "app")].volumeMounts
+          content:
+            name: writable
+            mountPath: /app/storage/framework
+            subPath: app-storage-framework
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "app")].volumeMounts
+          content:
+            name: writable
+            mountPath: /app/storage/logs
+            subPath: app-storage-logs
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "app")].volumeMounts
+          content:
+            name: writable
+            mountPath: /app/bootstrap/cache
+            subPath: app-bootstrap-cache
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "app")].volumeMounts
+          content:
+            name: caddy
+            mountPath: /data
+            subPath: data
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "app")].volumeMounts
+          content:
+            name: caddy
+            mountPath: /config
+            subPath: config
+
+  - it: renders emptyDir volumes without a size limit when emptyDirSizeLimit is empty
+    template: deployment.yaml
+    set:
+      emptyDirSizeLimit: ""
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: writable
+            emptyDir: {}
+
+  - it: seeds the writable paths from the image, or only creates them when seeding is off
+    template: deployment.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[?(@.name == "prepare")].command[2]
+          pattern: 'copy "/app/storage/framework" "/chart/writable/app-storage-framework"'
+  - it: only creates the writable paths when seedWritablePaths is false
+    template: deployment.yaml
+    set:
+      seedWritablePaths: false
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[?(@.name == "prepare")].command[2]
+          pattern: 'mkdir -p "/chart/writable/app-storage-framework"'
+      - notMatchRegex:
+          path: spec.template.spec.initContainers[?(@.name == "prepare")].command[2]
+          pattern: 'copy "/app/storage/framework"'
+
+  - it: runs the helm test pod unprivileged with a read-only root filesystem
+    template: tests/test-http.yaml
+    asserts:
+      - equal:
+          path: spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
+      - equal:
+          path: spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL

@@ -1,0 +1,244 @@
+suite: MySQL Jobs
+templates:
+  - templates/mysql-jobs.yaml
+release:
+  name: oedt
+  namespace: apps
+values:
+  - values/readme-mysql.yaml
+tests:
+  - it: renders one immutable ConfigMap and one Job named after the entry (README example)
+    asserts:
+      - hasDocuments:
+          count: 2
+      - matchRegex:
+          path: metadata.name
+          pattern: ^wordpress-db-init-[0-9a-f]{8}$
+      - equal:
+          path: immutable
+          value: true
+        documentIndex: 0
+      - isKind:
+          of: Job
+        documentIndex: 1
+
+  - it: keeps the component and container names of former releases
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: mariadb-init
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: init-mariadb
+      - equal:
+          path: spec.template.metadata.annotations["kubectl.kubernetes.io/default-container"]
+          value: init-mariadb
+
+  - it: connects to the HAProxy host as root with the password under the root key (README example)
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MYSQL_HOST
+            value: my-mysql-haproxy
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MYSQL_PORT
+            value: "3306"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MYSQL_USER
+            value: root
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: everest-secrets-my-mysql
+                key: root
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MYSQL_SSL_MODE
+            value: PREFERRED
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_USERNAME_0
+            valueFrom:
+              secretKeyRef:
+                name: wordpress-db
+                key: username
+
+  - it: reads the host and the admin user from the Secret when no literal is given
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      databases.mysql:
+        - name: mysql-init
+          clusterName: mysql
+          adminCredentialsSecret: mysql-admin
+          sslMode: REQUIRED
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MYSQL_HOST
+            valueFrom:
+              secretKeyRef:
+                name: mysql-admin
+                key: host
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysql-admin
+                key: user
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-admin
+                key: password
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MYSQL_SSL_MODE
+            value: REQUIRED
+
+  - it: creates the databases and grants exactly the configured privileges (README example)
+    documentSelector:
+      path: kind
+      value: ConfigMap
+    asserts:
+      - equal:
+          path: data["databases.sql"]
+          value: |
+            CREATE DATABASE IF NOT EXISTS `wordpress`;
+      - matchRegex:
+          path: data["user-0.sql"]
+          pattern: "SET @s = CONCAT\\('GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP ON `wordpress`\\.\\* TO ', @account\\);"
+      - notMatchRegex:
+          path: data["user-0.sql"]
+          pattern: ALL PRIVILEGES
+      - matchRegex:
+          path: data["user-0.sql"]
+          pattern: "SET @s = CONCAT\\('CREATE USER IF NOT EXISTS ', @account, ' IDENTIFIED BY ', QUOTE\\(@p\\)\\);"
+      - matchRegex:
+          path: data["user-0.sql"]
+          pattern: "SET @u = NULL, @p = NULL, @s = NULL, @account = NULL;\n$"
+
+  - it: grants ALL PRIVILEGES by default, upper-casing the privilege names
+    documentSelector:
+      path: kind
+      value: ConfigMap
+    set:
+      databases.mysql:
+        - name: mysql-init
+          clusterName: mysql
+          adminCredentialsSecret: mysql-admin
+          users:
+            - credentialsSecret: app-db
+              databases: [app, app_reports]
+            - credentialsSecret: reader-db
+              databases: [app]
+              privileges: [select, show view]
+    asserts:
+      - matchRegex:
+          path: data["user-0.sql"]
+          pattern: "GRANT ALL PRIVILEGES ON `app`\\.\\* TO .*\n(.*\n){3}SET @s = CONCAT\\('GRANT ALL PRIVILEGES ON `app_reports`\\.\\* TO "
+      - matchRegex:
+          path: data["user-1.sql"]
+          pattern: "GRANT SELECT, SHOW VIEW ON `app`\\.\\* TO "
+
+  - it: passes the user name and password hex-encoded, never as SQL text
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].command[2]
+          pattern: "SET @u = CONVERT\\(UNHEX\\('%s'\\) USING utf8mb4\\), @p = CONVERT\\(UNHEX\\('%s'\\) USING utf8mb4\\);"
+      - matchRegex:
+          path: spec.template.spec.containers[0].command[2]
+          pattern: '"\$\(hex "\$APP_USERNAME_0"\)" "\$\(hex "\$APP_PASSWORD_0"\)"'
+      - matchRegex:
+          path: spec.template.spec.containers[0].command[2]
+          pattern: "hex\\(\\) \\{ printf '%s' \"\\$1\" \\| od -An -v -tx1 \\| tr -d ' \\\\n'; \\}"
+      - matchRegex:
+          path: spec.template.spec.containers[0].command[2]
+          pattern: 'cat /scripts/user-0\.sql'
+      - equal:
+          path: spec.template.spec.containers[0].command[0]
+          value: /bin/bash
+
+  - it: resets existing passwords by default and leaves them alone when updateUserPasswords is false
+    set:
+      databases.mysql:
+        - name: mysql-keep
+          clusterName: mysql
+          adminCredentialsSecret: mysql-admin
+          updateUserPasswords: false
+          users:
+            - credentialsSecret: app-db
+              databases: [app]
+        - name: mysql-reset
+          clusterName: mysql
+          adminCredentialsSecret: mysql-admin
+          users:
+            - credentialsSecret: app-db
+              databases: [app]
+    asserts:
+      - notMatchRegex:
+          path: data["user-0.sql"]
+          pattern: ALTER USER
+        documentIndex: 0
+      - matchRegex:
+          path: data["user-0.sql"]
+          pattern: "SET @s = CONCAT\\('ALTER USER ', @account, ' IDENTIFIED BY ', QUOTE\\(@p\\)\\);"
+        documentIndex: 2
+
+  - it: runs the init scripts in order, in initScriptsDatabase when set
+    set:
+      databases.mysql:
+        - name: mysql-init
+          clusterName: mysql
+          adminCredentialsSecret: mysql-admin
+          initScriptsDatabase: app
+          initScripts:
+            - CREATE TABLE a (id INT);
+            - CREATE TABLE b (id INT);
+    asserts:
+      - equal:
+          path: data["script-1.sql"]
+          value: |
+            CREATE TABLE b (id INT);
+        documentIndex: 0
+      - equal:
+          path: data["databases.sql"]
+          value: ""
+        documentIndex: 0
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: INIT_SCRIPTS_DATABASE
+            value: app
+        documentIndex: 1
+      - matchRegex:
+          path: spec.template.spec.containers[0].command[2]
+          pattern: 'echo "Running init script 1/2"\nrun_mysql \$\{INIT_SCRIPTS_DATABASE:\+--database="\$INIT_SCRIPTS_DATABASE"\} < /scripts/script-0\.sql\necho "Running init script 2/2"\nrun_mysql \$\{INIT_SCRIPTS_DATABASE:\+--database="\$INIT_SCRIPTS_DATABASE"\} < /scripts/script-1\.sql\nrm -f /tmp/client\.cnf\n'
+        documentIndex: 1

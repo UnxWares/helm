@@ -1,0 +1,4 @@
+# Application image shared by the suites (the chart has no default image).
+image:
+  repository: registry.example.com/acme/shop
+  tag: "1.4.2"

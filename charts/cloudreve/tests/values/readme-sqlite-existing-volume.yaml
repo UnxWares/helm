@@ -1,0 +1,4 @@
+# README example "SQLite on an existing volume, official image", as written in the README.
+imageProvider: upstream
+persistence:
+  existingClaim: cloudreve-data

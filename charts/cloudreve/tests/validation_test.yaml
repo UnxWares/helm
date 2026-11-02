@@ -1,0 +1,96 @@
+suite: required values
+templates:
+  - configmap.yaml
+release:
+  name: files
+  namespace: storage
+tests:
+  - it: renders with the default values (SQLite, no Redis)
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: files-cloudreve
+
+  - it: requires a database host for a server database
+    set:
+      database:
+        type: postgres
+        password: db-pass
+    asserts:
+      - failedTemplate:
+          errorMessage: database.host (or database.url) is required when database.type is not sqlite
+
+  - it: requires a database password or Secret for a server database
+    set:
+      database:
+        type: mysql
+        host: db.example.svc
+    asserts:
+      - failedTemplate:
+          errorMessage: database.password or database.existingSecret is required when database.type is not sqlite
+
+  - it: accepts a connection URL instead of a host and a password
+    set:
+      database:
+        type: postgres
+        url: postgres://cloudreve:pw@db:5432/cloudreve
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: accepts an existing Secret instead of a password
+    set:
+      database:
+        type: postgres
+        host: db.example.svc
+        existingSecret: cloudreve-db
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: accepts a URL key of an existing Secret instead of a host
+    set:
+      database:
+        type: postgres
+        existingSecret: cloudreve-db
+        existingSecretKeys:
+          url: url
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: requires the Redis server when Redis is enabled
+    set:
+      redis:
+        enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: redis.server is required when redis.enabled is true
+
+  - it: skips these checks when the whole conf.ini comes from the user
+    set:
+      confini:
+        existingSecret: my-conf-ini
+      database:
+        type: postgres
+      redis:
+        enabled: true
+    asserts:
+      - notFailedTemplate: {}
+      - hasDocuments:
+          count: 0
+
+  - it: rejects an unknown database type
+    set:
+      database:
+        type: oracle
+    asserts:
+      - failedTemplate:
+          errorPattern: database.type
+
+  - it: rejects an unknown log level
+    set:
+      cloudreve:
+        logLevel: trace
+    asserts:
+      - failedTemplate:
+          errorPattern: logLevel

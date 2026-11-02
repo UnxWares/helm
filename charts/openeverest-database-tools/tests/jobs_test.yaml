@@ -1,0 +1,379 @@
+suite: Job settings shared by every engine
+templates:
+  - templates/postgresql-jobs.yaml
+release:
+  name: oedt
+  namespace: apps
+set:
+  databases.postgresql:
+    - name: pg-init
+      clusterName: pg
+      adminCredentialsSecret: everest-secrets-pg
+tests:
+  - it: makes the Jobs Argo CD Sync hooks deleted once they succeed, by default
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            argocd.argoproj.io/hook: Sync
+            argocd.argoproj.io/hook-delete-policy: HookSucceeded
+            argocd.argoproj.io/sync-options: Replace=true
+
+  - it: uses the configured Argo CD hook phase and policies
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      global.argocd:
+        hook: PostSync
+        hookDeletePolicy: BeforeHookCreation
+        syncOptions: Replace=true,Force=true
+    asserts:
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/hook"]
+          value: PostSync
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/hook-delete-policy"]
+          value: BeforeHookCreation
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/sync-options"]
+          value: Replace=true,Force=true
+
+  - it: drops the Argo CD annotations when global.argocd.enabled is false
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      global.argocd.enabled: false
+    asserts:
+      - notExists:
+          path: metadata.annotations
+
+  - it: merges the global, chart-wide and per-entry Job annotations
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      global.argocd.enabled: false
+      global.annotations:
+        example.com/global: "yes"
+      annotations:
+        example.com/chart: "yes"
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: everest-secrets-pg
+          annotations:
+            example.com/entry: "yes"
+          podAnnotations:
+            example.com/pod: "yes"
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            example.com/global: "yes"
+            example.com/chart: "yes"
+            example.com/entry: "yes"
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            kubectl.kubernetes.io/default-container: init-postgresql
+            example.com/pod: "yes"
+
+  - it: adds the chart-wide and per-entry labels to the Job, its pod and its ConfigMap
+    set:
+      labels:
+        team: platform
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: everest-secrets-pg
+          labels:
+            app: laravel
+    asserts:
+      - equal:
+          path: metadata.labels.team
+          value: platform
+      - equal:
+          path: metadata.labels.app
+          value: laravel
+      - equal:
+          path: spec.template.metadata.labels.app
+          value: laravel
+        documentIndex: 1
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: platform
+        documentIndex: 1
+
+  - it: applies the global Job defaults
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.backoffLimit
+          value: 5
+      - equal:
+          path: spec.ttlSecondsAfterFinished
+          value: 180
+      - notExists:
+          path: spec.activeDeadlineSeconds
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: OnFailure
+
+  - it: keeps finished Jobs when ttlSecondsAfterFinished is null and honours a deadline (compat values)
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      global.ttlSecondsAfterFinished: null
+      global.activeDeadlineSeconds: 1800
+      global.restartPolicy: Never
+    asserts:
+      - notExists:
+          path: spec.ttlSecondsAfterFinished
+      - equal:
+          path: spec.activeDeadlineSeconds
+          value: 1800
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Never
+
+  - it: lets an entry override the Job settings, including 0
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: everest-secrets-pg
+          backoffLimit: 0
+          ttlSecondsAfterFinished: 0
+          activeDeadlineSeconds: 600
+          restartPolicy: Never
+    asserts:
+      - equal:
+          path: spec.backoffLimit
+          value: 0
+      - equal:
+          path: spec.ttlSecondsAfterFinished
+          value: 0
+      - equal:
+          path: spec.activeDeadlineSeconds
+          value: 600
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Never
+
+  - it: waits for the DatabaseCluster to be created, then ready, in the clusters namespace
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-cluster-created
+      - equal:
+          path: spec.template.spec.initContainers[0].args
+          value:
+            - wait
+            - --for=create
+            - databaseclusters.everest.percona.com/pg
+            - --namespace=everest-databases
+            - --timeout=300s
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: wait-cluster-ready
+      - equal:
+          path: spec.template.spec.initContainers[1].args
+          value:
+            - wait
+            - --for=jsonpath={.status.status}=ready
+            - databaseclusters.everest.percona.com/pg
+            - --namespace=everest-databases
+            - --timeout=300s
+
+  - it: uses the per-entry wait timeout
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      global.waitTimeoutSeconds: 900
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: everest-secrets-pg
+          waitTimeoutSeconds: 60
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[1].args
+          content: --timeout=60s
+
+  - it: neither waits nor mounts a token when waitForCluster is false
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      global.waitForCluster: false
+    asserts:
+      - notExists:
+          path: spec.template.spec.initContainers
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: kube-api-access
+          any: true
+      - lengthEqual:
+          path: spec.template.spec.volumes
+          count: 2
+
+  - it: creates everything in global.namespace, or in the release namespace when it is empty
+    set:
+      global.namespace: ""
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: apps
+      - contains:
+          path: spec.template.spec.initContainers[0].args
+          content: --namespace=apps
+        documentIndex: 1
+
+  - it: adds extraEnv, then the entry env and extraEnv, after the chart variables
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      extraEnv:
+        - name: GLOBAL_VAR
+          value: global
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: everest-secrets-pg
+          env:
+            - name: CUSTOM_VAR
+              value: custom_value
+          extraEnv:
+            - name: ENTRY_VAR
+              value: entry
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers[0].env
+          count: 14
+      - equal:
+          path: spec.template.spec.containers[0].env[11]
+          value:
+            name: GLOBAL_VAR
+            value: global
+      - equal:
+          path: spec.template.spec.containers[0].env[12]
+          value:
+            name: CUSTOM_VAR
+            value: custom_value
+      - equal:
+          path: spec.template.spec.containers[0].env[13]
+          value:
+            name: ENTRY_VAR
+            value: entry
+      - equal:
+          path: spec.template.spec.containers[0].env[0]
+          value:
+            name: CLUSTER_NAME
+            value: pg
+
+  - it: gives every container the default resources, overridable per entry
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: everest-secrets-pg
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+      - equal:
+          path: spec.template.spec.initContainers[0].resources
+          value:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+
+  - it: requests 10m CPU and 64Mi with a 512Mi memory limit by default
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+
+  - it: applies the scheduling settings to the Job pods
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      priorityClassName: batch-low
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: jobs
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values: [amd64]
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: batch-low
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+      - equal:
+          path: spec.template.spec.tolerations[0].key
+          value: dedicated
+      - exists:
+          path: spec.template.spec.affinity.nodeAffinity
+
+  - it: truncates a long entry name so that the hashed Job name stays a DNS label
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      databases.postgresql:
+        - name: a-very-long-entry-name-that-goes-on-and-on-until-it-reaches-63
+          clusterName: pg
+          adminCredentialsSecret: everest-secrets-pg
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ^a-very-long-entry-name-that-goes-on-and-on-until-it-re-[0-9a-f]{8}$

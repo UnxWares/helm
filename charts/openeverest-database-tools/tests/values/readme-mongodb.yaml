@@ -1,0 +1,31 @@
+# README example "MongoDB (Percona Server for MongoDB)".
+databases:
+  mongodb:
+    - name: app-mongo-users
+      clusterName: my-mongo
+      adminCredentialsSecret: everest-secrets-my-mongo
+      host: my-mongo-rs0
+      uriOptions: replicaSet=rs0
+      userKey: MONGODB_USER_ADMIN_USER
+      passwordKey: MONGODB_USER_ADMIN_PASSWORD
+      users:
+        - credentialsSecret: appdb-user
+          databases:
+            - appdb
+          roles:            # default: readWrite
+            - readWrite
+    - name: app-mongo-schema
+      clusterName: my-mongo
+      adminCredentialsSecret: everest-secrets-my-mongo
+      host: my-mongo-rs0
+      uriOptions: replicaSet=rs0
+      userKey: MONGODB_DATABASE_ADMIN_USER
+      passwordKey: MONGODB_DATABASE_ADMIN_PASSWORD
+      databases:
+        - appdb
+      collections:
+        - name: users
+          database: appdb
+      initScripts:          # `db` is initScriptsDatabase (default: the first database)
+        - 'db.users.createIndex({ email: 1 }, { unique: true });'
+        - 'db.sessions.createIndex({ createdAt: 1 }, { expireAfterSeconds: 3600 });'

@@ -1,6 +1,6 @@
 # Laravel (generic) Helm Chart
 
-![Version: 2026.11.1](https://img.shields.io/badge/Version-2026.11.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 12.x](https://img.shields.io/badge/AppVersion-12.x-informational?style=flat-square)
+![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 12.x](https://img.shields.io/badge/AppVersion-12.x-informational?style=flat-square)
 
 Run **your own [Laravel](https://laravel.com) application image** on Kubernetes, packaged by UnxWares:
 web pods (FrankenPHP, or PHP-FPM with an nginx sidecar), queue workers, scheduler and database
@@ -850,6 +850,13 @@ an install:
 ```bash
 helm test shop --namespace shop --logs
 ```
+
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the message of every required value, the security contexts and writable paths, FrankenPHP and
+PHP-FPM + nginx (ports, probes, nginx configuration), the env with credentials through `secretKeyRef` only, the
+`APP_KEY` generated once and kept, the migrations hook, queue workers and scheduler, NetworkPolicy, HPA and PDB, and
+the examples of this README.
 
 ## Operations
 

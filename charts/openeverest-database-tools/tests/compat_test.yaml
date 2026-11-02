@@ -1,0 +1,103 @@
+suite: values written for the 2026.2.x releases (ci/compat-values.yaml)
+templates:
+  - templates/postgresql-jobs.yaml
+  - templates/serviceaccount.yaml
+release:
+  name: oedt
+  namespace: apps
+values:
+  - ../ci/compat-values.yaml
+tests:
+  - it: still renders the Job, without the Argo CD annotations
+    template: templates/postgresql-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ^my-db-init-[0-9a-f]{8}$
+      - equal:
+          path: metadata.annotations
+          value:
+            example.com/owner: platform
+
+  - it: reads the admin credentials from the legacy credentialsSecret key
+    template: templates/postgresql-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: my-dev-pg-cluster-credentials
+                key: password
+
+  - it: honours the per-entry Job settings and the global deadline
+    template: templates/postgresql-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.ttlSecondsAfterFinished
+          value: 300
+      - equal:
+          path: spec.backoffLimit
+          value: 3
+      - equal:
+          path: spec.activeDeadlineSeconds
+          value: 1800
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CUSTOM_VAR
+            value: custom_value
+
+  - it: merges the legacy securityContext (uid 1000) and keeps the hardened defaults
+    template: templates/postgresql-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 65532
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+
+  - it: runs as the dedicated ServiceAccount instead of the former default account
+    asserts:
+      - hasDocuments:
+          count: 1
+        template: templates/serviceaccount.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: oedt-openeverest-database-tools
+        template: templates/postgresql-jobs.yaml
+        documentIndex: 1
+
+  - it: keeps the per-entry and chart-wide labels on the Job and its pod
+    template: templates/postgresql-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: metadata.labels.team
+          value: platform
+      - equal:
+          path: spec.template.metadata.labels.app
+          value: laravel

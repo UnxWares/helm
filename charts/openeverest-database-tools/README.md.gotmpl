@@ -323,6 +323,12 @@ It then gives the users new passwords, runs the Jobs again and repeats the check
 `updateUserPasswords`. It runs on pull requests that touch the chart or its images, on every push to main and every
 Tuesday.
 
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the security contexts of the Jobs and of the wait containers, the client images, every validation
+message, the SQL and scripts generated for each engine with the examples of this README, credentials through
+`secretKeyRef` only, the Argo CD hooks and Job settings, and the read-only RBAC.
+
 ## Operations
 
 - **Run the Jobs again**: with Argo CD, sync again. With Helm, a changed entry gets a new Job; to re-run an unchanged

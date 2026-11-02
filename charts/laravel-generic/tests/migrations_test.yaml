@@ -1,0 +1,168 @@
+suite: database migrations
+templates:
+  - workload/migrations.yaml
+release:
+  name: shop
+  namespace: shop
+values:
+  - values/image.yaml
+tests:
+  - it: renders no migration Job with SQLite (the web pod migrates in an init container)
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: runs the migrations in a pre-install and pre-upgrade hook Job with an external database
+    values:
+      - values/pgsql.yaml
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: metadata.name
+          value: shop-laravel-generic-migrations
+        documentSelector:
+          path: kind
+          value: Job
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/hook: pre-install,pre-upgrade
+            helm.sh/hook-weight: "0"
+            helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+        documentSelector:
+          path: kind
+          value: Job
+
+  - it: runs php artisan migrate --force once, bounded in time
+    values:
+      - values/pgsql.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.backoffLimit
+          value: 1
+      - equal:
+          path: spec.activeDeadlineSeconds
+          value: 600
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Never
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: migrate
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value: ["php", "artisan", "migrate", "--force"]
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: migrations
+
+  - it: reads the secrets from its own hook Secret, which exists at pre-install
+    values:
+      - values/pgsql.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_KEY
+            valueFrom:
+              secretKeyRef:
+                name: shop-laravel-generic-migrations
+                key: app-key
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: shop-laravel-generic-migrations
+                key: db-password
+
+  - it: mounts no PVC and no chart service account, which do not exist yet at pre-install
+    values:
+      - values/pgsql.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - notExists:
+          path: spec.template.spec.serviceAccountName
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: writable
+            mountPath: /app/storage/app
+            subPath: app-storage-app
+
+  - it: uses an existing service account
+    values:
+      - values/pgsql.yaml
+    set:
+      serviceAccount.create: false
+      serviceAccount.name: shop-runner
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: shop-runner
+
+  - it: follows the README migrations example
+    values:
+      - values/pgsql.yaml
+    set:
+      workload.migrations.activeDeadlineSeconds: 1800
+      workload.migrations.backoffLimit: 0
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.activeDeadlineSeconds
+          value: 1800
+      - equal:
+          path: spec.backoffLimit
+          value: 0
+
+  - it: renders only the Job when every secret comes from existing Secrets
+    set:
+      laravel.key.existingSecret: shop-app-key
+      laravel.database.connection: pgsql
+      laravel.database.existingSecret: shop-db-app
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Job
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_KEY
+            valueFrom:
+              secretKeyRef:
+                name: shop-app-key
+                key: key
+
+  - it: renders nothing when migrations are disabled
+    values:
+      - values/pgsql.yaml
+    set:
+      workload.migrations.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

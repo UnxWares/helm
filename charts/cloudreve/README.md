@@ -1,6 +1,6 @@
 # Cloudreve Helm Chart
 
-![Version: 2026.11.1](https://img.shields.io/badge/Version-2026.11.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.19.1](https://img.shields.io/badge/AppVersion-4.19.1-informational?style=flat-square)
+![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.19.1](https://img.shields.io/badge/AppVersion-4.19.1-informational?style=flat-square)
 
 [Cloudreve](https://cloudreve.org/) is a self-hosted file management and sharing system: personal and shared files,
 public links, WebDAV, previews and thumbnails, with storage on the local disk or on remote providers (S3, OneDrive,
@@ -310,6 +310,13 @@ After an install or upgrade:
 ```bash
 helm test my-storage --namespace storage
 ```
+
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the security contexts of every container with both image providers, the image selection
+(`imageProvider`, repository, tag, digest), the session secret generated once and reused at upgrade, secrets passed
+through `secretKeyRef` only, the `conf.ini` template for each database, the messages of the required values, the
+probes, persistence, Service, Ingress and HTTPRoute, and the two examples of this README.
 
 ## Operations
 

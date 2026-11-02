@@ -1,0 +1,20 @@
+# One minimal entry per engine, to check what every Job has in common.
+databases:
+  postgresql:
+    - name: pg-init
+      clusterName: pg
+      adminCredentialsSecret: everest-secrets-pg
+      databases:
+        - app
+  mysql:
+    - name: mysql-init
+      clusterName: mysql
+      adminCredentialsSecret: everest-secrets-mysql
+      databases:
+        - app
+  mongodb:
+    - name: mongo-init
+      clusterName: mongo
+      adminCredentialsSecret: everest-secrets-mongo
+      databases:
+        - app

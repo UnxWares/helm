@@ -1,0 +1,206 @@
+suite: conf.ini template and user-provided conf.ini
+templates:
+  - configmap.yaml
+  - deployment.yaml
+release:
+  name: files
+  namespace: storage
+tests:
+  - it: keeps every secret out of the ConfigMap, as placeholders filled from the environment
+    template: configmap.yaml
+    set:
+      cloudreve:
+        sessionSecret: s3cret-session
+      database:
+        type: postgres
+        host: db.example.svc
+        password: s3cret-db
+      redis:
+        enabled: true
+        server: valkey:6379
+        password: s3cret-redis
+    asserts:
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "SessionSecret = `@@CR_SESSION_SECRET@@`"
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "Password = `@@CR_DB_PASSWORD@@`"
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "Password = `@@CR_REDIS_PASSWORD@@`"
+      - notMatchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: s3cret
+      - exists:
+          path: data["render.awk"]
+
+  - it: stores SQLite in the data volume by default
+    template: configmap.yaml
+    asserts:
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^\\[Database\\]\\nType = sqlite\\nDBFile = /cloudreve/data/cloudreve.db$"
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^Listen = :5212$"
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^ProxyHeader = X-Forwarded-For$"
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^LogLevel = info$"
+      - notMatchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "\\[Redis\\]"
+
+  - it: writes the PostgreSQL connection fields
+    template: configmap.yaml
+    set:
+      database:
+        type: postgres
+        host: db.example.svc
+        port: 5433
+        name: files
+        user: files-user
+        password: db-pass
+    asserts:
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^Type = postgres\\nHost = db.example.svc\\nPort = 5433\\nUser = files-user\\nPassword = `@@CR_DB_PASSWORD@@`\\nName = files$"
+      - notMatchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: Charset
+
+  - it: adds the charset for MySQL and MariaDB
+    template: configmap.yaml
+    set:
+      database:
+        type: mariadb
+        host: db.example.svc
+        port: 3306
+        password: db-pass
+    asserts:
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^Charset = utf8mb4$"
+
+  - it: uses the connection URL instead of the separate fields when one is given
+    template: configmap.yaml
+    set:
+      database:
+        type: postgres
+        existingSecret: cloudreve-db
+        existingSecretKeys:
+          url: url
+    asserts:
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^DatabaseURL = `@@CR_DB_URL@@`$"
+      - notMatchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^Host = "
+
+  - it: writes the Redis section and verifies TLS certificates by default
+    template: configmap.yaml
+    set:
+      redis:
+        enabled: true
+        server: valkey.cache.svc:6379
+        user: cloudreve
+        existingSecret: cloudreve-redis
+        db: 2
+        useTLS: true
+    asserts:
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^\\[Redis\\]\\nServer = valkey.cache.svc:6379\\nUser = cloudreve\\nPassword = `@@CR_REDIS_PASSWORD@@`\\nDB = 2\\nUseTLS = true\\nTLSSkipVerify = false$"
+
+  - it: adds the sections of cloudreve.config
+    template: configmap.yaml
+    set:
+      cloudreve:
+        logLevel: debug
+        proxyHeader: X-Real-IP
+        config:
+          CORS:
+            AllowOrigins: https://app.example.com
+            AllowCredentials: true
+    asserts:
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^\\[CORS\\]\\nAllowCredentials = true\\nAllowOrigins = https://app.example.com$"
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^ProxyHeader = X-Real-IP$"
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^LogLevel = debug$"
+
+  - it: drops the ProxyHeader line when the header is empty
+    template: configmap.yaml
+    set:
+      cloudreve:
+        proxyHeader: ""
+    asserts:
+      - notMatchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: ProxyHeader
+
+  - it: annotates the pod with checksums of the configuration and of the secret values, to restart it on change
+    template: deployment.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/config"]
+          pattern: ^[0-9a-f]{64}$
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/secret"]
+          pattern: ^[0-9a-f]{64}$
+
+  - it: renders no ConfigMap and mounts the user's conf.ini when confini.existingSecret is set
+    set:
+      confini:
+        existingSecret: my-conf-ini
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: configmap.yaml
+      - notExists:
+          path: spec.template.spec.initContainers
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: config
+            secret:
+              secretName: my-conf-ini
+              items:
+                - key: conf.ini
+                  path: conf.ini
+        template: deployment.yaml
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: config-template
+          any: true
+        template: deployment.yaml
+
+  - it: accepts the pre-v4 confini.fromSecret and confini.secretName values
+    set:
+      confini:
+        fromSecret: true
+        secretName: legacy-conf-ini
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: configmap.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: config
+            secret:
+              secretName: legacy-conf-ini
+              items:
+                - key: conf.ini
+                  path: conf.ini
+        template: deployment.yaml

@@ -1,0 +1,223 @@
+suite: README examples and CI values files
+templates:
+  - deployment.yaml
+  - configmap-nginx.yaml
+  - secret.yaml
+  - pvc.yaml
+  - ingress.yaml
+  - pdb.yaml
+  - workload/scheduler.yaml
+  - workload/migrations.yaml
+release:
+  name: shop
+  namespace: shop
+tests:
+  - it: "FrankenPHP with SQLite: one web pod, SQLite and storage/app on the PVC, migrations in the pod"
+    values:
+      - values/example-frankenphp-sqlite.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: migrate
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_URL
+            value: https://shop.example.com
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_NAME
+            value: Shop
+        template: deployment.yaml
+      - hasDocuments:
+          count: 1
+        template: pvc.yaml
+      - hasDocuments:
+          count: 0
+        template: workload/migrations.yaml
+      - equal:
+          path: spec.tls[0].secretName
+          value: shop-tls
+        template: ingress.yaml
+
+  - it: "PHP-FPM, PostgreSQL, Redis and S3: three replicas, every credential read from existing Secrets"
+    values:
+      - values/example-fpm-postgresql-redis-s3.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+        template: deployment.yaml
+      - notExists:
+          path: spec.strategy
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: nginx
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_KEY
+            valueFrom:
+              secretKeyRef:
+                name: shop-app-key
+                key: key
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_HOST
+            valueFrom:
+              secretKeyRef:
+                name: shop-db-app
+                key: host
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: shop-db-app
+                key: dbname
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: shop-db-app
+                key: password
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_HOST
+            value: shop-redis.databases.svc
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: shop-redis
+                key: password
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: shop-s3
+                key: aws-access-key-id
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AWS_DEFAULT_REGION
+            value: eu-west-3
+        template: deployment.yaml
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+          any: true
+        template: deployment.yaml
+      # nothing left for the chart to store
+      - hasDocuments:
+          count: 0
+        template: secret.yaml
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - isKind:
+          of: Deployment
+        template: workload/scheduler.yaml
+      - equal:
+          path: spec.minAvailable
+          value: 1
+        template: pdb.yaml
+      - hasDocuments:
+          count: 1
+        template: workload/migrations.yaml
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'root /var/www/html/public;'
+        template: configmap-nginx.yaml
+
+  - it: "Persist the whole storage directory: the writable paths inside it move to the volume"
+    values:
+      - values/image.yaml
+    set:
+      persistence.accessModes: [ReadWriteMany]
+      persistence.paths: [storage]
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /app/storage
+            subPath: app-storage
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /app/storage/database
+          any: true
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: writable
+            mountPath: /app/storage/logs
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: writable
+            mountPath: /app/bootstrap/cache
+            subPath: app-bootstrap-cache
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_DATABASE
+            value: /app/storage/database/database.sqlite
+
+  - it: renders ci/default-values.yaml
+    values:
+      - ../ci/default-values.yaml
+    template: deployment.yaml
+    asserts:
+      - notFailedTemplate: {}
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/dunglas/frankenphp:1-php8.4-alpine
+
+  - it: renders ci/fpm-values.yaml
+    values:
+      - ../ci/fpm-values.yaml
+    template: deployment.yaml
+    asserts:
+      - notFailedTemplate: {}
+      - equal:
+          path: spec.replicas
+          value: 2
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: shop-db-app
+                key: password

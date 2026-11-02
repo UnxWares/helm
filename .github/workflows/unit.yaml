@@ -1,0 +1,92 @@
+name: Unit tests
+
+# helm-unittest suites (charts/<chart>/tests/*_test.yaml): each test renders the chart with given values, without a
+# cluster, and checks the result: security contexts, image selection, required values and their messages, Secrets,
+# probes, NetworkPolicy, container env. Charts without a tests/ directory are skipped. The results are kept as the
+# artifact unit-results (unit.json), which the site workflow (site.yaml) publishes.
+on:
+    pull_request:
+        branches:
+            - main
+        paths:
+            - charts/**
+            - .github/workflows/unit.yaml
+            - .github/scripts/unittest-results.py
+    push:
+        branches:
+            - main
+    # Same day as the weekly end-to-end run.
+    schedule:
+        - cron: "23 5 * * 2"
+    workflow_dispatch:
+
+concurrency:
+    group: unit-${{ github.ref }}
+    cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions: {}
+
+env:
+    HELM_VERSION: v3.22.1
+    UNITTEST_VERSION: 1.2.1
+    UNITTEST_SHA256: 48e86ecc1467b009630e5954375e5d8494139f73b466df5fe8c04fa45b634939
+
+jobs:
+    unittest:
+        name: helm-unittest
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Install Helm
+              uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+              with:
+                  version: ${{ env.HELM_VERSION }}
+
+            # The release tarball, checked against its pinned checksum and unpacked into the plugin directory.
+            # `helm plugin install` is not used: its install hook would download the binary a second time, unchecked.
+            - name: Install helm-unittest
+              run: |
+                  asset="helm-unittest-linux-amd64-${UNITTEST_VERSION}.tgz"
+                  cd "$RUNNER_TEMP"
+                  curl -fsSLO "https://github.com/helm-unittest/helm-unittest/releases/download/v${UNITTEST_VERSION}/${asset}"
+                  echo "${UNITTEST_SHA256}  ${asset}" | sha256sum -c -
+                  plugin_dir="$(helm env HELM_PLUGINS)/unittest"
+                  mkdir -p "$plugin_dir"
+                  tar xzf "$asset" -C "$plugin_dir" plugin.yaml untt-linux-amd64
+                  helm plugin list
+
+            - name: helm unittest
+              run: |
+                  mkdir -p "$RUNNER_TEMP/unit"
+                  status=0
+                  for chart in charts/*/; do
+                      chart=${chart%/}
+                      name=${chart#charts/}
+                      if ! compgen -G "$chart/tests/*_test.yaml" >/dev/null; then
+                          echo "::notice::$name: no unit tests yet"
+                          continue
+                      fi
+                      echo "::group::$name"
+                      helm unittest --strict \
+                          --output-type JUnit --output-file "$RUNNER_TEMP/unit/$name.xml" "$chart" || status=1
+                      echo "::endgroup::"
+                  done
+                  exit $status
+
+            - name: Summary
+              if: ${{ !cancelled() }}
+              run: .github/scripts/unittest-results.py "$RUNNER_TEMP/unit" "$RUNNER_TEMP/unit/unit.json" >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Keep the results
+              if: ${{ !cancelled() }}
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              with:
+                  name: unit-results
+                  path: ${{ runner.temp }}/unit/unit.json
+                  retention-days: 90

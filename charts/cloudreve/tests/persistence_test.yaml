@@ -1,0 +1,128 @@
+suite: persistence of /cloudreve/data
+templates:
+  # deployment.yaml includes configmap.yaml for its checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+  - pvc.yaml
+release:
+  name: files
+  namespace: storage
+tests:
+  - it: creates a 10Gi ReadWriteOnce claim kept on uninstall
+    template: pvc.yaml
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+      - equal:
+          path: metadata.name
+          value: files-cloudreve
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+      - equal:
+          path: spec.accessModes
+          value:
+            - ReadWriteOnce
+      - equal:
+          path: spec.resources.requests.storage
+          value: 10Gi
+      - notExists:
+          path: spec.storageClassName
+
+  - it: mounts the claim on /cloudreve/data
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: storage
+            persistentVolumeClaim:
+              claimName: files-cloudreve
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: storage
+            mountPath: /cloudreve/data
+
+  - it: sets the storage class, size, access modes, labels and annotations
+    template: pvc.yaml
+    set:
+      persistence:
+        storageClassName: fast
+        size: 50Gi
+        accessModes:
+          - ReadWriteMany
+        annotations:
+          backup: daily
+        extraPvcLabels:
+          tier: data
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: fast
+      - equal:
+          path: spec.resources.requests.storage
+          value: 50Gi
+      - equal:
+          path: spec.accessModes
+          value:
+            - ReadWriteMany
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/resource-policy: keep
+            backup: daily
+      - equal:
+          path: metadata.labels.tier
+          value: data
+
+  - it: uses an existing claim without creating one
+    set:
+      persistence:
+        existingClaim: cloudreve-data
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: storage
+            persistentVolumeClaim:
+              claimName: cloudreve-data
+        template: deployment.yaml
+
+  - it: renders the existing claim name and the sub-path as templates
+    template: deployment.yaml
+    set:
+      persistence:
+        existingClaim: "{{ .Release.Name }}-data"
+        subPath: "{{ .Release.Namespace }}"
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: storage
+            persistentVolumeClaim:
+              claimName: files-data
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: storage
+            mountPath: /cloudreve/data
+            subPath: storage
+
+  - it: falls back to an emptyDir when persistence is disabled
+    set:
+      persistence:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: storage
+            emptyDir: {}
+        template: deployment.yaml

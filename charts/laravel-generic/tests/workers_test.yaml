@@ -1,0 +1,226 @@
+suite: queue workers and scheduler
+templates:
+  - workload/queue-worker.yaml
+  - workload/scheduler.yaml
+release:
+  name: shop
+  namespace: shop
+values:
+  - values/image.yaml
+tests:
+  - it: runs one queue:work Deployment by default
+    template: workload/queue-worker.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: shop-laravel-generic-queue
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3"]
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/acme/shop:1.4.2
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 60
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/component"]
+          value: queue-worker
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+      - notExists:
+          path: spec.template.spec.containers[0].ports
+
+  - it: schedules the workers next to the web pod on a ReadWriteOnce volume
+    template: workload/queue-worker.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution
+          value:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: laravel-generic
+                  app.kubernetes.io/instance: shop
+                  app.kubernetes.io/component: web
+              topologyKey: kubernetes.io/hostname
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /app/storage/app
+            subPath: app-storage-app
+
+  - it: lets the workers run anywhere on a ReadWriteMany volume or without persistence
+    template: workload/queue-worker.yaml
+    values:
+      - values/pgsql.yaml
+    set:
+      persistence.accessModes: [ReadWriteMany]
+    asserts:
+      - notExists:
+          path: spec.template.spec.affinity
+
+  - it: keeps the user affinity and adds the web pod affinity on a ReadWriteOnce volume
+    template: workload/queue-worker.yaml
+    set:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values: [amd64]
+    asserts:
+      - exists:
+          path: spec.template.spec.affinity.nodeAffinity
+      - exists:
+          path: spec.template.spec.affinity.podAffinity
+
+  - it: follows the README queue worker example
+    template: workload/queue-worker.yaml
+    set:
+      workload.queueWorker.replicaCount: 2
+      workload.queueWorker.command: ["php", "artisan", "queue:work", "--queue=high,default", "--tries=3", "--max-time=3600"]
+      workload.queueWorker.terminationGracePeriodSeconds: 120
+      workload.queueWorker.resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+      workload.queueWorker.livenessProbe:
+        exec:
+          command: ["php", "artisan", "queue:monitor", "default"]
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+      - equal:
+          path: spec.template.spec.containers[0].command[3]
+          value: --queue=high,default
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 120
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 1Gi
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.exec.command[2]
+          value: queue:monitor
+
+  - it: uses the component scheduling values before the top-level ones
+    template: workload/queue-worker.yaml
+    set:
+      nodeSelector:
+        pool: web
+      workload.queueWorker.nodeSelector:
+        pool: workers
+      tolerations:
+        - key: web
+          operator: Exists
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            pool: workers
+      - equal:
+          path: spec.template.spec.tolerations
+          value:
+            - key: web
+              operator: Exists
+
+  - it: renders no queue worker when disabled
+    template: workload/queue-worker.yaml
+    set:
+      workload.queueWorker.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: runs schedule:run every minute in a CronJob by default
+    template: workload/scheduler.yaml
+    asserts:
+      - isKind:
+          of: CronJob
+      - equal:
+          path: metadata.name
+          value: shop-laravel-generic-scheduler
+      - equal:
+          path: spec.schedule
+          value: "* * * * *"
+      - equal:
+          path: spec.concurrencyPolicy
+          value: Forbid
+      - equal:
+          path: spec.startingDeadlineSeconds
+          value: 60
+      - equal:
+          path: spec.successfulJobsHistoryLimit
+          value: 1
+      - equal:
+          path: spec.failedJobsHistoryLimit
+          value: 1
+      - equal:
+          path: spec.jobTemplate.spec.backoffLimit
+          value: 0
+      - equal:
+          path: spec.jobTemplate.spec.ttlSecondsAfterFinished
+          value: 120
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.restartPolicy
+          value: Never
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].name
+          value: scheduler
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command
+          value: ["php", "artisan", "schedule:run"]
+      - equal:
+          path: spec.jobTemplate.spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: scheduler
+      - exists:
+          path: spec.jobTemplate.spec.template.spec.affinity.podAffinity
+
+  - it: leaves out startingDeadlineSeconds when it is null
+    template: workload/scheduler.yaml
+    set:
+      workload.scheduler.startingDeadlineSeconds: null
+    asserts:
+      - notExists:
+          path: spec.startingDeadlineSeconds
+
+  - it: runs one schedule:work pod in deployment mode (README example)
+    template: workload/scheduler.yaml
+    set:
+      workload.scheduler.mode: deployment
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value: ["php", "artisan", "schedule:work"]
+      - notExists:
+          path: spec.template.spec.restartPolicy
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/component"]
+          value: scheduler
+
+  - it: renders no scheduler when disabled
+    template: workload/scheduler.yaml
+    set:
+      workload.scheduler.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

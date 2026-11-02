@@ -1,0 +1,92 @@
+suite: README examples
+templates:
+  - configmap.yaml
+  - deployment.yaml
+  - secret.yaml
+  - pvc.yaml
+  - ingress.yaml
+release:
+  name: files
+  namespace: storage
+chart:
+  appVersion: 4.19.1
+tests:
+  - it: "PostgreSQL and Redis behind an Ingress: every secret comes from the user's Secrets"
+    values:
+      - values/readme-postgres-redis-ingress.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].env
+          value:
+            - name: CR_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cloudreve-session
+                  key: session-secret
+            - name: CR_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cloudreve-db
+                  key: password
+            - name: CR_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cloudreve-redis
+                  key: password
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CR_SETTING_DEFAULT_siteURL
+            value: https://cloud.example.com
+        template: deployment.yaml
+      - isNullOrEmpty:
+          path: data
+        template: secret.yaml
+
+  - it: "PostgreSQL and Redis behind an Ingress: conf.ini points to both servers"
+    values:
+      - values/readme-postgres-redis-ingress.yaml
+    template: configmap.yaml
+    asserts:
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^Type = postgres\\nHost = cloudreve-db-rw.databases.svc\\nPort = 5432\\nUser = cloudreve\\nPassword = `@@CR_DB_PASSWORD@@`\\nName = cloudreve$"
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^Server = valkey.cache.svc:6379$"
+
+  - it: "PostgreSQL and Redis behind an Ingress: the Ingress terminates TLS for the host"
+    values:
+      - values/readme-postgres-redis-ingress.yaml
+    template: ingress.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: cloud.example.com
+      - equal:
+          path: spec.tls[0].secretName
+          value: cloud-example-com-tls
+
+  - it: "SQLite on an existing volume, official image: no claim created, official image on the existing volume"
+    values:
+      - values/readme-sqlite-existing-volume.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/cloudreve/cloudreve:4.19.1
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: storage
+            persistentVolumeClaim:
+              claimName: cloudreve-data
+        template: deployment.yaml
+      - matchRegex:
+          path: data["conf.ini.tpl"]
+          pattern: "(?m)^DBFile = /cloudreve/data/cloudreve.db$"
+        template: configmap.yaml

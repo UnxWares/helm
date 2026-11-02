@@ -1,0 +1,201 @@
+suite: deployment, probes and scheduling
+templates:
+  # deployment.yaml includes configmap.yaml for its checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+release:
+  name: files
+  namespace: storage
+tests:
+  - it: runs a single replica replaced with the Recreate strategy
+    template: deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: files-cloudreve
+      - equal:
+          path: metadata.namespace
+          value: storage
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: cloudreve
+            app.kubernetes.io/instance: files
+
+  - it: probes the ping endpoint of the API on the http port
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /api/v4/site/ping
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /api/v4/site/ping
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            httpGet:
+              path: /api/v4/site/ping
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+
+  - it: leaves a probe out when it is set to null
+    template: deployment.yaml
+    set:
+      livenessProbe: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  - it: requests 100m CPU and 128Mi and limits memory to 1Gi by default
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 1Gi
+
+  - it: places the pod with nodeSelector, tolerations, affinity and priority class
+    template: deployment.yaml
+    set:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: storage
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: disk
+                    operator: In
+                    values: [ssd]
+      priorityClassName: high
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: arm64
+      - equal:
+          path: spec.template.spec.tolerations[0].key
+          value: dedicated
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: disk
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: high
+
+  - it: adds labels and annotations to the Deployment and the pod
+    template: deployment.yaml
+    set:
+      labels:
+        team: files
+      annotations:
+        owner: ops
+      podLabels:
+        tier: web
+      podAnnotations:
+        scrape: "false"
+    asserts:
+      - equal:
+          path: metadata.labels.team
+          value: files
+      - equal:
+          path: metadata.annotations.owner
+          value: ops
+      - equal:
+          path: spec.template.metadata.labels.tier
+          value: web
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/instance"]
+          value: files
+      - equal:
+          path: spec.template.metadata.annotations.scrape
+          value: "false"
+      - exists:
+          path: spec.template.metadata.annotations["checksum/config"]
+
+  - it: adds extra volumes and mounts
+    template: deployment.yaml
+    set:
+      extraVolumes:
+        - name: fonts
+          configMap:
+            name: fonts
+      extraVolumeMounts:
+        - name: fonts
+          mountPath: /usr/share/fonts/custom
+          readOnly: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: fonts
+            configMap:
+              name: fonts
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: fonts
+            mountPath: /usr/share/fonts/custom
+            readOnly: true
+
+  - it: gives /tmp a size-limited emptyDir for the read-only root filesystem
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir:
+              sizeLimit: 2Gi
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp
+
+  - it: uses the full name override
+    template: deployment.yaml
+    set:
+      fullnameOverride: drive
+    asserts:
+      - equal:
+          path: metadata.name
+          value: drive
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: storage
+            persistentVolumeClaim:
+              claimName: drive

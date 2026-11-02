@@ -1,0 +1,260 @@
+suite: container environment and secret references
+templates:
+  # deployment.yaml includes configmap.yaml for its checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+release:
+  name: files
+  namespace: storage
+tests:
+  - it: gives the Cloudreve container only TZ (UTC by default), never a secret
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: TZ
+              value: UTC
+
+  - it: sets the time zone
+    template: deployment.yaml
+    set:
+      timezone: Europe/Paris
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0]
+          value:
+            name: TZ
+            value: Europe/Paris
+
+  - it: appends extraEnv to the Cloudreve container
+    template: deployment.yaml
+    set:
+      extraEnv:
+        - name: CR_SETTING_DEFAULT_siteURL
+          value: https://cloud.example.com
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: TZ
+              value: UTC
+            - name: CR_SETTING_DEFAULT_siteURL
+              value: https://cloud.example.com
+
+  - it: passes only the session secret to the render-config container with SQLite, through secretKeyRef
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].env
+          value:
+            - name: CR_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: files-cloudreve
+                  key: session-secret
+
+  - it: reads the session secret from an existing Secret with a custom key
+    template: deployment.yaml
+    set:
+      cloudreve:
+        existingSecret: cloudreve-session
+        existingSecretKey: token
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: CR_SESSION_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: cloudreve-session
+                key: token
+
+  - it: reads the database password from the chart Secret
+    template: deployment.yaml
+    set:
+      database:
+        type: postgres
+        host: db.example.svc
+        password: db-pass
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: CR_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: files-cloudreve
+                key: db-password
+      - notContains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: CR_DB_URL
+          any: true
+      - lengthEqual:
+          path: spec.template.spec.initContainers[0].env
+          count: 2
+
+  - it: reads the database URL from the chart Secret when database.url is set
+    template: deployment.yaml
+    set:
+      database:
+        type: postgres
+        url: postgres://cloudreve:pw@db:5432/cloudreve?sslmode=verify-full
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: CR_DB_URL
+            valueFrom:
+              secretKeyRef:
+                name: files-cloudreve
+                key: db-url
+
+  - it: reads the database password and URL from an existing Secret with custom keys
+    template: deployment.yaml
+    set:
+      database:
+        type: postgres
+        existingSecret: cloudreve-db
+        existingSecretKeys:
+          password: pass
+          url: dsn
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: CR_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: cloudreve-db
+                key: pass
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: CR_DB_URL
+            valueFrom:
+              secretKeyRef:
+                name: cloudreve-db
+                key: dsn
+
+  - it: reads the Redis password from the chart Secret
+    template: deployment.yaml
+    set:
+      redis:
+        enabled: true
+        server: valkey:6379
+        password: redis-pass
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: CR_REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: files-cloudreve
+                key: redis-password
+
+  - it: reads the Redis password from an existing Secret with a custom key
+    template: deployment.yaml
+    set:
+      redis:
+        enabled: true
+        server: valkey:6379
+        existingSecret: cloudreve-redis
+        existingSecretKey: redis-pw
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: CR_REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: cloudreve-redis
+                key: redis-pw
+
+  - it: passes no Redis password when Redis has none
+    template: deployment.yaml
+    set:
+      redis:
+        enabled: true
+        server: valkey:6379
+    asserts:
+      - notContains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: CR_REDIS_PASSWORD
+          any: true
+
+  - it: never passes a secret as a plain value to the render-config container
+    template: deployment.yaml
+    set:
+      cloudreve:
+        sessionSecret: s3cret
+      database:
+        type: mysql
+        host: db.example.svc
+        password: db-pass
+        url: mysql://cloudreve:db-pass@db:3306/cloudreve
+      redis:
+        enabled: true
+        server: valkey:6379
+        password: redis-pass
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers[0].env
+          count: 4
+      - notExists:
+          path: spec.template.spec.initContainers[0].env[?(@.value)]
+      - equal:
+          path: spec.template.spec.initContainers[0].env
+          value:
+            - name: CR_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: files-cloudreve
+                  key: session-secret
+            - name: CR_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: files-cloudreve
+                  key: db-password
+            - name: CR_DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: files-cloudreve
+                  key: db-url
+            - name: CR_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: files-cloudreve
+                  key: redis-password
+
+  - it: renders conf.ini into a memory-backed volume from the ConfigMap template
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value:
+            - /bin/sh
+            - -ec
+            - awk -f /config-template/render.awk /config-template/conf.ini.tpl > /config/conf.ini
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: config
+            emptyDir:
+              medium: Memory
+              sizeLimit: 1Mi
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: config-template
+            configMap:
+              name: files-cloudreve
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: config
+            mountPath: /etc/cloudreve
+            readOnly: true

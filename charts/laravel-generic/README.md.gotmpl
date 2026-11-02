@@ -849,6 +849,13 @@ an install:
 helm test shop --namespace shop --logs
 ```
 
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the message of every required value, the security contexts and writable paths, FrankenPHP and
+PHP-FPM + nginx (ports, probes, nginx configuration), the env with credentials through `secretKeyRef` only, the
+`APP_KEY` generated once and kept, the migrations hook, queue workers and scheduler, NetworkPolicy, HPA and PDB, and
+the examples of this README.
+
 ## Operations
 
 ### Backup and restore

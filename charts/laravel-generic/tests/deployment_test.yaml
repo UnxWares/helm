@@ -1,0 +1,417 @@
+suite: web Deployment with the FrankenPHP runtime
+templates:
+  - deployment.yaml
+release:
+  name: shop
+  namespace: shop
+values:
+  - values/image.yaml
+tests:
+  - it: runs the application image and labels the pods as the web component
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: shop-laravel-generic
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: app
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/acme/shop:1.4.2
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: laravel-generic
+            app.kubernetes.io/instance: shop
+            app.kubernetes.io/component: web
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: "1.4.2"
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: shop-laravel-generic
+
+  - it: prefers the image digest over the tag
+    set:
+      image.digest: sha256:1111111111111111111111111111111111111111111111111111111111111111
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/acme/shop@sha256:1111111111111111111111111111111111111111111111111111111111111111
+
+  - it: serves HTTP on port 8000 and points the stock Caddyfile at it
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SERVER_NAME
+            value: ":8000"
+
+  - it: follows a custom port and server name
+    set:
+      workload.runtime.frankenphp.port: 8443
+      workload.runtime.frankenphp.serverName: "http://:8443"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 8443
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SERVER_NAME
+            value: "http://:8443"
+
+  - it: probes the Laravel health route /up on the http port
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /up
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /up
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            httpGet:
+              path: /up
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 30
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
+          value: ["sh", "-c", "sleep 5"]
+
+  - it: drops a probe set to null
+    set:
+      startupProbe: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].startupProbe
+      - exists:
+          path: spec.template.spec.containers[0].livenessProbe
+
+  - it: uses the image entrypoint unless command or args are set
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].command
+      - notExists:
+          path: spec.template.spec.containers[0].args
+
+  - it: runs Laravel Octane through command (README example)
+    set:
+      command: ["php", "artisan", "octane:frankenphp", "--host=0.0.0.0", "--port=8000", "--max-requests=500"]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value: ["php", "artisan", "octane:frankenphp", "--host=0.0.0.0", "--port=8000", "--max-requests=500"]
+
+  - it: recreates the single pod on a ReadWriteOnce volume
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.strategy
+          value:
+            type: Recreate
+
+  - it: keeps the user update strategy on a ReadWriteMany volume
+    values:
+      - values/pgsql.yaml
+    set:
+      replicaCount: 3
+      persistence.accessModes: [ReadWriteMany]
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+      - equal:
+          path: spec.strategy
+          value:
+            type: RollingUpdate
+            rollingUpdate:
+              maxUnavailable: 0
+
+  - it: leaves replicas to the HorizontalPodAutoscaler
+    values:
+      - values/pgsql.yaml
+    set:
+      persistence.enabled: false
+      autoscaling.enabled: true
+    asserts:
+      - notExists:
+          path: spec.replicas
+      - notExists:
+          path: spec.strategy
+
+  - it: stores storage/app and the SQLite directory on the persistent volume
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: shop-laravel-generic
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /app/storage/app
+            subPath: app-storage-app
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /app/storage/database
+            subPath: app-storage-database
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: writable
+            mountPath: /app/storage/app
+            subPath: app-storage-app
+
+  - it: mounts an existing claim instead of the chart PVC
+    set:
+      persistence.existingClaim: shop-files
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: shop-files
+
+  - it: keeps storage/app writable on an emptyDir without persistence
+    values:
+      - values/pgsql.yaml
+    set:
+      persistence.enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: writable
+            mountPath: /app/storage/app
+            subPath: app-storage-app
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+          any: true
+
+  - it: resolves the writable and stored paths against appPath
+    values:
+      - values/pgsql.yaml
+    set:
+      appPath: /var/www/html
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: writable
+            mountPath: /var/www/html/storage/logs
+            subPath: var-www-html-storage-logs
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /var/www/html/storage/app
+            subPath: var-www-html-storage-app
+
+  - it: creates the SQLite file and migrates in an init container before the web pod starts
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: prepare
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: migrate
+      - equal:
+          path: spec.template.spec.initContainers[1].command[3]
+          value: sqlite-init
+      - lengthEqual:
+          path: spec.template.spec.initContainers[1].command
+          count: 8
+      - equal:
+          path: spec.template.spec.initContainers[1].command[4]
+          value: php
+      - equal:
+          path: spec.template.spec.initContainers[1].command[6]
+          value: migrate
+      - equal:
+          path: spec.template.spec.initContainers[1].command[7]
+          value: --force
+      - matchRegex:
+          path: spec.template.spec.initContainers[1].command[2]
+          pattern: '\[ -e "\$DB_DATABASE" \] \|\| touch "\$DB_DATABASE"'
+      - contains:
+          path: spec.template.spec.initContainers[1].env
+          content:
+            name: DB_DATABASE
+            value: /app/storage/database/database.sqlite
+
+  - it: only creates the SQLite file when migrations are disabled
+    set:
+      workload.migrations.enabled: false
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: sqlite-init
+      - equal:
+          path: spec.template.spec.initContainers[1].command[3]
+          value: sqlite-init
+      - lengthEqual:
+          path: spec.template.spec.initContainers[1].command
+          count: 4
+
+  - it: has no migration init container with an external database
+    values:
+      - values/pgsql.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 1
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: prepare
+
+  - it: prepares the Laravel storage directories on the right volumes
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].command[2]
+          pattern: 'mkdir -p "/chart/writable/app-storage-framework/cache/data" "/chart/writable/app-storage-framework/sessions" "/chart/writable/app-storage-framework/views" "/chart/writable/app-storage-logs" "/chart/data/app-storage-app/public"'
+      - equal:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          value:
+            - name: tmp
+              mountPath: /tmp
+            - name: writable
+              mountPath: /chart/writable
+            - name: data
+              mountPath: /chart/data
+
+  - it: restarts the pods when a chart secret value changes
+    asserts:
+      - exists:
+          path: spec.template.metadata.annotations["checksum/secret"]
+      - notExists:
+          path: spec.template.metadata.annotations["checksum/config"]
+
+  - it: adds pod annotations, labels and common labels
+    set:
+      podAnnotations:
+        example.com/note: hello
+      podLabels:
+        team: shop
+      commonLabels:
+        owner: acme
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["example.com/note"]
+          value: hello
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: shop
+      - equal:
+          path: spec.template.metadata.labels.owner
+          value: acme
+      - equal:
+          path: metadata.labels.owner
+          value: acme
+
+  - it: appends extra init containers, sidecars, volumes and mounts
+    set:
+      initContainers:
+        - name: wait
+          image: busybox
+      sidecars:
+        - name: log-shipper
+          image: fluent-bit
+      extraVolumes:
+        - name: ca
+          configMap:
+            name: db-ca
+      extraVolumeMounts:
+        - name: ca
+          mountPath: /etc/ssl/db
+          readOnly: true
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[2].name
+          value: wait
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: log-shipper
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: ca
+            configMap:
+              name: db-ca
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: ca
+            mountPath: /etc/ssl/db
+            readOnly: true
+
+  - it: applies the scheduling values to the web pods
+    set:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: web
+          effect: NoSchedule
+      priorityClassName: high
+      imagePullSecrets:
+        - name: registry
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: amd64
+      - equal:
+          path: spec.template.spec.tolerations[0].value
+          value: web
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: high
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].topologyKey
+          value: topology.kubernetes.io/zone
