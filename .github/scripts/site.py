@@ -4,12 +4,12 @@
 Inputs: the charts (charts/*/Chart.yaml), the UnxWares images (the matrix of .github/workflows/images.yaml, the
 `ARG VERSION` of each Dockerfile, its .trivyignore, the table of images/README.md) and the CI results gathered by
 .github/scripts/site-collect.py. Output, in <output dir>:
-  index.html, charts/<chart>.html, images/<image>.html, status.json (the same data as JSON), assets/ (styles,
-  fonts, logo, copied from .github/site/assets).
+  index.html (one page: the charts with their test results and vulnerabilities, the images, how to verify),
+  status.json (the same data and more, as JSON), assets/ (styles, fonts, logo, copied from .github/site/assets).
 
 The pages carry no build timestamp, so that an unchanged result gives byte-identical files and no commit. No file
-is deleted here; status.json lists the generated files ("files"), so that the publishing job can remove a page of a
-chart or image that no longer exists, by name.
+is deleted here; status.json lists the generated files ("files"), so that the publishing job can remove, by name,
+a page an earlier version generated (the former charts/*.html and images/*.html pages).
 
 usage: .github/scripts/site.py <results.json> <output dir>
 """
@@ -27,6 +27,33 @@ CHANGE_KINDS = {"added": "Added", "changed": "Changed", "deprecated": "Deprecate
                 "fixed": "Fixed", "security": "Security"}
 
 e = html.escape
+
+# Icons from Lucide (https://lucide.dev, ISC license), inline so that the page makes no other request.
+def _icon(paths):
+    return ('<svg class="i" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" '
+            'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + "</svg>")
+
+
+ICON = {
+    "check": _icon('<path d="M20 6 9 17l-5-5"/>'),
+    "x": _icon('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'),
+    "minus": _icon('<path d="M5 12h14"/>'),
+    "copy": _icon('<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>'
+                  '<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>'),
+    "package": _icon('<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 '
+                     '8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/>'
+                     '<path d="M12 22V12"/>'),
+    "box": _icon('<path d="M22 7.7c0-.6-.4-1.2-.8-1.5l-6.3-3.9a1.72 1.72 0 0 0-1.7 0l-10.3 6c-.5.2-.9.8-.9 1.4v6.6c0 '
+                 '.5.4 1.2.8 1.5l6.3 3.9a1.72 1.72 0 0 0 1.7 0l10.3-6c.5-.3.9-1 .9-1.5Z"/><path d="M10 21.9V14L2.1 9.1"/>'
+                 '<path d="m10 14 11.9-6.9"/><path d="M14 19.8v-8.1"/><path d="M18 17.5V9.4"/>'),
+    "shield": _icon('<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 '
+                    '4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>'
+                    '<path d="m9 12 2 2 4-4"/>'),
+    "code": _icon('<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>'),
+}
+
+# The footer of unxwares.com, with its markup: {year} is filled in.
+FOOTER = ROOT / ".github/site/footer.html"
 
 
 # --- inputs --------------------------------------------------------------------------------------------------------
@@ -118,6 +145,8 @@ def load_images():
         entries = [{"name": p.parent.name, "context": str(p.parent.relative_to(ROOT)), "suffix": ""}
                    for p in sorted((ROOT / "images").glob("*/Dockerfile"))]
     readme = images_readme()
+    upstream_file = ROOT / "images/upstream.yaml"
+    upstream = load_yaml_block(upstream_file.read_text(), {}) if upstream_file.is_file() else {}
     images = []
     for m in entries:
         context = ROOT / m["context"]
@@ -133,6 +162,7 @@ def load_images():
             "slug": m["context"].removeprefix("images/").replace("/", "-"),
             "upstream": info.get("upstream", ""), "changes": info.get("changes", ""),
             "accepted": parse_trivyignore(context / ".trivyignore"),
+            "official": str(upstream.get(m["context"], "")).replace("{tag}", tag),
         })
     return images
 
@@ -348,61 +378,7 @@ class Site:
             self._e2e_jobs = {str(j.get("name", k)) for k, j in (workflow.get("jobs") or {}).items() if isinstance(j, dict)}
         return self._e2e_jobs
 
-    # --- pages ---------------------------------------------------------------------------------------------------
-
-    def page(self, path, title, description, body):
-        root = "../" * path.count("/")
-        nav = [("index.html#charts", "Charts"), ("index.html#images", "Images"), ("index.html#install", "Install"),
-               ("index.html#verify", "Verify"), ("status.json", "Data")]
-        items = "".join(f'<li><a href="{root}{h}">{t}</a></li>' for h, t in nav)
-        items += f'<li><a href="{self.gh}">GitHub</a></li>'
-        doc = f"""<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{e(title)}</title>
-<meta name="description" content="{e(description)}">
-<meta name="color-scheme" content="light dark">
-<link rel="stylesheet" href="{root}assets/site.css">
-<link rel="icon" href="{root}assets/mark.svg" type="image/svg+xml">
-</head>
-<body>
-<a class="skip" href="#main">Skip to the content</a>
-<header class="masthead"><div class="wrap">
-<a class="brand" href="{root}index.html"><picture><source srcset="{root}assets/logo-dark.svg" media="(prefers-color-scheme: dark)"><img src="{root}assets/logo.svg" alt="UnxWares" width="122" height="26"></picture><span>Helm charts</span></a>
-<nav aria-label="Site"><ul>{items}</ul></nav>
-</div></header>
-<main id="main" class="wrap">
-{body}
-</main>
-{self.footer(root)}
-</body>
-</html>
-"""
-        self.write(path, doc)
-
-    def footer(self, root):
-        return f"""<footer class="colophon"><div class="wrap"><div class="colophon-grid">
-<div><h2>UnxWares Helm charts</h2><ul>
-<li>{link(self.gh, "Source on GitHub")}</li>
-<li>{link("https://artifacthub.io/packages/search?repo=unxwares", "Artifact Hub")}</li>
-<li>{link(root + "index.yaml", "index.yaml")}</li>
-</ul></div>
-<div><h2>Security</h2><ul>
-<li>{link(f"{self.gh}/blob/main/SECURITY.md", "Security policy")}</li>
-<li>{link(self.cve_issue_url(), "CVE watch issue")}</li>
-<li>{link(f"{self.gh}/security/advisories/new", "Report a vulnerability")}</li>
-</ul></div>
-<div><h2>Data</h2><ul>
-<li>{link(root + "status.json", "status.json")}, everything on these pages</li>
-<li>{link(root + "pgp-public-key.asc", "Signing key")}</li>
-</ul></div>
-<div><h2>Colophon</h2><ul>
-<li>UnxWares, Caen, France</li>
-<li>Set in Poppins ({link(root + "assets/fonts/OFL.txt", "SIL Open Font License 1.1")})</li>
-</ul></div>
-</div></div></footer>"""
+    # --- page -----------------------------------------------------------------------------------------------------
 
     def cve_issue_url(self):
         return self.cve.get("issue_url") or f"{self.gh}/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch"
@@ -418,434 +394,213 @@ class Site:
         fp = next((c["signKey"].get("fingerprint") for c in self.charts if c["signKey"].get("fingerprint")), "")
         fp = re.sub(r"\s", "", str(fp)).upper()
         groups = [fp[i:i + 4] for i in range(0, len(fp), 4)]
-        return fp, " ".join(groups[:5]) + ("  " + " ".join(groups[5:]) if len(groups) > 5 else "")
+        return fp, " ".join(groups[:5]) + ("  " + " ".join(groups[5:]) if len(groups) > 5 else "")
 
     def cosign(self, ref):
         return (f"cosign verify {ref} \\\n  --certificate-identity "
                 f"'https://github.com/{self.repo}/.github/workflows/images.yaml@refs/heads/main' \\\n"
                 f"  --certificate-oidc-issuer https://token.actions.githubusercontent.com")
 
+    def check(self, label, summary):
+        """One test of a chart card: its name and a mark, linked to the run that produced it."""
+        kind, word, note, detail, r = summary
+        mark = {"pass": ICON["check"], "fail": ICON["x"]}.get(kind, ICON["minus"])
+        title = word + (f": {note}" if note else "")
+        text = f'<span class="mark">{mark}</span>{e(label)}'
+        cls = f"test test-{kind}"
+        if r and (r.get("job_url") or r.get("run_url")):
+            return (f'<li><a class="{cls}" href="{e(r.get("job_url") or r["run_url"])}" title="{e(title)}">'
+                    f'{text}</a></li>')
+        return f'<li><span class="{cls}" title="{e(title)}">{text}</span></li>'
+
+    def security_line(self, counts):
+        if counts is None:
+            return '<p class="security security-none">Vulnerabilities: not scanned yet</p>'
+        n = counts["critical"] + counts["high"]
+        if n == 0:
+            return '<p class="security security-pass">No critical or high vulnerability</p>'
+        parts = []
+        if counts["critical"]:
+            parts.append(f"{counts['critical']} critical")
+        if counts["high"]:
+            parts.append(f"{counts['high']} high")
+        kind = "fail" if counts["open_fixable"] > 0 else "warn"
+        note = " (fix available upstream)" if counts["open_fixable"] > 0 else " (no fix yet, or not reachable)"
+        return f'<p class="security security-{kind}">{e(", ".join(parts))} vulnerabilities{e(note)}</p>'
+
+    def chart_card(self, c):
+        app = c.get("appVersion") or ""
+        ours = any(i["image"].startswith(OURS) for i in c["images"])
+        tests = "".join(self.check(label, fn(c)) for label, fn in (
+            ("Lint", self.lint_summary), ("Install", self.install_summary),
+            ("Unit", self.unit_summary), ("End to end", self.e2e_summary)))
+        return f"""<article class="card chart">
+<header><h3>{e(c["name"])}</h3><span class="version">{e(c["version"])}</span></header>
+<p class="app">{e(c["displayName"])} {e(app)}{' · UnxWares images' if ours else ''}</p>
+<p class="desc">{e(c["description"])}</p>
+<ul class="tests" aria-label="Tests">{tests}</ul>
+{self.security_line(self.chart_cve(c))}
+<p class="links"><a href="https://artifacthub.io/packages/helm/unxwares-sac/{e(c["name"])}">Artifact Hub</a><a href="{self.gh}/tree/main/charts/{e(c["name"])}#readme">README</a></p>
+</article>"""
+
+    def vuln_cell(self, ref, label, ours=False, accepted_link=""):
+        counts = self.cve_counts(ref) if ref else None
+        cls = "vcell ours" if ours else "vcell"
+        shown = "" if ours else f'<code class="ref">{e(ref or "none")}</code>'
+        if counts is None:
+            return (f'<td class="{cls}" data-label="{label}"><span class="none">Scanned at the next CVE watch</span>'
+                    f'{shown}</td>')
+        parts = []
+        for k in ("critical", "high"):
+            parts.append(f'<span class="n {k if counts[k] else "zero"}"><strong>{counts[k]}</strong> {k}</span>')
+        total = counts.get("total")
+        detail = f"{total} known in total" if total is not None else ""
+        if accepted_link and counts["accepted"]:
+            detail += f' · <a href="{accepted_link}">{counts["accepted"]} accepted, with the reason</a>'
+        return (f'<td class="{cls}" data-label="{label}"><span class="counts">{"".join(parts)}</span>'
+                f'<span class="detail">{detail}</span>{shown}</td>')
+
+    def compare_table(self):
+        rows, totals = [], {"official": [0, 0], "ours": [0, 0], "pairs": 0}
+        for i in self.images:
+            ours, official = self.cve_counts(i["ref"]), self.cve_counts(i["official"]) if i["official"] else None
+            if ours is not None and official is not None:
+                totals["pairs"] += 1
+                totals["official"][0] += official["critical"]
+                totals["official"][1] += official["high"]
+                totals["ours"][0] += ours["critical"]
+                totals["ours"][1] += ours["high"]
+            accepted = f"{self.gh}/blob/main/{i['context']}/.trivyignore"
+            rows.append(f"""<tr><th scope="row"><code>{e(i["name"])}</code><span class="tag">{e(i["tag"])}</span></th>
+{self.vuln_cell(i["official"], "Official image")}{self.vuln_cell(i["ref"], "UnxWares build", True, accepted)}</tr>""")
+        o, u = totals["official"], totals["ours"]
+
+        def num(n):
+            return f'<strong class="{"bad" if n else ""}">{n}</strong>'
+
+        summary = ""
+        if totals["pairs"]:
+            summary = f"""<div class="versus">
+<div class="side"><span class="label">Official images</span>{num(o[0])}<span>critical</span>{num(o[1])}<span>high</span></div>
+<div class="side ours"><span class="label">UnxWares builds</span>{num(u[0])}<span>critical</span>{num(u[1])}<span>high</span></div>
+</div>
+<p class="note">Known critical and high vulnerabilities, summed over the {totals["pairs"]} images scanned on both sides by the latest CVE watch.</p>"""
+        return f"""{summary}
+<div class="card table-card"><table class="compare">
+<thead><tr><th scope="col">Image</th><th scope="col">Official image</th><th scope="col">UnxWares build</th></tr></thead>
+<tbody>
+{chr(10).join(rows)}
+</tbody></table></div>"""
+
+    def footer(self):
+        html_text = FOOTER.read_text().split("\n", 1)[1]  # without the comment line
+        return html_text.replace("{year}", str(datetime.date.today().year))
+
     def index(self):
         fp, fp_spaced = self.fingerprint()
         latest = self.latest_date()
-        example = next((c["name"] for c in self.charts if c["name"] == "powerdns"), self.charts[0]["name"] if self.charts else "")
-        signed_image = next((i["ref"] for i in self.images if i["name"] == "taiga-back"), self.images[0]["ref"] if self.images else "")
-        rows = []
-        for c in self.charts:
-            cells = [f'<td class="lead"><span class="name">{link("charts/" + c["name"] + ".html", e(c["name"]))}</span>'
-                     f'{sub(e(c["displayName"] + " " + c["appVersion"]))}</td>',
-                     f'<td data-label="Version">{e(c["version"])}</td>']
-            for label, fn in (("Lint and schema", self.lint_summary), ("Install and helm test", self.install_summary),
-                              ("Unit tests", self.unit_summary), ("End to end", self.e2e_summary)):
-                kind, word, note, _, _ = fn(c)
-                cells.append(f'<td data-label="{label}">{st(kind, word)}{sub(e(note))}</td>')
-            cells.append(f'<td data-label="Default images">{self.cve_phrase(self.chart_cve(c))}</td>')
-            rows.append("<tr>" + "".join(cells) + "</tr>")
-        image_rows = []
-        for i in self.images:
-            build = (self.results.get("images") or {}).get(i["context"])
-            used = sorted({c["name"] for c in self.charts for img in c["images"] if img["image"] == i["ref"]} |
-                          set((self.cve_of(i["ref"]) or {}).get("charts", [])))
-            if build:
-                b = st("pass" if build["status"] == "passed" else "fail",
-                       "Built " + day(build["date"]) if build["status"] == "passed" else "Failed")
-                b += sub(e(", ".join(sorted(build.get("arch", {})))))
-            else:
-                b = st("none", "No result yet")
-            if self.cve_of(i["ref"]) is None and not used:
-                watch = st("na", "Not watched") + sub("no chart deploys this tag")
-            else:
-                watch = self.cve_phrase(self.cve_counts(i["ref"]), long=True)
-            image_rows.append(
-                "<tr>"
-                f'<td class="lead"><span class="name">{link("images/" + i["slug"] + ".html", e(i["name"]))}</span>'
-                f'{sub("<code>" + e(i["tag"]) + "</code>")}</td>'
-                f'<td data-label="Replaces">{inline_md(i["upstream"]) or "<span class=zero>not listed</span>"}</td>'
-                f'<td data-label="Used by">{", ".join(link("charts/" + n + ".html", e(n)) for n in used) or "<span class=zero>none</span>"}</td>'
-                f'<td data-label="Build">{b}</td>'
-                f'<td data-label="CVE watch">{watch}</td>'
-                "</tr>")
-        cve_note = ""
-        if self.cve.get("date"):
-            cve_note = (f'CVE watch of {stamp(self.cve["date"])}, {link(self.cve["run_url"], "run")}.')
-        body = f"""<section class="opening">
-<div>
-<span class="kicker">helm.unxwares.studio</span>
-<h1>UnxWares Helm charts</h1>
-<p class="lede">Helm charts we run ourselves, maintained by UnxWares, a small independent team in Caen, France.
-This page lists each chart with the latest results of its tests and of the vulnerability scans of its images, as the
-continuous integration of the repository reports them.</p>
-<p>Every result links to the run that produced it. Where a chart has no test of a kind yet, the page says so.</p>
-</div>
-<aside class="facts" aria-label="Repository">
-<dl>
-<dt>Charts</dt><dd><span class="figure">{len(self.charts)}</span></dd>
-<dt>UnxWares images</dt><dd><span class="figure">{len(self.images)}</span></dd>
-<dt>Latest result</dt><dd>{stamp(latest) if latest else "none yet"}</dd>
-<dt>Repository</dt><dd><code>{e(SITE)}</code></dd>
-</dl>
-</aside>
+        unit_total = sum((self.result(c["name"], "unit") or {}).get("tests", 0) for c in self.charts)
+        e2e_total = sum(len((self.result(c["name"], "e2e") or {}).get("checks", [])) for c in self.charts)
+        stats = [(len(self.charts), "Charts"), (len(self.images), "UnxWares images")]
+        if unit_total:
+            stats.append((unit_total, "Unit tests"))
+        if e2e_total:
+            stats.append((e2e_total, "End-to-end checks"))
+        stats_html = "".join(f'<div class="stat"><strong>{n}</strong><span>{e(t)}</span></div>' for n, t in stats)
+        cards = "\n".join(self.chart_card(c) for c in self.charts)
+        sample = next((i["ref"] for i in self.images if i["name"] == "taiga-back"), self.images[0]["ref"] if self.images else "")
+        updated = f"Results of {stamp(latest)}." if latest else ""
+        scan_line = (f'<p class="note scan">Latest scan: {stamp(self.cve["date"])}. The next one within 6 hours.</p>'
+                     if self.cve.get("date") else "")
+        doc = f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UnxWares Helm Repository</title>
+<meta name="description" content="Helm charts maintained by UnxWares, with the latest results of their tests and vulnerability scans.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+</head>
+<body>
+<div class="navbar-wrapper"><nav class="navbar" aria-label="Site"><div class="navbar-container">
+<a class="navbar-brand" href="https://unxwares.com"><picture><source srcset="assets/mark-dark.svg" media="(prefers-color-scheme: dark)"><img class="logo" src="assets/mark.svg" alt="UnxWares Logo" width="38" height="38"></picture><span class="brand-name">UnxWares</span></a>
+<div class="navbar-center"><a class="nav-link" href="#charts">Charts</a><a class="nav-link" href="#images">Images</a><a class="nav-link" href="#verify">Verify</a><a class="nav-link" href="{self.gh}">GitHub</a></div>
+<div class="navbar-actions"><a class="btn-primary" href="https://artifacthub.io/packages/search?repo=unxwares">Artifact Hub</a></div>
+</div></nav></div>
+<main>
+<section class="hero">
+<picture><source srcset="assets/logo-dark.svg" media="(prefers-color-scheme: dark)"><img class="logo" src="assets/logo.svg" alt="UnxWares" width="300" height="64"></picture>
+<h1>Helm Repository</h1>
+<p class="lead">Helm charts maintained by UnxWares, tested on every change, with their images scanned every 6 hours.</p>
+<div class="code"><code id="repo-add">helm repo add unxwares {SITE}/</code><button type="button" class="copy" data-copy="repo-add" aria-label="Copy the command">{ICON["copy"]}</button></div>
+<p class="buttons"><a class="button" href="https://artifacthub.io/packages/search?repo=unxwares">{ICON["package"]}Browse on Artifact Hub</a><a class="button button-light" href="{self.gh}">{ICON["code"]}Source on GitHub</a></p>
+<div class="stats">{stats_html}</div>
 </section>
 
-<section class="part" id="install">
-<header><h2>Install</h2><p>Helm 3.18 or later, or Helm 4.</p></header>
-<div>
-<pre><code>helm repo add unxwares {SITE}
-helm repo update
-helm search repo unxwares
+<div class="divider"><picture><source srcset="assets/mark-dark.svg" media="(prefers-color-scheme: dark)"><img src="assets/mark.svg" alt="" width="16" height="16"></picture></div>
 
-helm install my-dns unxwares/{e(example)} --namespace dns --create-namespace</code></pre>
-<p>Each chart page gives its install command, its README and its values.</p>
+<section id="charts">
+<h2><span class="icon">{ICON["package"]}</span>Charts</h2>
+<p class="section-lead">Each chart with the latest result of its tests on main and the vulnerabilities of the images it deploys by default. A mark links to the run that produced it.</p>
+<div class="grid">
+{cards}
 </div>
+<p class="legend"><span class="test test-pass"><span class="mark">{ICON["check"]}</span>passed</span><span class="test test-fail"><span class="mark">{ICON["x"]}</span>failed</span><span class="test test-na"><span class="mark">{ICON["minus"]}</span>no such test yet</span></p>
 </section>
 
-<section class="part" id="verify">
-<header><h2>Verify</h2><p>Charts are signed with an OpenPGP key, images with cosign.</p></header>
-<div>
-<div class="block">
-<h3>Chart signatures</h3>
-<p>Packages are signed with the UnxWares Helm Charts OpenPGP key, published at
-{link("pgp-public-key.asc", "pgp-public-key.asc")}. Its fingerprint:</p>
-<p class="fingerprint">{e(fp_spaced)}</p>
+<div class="divider"><picture><source srcset="assets/mark-dark.svg" media="(prefers-color-scheme: dark)"><img src="assets/mark.svg" alt="" width="16" height="16"></picture></div>
+
+<section id="images">
+<h2><span class="icon">{ICON["box"]}</span>Images</h2>
+<p class="section-lead">Where an official image lags behind, the charts default to our own build, published on <code>ghcr.io/unxwares</code>, rebuilt twice a week and scanned every 6 hours (<a href="{self.cve_issue_url()}">CVE watch</a>). Both are scanned with Trivy: the official image on the left, our build on the right.</p>
+{scan_line}
+{self.compare_table()}
+</section>
+
+<div class="divider"><picture><source srcset="assets/mark-dark.svg" media="(prefers-color-scheme: dark)"><img src="assets/mark.svg" alt="" width="16" height="16"></picture></div>
+
+<section id="verify">
+<h2><span class="icon">{ICON["shield"]}</span>Verify</h2>
+<div class="grid grid-2">
+<div class="card">
+<h3>Charts</h3>
+<p>Signed with the <a href="pgp-public-key.asc">UnxWares Helm Charts key</a>, fingerprint <code>{e(fp_spaced)}</code>.</p>
 <pre><code>curl -fsSL {SITE}/pgp-public-key.asc | gpg --import
-gpg --export {e(fp)} &gt; ~/.gnupg/unxwares-helm.gpg
-helm install my-dns unxwares/{e(example)} --verify \\
+gpg --export {e(fp)} > ~/.gnupg/unxwares-helm.gpg
+helm install my-release unxwares/&lt;chart&gt; --verify \\
   --keyring ~/.gnupg/unxwares-helm.gpg</code></pre>
 </div>
-<div class="block">
-<h3>Image signatures</h3>
-<p>Every published tag of the UnxWares images is signed with cosign, keyless, by the image workflow.</p>
-<pre><code>{e(self.cosign(signed_image))}</code></pre>
+<div class="card">
+<h3>Images</h3>
+<p>Every published image is signed with cosign, keyless, by the image workflow.</p>
+<pre><code>{e(self.cosign(sample))}</code></pre>
 </div>
 </div>
 </section>
-
-<section class="part wide" id="charts">
-<header><h2>Charts</h2><p>The latest result of each kind for what is on main. Open a chart for the dates, the runs and the details, and its images.</p></header>
-<div>
-<table class="reflow">
-<thead><tr><th scope="col">Chart</th><th scope="col">Version</th><th scope="col">Lint and schema</th><th scope="col">Install and helm test</th><th scope="col">Unit tests</th><th scope="col">End to end</th><th scope="col">Default images</th></tr></thead>
-<tbody>
-{chr(10).join(rows)}
-</tbody>
-</table>
-</div>
-</section>
-
-<section class="part wide" id="images">
-<header><h2>Images</h2><p>Where the upstream images lag behind, the charts default to these rebuilds, published on <code>ghcr.io/unxwares</code> and rebuilt every Monday and Thursday. {cve_note}</p></header>
-<div>
-<table class="reflow">
-<thead><tr><th scope="col">Image</th><th scope="col">Replaces</th><th scope="col">Used by</th><th scope="col">Build</th><th scope="col">CVE watch</th></tr></thead>
-<tbody>
-{chr(10).join(image_rows)}
-</tbody>
-</table>
-</div>
-</section>
-
-<section class="part" id="method">
-<header><h2>How these results are collected</h2><p>From the GitHub Actions runs of {link(self.gh, e(self.repo))}, read through its API.</p></header>
-<div>
-<ul class="dash">
-<li><span class="label">Lint and schema</span> {link(self.gh + "/blob/main/.github/workflows/lint-test.yaml", "lint-test.yaml")}
-runs <code>helm lint --strict</code> with Helm 3 and 4 and kubeconform on every chart, for each pull request. Shown:
-the last pull request merged into main.</li>
-<li><span class="label">Install and helm test</span> the same workflow installs the charts a pull request changes on a
-kind cluster with chart-testing, then runs <code>helm test</code>. Shown: the last merged pull request that changed the chart.</li>
-<li><span class="label">Unit tests</span> {link(self.gh + "/blob/main/.github/workflows/unit.yaml", "unit.yaml")} runs the
-helm-unittest suites of <code>charts/&lt;chart&gt;/tests</code>, on pull requests, every push to main and every Tuesday.</li>
-<li><span class="label">End to end</span> {link(self.gh + "/blob/main/.github/workflows/e2e.yaml", "e2e.yaml")} installs a
-chart in kind next to real dependencies and checks what the application answers; every push to main and every Tuesday.</li>
-<li><span class="label">CVEs</span> {link(self.gh + "/blob/main/.github/workflows/cve-watch.yaml", "cve-watch.yaml")} scans
-every image the charts can deploy with Trivy, every day. Fixable means Trivy knows a fixed version. Accepted means the
-image's <code>.trivyignore</code> says why the vulnerability stays; the reasons are on the image pages.</li>
-<li><span class="label">Images</span> {link(self.gh + "/blob/main/.github/workflows/images.yaml", "images.yaml")} builds
-each image on amd64 and arm64, scans it and signs the published tags.</li>
-</ul>
-<p>A result is only as recent as its last run: a chart nobody changed keeps the install result of the last pull request
-that touched it. Known vulnerabilities of the images are tracked in the {link(self.cve_issue_url(), "CVE watch issue")};
-how to report one is in the {link(self.gh + "/blob/main/SECURITY.md", "security policy")}.</p>
-</div>
-</section>"""
-        self.page("index.html", "UnxWares Helm charts",
-                  "Helm charts maintained by UnxWares, with the latest test results and CVE scans of each chart and image.",
-                  body)
-
-    def result_block(self, title, summary, extra=""):
-        kind, word, _, detail, r = summary
-        text = f'<p class="verdict">{st(kind, word)}</p>'
-        if detail:
-            text += f"<p>{inline_md(detail)}{'' if detail.endswith('.') else '.'}</p>"
-        text += extra
-        if r:
-            text += self.origin(r)
-        return f'<div class="result"><h3>{e(title)}</h3><div>{text}</div></div>'
-
-    def chart_page(self, c):
-        name = c["name"]
-        unit = self.result(name, "unit") or {}
-        unit_extra = ""
-        if unit.get("failures"):
-            unit_extra = '<ul class="dash">' + "".join(
-                f"<li>{e(f['suite'])}: {e(f['test'])}" + (f"<br><code>{e(f['message'])}</code>" if f.get("message") else "")
-                + "</li>" for f in unit["failures"][:30]) + "</ul>"
-        if c["has_unit_tests"]:
-            unit_extra += f'<p>{link(f"{self.gh}/tree/main/charts/{name}/tests", "The suites")}</p>'
-        e2e = self.result(name, "e2e") or {}
-        e2e_extra = ""
-        if e2e.get("checks"):
-            repeats = {ch["runs"] for ch in e2e["checks"]}
-            times = repeats.pop() if len(repeats) == 1 else 1
-            note = {1: "", 2: " Each check ran twice in the job."}.get(times, f" Each check ran {times} times in the job.")
-            e2e_extra += (f"<p>Checks of the end-to-end scripts, in order.{e(note)}</p>"
-                          '<ul class="dash checks">' + "".join(f"<li>{e(ch['name'])}</li>" for ch in e2e["checks"]) + "</ul>")
-        if e2e.get("steps"):
-            e2e_extra += ("<details><summary>Steps of the job</summary><ul class=\"dash\">" + "".join(
-                f"<li>{e(s['name'])}" + (f" ({e(s['conclusion'])})" if s.get("conclusion") not in ("success", None) else "")
-                + "</li>" for s in e2e["steps"]) + "</ul></details>")
-        install = self.result(name, "install") or {}
-        install_extra = ""
-        tests = [t for v in install.get("values", []) for t in v.get("tests", [])]
-        if tests:
-            install_extra = "<details><summary>helm test pods</summary><ul class=\"dash\">" + "".join(
-                f"<li><code>{e(re.sub(r'^' + re.escape(name) + r'-[a-z0-9]{10}-', '', t['name']))}</code> with "
-                f"{e(v['file'])}: {e(t['phase'] or 'no phase')}</li>" for v in install["values"] for t in v["tests"]) + "</ul></details>"
-
-        image_rows, other_rows = [], []
-        defaults = {i["image"] for i in c["images"]}
-        for i in c["images"]:
-            ours = self.image_of(i["image"])
-            label = link("../images/" + ours["slug"] + ".html", f"<code>{e(i['image'])}</code>") if ours else f"<code>{e(i['image'])}</code>"
-            image_rows.append(self.image_row(i["name"], label, "UnxWares" if i["image"].startswith(OURS) else "Upstream", i["image"]))
-        for ref, data in sorted((self.cve.get("images") or {}).items()):
-            if name in data.get("charts", []) and ref not in defaults:
-                ours = self.image_of(ref)
-                label = link("../images/" + ours["slug"] + ".html", f"<code>{e(ref)}</code>") if ours else f"<code>{e(ref)}</code>"
-                other_rows.append(self.image_row("", label, "UnxWares" if ref.startswith(OURS) else "Upstream", ref))
-        head = ('<thead><tr><th scope="col">Image</th><th scope="col">Source</th><th scope="col" class="num">Critical</th>'
-                '<th scope="col" class="num">High</th><th scope="col" class="num">Medium</th><th scope="col" class="num">Low</th>'
-                '<th scope="col" class="num">All</th><th scope="col" class="num">Fixable C/H</th>'
-                '<th scope="col" class="num">Accepted C/H</th></tr></thead>')
-        images_html = f'<table class="reflow">{head}<tbody>{"".join(image_rows)}</tbody></table>'
-        if other_rows:
-            images_html += ('<h3 style="margin-top:2rem">Other images it can deploy</h3>'
-                            "<p>Rendered from the chart's <code>ci/</code> values, such as the upstream images or optional components.</p>"
-                            f'<table class="reflow">{head}<tbody>{"".join(other_rows)}</tbody></table>')
-        if self.cve.get("date"):
-            images_html += f'<p class="origin">CVE watch of {stamp(self.cve["date"])} · {link(self.cve["run_url"], "run")} · {link(self.cve_issue_url(), "issue")}</p>'
-
-        changes = "".join(
-            f'<li>{(f"<span class=label>{e(CHANGE_KINDS.get(ch["kind"], ch["kind"]))}</span> " if ch["kind"] else "")}'
-            f'{inline_md(ch["description"])}</li>' for ch in c["changes"])
-        fp, _ = self.fingerprint()
-        security = " This release contains security updates." if c["containsSecurityUpdates"] else ""
-        body = f"""<section class="opening">
-<div>
-<span class="kicker"><a href="../index.html#charts">Charts</a></span>
-<h1{' class="long"' if len(name) > 16 else ""}>{e(name)}</h1>
-<p class="lede">{e(c["description"])}</p>
-<ul class="inline">
-<li>{link(f"{self.gh}/tree/main/charts/{name}#readme", "README and values")}</li>
-<li>{link(f"https://artifacthub.io/packages/helm/unxwares-sac/{name}", "Artifact Hub")}</li>
-<li>{link(f"{self.gh}/tree/main/charts/{name}", "Source")}</li>
-</ul>
-</div>
-<aside class="facts" aria-label="Chart">
-<dl>
-<dt>Chart version</dt><dd><span class="figure">{e(c["version"])}</span></dd>
-<dt>{e(c["displayName"])}</dt><dd>{e(c["appVersion"])}</dd>
-{f'<dt>Kubernetes</dt><dd><code>{e(c["kubeVersion"])}</code></dd>' if c["kubeVersion"] else ""}
-</dl>
-</aside>
-</section>
-
-<section class="part">
-<header><h2>Install</h2><p>With the signature check: see <a href="../index.html#verify">Verify</a> for the key.</p></header>
-<div>
-<pre><code>helm repo add unxwares {SITE}
-helm install {e(name)} unxwares/{e(name)} --version {e(c["version"])} \\
-  --namespace {e(name)} --create-namespace \\
-  --verify --keyring ~/.gnupg/unxwares-helm.gpg</code></pre>
-</div>
-</section>
-
-<section class="part">
-<header><h2>Test results</h2><p>Latest result of each kind on main.</p></header>
-<div>
-{self.result_block("Lint and schema", self.lint_summary(c))}
-{self.result_block("Install and helm test", self.install_summary(c), install_extra)}
-{self.result_block("Unit tests", self.unit_summary(c), unit_extra)}
-{self.result_block("End to end", self.e2e_summary(c), e2e_extra)}
-</div>
-</section>
-
-<section class="part">
-<header><h2>Images and CVEs</h2><p>Trivy, all severities. Fixable: a fixed version exists. Accepted: listed with a reason in the image's <code>.trivyignore</code>.{" Medium and low appear after the next run of the CVE watch." if self.cve.get("source") == "issue" else ""}</p></header>
-<div>
-{images_html}
-</div>
-</section>
-
-<section class="part">
-<header><h2>Changes in {e(c["version"])}</h2><p>From the chart's <code>artifacthub.io/changes</code>.{e(security)}</p></header>
-<div>
-<ul class="dash">{changes or "<li>No changes listed.</li>"}</ul>
-<p>{link(f"{self.gh}/releases/tag/{name}-{c['version']}", "Release " + e(name + "-" + c["version"]))} · earlier versions in {link(f"{self.gh}/releases?q={name}", "the releases")}</p>
-</div>
-</section>"""
-        self.page(f"charts/{name}.html", f"{name} {c['version']}: UnxWares Helm charts",
-                  f"{c['description']} Version {c['version']}, latest test results and CVE scans.", body)
-
-    def image_row(self, name, label, source, ref):
-        counts = self.cve_counts(ref)
-        if counts is None:
-            data = self.cve_of(ref)
-            status = st("fail", "Scan failed") if data and data.get("scan_failed") else st("none", "Not scanned yet")
-            return (f'<tr><td class="lead">{label}{sub(e(name))}</td><td data-label="Source">{source}</td>'
-                    f'<td data-label="Critical" class="num" colspan="7">{status}</td></tr>')
-
-        def num(v, warn=False):
-            if v is None:
-                return '<span class="zero">n/a</span>'
-            return f'<span class="zero">0</span>' if v == 0 else (f'<span class="st-fail">{v}</span>' if warn else str(v))
-        unaccepted = counts["open_fixable"]
-        return (f'<tr><td class="lead">{label}{sub(e(name) + (" (base image end of life)" if counts["eosl"] else ""))}</td>'
-                f'<td data-label="Source">{source}</td>'
-                f'<td data-label="Critical" class="num">{num(counts["critical"])}</td>'
-                f'<td data-label="High" class="num">{num(counts["high"])}</td>'
-                f'<td data-label="Medium" class="num">{num(counts["medium"])}</td>'
-                f'<td data-label="Low" class="num">{num(counts["low"])}</td>'
-                f'<td data-label="All" class="num">{num(counts["total"])}</td>'
-                f'<td data-label="Fixable C/H" class="num">{num(counts["fixable"], warn=unaccepted > 0 and ref.startswith(OURS))}</td>'
-                f'<td data-label="Accepted C/H" class="num">{num(counts["accepted"]) if ref.startswith(OURS) else "<span class=zero>n/a</span>"}</td></tr>')
-
-    def image_page(self, i):
-        build = (self.results.get("images") or {}).get(i["context"])
-        cve = self.cve_of(i["ref"]) or {}
-        counts = self.cve_counts(i["ref"])
-        used = sorted({c["name"] for c in self.charts for img in c["images"] if img["image"] == i["ref"]} |
-                      set(cve.get("charts", [])))
-        if build:
-            archs = sorted(build.get("arch", {}).items())
-            built = [a for a, d in archs if d["status"] == "passed"]
-            failed = [a for a, d in archs if d["status"] != "passed"]
-            pub = build.get("publish")
-            text = (f"Built on {' and '.join(built)}" if built else "Not built") + (
-                f"; the build failed on {' and '.join(failed)}" if failed else "")
-            text += ("; published and signed." if pub and pub["status"] == "passed" else
-                     "; not published." if not pub else "; publishing failed.")
-            scans = [(a, d["scan_findings"]) for a, d in archs if d.get("scan_findings") is not None]
-            if scans:
-                text += (" Scan of the build, fixable critical or high vulnerabilities outside `.trivyignore`: "
-                         + ", ".join(f"{n} on {a}" for a, n in scans) + ".")
-            build_html = (f'<p class="verdict">{st("pass" if build["status"] == "passed" else "fail", "Passed" if build["status"] == "passed" else "Failed")}</p>'
-                          f"<p>{inline_md(text)}</p>{self.origin(build)}")
-        else:
-            build_html = f'<p class="verdict">{st("none", "No result yet")}</p>'
-
-        sev_rows = ""
-        if counts:
-            vulns = cve.get("vulnerabilities")
-            accepted_ids = set(i["accepted"])
-            for s in SEVERITIES:
-                total = (cve.get("severity") or {}).get(s)
-                if total is None:
-                    continue
-                fixable = (cve.get("fixable") or {}).get(s)
-                acc = sum(1 for v in vulns if v["severity"] == s and v["id"] in accepted_ids) if vulns is not None else None
-                sev_rows += (f'<tr><td class="lead">{e(s.capitalize())}</td><td data-label="Found" class="num">{total}</td>'
-                             f'<td data-label="Fixable" class="num">{"n/a" if fixable is None else fixable}</td>'
-                             f'<td data-label="Accepted" class="num">{"n/a" if acc is None else acc}</td></tr>')
-        if sev_rows:
-            cve_html = ('<table class="reflow"><thead><tr><th scope="col">Severity</th><th scope="col" class="num">Found</th>'
-                        '<th scope="col" class="num">Fixable</th><th scope="col" class="num">Accepted</th></tr></thead>'
-                        f"<tbody>{sev_rows}</tbody></table>")
-            if "fixable" not in cve:
-                cve_html += (f"<p>Critical or high and fixable: {counts['fixable']}, of which {counts['accepted']} "
-                             "accepted. This summary comes from the CVE watch issue; the next run of the CVE watch "
-                             "records every severity here.</p>")
-        elif cve.get("scan_failed"):
-            cve_html = f'<p class="verdict">{st("fail", "The last scan failed")}</p>'
-        else:
-            cve_html = f'<p class="verdict">{st("none", "Not scanned yet")}</p>'
-        if self.cve.get("date"):
-            cve_html += f'<p class="origin">CVE watch of {stamp(self.cve["date"])} · {link(self.cve["run_url"], "run")} · {link(self.cve_issue_url(), "issue")}</p>'
-
-        fixable_rows = ""
-        vulns = cve.get("vulnerabilities")
-        if vulns is not None:
-            open_fixable = [v for v in vulns if v.get("fixed") and v["id"] not in i["accepted"]]
-            for v in open_fixable[:100]:
-                fixable_rows += (f'<tr><td class="lead"><code>{e(v["id"])}</code>{sub(e(v["severity"].capitalize()))}</td>'
-                                 f'<td data-label="Package">{e(v["package"])}</td><td data-label="Installed"><code>{e(v["installed"])}</code></td>'
-                                 f'<td data-label="Fixed in"><code>{e(v["fixed"])}</code></td></tr>')
-        elif cve.get("fixable_critical_high_list") is not None:
-            for v in cve["fixable_critical_high_list"]:
-                if v["id"] not in i["accepted"]:
-                    fixable_rows += (f'<tr><td class="lead"><code>{e(v["id"])}</code></td><td data-label="Package">{e(v["package"])}</td>'
-                                     '<td data-label="Installed">n/a</td><td data-label="Fixed in">n/a</td></tr>')
-        none_text = ("None outside the accepted list." if vulns is not None else
-                     "No fixable critical or high outside the accepted list. Medium and low appear after the next "
-                     "run of the CVE watch.")
-        fixable_html = (f"<p>{none_text}</p>" if not fixable_rows else
-                        '<table class="reflow"><thead><tr><th scope="col">Vulnerability</th><th scope="col">Package</th>'
-                        f'<th scope="col">Installed</th><th scope="col">Fixed in</th></tr></thead><tbody>{fixable_rows}</tbody></table>')
-
-        by_reason = {}
-        for vuln, reason in i["accepted"].items():
-            by_reason.setdefault(reason, []).append(vuln)
-        accepted_html = "".join(
-            f"<p>{e(reason) or 'No reason written.'}</p><ul class=\"dash checks\">" +
-            "".join(f"<li><code>{e(v)}</code></li>" for v in vs) + "</ul>" for reason, vs in by_reason.items())
-        if not accepted_html:
-            accepted_html = "<p>None: the image has no <code>.trivyignore</code>.</p>"
-
-        body = f"""<section class="opening">
-<div>
-<span class="kicker"><a href="../index.html#images">Images</a></span>
-<h1>{e(i["name"])}<span class="mono">{e(i["ref"])}</span></h1>
-<p class="lede">{("Replaces " + inline_md(i["upstream"]) + ". ") if i["upstream"] else ""}{inline_md(i["changes"])}{"." if i["changes"] and not i["changes"].endswith(".") else ""}</p>
-<ul class="inline">
-<li>{link(f"{self.gh}/tree/main/{i['context']}", "Dockerfile and sources")}</li>
-<li>{link(f"{self.gh}/blob/main/images/README.md", "About the images")}</li>
-<li>{link(f"https://github.com/orgs/UnxWares/packages/container/package/{i['name']}", "Package on GitHub")}</li>
-</ul>
-</div>
-<aside class="facts" aria-label="Image">
-<dl>
-<dt>Tag</dt><dd><span class="figure">{e(i["tag"])}</span></dd>
-<dt>Used by</dt><dd>{", ".join(link("../charts/" + n + ".html", e(n)) for n in used) or "no chart by default"}</dd>
-</dl>
-</aside>
-</section>
-
-<section class="part">
-<header><h2>Build</h2><p>Latest build on main, amd64 and arm64. Rebuilt every Monday and Thursday on current bases.</p></header>
-<div>{build_html}</div>
-</section>
-
-<section class="part">
-<header><h2>CVE watch</h2><p>Trivy scan of the published tag.</p></header>
-<div>{cve_html}</div>
-</section>
-
-<section class="part">
-<header><h2>Fixable, not accepted</h2><p>Fixed by bumping the dependency or the base in <code>{e(i["context"])}</code>, or by the next rebuild.</p></header>
-<div>{fixable_html}</div>
-</section>
-
-<section class="part">
-<header><h2>Accepted</h2><p>From <code>{e(i["context"])}/.trivyignore</code>: the pull request gate of the image workflow lets these pass. They still show in scans and on Artifact Hub.</p></header>
-<div>{accepted_html}</div>
-</section>
-
-<section class="part">
-<header><h2>Verify</h2><p>Signed with cosign, keyless, by the image workflow on main.</p></header>
-<div><pre><code>{e(self.cosign(i["ref"]))}</code></pre></div>
-</section>"""
-        self.page(f"images/{i['slug']}.html", f"{i['name']}:{i['tag']}: UnxWares images",
-                  f"The UnxWares {i['name']} image: build, CVE watch and accepted vulnerabilities.", body)
+<p class="results">{updated} <a href="status.json">status.json</a> · <a href="index.yaml">index.yaml</a> · <a href="{self.cve_issue_url()}">CVE watch</a> · <a href="{self.gh}/blob/main/SECURITY.md">Security policy</a></p>
+</main>
+{self.footer()}
+<script>
+// How long ago each result is, from the visitor's clock (the page itself is rebuilt every 6 hours at least).
+document.querySelectorAll("time[datetime]").forEach(function (t) {{
+  var minutes = Math.round((Date.now() - Date.parse(t.getAttribute("datetime"))) / 60000);
+  if (!(minutes >= 0)) return;
+  var ago = minutes < 60 ? minutes + " min ago" : minutes < 2880 ? Math.round(minutes / 60) + " h ago" : Math.round(minutes / 1440) + " days ago";
+  t.insertAdjacentText("beforeend", " (" + ago + ")");
+}});
+document.querySelectorAll("button.copy").forEach(function (b) {{
+  b.addEventListener("click", function () {{
+    var text = document.getElementById(b.dataset.copy).textContent;
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () {{ b.classList.add("done"); }});
+  }});
+}});
+</script>
+</body>
+</html>
+"""
+        self.write("index.html", doc)
 
     def status_json(self):
         charts = []
@@ -861,11 +616,11 @@ helm install {e(name)} unxwares/{e(name)} --version {e(c["version"])} \\
                 {k: c[k] for k in ("name", "version", "appVersion", "description", "kubeVersion", "changes",
                                    "containsSecurityUpdates")},
                 images=[dict(i, ours=i["image"].startswith(OURS), cve=self.cve_counts(i["image"])) for i in c["images"]],
-                results=results, page=f"charts/{c['name']}.html",
+                results=results,
                 links={"readme": f"{self.gh}/tree/main/charts/{c['name']}#readme",
                        "artifacthub": f"https://artifacthub.io/packages/helm/unxwares-sac/{c['name']}"}))
         images = [dict({k: i[k] for k in ("name", "tag", "ref", "context", "upstream", "changes", "accepted")},
-                       page=f"images/{i['slug']}.html", build=(self.results.get("images") or {}).get(i["context"]),
+                       build=(self.results.get("images") or {}).get(i["context"]),
                        cve=self.cve_counts(i["ref"])) for i in self.images]
         fp, _ = self.fingerprint()
         data = {"repository": self.repo, "site": SITE, "latest_result": self.latest_date(), "signing_key": fp,
@@ -882,10 +637,6 @@ helm install {e(name)} unxwares/{e(name)} --version {e(c["version"])} \\
                 shutil.copyfile(asset, out / rel)
                 self.files.append(rel)
         self.index()
-        for c in self.charts:
-            self.chart_page(c)
-        for i in self.images:
-            self.image_page(i)
         self.status_json()
 
 

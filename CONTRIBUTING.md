@@ -196,7 +196,7 @@ Chart READMEs and `values.schema.json` are generated, never edited by hand:
 - run `./generate-schemas.sh <chart-name>` and commit the result: CI fails when the generated files are out of date
 - list the release's changes in the `artifacthub.io/changes` annotation of `Chart.yaml` (replace the previous list:
   Artifact Hub shows it per version), set `artifacthub.io/containsSecurityUpdates: "true"` when the release fixes CVEs,
-  and keep `artifacthub.io/images` in sync with the images the chart deploys (the daily CVE watch reads it)
+  and keep `artifacthub.io/images` in sync with the images the chart deploys (the CVE watch reads it)
 
 ## Chart Guidelines
 
@@ -286,7 +286,7 @@ sections, in this order (skip one only when it does not apply):
 3. Architecture: workloads, Services and ports, volumes and what they hold, Secrets and ConfigMaps, optional parts
    and the value that enables each
 4. Images: default images, `imageProvider` when the chart has one, digest pinning, link to the CVE watch issue (no
-   vulnerability counts in READMEs: they change every day)
+   vulnerability counts in READMEs: they change all the time)
 5. Requirements
 6. Installation, with the signature check
 7. Configuration, one subsection per topic (persistence, database, exposure, TLS, secrets, SSO, resources,
@@ -378,10 +378,11 @@ helm unittest --strict charts/<chart-name>
 
 ### Results page
 
-<https://helm.unxwares.studio> shows, for each chart and image, the latest result of each kind with the run it comes
-from. `.github/workflows/site.yaml` rebuilds it after the test, image, CVE and release workflows and once a day:
+<https://helm.unxwares.studio> shows, for each chart, the latest result of each kind of test with the run it comes
+from, and compares each UnxWares image with the official image it replaces (`images/upstream.yaml`).
+`.github/workflows/site.yaml` rebuilds it after the test, image, CVE and release workflows and every 6 hours:
 `.github/scripts/site-collect.py` reads the runs, job logs and artifacts through the GitHub API (read only), and
-`.github/scripts/site.py` writes the pages and `status.json`, which are committed to gh-pages only when they changed.
+`.github/scripts/site.py` writes the page and `status.json`, which are committed to gh-pages only when they changed.
 It reads the `ok:` lines of the end-to-end jobs: keep one job per chart, named after the chart.
 
 ## Submitting Changes

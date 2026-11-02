@@ -21,7 +21,7 @@
 Helm charts we run ourselves, maintained by UnxWares, a small independent team in Caen, France. Every chart follows
 the same rules:
 
-- **Current, scanned images**: pinned versions, scanned every day with Trivy (the
+- **Current, scanned images**: pinned versions, scanned every 6 hours with Trivy (the
   [CVE watch](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch) issue). Where the
   upstream images lag behind, the charts default to our own rebuilds (see [Images](#images)); releases that bring
   security fixes are flagged `containsSecurityUpdates` on Artifact Hub.
@@ -92,7 +92,7 @@ still use the upstream images. Sources, differences and the signature check are 
 | Every pull request | `helm lint --strict` with Helm 3 and 4 on each chart's default and `ci/*-values.yaml` values, kubeconform on several Kubernetes versions, chart-testing (`ct lint`, then `ct install` on kind, which runs each chart's `helm test`), Artifact Hub lint, a check that the READMEs and schemas are generated |
 | Pull requests touching a chart with an end-to-end test, every push to main, every Tuesday | [`e2e.yaml`](.github/workflows/e2e.yaml): the images of the commit are built and loaded into kind, the chart is installed next to real dependencies, and a script drives the application and checks its answers |
 | Pull requests touching `images/` | Each image is built for amd64 and arm64 and fails on a fixable critical or high vulnerability that is not documented |
-| Every day, and after each image rebuild | The CVE watch scans every image the charts can deploy |
+| Every 6 hours, and after each image rebuild | The CVE watch scans every image the charts can deploy, and the official image each UnxWares image replaces |
 
 The end-to-end tests:
 
