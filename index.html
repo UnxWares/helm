@@ -1,23 +1,164 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>UnxWares Helm Repository</title>
-    <meta charset="utf-8">
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .logo { text-align: center; margin-bottom: 40px; }
-        .code { background: #f4f4f4; padding: 10px; border-radius: 4px; }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UnxWares Helm charts</title>
+<meta name="description" content="Helm charts maintained by UnxWares, with the latest test results and CVE scans of each chart and image.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
 </head>
 <body>
-    <div class="logo">
-        <img src="https://github.com/UnxWares/.github/blob/main/unxwares-logo.png?raw=true" width="300" alt="UnxWares">
-    </div>
-    <h1>UnxWares Helm Repository</h1>
-    <p>Add this Helm repository to your cluster:</p>
-    <div class="code">
-        <code>helm repo add unxwares https://helm.unxwares.studio/</code>
-    </div>
-    <p><a href="index.yaml">View index.yaml</a></p>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="masthead"><div class="wrap">
+<a class="brand" href="index.html"><picture><source srcset="assets/logo-dark.svg" media="(prefers-color-scheme: dark)"><img src="assets/logo.svg" alt="UnxWares" width="122" height="26"></picture><span>Helm charts</span></a>
+<nav aria-label="Site"><ul><li><a href="index.html#charts">Charts</a></li><li><a href="index.html#images">Images</a></li><li><a href="index.html#install">Install</a></li><li><a href="index.html#verify">Verify</a></li><li><a href="status.json">Data</a></li><li><a href="https://github.com/UnxWares/helm">GitHub</a></li></ul></nav>
+</div></header>
+<main id="main" class="wrap">
+<section class="opening">
+<div>
+<span class="kicker">helm.unxwares.studio</span>
+<h1>UnxWares Helm charts</h1>
+<p class="lede">Helm charts we run ourselves, maintained by UnxWares, a small independent team in Caen, France.
+This page lists each chart with the latest results of its tests and of the vulnerability scans of its images, as the
+continuous integration of the repository reports them.</p>
+<p>Every result links to the run that produced it. Where a chart has no test of a kind yet, the page says so.</p>
+</div>
+<aside class="facts" aria-label="Repository">
+<dl>
+<dt>Charts</dt><dd><span class="figure">9</span></dd>
+<dt>UnxWares images</dt><dd><span class="figure">14</span></dd>
+<dt>Latest result</dt><dd><time datetime="2026-11-02T15:26:39Z">2 Nov 2026, 15:26 UTC</time></dd>
+<dt>Repository</dt><dd><code>https://helm.unxwares.studio</code></dd>
+</dl>
+</aside>
+</section>
+
+<section class="part" id="install">
+<header><h2>Install</h2><p>Helm 3.18 or later, or Helm 4.</p></header>
+<div>
+<pre><code>helm repo add unxwares https://helm.unxwares.studio
+helm repo update
+helm search repo unxwares
+
+helm install my-dns unxwares/powerdns --namespace dns --create-namespace</code></pre>
+<p>Each chart page gives its install command, its README and its values.</p>
+</div>
+</section>
+
+<section class="part" id="verify">
+<header><h2>Verify</h2><p>Charts are signed with an OpenPGP key, images with cosign.</p></header>
+<div>
+<div class="block">
+<h3>Chart signatures</h3>
+<p>Packages are signed with the UnxWares Helm Charts OpenPGP key, published at
+<a href="pgp-public-key.asc">pgp-public-key.asc</a>. Its fingerprint:</p>
+<p class="fingerprint">7902 E52E A435 EF27 C643  2E53 78D6 B532 C599 DA9B</p>
+<pre><code>curl -fsSL https://helm.unxwares.studio/pgp-public-key.asc | gpg --import
+gpg --export 7902E52EA435EF27C6432E5378D6B532C599DA9B &gt; ~/.gnupg/unxwares-helm.gpg
+helm install my-dns unxwares/powerdns --verify \
+  --keyring ~/.gnupg/unxwares-helm.gpg</code></pre>
+</div>
+<div class="block">
+<h3>Image signatures</h3>
+<p>Every published tag of the UnxWares images is signed with cosign, keyless, by the image workflow.</p>
+<pre><code>cosign verify ghcr.io/unxwares/taiga-back:6.10.2 \
+  --certificate-identity &#x27;https://github.com/UnxWares/helm/.github/workflows/images.yaml@refs/heads/main&#x27; \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com</code></pre>
+</div>
+</div>
+</section>
+
+<section class="part wide" id="charts">
+<header><h2>Charts</h2><p>The latest result of each kind for what is on main. Open a chart for the dates, the runs and the details, and its images.</p></header>
+<div>
+<table class="reflow">
+<thead><tr><th scope="col">Chart</th><th scope="col">Version</th><th scope="col">Lint and schema</th><th scope="col">Install and helm test</th><th scope="col">Unit tests</th><th scope="col">End to end</th><th scope="col">Default images</th></tr></thead>
+<tbody>
+<tr><td class="lead"><span class="name"><a href="charts/bind9.html">bind9</a></span><span class="sub">ISC Bind9 9.20</span></td><td data-label="Version">2026.11.1</td><td data-label="Lint and schema"><span class="st st-pass">Passed</span></td><td data-label="Install and helm test"><span class="st st-pass">Passed</span><span class="sub">helm test 1 of 1</span></td><td data-label="Unit tests"><span class="st st-na">No tests yet</span></td><td data-label="End to end"><span class="st st-na">No test</span></td><td data-label="Default images"><span class="st st-fail">0 critical, 2 high</span><span class="sub">2 fixable</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="charts/cloudreve.html">cloudreve</a></span><span class="sub">Cloudreve 4.19.1</span></td><td data-label="Version">2026.11.2</td><td data-label="Lint and schema"><span class="st st-pass">Passed</span></td><td data-label="Install and helm test"><span class="st st-pass">Passed</span><span class="sub">helm test 2 of 2</span></td><td data-label="Unit tests"><span class="st st-none">No result yet</span></td><td data-label="End to end"><span class="st st-pass">Passed</span><span class="sub">5 checks</span></td><td data-label="Default images"><span class="st st-pass">0 critical, 0 high</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="charts/excalidash.html">excalidash</a></span><span class="sub">ExcaliDash 0.6.7</span></td><td data-label="Version">2026.11.2</td><td data-label="Lint and schema"><span class="st st-pass">Passed</span></td><td data-label="Install and helm test"><span class="st st-pass">Passed</span><span class="sub">helm test 1 of 1</span></td><td data-label="Unit tests"><span class="st st-na">No tests yet</span></td><td data-label="End to end"><span class="st st-none">No result yet</span></td><td data-label="Default images"><span class="st st-pass">0 critical, 0 high</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="charts/fossflow.html">fossflow</a></span><span class="sub">FossFLOW 1.0.5</span></td><td data-label="Version">2026.11.2</td><td data-label="Lint and schema"><span class="st st-pass">Passed</span></td><td data-label="Install and helm test"><span class="st st-pass">Passed</span><span class="sub">helm test 3 of 3</span></td><td data-label="Unit tests"><span class="st st-na">No tests yet</span></td><td data-label="End to end"><span class="st st-none">No result yet</span></td><td data-label="Default images"><span class="st st-none">Not scanned yet</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="charts/kener.html">kener</a></span><span class="sub">Kener 4.1.11</span></td><td data-label="Version">2026.11.3</td><td data-label="Lint and schema"><span class="st st-pass">Passed</span></td><td data-label="Install and helm test"><span class="st st-pass">Passed</span><span class="sub">helm test 2 of 2</span></td><td data-label="Unit tests"><span class="st st-na">No tests yet</span></td><td data-label="End to end"><span class="st st-none">No result yet</span></td><td data-label="Default images"><span class="st st-fail">0 critical, 13 high</span><span class="sub">13 fixable</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="charts/laravel-generic.html">laravel-generic</a></span><span class="sub">Laravel (generic) 12.x</span></td><td data-label="Version">2026.11.2</td><td data-label="Lint and schema"><span class="st st-pass">Passed</span></td><td data-label="Install and helm test"><span class="st st-na">Not installed</span><span class="sub">excluded from chart-testing</span></td><td data-label="Unit tests"><span class="st st-none">No result yet</span></td><td data-label="End to end"><span class="st st-na">No test</span></td><td data-label="Default images"><span class="st st-pass">0 critical, 0 high</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="charts/openeverest-database-tools.html">openeverest-database-tools</a></span><span class="sub">OpenEverest Database Tools 1.17.0</span></td><td data-label="Version">2026.11.3</td><td data-label="Lint and schema"><span class="st st-pass">Passed</span></td><td data-label="Install and helm test"><span class="st st-na">Not installed</span><span class="sub">excluded from chart-testing</span></td><td data-label="Unit tests"><span class="st st-none">No result yet</span></td><td data-label="End to end"><span class="st st-pass">Passed</span><span class="sub">15 checks</span></td><td data-label="Default images"><span class="st st-fail">0 critical, 3 high</span><span class="sub">3 fixable, 1 accepted</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="charts/powerdns.html">powerdns</a></span><span class="sub">PowerDNS 5.1.5</span></td><td data-label="Version">2026.11.1</td><td data-label="Lint and schema"><span class="st st-pass">Passed</span></td><td data-label="Install and helm test"><span class="st st-pass">Passed</span><span class="sub">helm test 2 of 2</span></td><td data-label="Unit tests"><span class="st st-na">No tests yet</span></td><td data-label="End to end"><span class="st st-na">No test</span></td><td data-label="Default images"><span class="st st-pass">0 critical, 0 high</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="charts/taiga.html">taiga</a></span><span class="sub">Taiga 6.10.2</span></td><td data-label="Version">2026.11.2</td><td data-label="Lint and schema"><span class="st st-pass">Passed</span></td><td data-label="Install and helm test"><span class="st st-pass">Passed</span><span class="sub">helm test 2 of 2</span></td><td data-label="Unit tests"><span class="st st-na">No tests yet</span></td><td data-label="End to end"><span class="st st-pass">Passed</span><span class="sub">14 checks</span></td><td data-label="Default images"><span class="st st-none">1 critical, 3 high</span><span class="sub">4 fixable, 4 accepted</span></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section class="part wide" id="images">
+<header><h2>Images</h2><p>Where the upstream images lag behind, the charts default to these rebuilds, published on <code>ghcr.io/unxwares</code> and rebuilt every Monday and Thursday. CVE watch of <time datetime="2026-11-02T15:21:56Z">2 Nov 2026, 15:21 UTC</time>, <a href="https://github.com/UnxWares/helm/actions/runs/41470515388">run</a>.</p></header>
+<div>
+<table class="reflow">
+<thead><tr><th scope="col">Image</th><th scope="col">Replaces</th><th scope="col">Used by</th><th scope="col">Build</th><th scope="col">CVE watch</th></tr></thead>
+<tbody>
+<tr><td class="lead"><span class="name"><a href="images/postgres-17.html">postgres</a></span><span class="sub"><code>17.11-alpine</code></span></td><td data-label="Replaces"><code>docker.io/library/postgres</code></td><td data-label="Used by"><a href="charts/taiga.html">taiga</a></td><td data-label="Build"><span class="st st-pass">Built 2 Nov 2026</span><span class="sub">amd64, arm64</span></td><td data-label="CVE watch"><span class="st st-pass">0 critical, 0 high</span><span class="sub">0 in total</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="images/postgres-18.html">postgres</a></span><span class="sub"><code>18.6-alpine</code></span></td><td data-label="Replaces"><code>docker.io/library/postgres</code></td><td data-label="Used by"><span class=zero>none</span></td><td data-label="Build"><span class="st st-pass">Built 2 Nov 2026</span><span class="sub">amd64, arm64</span></td><td data-label="CVE watch"><span class="st st-na">Not watched</span><span class="sub">no chart deploys this tag</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="images/taiga-back.html">taiga-back</a></span><span class="sub"><code>6.10.2</code></span></td><td data-label="Replaces"><code>docker.io/taigaio/taiga-back</code></td><td data-label="Used by"><a href="charts/taiga.html">taiga</a></td><td data-label="Build"><span class="st st-pass">Built 2 Nov 2026</span><span class="sub">amd64, arm64</span></td><td data-label="CVE watch"><span class="st st-none">1 critical, 3 high</span><span class="sub">4 fixable, 4 accepted, 15 in total</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="images/taiga-events.html">taiga-events</a></span><span class="sub"><code>6.10.0</code></span></td><td data-label="Replaces"><code>docker.io/taigaio/taiga-events</code></td><td data-label="Used by"><a href="charts/taiga.html">taiga</a></td><td data-label="Build"><span class="st st-pass">Built 2 Nov 2026</span><span class="sub">amd64, arm64</span></td><td data-label="CVE watch"><span class="st st-pass">0 critical, 0 high</span><span class="sub">0 in total</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="images/taiga-front.html">taiga-front</a></span><span class="sub"><code>6.10.3</code></span></td><td data-label="Replaces"><code>docker.io/taigaio/taiga-front</code></td><td data-label="Used by"><a href="charts/taiga.html">taiga</a></td><td data-label="Build"><span class="st st-pass">Built 2 Nov 2026</span><span class="sub">amd64, arm64</span></td><td data-label="CVE watch"><span class="st st-pass">0 critical, 0 high</span><span class="sub">0 in total</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="images/taiga-protected.html">taiga-protected</a></span><span class="sub"><code>6.10.1</code></span></td><td data-label="Replaces"><code>docker.io/taigaio/taiga-protected</code></td><td data-label="Used by"><a href="charts/taiga.html">taiga</a></td><td data-label="Build"><span class="st st-pass">Built 2 Nov 2026</span><span class="sub">amd64, arm64</span></td><td data-label="CVE watch"><span class="st st-pass">0 critical, 0 high</span><span class="sub">0 in total</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="images/pdns-auth.html">pdns-auth</a></span><span class="sub"><code>5.1.5</code></span></td><td data-label="Replaces"><code>docker.io/powerdns/pdns-auth-51</code></td><td data-label="Used by"><a href="charts/powerdns.html">powerdns</a></td><td data-label="Build"><span class="st st-pass">Built 2 Nov 2026</span><span class="sub">amd64, arm64</span></td><td data-label="CVE watch"><span class="st st-pass">0 critical, 0 high</span><span class="sub">0 in total</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="images/pdns-recursor.html">pdns-recursor</a></span><span class="sub"><code>5.4.9</code></span></td><td data-label="Replaces"><code>docker.io/powerdns/pdns-recursor-54</code></td><td data-label="Used by"><a href="charts/powerdns.html">powerdns</a></td><td data-label="Build"><span class="st st-pass">Built 2 Nov 2026</span><span class="sub">amd64, arm64</span></td><td data-label="CVE watch"><span class="st st-pass">0 critical, 0 high</span><span class="sub">0 in total</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="images/postgresql-client.html">postgresql-client</a></span><span class="sub"><code>18</code></span></td><td data-label="Replaces"><code>docker.io/library/postgres</code> (its <code>psql</code>)</td><td data-label="Used by"><a href="charts/openeverest-database-tools.html">openeverest-database-tools</a></td><td data-label="Build"><span class="st st-pass">Built 2 Nov 2026</span><span class="sub">amd64, arm64</span></td><td data-label="CVE watch"><span class="st st-pass">0 critical, 0 high</span><span class="sub">0 in total</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="images/mysql-client.html">mysql-client</a></span><span class="sub"><code>8.4</code></span></td><td data-label="Replaces"><code>docker.io/library/mysql</code> (its <code>mysql</code>)</td><td data-label="Used by"><a href="charts/openeverest-database-tools.html">openeverest-database-tools</a></td><td data-label="Build"><span class="st st-pass">Built 2 Nov 2026</span><span class="sub">amd64, arm64</span></td><td data-label="CVE watch"><span class="st st-pass">0 critical, 0 high</span><span class="sub">0 in total</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="images/mongosh.html">mongosh</a></span><span class="sub"><code>2.14.1</code></span></td><td data-label="Replaces"><code>docker.io/library/mongo</code> (its <code>mongosh</code>)</td><td data-label="Used by"><a href="charts/openeverest-database-tools.html">openeverest-database-tools</a></td><td data-label="Build"><span class="st st-pass">Built 2 Nov 2026</span><span class="sub">amd64, arm64</span></td><td data-label="CVE watch"><span class="st st-none">0 critical, 1 high</span><span class="sub">1 fixable, 1 accepted, 47 in total</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="images/cloudreve.html">cloudreve</a></span><span class="sub"><code>4.19.1</code></span></td><td data-label="Replaces"><code>docker.io/cloudreve/cloudreve</code></td><td data-label="Used by"><a href="charts/cloudreve.html">cloudreve</a></td><td data-label="Build"><span class="st st-pass">Built 2 Nov 2026</span><span class="sub">amd64, arm64</span></td><td data-label="CVE watch"><span class="st st-pass">0 critical, 0 high</span><span class="sub">3 in total</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="images/fossflow.html">fossflow</a></span><span class="sub"><code>1.0.5</code></span></td><td data-label="Replaces"><code>docker.io/abrar74774/fossflow</code></td><td data-label="Used by"><a href="charts/fossflow.html">fossflow</a></td><td data-label="Build"><span class="st st-pass">Built 2 Nov 2026</span><span class="sub">amd64, arm64</span></td><td data-label="CVE watch"><span class="st st-none">Not scanned yet</span></td></tr>
+<tr><td class="lead"><span class="name"><a href="images/bind-exporter.html">bind-exporter</a></span><span class="sub"><code>0.8.0-62-gbafd56f</code></span></td><td data-label="Replaces"><code>docker.io/prometheuscommunity/bind-exporter</code></td><td data-label="Used by"><span class=zero>none</span></td><td data-label="Build"><span class="st st-none">No result yet</span></td><td data-label="CVE watch"><span class="st st-na">Not watched</span><span class="sub">no chart deploys this tag</span></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section class="part" id="method">
+<header><h2>How these results are collected</h2><p>From the GitHub Actions runs of <a href="https://github.com/UnxWares/helm">UnxWares/helm</a>, read through its API.</p></header>
+<div>
+<ul class="dash">
+<li><span class="label">Lint and schema</span> <a href="https://github.com/UnxWares/helm/blob/main/.github/workflows/lint-test.yaml">lint-test.yaml</a>
+runs <code>helm lint --strict</code> with Helm 3 and 4 and kubeconform on every chart, for each pull request. Shown:
+the last pull request merged into main.</li>
+<li><span class="label">Install and helm test</span> the same workflow installs the charts a pull request changes on a
+kind cluster with chart-testing, then runs <code>helm test</code>. Shown: the last merged pull request that changed the chart.</li>
+<li><span class="label">Unit tests</span> <a href="https://github.com/UnxWares/helm/blob/main/.github/workflows/unit.yaml">unit.yaml</a> runs the
+helm-unittest suites of <code>charts/&lt;chart&gt;/tests</code>, on pull requests, every push to main and every Tuesday.</li>
+<li><span class="label">End to end</span> <a href="https://github.com/UnxWares/helm/blob/main/.github/workflows/e2e.yaml">e2e.yaml</a> installs a
+chart in kind next to real dependencies and checks what the application answers; every push to main and every Tuesday.</li>
+<li><span class="label">CVEs</span> <a href="https://github.com/UnxWares/helm/blob/main/.github/workflows/cve-watch.yaml">cve-watch.yaml</a> scans
+every image the charts can deploy with Trivy, every day. Fixable means Trivy knows a fixed version. Accepted means the
+image's <code>.trivyignore</code> says why the vulnerability stays; the reasons are on the image pages.</li>
+<li><span class="label">Images</span> <a href="https://github.com/UnxWares/helm/blob/main/.github/workflows/images.yaml">images.yaml</a> builds
+each image on amd64 and arm64, scans it and signs the published tags.</li>
+</ul>
+<p>A result is only as recent as its last run: a chart nobody changed keeps the install result of the last pull request
+that touched it. Known vulnerabilities of the images are tracked in the <a href="https://github.com/UnxWares/helm/issues/16">CVE watch issue</a>;
+how to report one is in the <a href="https://github.com/UnxWares/helm/blob/main/SECURITY.md">security policy</a>.</p>
+</div>
+</section>
+</main>
+<footer class="colophon"><div class="wrap"><div class="colophon-grid">
+<div><h2>UnxWares Helm charts</h2><ul>
+<li><a href="https://github.com/UnxWares/helm">Source on GitHub</a></li>
+<li><a href="https://artifacthub.io/packages/search?repo=unxwares">Artifact Hub</a></li>
+<li><a href="index.yaml">index.yaml</a></li>
+</ul></div>
+<div><h2>Security</h2><ul>
+<li><a href="https://github.com/UnxWares/helm/blob/main/SECURITY.md">Security policy</a></li>
+<li><a href="https://github.com/UnxWares/helm/issues/16">CVE watch issue</a></li>
+<li><a href="https://github.com/UnxWares/helm/security/advisories/new">Report a vulnerability</a></li>
+</ul></div>
+<div><h2>Data</h2><ul>
+<li><a href="status.json">status.json</a>, everything on these pages</li>
+<li><a href="pgp-public-key.asc">Signing key</a></li>
+</ul></div>
+<div><h2>Colophon</h2><ul>
+<li>UnxWares, Caen, France</li>
+<li>Set in Poppins (<a href="assets/fonts/OFL.txt">SIL Open Font License 1.1</a>)</li>
+</ul></div>
+</div></div></footer>
 </body>
 </html>

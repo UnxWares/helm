@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fossflow 2026.11.2: UnxWares Helm charts</title>
+<meta name="description" content="FossFLOW, an open source web app to draw isometric infrastructure diagrams, with optional server-side storage of the diagrams. Version 2026.11.2, latest test results and CVE scans.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="masthead"><div class="wrap">
+<a class="brand" href="../index.html"><picture><source srcset="../assets/logo-dark.svg" media="(prefers-color-scheme: dark)"><img src="../assets/logo.svg" alt="UnxWares" width="122" height="26"></picture><span>Helm charts</span></a>
+<nav aria-label="Site"><ul><li><a href="../index.html#charts">Charts</a></li><li><a href="../index.html#images">Images</a></li><li><a href="../index.html#install">Install</a></li><li><a href="../index.html#verify">Verify</a></li><li><a href="../status.json">Data</a></li><li><a href="https://github.com/UnxWares/helm">GitHub</a></li></ul></nav>
+</div></header>
+<main id="main" class="wrap">
+<section class="opening">
+<div>
+<span class="kicker"><a href="../index.html#charts">Charts</a></span>
+<h1>fossflow</h1>
+<p class="lede">FossFLOW, an open source web app to draw isometric infrastructure diagrams, with optional server-side storage of the diagrams.</p>
+<ul class="inline">
+<li><a href="https://github.com/UnxWares/helm/tree/main/charts/fossflow#readme">README and values</a></li>
+<li><a href="https://artifacthub.io/packages/helm/unxwares-sac/fossflow">Artifact Hub</a></li>
+<li><a href="https://github.com/UnxWares/helm/tree/main/charts/fossflow">Source</a></li>
+</ul>
+</div>
+<aside class="facts" aria-label="Chart">
+<dl>
+<dt>Chart version</dt><dd><span class="figure">2026.11.2</span></dd>
+<dt>FossFLOW</dt><dd>1.0.5</dd>
+<dt>Kubernetes</dt><dd><code>&gt;=1.27.0-0</code></dd>
+</dl>
+</aside>
+</section>
+
+<section class="part">
+<header><h2>Install</h2><p>With the signature check: see <a href="../index.html#verify">Verify</a> for the key.</p></header>
+<div>
+<pre><code>helm repo add unxwares https://helm.unxwares.studio
+helm install fossflow unxwares/fossflow --version 2026.11.2 \
+  --namespace fossflow --create-namespace \
+  --verify --keyring ~/.gnupg/unxwares-helm.gpg</code></pre>
+</div>
+</section>
+
+<section class="part">
+<header><h2>Test results</h2><p>Latest result of each kind on main.</p></header>
+<div>
+<div class="result"><h3>Lint and schema</h3><div><p class="verdict"><span class="st st-pass">Passed</span></p><p><code>helm lint --strict</code> with Helm v3.22.1 and v4.3.1, on the default values and 3 ci values files; <code>kubeconform</code> on Kubernetes 1.31.0 and 1.34.0, 4 renderings.</p><p class="origin"><time datetime="2026-11-02T15:26:39Z">2 Nov 2026, 15:26 UTC</time> · <a href="https://github.com/UnxWares/helm/pull/33">pull request #33</a> · commit <a href="https://github.com/UnxWares/helm/commit/545d8b4114ddb7b9e7d785105cbd736b1965b30b"><code>545d8b4</code></a> · <a href="https://github.com/UnxWares/helm/actions/runs/41470723628">run</a></p></div></div>
+<div class="result"><h3>Install and helm test</h3><div><p class="verdict"><span class="st st-pass">Passed</span></p><p><code>ct lint</code> passed (version increment, YAML lint). Installed on kind with <code>browser-only-values.yaml</code> and <code>default-values.yaml</code> and <code>upstream-values.yaml</code>; <code>helm test</code>: 3 of 3 test pods succeeded.</p><details><summary>helm test pods</summary><ul class="dash"><li><code>test-connection</code> with browser-only-values.yaml: Succeeded</li><li><code>test-connection</code> with default-values.yaml: Succeeded</li><li><code>test-connection</code> with upstream-values.yaml: Succeeded</li></ul></details><p class="origin"><time datetime="2026-11-02T15:26:39Z">2 Nov 2026, 15:26 UTC</time> · <a href="https://github.com/UnxWares/helm/pull/33">pull request #33</a> · commit <a href="https://github.com/UnxWares/helm/commit/545d8b4114ddb7b9e7d785105cbd736b1965b30b"><code>545d8b4</code></a> · <a href="https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363709379">run</a></p></div></div>
+<div class="result"><h3>Unit tests</h3><div><p class="verdict"><span class="st st-na">No tests yet</span></p></div></div>
+<div class="result"><h3>End to end</h3><div><p class="verdict"><span class="st st-none">No result yet</span></p></div></div>
+</div>
+</section>
+
+<section class="part">
+<header><h2>Images and CVEs</h2><p>Trivy, all severities. Fixable: a fixed version exists. Accepted: listed with a reason in the image's <code>.trivyignore</code>. Medium and low appear after the next run of the CVE watch.</p></header>
+<div>
+<table class="reflow"><thead><tr><th scope="col">Image</th><th scope="col">Source</th><th scope="col" class="num">Critical</th><th scope="col" class="num">High</th><th scope="col" class="num">Medium</th><th scope="col" class="num">Low</th><th scope="col" class="num">All</th><th scope="col" class="num">Fixable C/H</th><th scope="col" class="num">Accepted C/H</th></tr></thead><tbody><tr><td class="lead"><a href="../images/fossflow.html"><code>ghcr.io/unxwares/fossflow:1.0.5</code></a><span class="sub">fossflow</span></td><td data-label="Source">UnxWares</td><td data-label="Critical" class="num" colspan="7"><span class="st st-none">Not scanned yet</span></td></tr></tbody></table><h3 style="margin-top:2rem">Other images it can deploy</h3><p>Rendered from the chart's <code>ci/</code> values, such as the upstream images or optional components.</p><table class="reflow"><thead><tr><th scope="col">Image</th><th scope="col">Source</th><th scope="col" class="num">Critical</th><th scope="col" class="num">High</th><th scope="col" class="num">Medium</th><th scope="col" class="num">Low</th><th scope="col" class="num">All</th><th scope="col" class="num">Fixable C/H</th><th scope="col" class="num">Accepted C/H</th></tr></thead><tbody><tr><td class="lead"><code>docker.io/abrar74774/fossflow:master-2b3cee3</code></td><td data-label="Source">Upstream</td><td data-label="Critical" class="num"><span class="zero">0</span></td><td data-label="High" class="num">14</td><td data-label="Medium" class="num"><span class="zero">n/a</span></td><td data-label="Low" class="num"><span class="zero">n/a</span></td><td data-label="All" class="num">40</td><td data-label="Fixable C/H" class="num">14</td><td data-label="Accepted C/H" class="num"><span class=zero>n/a</span></td></tr></tbody></table><p class="origin">CVE watch of <time datetime="2026-11-02T15:21:56Z">2 Nov 2026, 15:21 UTC</time> · <a href="https://github.com/UnxWares/helm/actions/runs/41470515388">run</a> · <a href="https://github.com/UnxWares/helm/issues/16">issue</a></p>
+</div>
+</section>
+
+<section class="part">
+<header><h2>Changes in 2026.11.2</h2><p>From the chart's <code>artifacthub.io/changes</code>. This release contains security updates.</p></header>
+<div>
+<ul class="dash"><li><span class=label>Security</span> Default image moves to ghcr.io/unxwares/fossflow (imageProvider: unxwares): FossFLOW 1.0.5 built from the upstream sources with updated npm dependencies on a current Alpine, without npm, su-exec or openssl at runtime. It runs as uid 1000 on port 8080 with a read-only root filesystem and no capability. imageProvider: upstream keeps abrar74774/fossflow:master-2b3cee3.</li><li><span class=label>Security</span> The storage backend listens on 127.0.0.1 only (BACKEND_HOST), with both images: other pods can no longer read or change the diagrams on port 3001 without going through nginx.</li><li><span class=label>Security</span> The UnxWares image drops the CORS headers of the backend (any origin allowed): another site can no longer read or change the diagrams through a visitor&#x27;s browser.</li><li><span class=label>Added</span> Optional NetworkPolicy (networkPolicy.enabled, networkPolicy.ingressFrom): only the HTTP port is open, and the pods open no connection.</li><li><span class=label>Added</span> End-to-end test in CI on the image of the commit: diagrams created, listed, read back, updated and kept across a pod replacement through the Service, browser-only mode, and the backend port and the NetworkPolicy checked from other pods.</li><li><span class=label>Changed</span> podSecurityContext and securityContext are empty by default: the chart applies the defaults of imageProvider, with fsGroup taken from storage.gid.</li><li><span class=label>Fixed</span> autoscaling.targetMemoryUtilizationPercentage is a documented value; the helm test pod no longer carries the labels the Service selects; Service environment variables are no longer injected (a Service named backend would have set BACKEND_PORT).</li></ul>
+<p><a href="https://github.com/UnxWares/helm/releases/tag/fossflow-2026.11.2">Release fossflow-2026.11.2</a> · earlier versions in <a href="https://github.com/UnxWares/helm/releases?q=fossflow">the releases</a></p>
+</div>
+</section>
+</main>
+<footer class="colophon"><div class="wrap"><div class="colophon-grid">
+<div><h2>UnxWares Helm charts</h2><ul>
+<li><a href="https://github.com/UnxWares/helm">Source on GitHub</a></li>
+<li><a href="https://artifacthub.io/packages/search?repo=unxwares">Artifact Hub</a></li>
+<li><a href="../index.yaml">index.yaml</a></li>
+</ul></div>
+<div><h2>Security</h2><ul>
+<li><a href="https://github.com/UnxWares/helm/blob/main/SECURITY.md">Security policy</a></li>
+<li><a href="https://github.com/UnxWares/helm/issues/16">CVE watch issue</a></li>
+<li><a href="https://github.com/UnxWares/helm/security/advisories/new">Report a vulnerability</a></li>
+</ul></div>
+<div><h2>Data</h2><ul>
+<li><a href="../status.json">status.json</a>, everything on these pages</li>
+<li><a href="../pgp-public-key.asc">Signing key</a></li>
+</ul></div>
+<div><h2>Colophon</h2><ul>
+<li>UnxWares, Caen, France</li>
+<li>Set in Poppins (<a href="../assets/fonts/OFL.txt">SIL Open Font License 1.1</a>)</li>
+</ul></div>
+</div></div></footer>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>powerdns 2026.11.1: UnxWares Helm charts</title>
+<meta name="description" content="PowerDNS Authoritative Server with its REST API, SQLite/PostgreSQL/MySQL backends and an optional PowerDNS Recursor, hardened for Kubernetes. Version 2026.11.1, latest test results and CVE scans.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="masthead"><div class="wrap">
+<a class="brand" href="../index.html"><picture><source srcset="../assets/logo-dark.svg" media="(prefers-color-scheme: dark)"><img src="../assets/logo.svg" alt="UnxWares" width="122" height="26"></picture><span>Helm charts</span></a>
+<nav aria-label="Site"><ul><li><a href="../index.html#charts">Charts</a></li><li><a href="../index.html#images">Images</a></li><li><a href="../index.html#install">Install</a></li><li><a href="../index.html#verify">Verify</a></li><li><a href="../status.json">Data</a></li><li><a href="https://github.com/UnxWares/helm">GitHub</a></li></ul></nav>
+</div></header>
+<main id="main" class="wrap">
+<section class="opening">
+<div>
+<span class="kicker"><a href="../index.html#charts">Charts</a></span>
+<h1>powerdns</h1>
+<p class="lede">PowerDNS Authoritative Server with its REST API, SQLite/PostgreSQL/MySQL backends and an optional PowerDNS Recursor, hardened for Kubernetes.</p>
+<ul class="inline">
+<li><a href="https://github.com/UnxWares/helm/tree/main/charts/powerdns#readme">README and values</a></li>
+<li><a href="https://artifacthub.io/packages/helm/unxwares-sac/powerdns">Artifact Hub</a></li>
+<li><a href="https://github.com/UnxWares/helm/tree/main/charts/powerdns">Source</a></li>
+</ul>
+</div>
+<aside class="facts" aria-label="Chart">
+<dl>
+<dt>Chart version</dt><dd><span class="figure">2026.11.1</span></dd>
+<dt>PowerDNS</dt><dd>5.1.5</dd>
+<dt>Kubernetes</dt><dd><code>&gt;=1.27.0-0</code></dd>
+</dl>
+</aside>
+</section>
+
+<section class="part">
+<header><h2>Install</h2><p>With the signature check: see <a href="../index.html#verify">Verify</a> for the key.</p></header>
+<div>
+<pre><code>helm repo add unxwares https://helm.unxwares.studio
+helm install powerdns unxwares/powerdns --version 2026.11.1 \
+  --namespace powerdns --create-namespace \
+  --verify --keyring ~/.gnupg/unxwares-helm.gpg</code></pre>
+</div>
+</section>
+
+<section class="part">
+<header><h2>Test results</h2><p>Latest result of each kind on main.</p></header>
+<div>
+<div class="result"><h3>Lint and schema</h3><div><p class="verdict"><span class="st st-pass">Passed</span></p><p><code>helm lint --strict</code> with Helm v3.22.1 and v4.3.1, on the default values and 2 ci values files; <code>kubeconform</code> on Kubernetes 1.31.0 and 1.34.0, 3 renderings.</p><p class="origin"><time datetime="2026-11-02T15:26:39Z">2 Nov 2026, 15:26 UTC</time> · <a href="https://github.com/UnxWares/helm/pull/33">pull request #33</a> · commit <a href="https://github.com/UnxWares/helm/commit/545d8b4114ddb7b9e7d785105cbd736b1965b30b"><code>545d8b4</code></a> · <a href="https://github.com/UnxWares/helm/actions/runs/41470723628">run</a></p></div></div>
+<div class="result"><h3>Install and helm test</h3><div><p class="verdict"><span class="st st-pass">Passed</span></p><p><code>ct lint</code> passed (version increment, YAML lint). Installed on kind with <code>default-values.yaml</code> and <code>upstream-values.yaml</code>; <code>helm test</code>: 2 of 2 test pods succeeded.</p><details><summary>helm test pods</summary><ul class="dash"><li><code>test-api</code> with default-values.yaml: Succeeded</li><li><code>test-api</code> with upstream-values.yaml: Succeeded</li></ul></details><p class="origin"><time datetime="2026-11-02T13:02:01Z">2 Nov 2026, 13:02 UTC</time> · <a href="https://github.com/UnxWares/helm/pull/27">pull request #27</a> · commit <a href="https://github.com/UnxWares/helm/commit/03128db8309a189d6a2d50f0427be72460809b22"><code>03128db</code></a> · <a href="https://github.com/UnxWares/helm/actions/runs/41448084718/job/125286277633">run</a></p></div></div>
+<div class="result"><h3>Unit tests</h3><div><p class="verdict"><span class="st st-na">No tests yet</span></p></div></div>
+<div class="result"><h3>End to end</h3><div><p class="verdict"><span class="st st-na">No test</span></p></div></div>
+</div>
+</section>
+
+<section class="part">
+<header><h2>Images and CVEs</h2><p>Trivy, all severities. Fixable: a fixed version exists. Accepted: listed with a reason in the image's <code>.trivyignore</code>. Medium and low appear after the next run of the CVE watch.</p></header>
+<div>
+<table class="reflow"><thead><tr><th scope="col">Image</th><th scope="col">Source</th><th scope="col" class="num">Critical</th><th scope="col" class="num">High</th><th scope="col" class="num">Medium</th><th scope="col" class="num">Low</th><th scope="col" class="num">All</th><th scope="col" class="num">Fixable C/H</th><th scope="col" class="num">Accepted C/H</th></tr></thead><tbody><tr><td class="lead"><a href="../images/pdns-auth.html"><code>ghcr.io/unxwares/pdns-auth:5.1.5</code></a><span class="sub">pdns-auth</span></td><td data-label="Source">UnxWares</td><td data-label="Critical" class="num"><span class="zero">0</span></td><td data-label="High" class="num"><span class="zero">0</span></td><td data-label="Medium" class="num"><span class="zero">n/a</span></td><td data-label="Low" class="num"><span class="zero">n/a</span></td><td data-label="All" class="num"><span class="zero">0</span></td><td data-label="Fixable C/H" class="num"><span class="zero">0</span></td><td data-label="Accepted C/H" class="num"><span class="zero">0</span></td></tr></tbody></table><h3 style="margin-top:2rem">Other images it can deploy</h3><p>Rendered from the chart's <code>ci/</code> values, such as the upstream images or optional components.</p><table class="reflow"><thead><tr><th scope="col">Image</th><th scope="col">Source</th><th scope="col" class="num">Critical</th><th scope="col" class="num">High</th><th scope="col" class="num">Medium</th><th scope="col" class="num">Low</th><th scope="col" class="num">All</th><th scope="col" class="num">Fixable C/H</th><th scope="col" class="num">Accepted C/H</th></tr></thead><tbody><tr><td class="lead"><code>docker.io/powerdns/pdns-auth-51:5.1.5</code></td><td data-label="Source">Upstream</td><td data-label="Critical" class="num">8</td><td data-label="High" class="num">165</td><td data-label="Medium" class="num"><span class="zero">n/a</span></td><td data-label="Low" class="num"><span class="zero">n/a</span></td><td data-label="All" class="num">574</td><td data-label="Fixable C/H" class="num">73</td><td data-label="Accepted C/H" class="num"><span class=zero>n/a</span></td></tr><tr><td class="lead"><code>docker.io/powerdns/pdns-recursor-54:5.4.9</code></td><td data-label="Source">Upstream</td><td data-label="Critical" class="num"><span class="zero">0</span></td><td data-label="High" class="num">70</td><td data-label="Medium" class="num"><span class="zero">n/a</span></td><td data-label="Low" class="num"><span class="zero">n/a</span></td><td data-label="All" class="num">377</td><td data-label="Fixable C/H" class="num"><span class="zero">0</span></td><td data-label="Accepted C/H" class="num"><span class=zero>n/a</span></td></tr><tr><td class="lead"><a href="../images/pdns-recursor.html"><code>ghcr.io/unxwares/pdns-recursor:5.4.9</code></a></td><td data-label="Source">UnxWares</td><td data-label="Critical" class="num"><span class="zero">0</span></td><td data-label="High" class="num"><span class="zero">0</span></td><td data-label="Medium" class="num"><span class="zero">n/a</span></td><td data-label="Low" class="num"><span class="zero">n/a</span></td><td data-label="All" class="num"><span class="zero">0</span></td><td data-label="Fixable C/H" class="num"><span class="zero">0</span></td><td data-label="Accepted C/H" class="num"><span class="zero">0</span></td></tr></tbody></table><p class="origin">CVE watch of <time datetime="2026-11-02T15:21:56Z">2 Nov 2026, 15:21 UTC</time> · <a href="https://github.com/UnxWares/helm/actions/runs/41470515388">run</a> · <a href="https://github.com/UnxWares/helm/issues/16">issue</a></p>
+</div>
+</section>
+
+<section class="part">
+<header><h2>Changes in 2026.11.1</h2><p>From the chart's <code>artifacthub.io/changes</code>.</p></header>
+<div>
+<ul class="dash"><li><span class=label>Changed</span> README completed: architecture, images, requirements, signed installation, configuration by topic, examples checked with helm template and kubeconform, security, testing, operations, troubleshooting and uninstalling.</li><li><span class=label>Fixed</span> The autoscaling, recursor PodDisruptionBudget and recursor ServiceMonitor values are described in the values table; the ExternalDNS example uses a Secret that exists in its namespace.</li></ul>
+<p><a href="https://github.com/UnxWares/helm/releases/tag/powerdns-2026.11.1">Release powerdns-2026.11.1</a> · earlier versions in <a href="https://github.com/UnxWares/helm/releases?q=powerdns">the releases</a></p>
+</div>
+</section>
+</main>
+<footer class="colophon"><div class="wrap"><div class="colophon-grid">
+<div><h2>UnxWares Helm charts</h2><ul>
+<li><a href="https://github.com/UnxWares/helm">Source on GitHub</a></li>
+<li><a href="https://artifacthub.io/packages/search?repo=unxwares">Artifact Hub</a></li>
+<li><a href="../index.yaml">index.yaml</a></li>
+</ul></div>
+<div><h2>Security</h2><ul>
+<li><a href="https://github.com/UnxWares/helm/blob/main/SECURITY.md">Security policy</a></li>
+<li><a href="https://github.com/UnxWares/helm/issues/16">CVE watch issue</a></li>
+<li><a href="https://github.com/UnxWares/helm/security/advisories/new">Report a vulnerability</a></li>
+</ul></div>
+<div><h2>Data</h2><ul>
+<li><a href="../status.json">status.json</a>, everything on these pages</li>
+<li><a href="../pgp-public-key.asc">Signing key</a></li>
+</ul></div>
+<div><h2>Colophon</h2><ul>
+<li>UnxWares, Caen, France</li>
+<li>Set in Poppins (<a href="../assets/fonts/OFL.txt">SIL Open Font License 1.1</a>)</li>
+</ul></div>
+</div></div></footer>
+</body>
+</html>

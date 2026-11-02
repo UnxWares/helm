@@ -1,0 +1,3048 @@
+{
+ "charts": [
+  {
+   "appVersion": "9.20",
+   "changes": [
+    {
+     "description": "README completed: architecture, images, requirements, signed installation, configuration by topic, examples checked with helm template and kubeconform, security, testing, operations, troubleshooting and uninstalling.",
+     "kind": "changed"
+    },
+    {
+     "description": "The autoscaling values are described in the values table.",
+     "kind": "fixed"
+    }
+   ],
+   "containsSecurityUpdates": false,
+   "description": "A flexible and production-ready Helm chart for running ISC Bind9 DNS server on Kubernetes.",
+   "images": [
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 2
+     },
+     "image": "docker.io/internetsystemsconsortium/bind9:9.20",
+     "name": "bind9",
+     "ours": false
+    },
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 2,
+      "high": 2,
+      "low": null,
+      "medium": null,
+      "open_fixable": 2,
+      "total": 9
+     },
+     "image": "docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf",
+     "name": "bind-exporter",
+     "ours": false
+    }
+   ],
+   "kubeVersion": ">=1.27.0-0",
+   "links": {
+    "artifacthub": "https://artifacthub.io/packages/helm/unxwares-sac/bind9",
+    "readme": "https://github.com/UnxWares/helm/tree/main/charts/bind9#readme"
+   },
+   "name": "bind9",
+   "page": "charts/bind9.html",
+   "results": {
+    "e2e": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "not applicable",
+     "summary": "No test"
+    },
+    "install": {
+     "detail": "`ct lint` passed (version increment, YAML lint). Installed on kind with `default-values.yaml`; `helm test`: 1 of 1 test pod succeeded",
+     "note": "helm test 1 of 1",
+     "result": {
+      "commit": "03128db8309a189d6a2d50f0427be72460809b22",
+      "ct_lint": {
+       "ok": true,
+       "version": "2026.11.1"
+      },
+      "date": "2026-11-02T13:02:01Z",
+      "event": "pull_request",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41448084718/job/125286277633",
+      "pr": 27,
+      "pr_url": "https://github.com/UnxWares/helm/pull/27",
+      "run_id": 41448084718,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41448084718",
+      "status": "passed",
+      "tested_commit": "b1f0e5f379c966b60451d2633ba87539bbcaec34",
+      "tests_passed": 1,
+      "tests_total": 1,
+      "values": [
+       {
+        "file": "default-values.yaml",
+        "tests": [
+         {
+          "name": "bind9-0zl0lnow05-test-dns",
+          "phase": "Succeeded"
+         }
+        ]
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "lint": {
+     "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 1 ci values file; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 2 renderings",
+     "note": "",
+     "result": {
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:26:39Z",
+      "event": "pull_request",
+      "helm": {
+       "v3.22.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261691",
+        "lint_failed": 0,
+        "lint_runs": 2,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "default-values.yaml"
+         ],
+         "resources": 22
+        }
+       },
+       "v4.3.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261090",
+        "lint_failed": 0,
+        "lint_runs": 2,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "default-values.yaml"
+         ],
+         "resources": 22
+        }
+       }
+      },
+      "lint_status": "passed",
+      "pr": 33,
+      "pr_url": "https://github.com/UnxWares/helm/pull/33",
+      "run_id": 41470723628,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41470723628",
+      "schema_status": "passed",
+      "status": "passed",
+      "tested_commit": "7ccfe5f46fd640029bf2dffc58f4c0b83bdce9f6"
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "unit": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "not applicable",
+     "summary": "No tests yet"
+    }
+   },
+   "version": "2026.11.1"
+  },
+  {
+   "appVersion": "4.19.1",
+   "changes": [
+    {
+     "description": "Unit tests (helm-unittest, 95 tests) of the security contexts, image selection, required values, Secrets, probes and README examples, run in CI on every pull request and push to main. The templates and values are unchanged.",
+     "kind": "added"
+    }
+   ],
+   "containsSecurityUpdates": false,
+   "description": "Self-hosted file management and sharing system (Cloudreve v4), supports multiple storage providers.",
+   "images": [
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 3
+     },
+     "image": "ghcr.io/unxwares/cloudreve:4.19.1",
+     "name": "cloudreve",
+     "ours": true
+    }
+   ],
+   "kubeVersion": ">=1.27.0-0",
+   "links": {
+    "artifacthub": "https://artifacthub.io/packages/helm/unxwares-sac/cloudreve",
+    "readme": "https://github.com/UnxWares/helm/tree/main/charts/cloudreve#readme"
+   },
+   "name": "cloudreve",
+   "page": "charts/cloudreve.html",
+   "results": {
+    "e2e": {
+     "detail": "5 checks, all passed",
+     "note": "5 checks",
+     "result": {
+      "checks": [
+       {
+        "name": "the API answers (4.19.1)",
+        "runs": 1
+       },
+       {
+        "name": "the first account signs up, logs in and is administrator",
+        "runs": 1
+       },
+       {
+        "name": "an uploaded file is listed with its size",
+        "runs": 1
+       },
+       {
+        "name": "the file downloads back unchanged",
+        "runs": 1
+       },
+       {
+        "name": "a thumbnail is generated for an uploaded image",
+        "runs": 1
+       }
+      ],
+      "commit": "227331f880e38f6143454eec789039771a0e694b",
+      "date": "2026-11-02T15:24:04Z",
+      "event": "push",
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41469463513/job/125359323658",
+      "run_id": 41469463513,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41469463513",
+      "status": "passed",
+      "steps": [
+       {
+        "conclusion": "success",
+        "name": "Checkout"
+       },
+       {
+        "conclusion": "success",
+        "name": "Build the Cloudreve image"
+       },
+       {
+        "conclusion": "success",
+        "name": "Create kind cluster"
+       },
+       {
+        "conclusion": "success",
+        "name": "Load the Cloudreve image"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install Helm"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install the chart"
+       },
+       {
+        "conclusion": "success",
+        "name": "helm test"
+       },
+       {
+        "conclusion": "success",
+        "name": "Sign up, log in, upload, download and thumbnail"
+       },
+       {
+        "conclusion": "skipped",
+        "name": "Diagnostics"
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "install": {
+     "detail": "`ct lint` passed (version increment, YAML lint). Installed on kind with `default-values.yaml` and `upstream-values.yaml`; `helm test`: 2 of 2 test pods succeeded",
+     "note": "helm test 2 of 2",
+     "result": {
+      "commit": "9435d1cbcf7653b6c7fc82b035fb7ff89c03d759",
+      "ct_lint": {
+       "ok": true,
+       "version": "2026.11.1"
+      },
+      "date": "2026-11-02T12:39:44Z",
+      "event": "pull_request",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41446083254/job/125279710379",
+      "pr": 26,
+      "pr_url": "https://github.com/UnxWares/helm/pull/26",
+      "run_id": 41446083254,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41446083254",
+      "status": "passed",
+      "tested_commit": "8775f90a87703329c05d8657f669488d196e3003",
+      "tests_passed": 2,
+      "tests_total": 2,
+      "values": [
+       {
+        "file": "default-values.yaml",
+        "tests": [
+         {
+          "name": "cloudreve-yjs1enuowt-test-ping",
+          "phase": "Succeeded"
+         }
+        ]
+       },
+       {
+        "file": "upstream-values.yaml",
+        "tests": [
+         {
+          "name": "cloudreve-7aheta789o-test-ping",
+          "phase": "Succeeded"
+         }
+        ]
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "lint": {
+     "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 2 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 3 renderings",
+     "note": "",
+     "result": {
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:26:39Z",
+      "event": "pull_request",
+      "helm": {
+       "v3.22.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261691",
+        "lint_failed": 0,
+        "lint_runs": 3,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "default-values.yaml",
+          "upstream-values.yaml"
+         ],
+         "resources": 42
+        }
+       },
+       "v4.3.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261090",
+        "lint_failed": 0,
+        "lint_runs": 3,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "default-values.yaml",
+          "upstream-values.yaml"
+         ],
+         "resources": 42
+        }
+       }
+      },
+      "lint_status": "passed",
+      "pr": 33,
+      "pr_url": "https://github.com/UnxWares/helm/pull/33",
+      "run_id": 41470723628,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41470723628",
+      "schema_status": "passed",
+      "status": "passed",
+      "tested_commit": "7ccfe5f46fd640029bf2dffc58f4c0b83bdce9f6"
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "unit": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "no result",
+     "summary": "No result yet"
+    }
+   },
+   "version": "2026.11.2"
+  },
+  {
+   "appVersion": "0.6.7",
+   "changes": [
+    {
+     "description": "backend.trustProxy defaults to \"1\", the chart's own frontend nginx: behind an Ingress or a Gateway that terminates TLS, session and CSRF cookies now get the Secure flag. See Upgrading in the README.",
+     "kind": "security"
+    },
+    {
+     "description": "The backend runs with a read-only root filesystem: an init container copies /app/dist into an emptyDir, which also holds /app/uploads.",
+     "kind": "changed"
+    },
+    {
+     "description": "The chart Secret is kept on uninstall (helm.sh/resource-policy: keep), like the PVC: a new install keeps sessions and API keys valid.",
+     "kind": "fixed"
+    },
+    {
+     "description": "The OIDC modes require backend.auth.oidc.clientId as well as issuerUrl, and an https:// redirect URI in production, without which the backend does not start.",
+     "kind": "fixed"
+    },
+    {
+     "description": "helm test uses the image pull secrets and pull policy of the frontend, and sets resources.",
+     "kind": "fixed"
+    },
+    {
+     "description": "frontend.autoscaling.targetMemoryUtilizationPercentage, already read by the HPA template.",
+     "kind": "added"
+    },
+    {
+     "description": "NOTES explain how the first administrator is created in each authentication mode.",
+     "kind": "fixed"
+    },
+    {
+     "description": "End-to-end test in CI: onboarding with the setup code, login, drawing created, listed, exported and accepted by the import check, Secure cookies behind TLS, NetworkPolicy, then what a new install keeps.",
+     "kind": "added"
+    }
+   ],
+   "containsSecurityUpdates": true,
+   "description": "A helm chart for ExcaliDash, A self-hosted dashboard and organizer for Excalidraw with live collaboration features",
+   "images": [
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 0
+     },
+     "image": "docker.io/zimengxiong/excalidash-frontend:0.6.7",
+     "name": "excalidash-frontend",
+     "ours": false
+    },
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 2
+     },
+     "image": "docker.io/zimengxiong/excalidash-backend:0.6.7",
+     "name": "excalidash-backend",
+     "ours": false
+    }
+   ],
+   "kubeVersion": ">=1.27.0-0",
+   "links": {
+    "artifacthub": "https://artifacthub.io/packages/helm/unxwares-sac/excalidash",
+    "readme": "https://github.com/UnxWares/helm/tree/main/charts/excalidash#readme"
+   },
+   "name": "excalidash",
+   "page": "charts/excalidash.html",
+   "results": {
+    "e2e": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "no result",
+     "summary": "No result yet"
+    },
+    "install": {
+     "detail": "`ct lint` passed (version increment, YAML lint). Installed on kind with `default-values.yaml`; `helm test`: 1 of 1 test pod succeeded",
+     "note": "helm test 1 of 1",
+     "result": {
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "ct_lint": {
+       "ok": true,
+       "version": "2026.11.2"
+      },
+      "date": "2026-11-02T15:26:39Z",
+      "event": "pull_request",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363709379",
+      "pr": 33,
+      "pr_url": "https://github.com/UnxWares/helm/pull/33",
+      "run_id": 41470723628,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41470723628",
+      "status": "passed",
+      "tested_commit": "7ccfe5f46fd640029bf2dffc58f4c0b83bdce9f6",
+      "tests_passed": 1,
+      "tests_total": 1,
+      "values": [
+       {
+        "file": "default-values.yaml",
+        "tests": [
+         {
+          "name": "excalidash-rcansziugx-test-health",
+          "phase": "Succeeded"
+         }
+        ]
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "lint": {
+     "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 1 ci values file; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 2 renderings",
+     "note": "",
+     "result": {
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:26:39Z",
+      "event": "pull_request",
+      "helm": {
+       "v3.22.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261691",
+        "lint_failed": 0,
+        "lint_runs": 2,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "default-values.yaml"
+         ],
+         "resources": 34
+        }
+       },
+       "v4.3.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261090",
+        "lint_failed": 0,
+        "lint_runs": 2,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "default-values.yaml"
+         ],
+         "resources": 34
+        }
+       }
+      },
+      "lint_status": "passed",
+      "pr": 33,
+      "pr_url": "https://github.com/UnxWares/helm/pull/33",
+      "run_id": 41470723628,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41470723628",
+      "schema_status": "passed",
+      "status": "passed",
+      "tested_commit": "7ccfe5f46fd640029bf2dffc58f4c0b83bdce9f6"
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "unit": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "not applicable",
+     "summary": "No tests yet"
+    }
+   },
+   "version": "2026.11.2"
+  },
+  {
+   "appVersion": "1.0.5",
+   "changes": [
+    {
+     "description": "Default image moves to ghcr.io/unxwares/fossflow (imageProvider: unxwares): FossFLOW 1.0.5 built from the upstream sources with updated npm dependencies on a current Alpine, without npm, su-exec or openssl at runtime. It runs as uid 1000 on port 8080 with a read-only root filesystem and no capability. imageProvider: upstream keeps abrar74774/fossflow:master-2b3cee3.",
+     "kind": "security"
+    },
+    {
+     "description": "The storage backend listens on 127.0.0.1 only (BACKEND_HOST), with both images: other pods can no longer read or change the diagrams on port 3001 without going through nginx.",
+     "kind": "security"
+    },
+    {
+     "description": "The UnxWares image drops the CORS headers of the backend (any origin allowed): another site can no longer read or change the diagrams through a visitor's browser.",
+     "kind": "security"
+    },
+    {
+     "description": "Optional NetworkPolicy (networkPolicy.enabled, networkPolicy.ingressFrom): only the HTTP port is open, and the pods open no connection.",
+     "kind": "added"
+    },
+    {
+     "description": "End-to-end test in CI on the image of the commit: diagrams created, listed, read back, updated and kept across a pod replacement through the Service, browser-only mode, and the backend port and the NetworkPolicy checked from other pods.",
+     "kind": "added"
+    },
+    {
+     "description": "podSecurityContext and securityContext are empty by default: the chart applies the defaults of imageProvider, with fsGroup taken from storage.gid.",
+     "kind": "changed"
+    },
+    {
+     "description": "autoscaling.targetMemoryUtilizationPercentage is a documented value; the helm test pod no longer carries the labels the Service selects; Service environment variables are no longer injected (a Service named backend would have set BACKEND_PORT).",
+     "kind": "fixed"
+    }
+   ],
+   "containsSecurityUpdates": true,
+   "description": "FossFLOW, an open source web app to draw isometric infrastructure diagrams, with optional server-side storage of the diagrams.",
+   "images": [
+    {
+     "cve": null,
+     "image": "ghcr.io/unxwares/fossflow:1.0.5",
+     "name": "fossflow",
+     "ours": true
+    }
+   ],
+   "kubeVersion": ">=1.27.0-0",
+   "links": {
+    "artifacthub": "https://artifacthub.io/packages/helm/unxwares-sac/fossflow",
+    "readme": "https://github.com/UnxWares/helm/tree/main/charts/fossflow#readme"
+   },
+   "name": "fossflow",
+   "page": "charts/fossflow.html",
+   "results": {
+    "e2e": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "no result",
+     "summary": "No result yet"
+    },
+    "install": {
+     "detail": "`ct lint` passed (version increment, YAML lint). Installed on kind with `browser-only-values.yaml` and `default-values.yaml` and `upstream-values.yaml`; `helm test`: 3 of 3 test pods succeeded",
+     "note": "helm test 3 of 3",
+     "result": {
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "ct_lint": {
+       "ok": true,
+       "version": "2026.11.2"
+      },
+      "date": "2026-11-02T15:26:39Z",
+      "event": "pull_request",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363709379",
+      "pr": 33,
+      "pr_url": "https://github.com/UnxWares/helm/pull/33",
+      "run_id": 41470723628,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41470723628",
+      "status": "passed",
+      "tested_commit": "7ccfe5f46fd640029bf2dffc58f4c0b83bdce9f6",
+      "tests_passed": 3,
+      "tests_total": 3,
+      "values": [
+       {
+        "file": "browser-only-values.yaml",
+        "tests": [
+         {
+          "name": "fossflow-giudnynbyj-test-connection",
+          "phase": "Succeeded"
+         }
+        ]
+       },
+       {
+        "file": "default-values.yaml",
+        "tests": [
+         {
+          "name": "fossflow-mblbgurxk4-test-connection",
+          "phase": "Succeeded"
+         }
+        ]
+       },
+       {
+        "file": "upstream-values.yaml",
+        "tests": [
+         {
+          "name": "fossflow-48ppczxhjb-test-connection",
+          "phase": "Succeeded"
+         }
+        ]
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "lint": {
+     "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 3 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 4 renderings",
+     "note": "",
+     "result": {
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:26:39Z",
+      "event": "pull_request",
+      "helm": {
+       "v3.22.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261691",
+        "lint_failed": 0,
+        "lint_runs": 4,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "browser-only-values.yaml",
+          "default-values.yaml",
+          "upstream-values.yaml"
+         ],
+         "resources": 40
+        }
+       },
+       "v4.3.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261090",
+        "lint_failed": 0,
+        "lint_runs": 4,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "browser-only-values.yaml",
+          "default-values.yaml",
+          "upstream-values.yaml"
+         ],
+         "resources": 40
+        }
+       }
+      },
+      "lint_status": "passed",
+      "pr": 33,
+      "pr_url": "https://github.com/UnxWares/helm/pull/33",
+      "run_id": 41470723628,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41470723628",
+      "schema_status": "passed",
+      "status": "passed",
+      "tested_commit": "7ccfe5f46fd640029bf2dffc58f4c0b83bdce9f6"
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "unit": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "not applicable",
+     "summary": "No tests yet"
+    }
+   },
+   "version": "2026.11.2"
+  },
+  {
+   "appVersion": "4.1.11",
+   "changes": [
+    {
+     "description": "The chart Secret is kept on uninstall (helm.sh/resource-policy: keep), like the SQLite PVC: a new install reads the generated KENER_SECRET_KEY back, so sessions and API keys keep working.",
+     "kind": "fixed"
+    },
+    {
+     "description": "podDisruptionBudget.enabled is refused with SQLite, and when minAvailable is not lower than the number of replicas: such a budget blocked node drains.",
+     "kind": "fixed"
+    },
+    {
+     "description": "An empty redis.image.tag no longer falls back to a Valkey tag hidden in the templates: the chart asks for a tag or a digest.",
+     "kind": "fixed"
+    },
+    {
+     "description": "proxy.existingSecret (keys existingSecretHttpProxyKey and existingSecretHttpsProxyKey) reads HTTP_PROXY and HTTPS_PROXY from your own Secret.",
+     "kind": "added"
+    },
+    {
+     "description": "End-to-end test in CI: first account and login, API key, monitor created through the REST API and run from the queue, status page and badge, Valkey password and NetworkPolicies, then what a new install keeps.",
+     "kind": "added"
+    }
+   ],
+   "containsSecurityUpdates": false,
+   "description": "Kener 4 status page with SQLite/PostgreSQL/MySQL, a bundled hardened Valkey for its queues, and secure defaults for Kubernetes.",
+   "images": [
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 13,
+      "high": 13,
+      "low": null,
+      "medium": null,
+      "open_fixable": 13,
+      "total": 45
+     },
+     "image": "docker.io/rajnandan1/kener:4.1.11-alpine",
+     "name": "kener",
+     "ours": false
+    },
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 0
+     },
+     "image": "docker.io/valkey/valkey:9.1.3-alpine",
+     "name": "valkey",
+     "ours": false
+    }
+   ],
+   "kubeVersion": ">=1.27.0-0",
+   "links": {
+    "artifacthub": "https://artifacthub.io/packages/helm/unxwares-sac/kener",
+    "readme": "https://github.com/UnxWares/helm/tree/main/charts/kener#readme"
+   },
+   "name": "kener",
+   "page": "charts/kener.html",
+   "results": {
+    "e2e": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "no result",
+     "summary": "No result yet"
+    },
+    "install": {
+     "detail": "`ct lint` passed (version increment, YAML lint). Installed on kind with `default-values.yaml` and `status-debian-values.yaml`; `helm test`: 2 of 2 test pods succeeded",
+     "note": "helm test 2 of 2",
+     "result": {
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "ct_lint": {
+       "ok": true,
+       "version": "2026.11.3"
+      },
+      "date": "2026-11-02T15:26:39Z",
+      "event": "pull_request",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363709379",
+      "pr": 33,
+      "pr_url": "https://github.com/UnxWares/helm/pull/33",
+      "run_id": 41470723628,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41470723628",
+      "status": "passed",
+      "tested_commit": "7ccfe5f46fd640029bf2dffc58f4c0b83bdce9f6",
+      "tests_passed": 2,
+      "tests_total": 2,
+      "values": [
+       {
+        "file": "default-values.yaml",
+        "tests": [
+         {
+          "name": "kener-rwi2ey6ywk-test-healthcheck",
+          "phase": "Succeeded"
+         }
+        ]
+       },
+       {
+        "file": "status-debian-values.yaml",
+        "tests": [
+         {
+          "name": "kener-8o91f4w0i1-test-healthcheck",
+          "phase": "Succeeded"
+         }
+        ]
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "lint": {
+     "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 2 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 3 renderings",
+     "note": "",
+     "result": {
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:26:39Z",
+      "event": "pull_request",
+      "helm": {
+       "v3.22.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261691",
+        "lint_failed": 0,
+        "lint_runs": 3,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "default-values.yaml",
+          "status-debian-values.yaml"
+         ],
+         "resources": 60
+        }
+       },
+       "v4.3.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261090",
+        "lint_failed": 0,
+        "lint_runs": 3,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "default-values.yaml",
+          "status-debian-values.yaml"
+         ],
+         "resources": 60
+        }
+       }
+      },
+      "lint_status": "passed",
+      "pr": 33,
+      "pr_url": "https://github.com/UnxWares/helm/pull/33",
+      "run_id": 41470723628,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41470723628",
+      "schema_status": "passed",
+      "status": "passed",
+      "tested_commit": "7ccfe5f46fd640029bf2dffc58f4c0b83bdce9f6"
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "unit": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "not applicable",
+     "summary": "No tests yet"
+    }
+   },
+   "version": "2026.11.3"
+  },
+  {
+   "appVersion": "12.x",
+   "changes": [
+    {
+     "description": "Unit tests (helm-unittest, 144 tests) of the security contexts, image selection, required values, Secrets, probes and README examples, run in CI on every pull request and push to main. The templates and values are unchanged.",
+     "kind": "added"
+    }
+   ],
+   "containsSecurityUpdates": false,
+   "description": "Run your own Laravel application image on Kubernetes (FrankenPHP, or PHP-FPM with an nginx sidecar) with queue workers, scheduler, migrations and hardened defaults.",
+   "images": [
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 3
+     },
+     "image": "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim",
+     "name": "nginx-unprivileged",
+     "ours": false
+    }
+   ],
+   "kubeVersion": ">=1.27.0-0",
+   "links": {
+    "artifacthub": "https://artifacthub.io/packages/helm/unxwares-sac/laravel-generic",
+    "readme": "https://github.com/UnxWares/helm/tree/main/charts/laravel-generic#readme"
+   },
+   "name": "laravel-generic",
+   "page": "charts/laravel-generic.html",
+   "results": {
+    "e2e": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "not applicable",
+     "summary": "No test"
+    },
+    "install": {
+     "detail": "Excluded from `ct install` in `lint-test.yaml`: the chart needs prerequisites that a bare kind cluster does not have (its README says which)",
+     "note": "excluded from chart-testing",
+     "result": null,
+     "status": "not applicable",
+     "summary": "Not installed"
+    },
+    "lint": {
+     "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 2 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 2 renderings. The default values need your input (image.repository is required: set it to your Laravel application image (e.g. registry.example.com/acme/shop)): they are rendered with the ci values only",
+     "note": "",
+     "result": {
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:26:39Z",
+      "event": "pull_request",
+      "helm": {
+       "v3.22.1": {
+        "default_values_note": "image.repository is required: set it to your Laravel application image (e.g. registry.example.com/acme/shop)",
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261691",
+        "lint_failed": 0,
+        "lint_runs": 3,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default-values.yaml",
+          "fpm-values.yaml"
+         ],
+         "resources": 50
+        }
+       },
+       "v4.3.1": {
+        "default_values_note": "image.repository is required: set it to your Laravel application image (e.g. registry.example.com/acme/shop)",
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261090",
+        "lint_failed": 0,
+        "lint_runs": 3,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default-values.yaml",
+          "fpm-values.yaml"
+         ],
+         "resources": 50
+        }
+       }
+      },
+      "lint_status": "passed",
+      "pr": 33,
+      "pr_url": "https://github.com/UnxWares/helm/pull/33",
+      "run_id": 41470723628,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41470723628",
+      "schema_status": "passed",
+      "status": "passed",
+      "tested_commit": "7ccfe5f46fd640029bf2dffc58f4c0b83bdce9f6"
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "unit": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "no result",
+     "summary": "No result yet"
+    }
+   },
+   "version": "2026.11.2"
+  },
+  {
+   "appVersion": "1.17.0",
+   "changes": [
+    {
+     "description": "Unit tests (helm-unittest, 118 tests) of the security contexts, image selection, required values, Secrets, probes and README examples, run in CI on every pull request and push to main. The templates and values are unchanged.",
+     "kind": "added"
+    }
+   ],
+   "containsSecurityUpdates": false,
+   "description": "Jobs that wait for an OpenEverest DatabaseCluster to be ready, then create PostgreSQL, MySQL and MongoDB databases, users, grants and run init scripts.",
+   "images": [
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 0
+     },
+     "image": "ghcr.io/unxwares/postgresql-client:18",
+     "name": "postgresql-client",
+     "ours": true
+    },
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 0
+     },
+     "image": "ghcr.io/unxwares/mysql-client:8.4",
+     "name": "mysql-client",
+     "ours": true
+    },
+    {
+     "cve": {
+      "accepted": 1,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 1,
+      "high": 1,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 47
+     },
+     "image": "ghcr.io/unxwares/mongosh:2.14.1",
+     "name": "mongosh",
+     "ours": true
+    },
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 2,
+      "high": 2,
+      "low": null,
+      "medium": null,
+      "open_fixable": 2,
+      "total": 12
+     },
+     "image": "registry.k8s.io/kubectl:v1.37.2",
+     "name": "kubectl",
+     "ours": false
+    }
+   ],
+   "kubeVersion": ">=1.27.0-0",
+   "links": {
+    "artifacthub": "https://artifacthub.io/packages/helm/unxwares-sac/openeverest-database-tools",
+    "readme": "https://github.com/UnxWares/helm/tree/main/charts/openeverest-database-tools#readme"
+   },
+   "name": "openeverest-database-tools",
+   "page": "charts/openeverest-database-tools.html",
+   "results": {
+    "e2e": {
+     "detail": "15 checks, all passed",
+     "note": "15 checks",
+     "result": {
+      "checks": [
+       {
+        "name": "PostgreSQL: laravel-app logs in over TLS",
+        "runs": 2
+       },
+       {
+        "name": "PostgreSQL: laravel-app owns its database",
+        "runs": 2
+       },
+       {
+        "name": "PostgreSQL: init script created the pg_trgm extension",
+        "runs": 2
+       },
+       {
+        "name": "PostgreSQL: laravel-app writes to the table of an init script",
+        "runs": 2
+       },
+       {
+        "name": "PostgreSQL: laravel-app creates tables in its database",
+        "runs": 2
+       },
+       {
+        "name": "PostgreSQL: laravel-app cannot create tables in another database",
+        "runs": 2
+       },
+       {
+        "name": "MySQL: wordpress logs in",
+        "runs": 2
+       },
+       {
+        "name": "MySQL: the session is encrypted",
+        "runs": 2
+       },
+       {
+        "name": "MySQL: wordpress has the configured privileges on wordpress.*",
+        "runs": 2
+       },
+       {
+        "name": "MySQL: wordpress has no global privilege",
+        "runs": 2
+       },
+       {
+        "name": "MySQL: wordpress writes to the table of an init script",
+        "runs": 2
+       },
+       {
+        "name": "MySQL: wordpress cannot read the system tables",
+        "runs": 2
+       },
+       {
+        "name": "MongoDB: appdb logs in and writes to its database",
+        "runs": 2
+       },
+       {
+        "name": "MongoDB: init script created the unique index",
+        "runs": 2
+       },
+       {
+        "name": "MongoDB: appdb cannot read another database",
+        "runs": 2
+       }
+      ],
+      "commit": "227331f880e38f6143454eec789039771a0e694b",
+      "date": "2026-11-02T15:24:04Z",
+      "event": "push",
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41469463513/job/125359323546",
+      "run_id": 41469463513,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41469463513",
+      "status": "passed",
+      "steps": [
+       {
+        "conclusion": "success",
+        "name": "Checkout"
+       },
+       {
+        "conclusion": "success",
+        "name": "Build the client images"
+       },
+       {
+        "conclusion": "success",
+        "name": "Create kind cluster"
+       },
+       {
+        "conclusion": "success",
+        "name": "Load the client images"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install Helm"
+       },
+       {
+        "conclusion": "success",
+        "name": "Start PostgreSQL, MySQL, MongoDB and the DatabaseClusters"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install the chart and run its Jobs"
+       },
+       {
+        "conclusion": "success",
+        "name": "Check the databases, users and grants"
+       },
+       {
+        "conclusion": "success",
+        "name": "Rotate the application passwords"
+       },
+       {
+        "conclusion": "success",
+        "name": "Run the Jobs again"
+       },
+       {
+        "conclusion": "success",
+        "name": "Check again with the new passwords"
+       },
+       {
+        "conclusion": "skipped",
+        "name": "Diagnostics"
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "install": {
+     "detail": "Excluded from `ct install` in `lint-test.yaml`: the chart needs prerequisites that a bare kind cluster does not have (its README says which)",
+     "note": "excluded from chart-testing",
+     "result": null,
+     "status": "not applicable",
+     "summary": "Not installed"
+    },
+    "lint": {
+     "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 3 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 4 renderings",
+     "note": "",
+     "result": {
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:26:39Z",
+      "event": "pull_request",
+      "helm": {
+       "v3.22.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261691",
+        "lint_failed": 0,
+        "lint_runs": 4,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "compat-values.yaml",
+          "default-values.yaml",
+          "e2e-values.yaml"
+         ],
+         "resources": 56
+        }
+       },
+       "v4.3.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261090",
+        "lint_failed": 0,
+        "lint_runs": 4,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "compat-values.yaml",
+          "default-values.yaml",
+          "e2e-values.yaml"
+         ],
+         "resources": 56
+        }
+       }
+      },
+      "lint_status": "passed",
+      "pr": 33,
+      "pr_url": "https://github.com/UnxWares/helm/pull/33",
+      "run_id": 41470723628,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41470723628",
+      "schema_status": "passed",
+      "status": "passed",
+      "tested_commit": "7ccfe5f46fd640029bf2dffc58f4c0b83bdce9f6"
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "unit": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "no result",
+     "summary": "No result yet"
+    }
+   },
+   "version": "2026.11.3"
+  },
+  {
+   "appVersion": "5.1.5",
+   "changes": [
+    {
+     "description": "README completed: architecture, images, requirements, signed installation, configuration by topic, examples checked with helm template and kubeconform, security, testing, operations, troubleshooting and uninstalling.",
+     "kind": "changed"
+    },
+    {
+     "description": "The autoscaling, recursor PodDisruptionBudget and recursor ServiceMonitor values are described in the values table; the ExternalDNS example uses a Secret that exists in its namespace.",
+     "kind": "fixed"
+    }
+   ],
+   "containsSecurityUpdates": false,
+   "description": "PowerDNS Authoritative Server with its REST API, SQLite/PostgreSQL/MySQL backends and an optional PowerDNS Recursor, hardened for Kubernetes.",
+   "images": [
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 0
+     },
+     "image": "ghcr.io/unxwares/pdns-auth:5.1.5",
+     "name": "pdns-auth",
+     "ours": true
+    }
+   ],
+   "kubeVersion": ">=1.27.0-0",
+   "links": {
+    "artifacthub": "https://artifacthub.io/packages/helm/unxwares-sac/powerdns",
+    "readme": "https://github.com/UnxWares/helm/tree/main/charts/powerdns#readme"
+   },
+   "name": "powerdns",
+   "page": "charts/powerdns.html",
+   "results": {
+    "e2e": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "not applicable",
+     "summary": "No test"
+    },
+    "install": {
+     "detail": "`ct lint` passed (version increment, YAML lint). Installed on kind with `default-values.yaml` and `upstream-values.yaml`; `helm test`: 2 of 2 test pods succeeded",
+     "note": "helm test 2 of 2",
+     "result": {
+      "commit": "03128db8309a189d6a2d50f0427be72460809b22",
+      "ct_lint": {
+       "ok": true,
+       "version": "2026.11.1"
+      },
+      "date": "2026-11-02T13:02:01Z",
+      "event": "pull_request",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41448084718/job/125286277633",
+      "pr": 27,
+      "pr_url": "https://github.com/UnxWares/helm/pull/27",
+      "run_id": 41448084718,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41448084718",
+      "status": "passed",
+      "tested_commit": "b1f0e5f379c966b60451d2633ba87539bbcaec34",
+      "tests_passed": 2,
+      "tests_total": 2,
+      "values": [
+       {
+        "file": "default-values.yaml",
+        "tests": [
+         {
+          "name": "powerdns-qmzo58zucv-test-api",
+          "phase": "Succeeded"
+         }
+        ]
+       },
+       {
+        "file": "upstream-values.yaml",
+        "tests": [
+         {
+          "name": "powerdns-15la0m5fnd-test-api",
+          "phase": "Succeeded"
+         }
+        ]
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "lint": {
+     "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 2 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 3 renderings",
+     "note": "",
+     "result": {
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:26:39Z",
+      "event": "pull_request",
+      "helm": {
+       "v3.22.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261691",
+        "lint_failed": 0,
+        "lint_runs": 3,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "default-values.yaml",
+          "upstream-values.yaml"
+         ],
+         "resources": 68
+        }
+       },
+       "v4.3.1": {
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261090",
+        "lint_failed": 0,
+        "lint_runs": 3,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default values",
+          "default-values.yaml",
+          "upstream-values.yaml"
+         ],
+         "resources": 68
+        }
+       }
+      },
+      "lint_status": "passed",
+      "pr": 33,
+      "pr_url": "https://github.com/UnxWares/helm/pull/33",
+      "run_id": 41470723628,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41470723628",
+      "schema_status": "passed",
+      "status": "passed",
+      "tested_commit": "7ccfe5f46fd640029bf2dffc58f4c0b83bdce9f6"
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "unit": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "not applicable",
+     "summary": "No tests yet"
+    }
+   },
+   "version": "2026.11.1"
+  },
+  {
+   "appVersion": "6.10.2",
+   "changes": [
+    {
+     "description": "Periodic tasks were sent once per async worker (each ran its own Celery beat): the beat scheduler now runs once, in its own async-beat Deployment (one replica, Recreate strategy), so the workers can be scaled.",
+     "kind": "fixed"
+    },
+    {
+     "description": "async.command defaults to the Celery worker without beat; a command that starts a beat scheduler (docker/async_entrypoint.sh, -B) is refused. New async.extraArgs for Celery options such as --concurrency.",
+     "kind": "changed"
+    },
+    {
+     "description": "The chart Secret is kept on uninstall (helm.sh/resource-policy: keep), like the database and media claims, so a reinstall keeps the passwords the volumes were initialized with.",
+     "kind": "fixed"
+    },
+    {
+     "description": "taiga-events connects to eventsRabbitmq.service.port instead of always 5672.",
+     "kind": "fixed"
+    },
+    {
+     "description": "The async pods also use backend.imagePullSecrets (they run the backend image).",
+     "kind": "fixed"
+    },
+    {
+     "description": "events and protected restart when the chart Secret changes.",
+     "kind": "fixed"
+    },
+    {
+     "description": "Value descriptions corrected: global resources and security contexts, OIDC endpoints (no discovery), external database with an existing Secret, events broker vhost, sub-path.",
+     "kind": "fixed"
+    },
+    {
+     "description": "Optional NetworkPolicies (networkPolicy.enabled): the gateway is the only entry point, the database and the brokers only accept the components that use them.",
+     "kind": "added"
+    },
+    {
+     "description": "helm test through the gateway: API, front and its configuration, static files, events websocket handshake, refusal of an unsigned attachment URL. It creates nothing.",
+     "kind": "added"
+    }
+   ],
+   "containsSecurityUpdates": false,
+   "description": "Taiga, the open-source agile project management platform (backend, async workers, events, front, protected media, bundled PostgreSQL and RabbitMQ), hardened for Kubernetes.",
+   "images": [
+    {
+     "cve": {
+      "accepted": 4,
+      "critical": 1,
+      "eosl": false,
+      "fixable": 4,
+      "high": 3,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 15
+     },
+     "image": "ghcr.io/unxwares/taiga-back:6.10.2",
+     "name": "taiga-back",
+     "ours": true
+    },
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 0
+     },
+     "image": "ghcr.io/unxwares/taiga-front:6.10.3",
+     "name": "taiga-front",
+     "ours": true
+    },
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 0
+     },
+     "image": "ghcr.io/unxwares/taiga-events:6.10.0",
+     "name": "taiga-events",
+     "ours": true
+    },
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 0
+     },
+     "image": "ghcr.io/unxwares/taiga-protected:6.10.1",
+     "name": "taiga-protected",
+     "ours": true
+    },
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 0
+     },
+     "image": "ghcr.io/unxwares/postgres:17.11-alpine",
+     "name": "postgres",
+     "ours": true
+    },
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 0
+     },
+     "image": "docker.io/library/rabbitmq:4.4.0-management-alpine",
+     "name": "rabbitmq",
+     "ours": false
+    },
+    {
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": null,
+      "medium": null,
+      "open_fixable": 0,
+      "total": 3
+     },
+     "image": "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim",
+     "name": "nginx-unprivileged",
+     "ours": false
+    }
+   ],
+   "kubeVersion": ">=1.27.0-0",
+   "links": {
+    "artifacthub": "https://artifacthub.io/packages/helm/unxwares-sac/taiga",
+    "readme": "https://github.com/UnxWares/helm/tree/main/charts/taiga#readme"
+   },
+   "name": "taiga",
+   "page": "charts/taiga.html",
+   "results": {
+    "e2e": {
+     "detail": "14 checks, all passed",
+     "note": "14 checks",
+     "result": {
+      "checks": [
+       {
+        "name": "the API answers through the gateway",
+        "runs": 2
+       },
+       {
+        "name": "the front serves its page and its configuration (API http://localhost/api/v1/, events ws://localhost/events)",
+        "runs": 2
+       },
+       {
+        "name": "a superuser is created with manage.py createsuperuser",
+        "runs": 2
+       },
+       {
+        "name": "the superuser logs in through the API (a wrong password is refused) and gets a token",
+        "runs": 2
+       },
+       {
+        "name": "a project is created and read back (id 1)",
+        "runs": 1
+       },
+       {
+        "name": "a user story is created, read back and listed (id 1)",
+        "runs": 1
+       },
+       {
+        "name": "the websocket client receives the change of the user story (backend -> events broker -> taiga-events -> gateway)",
+        "runs": 2
+       },
+       {
+        "name": "an attachment is uploaded and downloaded back unchanged through taiga-protected",
+        "runs": 2
+       },
+       {
+        "name": "the attachment is refused without its token or with a forged one",
+        "runs": 2
+       },
+       {
+        "name": "one beat scheduler, in its own pod, sends the periodic tasks: 1 received by 2 worker pod(s) in 1 period(s) of 120 s",
+        "runs": 2
+       },
+       {
+        "name": "from a pod outside the release, only the gateway answers (9 Service ports closed)",
+        "runs": 2
+       },
+       {
+        "name": "1 project(s) of the first install are still there",
+        "runs": 1
+       },
+       {
+        "name": "a project is created and read back (id 2)",
+        "runs": 1
+       },
+       {
+        "name": "a user story is created, read back and listed (id 2)",
+        "runs": 1
+       }
+      ],
+      "commit": "227331f880e38f6143454eec789039771a0e694b",
+      "date": "2026-11-02T15:24:04Z",
+      "event": "push",
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41469463513/job/125359323365",
+      "run_id": 41469463513,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41469463513",
+      "status": "passed",
+      "steps": [
+       {
+        "conclusion": "success",
+        "name": "Checkout"
+       },
+       {
+        "conclusion": "success",
+        "name": "Build the Taiga and PostgreSQL images"
+       },
+       {
+        "conclusion": "success",
+        "name": "Create kind cluster"
+       },
+       {
+        "conclusion": "success",
+        "name": "Load the images"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install Helm"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install the chart"
+       },
+       {
+        "conclusion": "success",
+        "name": "helm test"
+       },
+       {
+        "conclusion": "success",
+        "name": "Log in, create, read back, websocket, attachment, beat and NetworkPolicies"
+       },
+       {
+        "conclusion": "success",
+        "name": "Uninstall, keeping the Secret and the volumes"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install the chart again"
+       },
+       {
+        "conclusion": "success",
+        "name": "Check the data of the first install"
+       },
+       {
+        "conclusion": "success",
+        "name": "helm test after the reinstall"
+       },
+       {
+        "conclusion": "success",
+        "name": "Check again after the reinstall"
+       },
+       {
+        "conclusion": "skipped",
+        "name": "Diagnostics"
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "install": {
+     "detail": "`ct lint` passed (version increment, YAML lint). Installed on kind with `default-values.yaml` and `upstream-values.yaml`; `helm test`: 2 of 2 test pods succeeded",
+     "note": "helm test 2 of 2",
+     "result": {
+      "commit": "fd92cab2b3f8f797699385066df5494acec1af45",
+      "ct_lint": {
+       "ok": true,
+       "version": "2026.11.2"
+      },
+      "date": "2026-11-02T15:18:50Z",
+      "event": "pull_request",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41469110455/job/125357905436",
+      "pr": 31,
+      "pr_url": "https://github.com/UnxWares/helm/pull/31",
+      "run_id": 41469110455,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41469110455",
+      "status": "passed",
+      "tested_commit": "ce8ce76c76a8750cf664ac214139ad3daf734e98",
+      "tests_passed": 2,
+      "tests_total": 2,
+      "values": [
+       {
+        "file": "default-values.yaml",
+        "tests": [
+         {
+          "name": "taiga-osejgm52w9-test",
+          "phase": "Succeeded"
+         }
+        ]
+       },
+       {
+        "file": "upstream-values.yaml",
+        "tests": [
+         {
+          "name": "taiga-96pghjkd3c-test",
+          "phase": "Succeeded"
+         }
+        ]
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "lint": {
+     "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 2 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 2 renderings. The default values need your input (externalDatabase.password or externalDatabase.existingSecret is required): they are rendered with the ci values only",
+     "note": "",
+     "result": {
+      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+      "date": "2026-11-02T15:26:39Z",
+      "event": "pull_request",
+      "helm": {
+       "v3.22.1": {
+        "default_values_note": "externalDatabase.password or externalDatabase.existingSecret is required",
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261691",
+        "lint_failed": 0,
+        "lint_runs": 3,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default-values.yaml",
+          "upstream-values.yaml"
+         ],
+         "resources": 120
+        }
+       },
+       "v4.3.1": {
+        "default_values_note": "externalDatabase.password or externalDatabase.existingSecret is required",
+        "failed_step": null,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/41470723628/job/125363261090",
+        "lint_failed": 0,
+        "lint_runs": 3,
+        "schema": {
+         "invalid": 0,
+         "kubernetes": [
+          "1.31.0",
+          "1.34.0"
+         ],
+         "renders": [
+          "default-values.yaml",
+          "upstream-values.yaml"
+         ],
+         "resources": 120
+        }
+       }
+      },
+      "lint_status": "passed",
+      "pr": 33,
+      "pr_url": "https://github.com/UnxWares/helm/pull/33",
+      "run_id": 41470723628,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41470723628",
+      "schema_status": "passed",
+      "status": "passed",
+      "tested_commit": "7ccfe5f46fd640029bf2dffc58f4c0b83bdce9f6"
+     },
+     "status": "passed",
+     "summary": "Passed"
+    },
+    "unit": {
+     "detail": "",
+     "note": "",
+     "result": null,
+     "status": "not applicable",
+     "summary": "No tests yet"
+    }
+   },
+   "version": "2026.11.2"
+  }
+ ],
+ "cve_watch": {
+  "commit": "227331f880e38f6143454eec789039771a0e694b",
+  "date": "2026-11-02T15:21:56Z",
+  "event": "workflow_run",
+  "images": {
+   "docker.io/abrar74774/fossflow:master-2b3cee3": {
+    "charts": [
+     "fossflow"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 14,
+    "image": "docker.io/abrar74774/fossflow:master-2b3cee3",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 14
+    },
+    "total": 40
+   },
+   "docker.io/cloudreve/cloudreve:4.19.1": {
+    "charts": [
+     "cloudreve"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 231,
+    "image": "docker.io/cloudreve/cloudreve:4.19.1",
+    "severity": {
+     "CRITICAL": 15,
+     "HIGH": 216
+    },
+    "total": 547
+   },
+   "docker.io/internetsystemsconsortium/bind9:9.20": {
+    "charts": [
+     "bind9"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "image": "docker.io/internetsystemsconsortium/bind9:9.20",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 2
+   },
+   "docker.io/library/postgres:17.11-alpine": {
+    "charts": [
+     "taiga"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 26,
+    "image": "docker.io/library/postgres:17.11-alpine",
+    "severity": {
+     "CRITICAL": 1,
+     "HIGH": 25
+    },
+    "total": 61
+   },
+   "docker.io/library/rabbitmq:4.4.0-management-alpine": {
+    "charts": [
+     "taiga"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "image": "docker.io/library/rabbitmq:4.4.0-management-alpine",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 0
+   },
+   "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim": {
+    "charts": [
+     "laravel-generic",
+     "taiga"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "image": "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 3
+   },
+   "docker.io/powerdns/pdns-auth-51:5.1.5": {
+    "charts": [
+     "powerdns"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 73,
+    "image": "docker.io/powerdns/pdns-auth-51:5.1.5",
+    "severity": {
+     "CRITICAL": 8,
+     "HIGH": 165
+    },
+    "total": 574
+   },
+   "docker.io/powerdns/pdns-recursor-54:5.4.9": {
+    "charts": [
+     "powerdns"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "image": "docker.io/powerdns/pdns-recursor-54:5.4.9",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 70
+    },
+    "total": 377
+   },
+   "docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf": {
+    "charts": [
+     "bind9"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 2,
+    "image": "docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 2
+    },
+    "total": 9
+   },
+   "docker.io/rajnandan1/kener:4.1.11-alpine": {
+    "charts": [
+     "kener"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 13,
+    "image": "docker.io/rajnandan1/kener:4.1.11-alpine",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 13
+    },
+    "total": 45
+   },
+   "docker.io/rajnandan1/kener:4.1.11-status": {
+    "charts": [
+     "kener"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 13,
+    "image": "docker.io/rajnandan1/kener:4.1.11-status",
+    "severity": {
+     "CRITICAL": 3,
+     "HIGH": 62
+    },
+    "total": 407
+   },
+   "docker.io/taigaio/taiga-back:6.10.2": {
+    "charts": [
+     "taiga"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 147,
+    "image": "docker.io/taigaio/taiga-back:6.10.2",
+    "severity": {
+     "CRITICAL": 11,
+     "HIGH": 181
+    },
+    "total": 546
+   },
+   "docker.io/taigaio/taiga-events:6.10.0": {
+    "charts": [
+     "taiga"
+    ],
+    "eosl": true,
+    "fixable_critical_high": 37,
+    "image": "docker.io/taigaio/taiga-events:6.10.0",
+    "severity": {
+     "CRITICAL": 3,
+     "HIGH": 35
+    },
+    "total": 90
+   },
+   "docker.io/taigaio/taiga-front:6.10.3": {
+    "charts": [
+     "taiga"
+    ],
+    "eosl": true,
+    "fixable_critical_high": 31,
+    "image": "docker.io/taigaio/taiga-front:6.10.3",
+    "severity": {
+     "CRITICAL": 4,
+     "HIGH": 27
+    },
+    "total": 120
+   },
+   "docker.io/taigaio/taiga-protected:6.10.1": {
+    "charts": [
+     "taiga"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 66,
+    "image": "docker.io/taigaio/taiga-protected:6.10.1",
+    "severity": {
+     "CRITICAL": 3,
+     "HIGH": 108
+    },
+    "total": 427
+   },
+   "docker.io/valkey/valkey:9.1.3-alpine": {
+    "charts": [
+     "kener"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "image": "docker.io/valkey/valkey:9.1.3-alpine",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 0
+   },
+   "docker.io/zimengxiong/excalidash-backend:0.6.7": {
+    "charts": [
+     "excalidash"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "image": "docker.io/zimengxiong/excalidash-backend:0.6.7",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 2
+   },
+   "docker.io/zimengxiong/excalidash-frontend:0.6.7": {
+    "charts": [
+     "excalidash"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "image": "docker.io/zimengxiong/excalidash-frontend:0.6.7",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 0
+   },
+   "ghcr.io/unxwares/cloudreve:4.19.1": {
+    "charts": [
+     "cloudreve"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "fixable_critical_high_list": [],
+    "image": "ghcr.io/unxwares/cloudreve:4.19.1",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 3
+   },
+   "ghcr.io/unxwares/mongosh:2.14.1": {
+    "charts": [
+     "openeverest-database-tools"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 1,
+    "fixable_critical_high_list": [
+     {
+      "id": "CVE-2026-102990",
+      "package": "basic-ftp"
+     }
+    ],
+    "image": "ghcr.io/unxwares/mongosh:2.14.1",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 1
+    },
+    "total": 47
+   },
+   "ghcr.io/unxwares/mysql-client:8.4": {
+    "charts": [
+     "openeverest-database-tools"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "fixable_critical_high_list": [],
+    "image": "ghcr.io/unxwares/mysql-client:8.4",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 0
+   },
+   "ghcr.io/unxwares/pdns-auth:5.1.5": {
+    "charts": [
+     "powerdns"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "fixable_critical_high_list": [],
+    "image": "ghcr.io/unxwares/pdns-auth:5.1.5",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 0
+   },
+   "ghcr.io/unxwares/pdns-recursor:5.4.9": {
+    "charts": [
+     "powerdns"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "fixable_critical_high_list": [],
+    "image": "ghcr.io/unxwares/pdns-recursor:5.4.9",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 0
+   },
+   "ghcr.io/unxwares/postgres:17.11-alpine": {
+    "charts": [
+     "taiga"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "fixable_critical_high_list": [],
+    "image": "ghcr.io/unxwares/postgres:17.11-alpine",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 0
+   },
+   "ghcr.io/unxwares/postgresql-client:18": {
+    "charts": [
+     "openeverest-database-tools"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "fixable_critical_high_list": [],
+    "image": "ghcr.io/unxwares/postgresql-client:18",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 0
+   },
+   "ghcr.io/unxwares/taiga-back:6.10.2": {
+    "charts": [
+     "taiga"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 4,
+    "fixable_critical_high_list": [
+     {
+      "id": "CVE-2025-57833",
+      "package": "Django"
+     },
+     {
+      "id": "CVE-2025-64458",
+      "package": "Django"
+     },
+     {
+      "id": "CVE-2025-64459",
+      "package": "Django"
+     },
+     {
+      "id": "CVE-2026-15307",
+      "package": "Django"
+     }
+    ],
+    "image": "ghcr.io/unxwares/taiga-back:6.10.2",
+    "severity": {
+     "CRITICAL": 1,
+     "HIGH": 3
+    },
+    "total": 15
+   },
+   "ghcr.io/unxwares/taiga-events:6.10.0": {
+    "charts": [
+     "taiga"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "fixable_critical_high_list": [],
+    "image": "ghcr.io/unxwares/taiga-events:6.10.0",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 0
+   },
+   "ghcr.io/unxwares/taiga-front:6.10.3": {
+    "charts": [
+     "taiga"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "fixable_critical_high_list": [],
+    "image": "ghcr.io/unxwares/taiga-front:6.10.3",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 0
+   },
+   "ghcr.io/unxwares/taiga-protected:6.10.1": {
+    "charts": [
+     "taiga"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 0,
+    "fixable_critical_high_list": [],
+    "image": "ghcr.io/unxwares/taiga-protected:6.10.1",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0
+    },
+    "total": 0
+   },
+   "registry.k8s.io/kubectl:v1.37.2": {
+    "charts": [
+     "openeverest-database-tools"
+    ],
+    "eosl": false,
+    "fixable_critical_high": 2,
+    "image": "registry.k8s.io/kubectl:v1.37.2",
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 2
+    },
+    "total": 12
+   }
+  },
+  "issue_updated": "2026-11-02T15:10:40Z",
+  "issue_url": "https://github.com/UnxWares/helm/issues/16",
+  "run_id": 41470515388,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/41470515388",
+  "source": "issue"
+ },
+ "files": [
+  "assets/fonts/OFL.txt",
+  "assets/fonts/poppins-400.woff2",
+  "assets/fonts/poppins-500.woff2",
+  "assets/fonts/poppins-600.woff2",
+  "assets/fonts/poppins-700.woff2",
+  "assets/logo-dark.svg",
+  "assets/logo.svg",
+  "assets/mark-dark.svg",
+  "assets/mark.svg",
+  "assets/site.css",
+  "charts/bind9.html",
+  "charts/cloudreve.html",
+  "charts/excalidash.html",
+  "charts/fossflow.html",
+  "charts/kener.html",
+  "charts/laravel-generic.html",
+  "charts/openeverest-database-tools.html",
+  "charts/powerdns.html",
+  "charts/taiga.html",
+  "images/bind-exporter.html",
+  "images/cloudreve.html",
+  "images/fossflow.html",
+  "images/mongosh.html",
+  "images/mysql-client.html",
+  "images/pdns-auth.html",
+  "images/pdns-recursor.html",
+  "images/postgres-17.html",
+  "images/postgres-18.html",
+  "images/postgresql-client.html",
+  "images/taiga-back.html",
+  "images/taiga-events.html",
+  "images/taiga-front.html",
+  "images/taiga-protected.html",
+  "index.html",
+  "status.json"
+ ],
+ "images": [
+  {
+   "accepted": {},
+   "build": {
+    "arch": {
+     "amd64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639316",
+      "scan_findings": 0,
+      "status": "passed"
+     },
+     "arm64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639630",
+      "scan_findings": 0,
+      "status": "passed"
+     }
+    },
+    "commit": "bafd07c72683d16aafd120eae13e0987e0d6df85",
+    "date": "2026-11-02T15:19:48Z",
+    "event": "push",
+    "publish": {
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125360466075",
+     "status": "passed"
+    },
+    "run_id": 41466812356,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/41466812356",
+    "status": "passed"
+   },
+   "changes": "Alpine packages upgraded, `su-exec` instead of `gosu` (built with an old Go toolchain)",
+   "context": "images/postgres/17",
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": null,
+    "medium": null,
+    "open_fixable": 0,
+    "total": 0
+   },
+   "name": "postgres",
+   "page": "images/postgres-17.html",
+   "ref": "ghcr.io/unxwares/postgres:17.11-alpine",
+   "tag": "17.11-alpine",
+   "upstream": "`docker.io/library/postgres`"
+  },
+  {
+   "accepted": {},
+   "build": {
+    "arch": {
+     "amd64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639832",
+      "scan_findings": 0,
+      "status": "passed"
+     },
+     "arm64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639919",
+      "scan_findings": 0,
+      "status": "passed"
+     }
+    },
+    "commit": "bafd07c72683d16aafd120eae13e0987e0d6df85",
+    "date": "2026-11-02T15:19:48Z",
+    "event": "push",
+    "publish": {
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125360466173",
+     "status": "passed"
+    },
+    "run_id": 41466812356,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/41466812356",
+    "status": "passed"
+   },
+   "changes": "Alpine packages upgraded, `su-exec` instead of `gosu` (built with an old Go toolchain)",
+   "context": "images/postgres/18",
+   "cve": null,
+   "name": "postgres",
+   "page": "images/postgres-18.html",
+   "ref": "ghcr.io/unxwares/postgres:18.6-alpine",
+   "tag": "18.6-alpine",
+   "upstream": "`docker.io/library/postgres`"
+  },
+  {
+   "accepted": {
+    "CVE-2024-45231": "Fixed in the image by Debian's backports (django-patches/):",
+    "CVE-2025-48432": "0020-CVE-2024-45231.patch",
+    "CVE-2025-57833": "0026-CVE-2025-48432.patch, 0027-CVE-2025-48432-2.patch",
+    "CVE-2025-64458": "Django 3.2 not affected, according to the Debian security tracker:",
+    "CVE-2025-64459": "0028-CVE-2025-57833.patch",
+    "CVE-2026-15307": "Not reachable in Taiga, not fixed for Django 3.2 by Debian yet: GeoDjango (django.contrib.gis): not in Taiga's INSTALLED_APPS, no spatial field or lookup.",
+    "CVE-2026-15830": "Not reachable in Taiga, not fixed for Django 3.2 by Debian yet: GeoDjango (django.contrib.gis): not in Taiga's INSTALLED_APPS, no spatial field or lookup.",
+    "CVE-2026-48587": "0031-CVE-2025-64459.patch (SQL injection through the _connector argument, critical)",
+    "CVE-2026-48588": "0043-CVE-2026-48587.patch",
+    "CVE-2026-53877": "Not reachable in Taiga, not fixed for Django 3.2 by Debian yet: GeoDjango (django.contrib.gis): not in Taiga's INSTALLED_APPS, no spatial field or lookup.",
+    "CVE-2026-53878": "Django 3.2 not affected, according to the Debian security tracker:",
+    "CVE-2026-6873": "HttpRequest.get_signed_cookie: never called by Taiga or its contribs.",
+    "CVE-2026-8404": "Fixed in the image by our backport of the upstream fix (django-patches/9001-CVE-2026-8404.patch):",
+    "GHSA-8rfp-98v4-mmr6": "bleach 4.1.0: taiga/mdrender patches bleach 4 internals (ALLOWED_STYLES, mutable ALLOWED_TAGS) that bleach 5+ removed. Neither issue is reachable with Taiga's allow list (no formaction attribute).",
+    "GHSA-gj48-438w-jh9v": "bleach 4.1.0: taiga/mdrender patches bleach 4 internals (ALLOWED_STYLES, mutable ALLOWED_TAGS) that bleach 5+ removed. Neither issue is reachable with Taiga's allow list (no formaction attribute)."
+   },
+   "build": {
+    "arch": {
+     "amd64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639788",
+      "scan_findings": 0,
+      "status": "passed"
+     },
+     "arm64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639550",
+      "scan_findings": 0,
+      "status": "passed"
+     }
+    },
+    "commit": "bafd07c72683d16aafd120eae13e0987e0d6df85",
+    "date": "2026-11-02T15:19:48Z",
+    "event": "push",
+    "publish": {
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125360466178",
+     "status": "passed"
+    },
+    "run_id": 41466812356,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/41466812356",
+    "status": "passed"
+   },
+   "changes": "Alpine, non-root (uid 999), dependencies bumped for known vulnerabilities, upstream security fixes not released yet (`patches/`), Django 3.2 security fixes backported by Debian (`django-patches/`), OIDC plugin built in",
+   "context": "images/taiga-back",
+   "cve": {
+    "accepted": 4,
+    "critical": 1,
+    "eosl": false,
+    "fixable": 4,
+    "high": 3,
+    "low": null,
+    "medium": null,
+    "open_fixable": 0,
+    "total": 15
+   },
+   "name": "taiga-back",
+   "page": "images/taiga-back.html",
+   "ref": "ghcr.io/unxwares/taiga-back:6.10.2",
+   "tag": "6.10.2",
+   "upstream": "`docker.io/taigaio/taiga-back`"
+  },
+  {
+   "accepted": {},
+   "build": {
+    "arch": {
+     "amd64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639758",
+      "scan_findings": 0,
+      "status": "passed"
+     },
+     "arm64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639804",
+      "scan_findings": 0,
+      "status": "passed"
+     }
+    },
+    "commit": "bafd07c72683d16aafd120eae13e0987e0d6df85",
+    "date": "2026-11-02T15:19:48Z",
+    "event": "push",
+    "publish": {
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125360466294",
+     "status": "passed"
+    },
+    "run_id": 41466812356,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/41466812356",
+    "status": "passed"
+   },
+   "changes": "Node.js 24, current dependencies, no npm, non-root, read-only root filesystem",
+   "context": "images/taiga-events",
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": null,
+    "medium": null,
+    "open_fixable": 0,
+    "total": 0
+   },
+   "name": "taiga-events",
+   "page": "images/taiga-events.html",
+   "ref": "ghcr.io/unxwares/taiga-events:6.10.0",
+   "tag": "6.10.0",
+   "upstream": "`docker.io/taigaio/taiga-events`"
+  },
+  {
+   "accepted": {},
+   "build": {
+    "arch": {
+     "amd64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639813",
+      "scan_findings": 0,
+      "status": "passed"
+     },
+     "arm64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639757",
+      "scan_findings": 0,
+      "status": "passed"
+     }
+    },
+    "commit": "bafd07c72683d16aafd120eae13e0987e0d6df85",
+    "date": "2026-11-02T15:19:48Z",
+    "event": "push",
+    "publish": {
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125360466301",
+     "status": "passed"
+    },
+    "run_id": 41466812356,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/41466812356",
+    "status": "passed"
+   },
+   "changes": "nginx-unprivileged slim, non-root, port 8080, read-only root filesystem, OIDC plugin built in",
+   "context": "images/taiga-front",
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": null,
+    "medium": null,
+    "open_fixable": 0,
+    "total": 0
+   },
+   "name": "taiga-front",
+   "page": "images/taiga-front.html",
+   "ref": "ghcr.io/unxwares/taiga-front:6.10.3",
+   "tag": "6.10.3",
+   "upstream": "`docker.io/taigaio/taiga-front`"
+  },
+  {
+   "accepted": {},
+   "build": {
+    "arch": {
+     "amd64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639922",
+      "scan_findings": 0,
+      "status": "passed"
+     },
+     "arm64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639661",
+      "scan_findings": 0,
+      "status": "passed"
+     }
+    },
+    "commit": "bafd07c72683d16aafd120eae13e0987e0d6df85",
+    "date": "2026-11-02T15:19:48Z",
+    "event": "push",
+    "publish": {
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125360466308",
+     "status": "passed"
+    },
+    "run_id": 41466812356,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/41466812356",
+    "status": "passed"
+   },
+   "changes": "Python 3.12 Alpine, current gunicorn and Werkzeug, non-root, read-only root filesystem",
+   "context": "images/taiga-protected",
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": null,
+    "medium": null,
+    "open_fixable": 0,
+    "total": 0
+   },
+   "name": "taiga-protected",
+   "page": "images/taiga-protected.html",
+   "ref": "ghcr.io/unxwares/taiga-protected:6.10.1",
+   "tag": "6.10.1",
+   "upstream": "`docker.io/taigaio/taiga-protected`"
+  },
+  {
+   "accepted": {},
+   "build": {
+    "arch": {
+     "amd64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639797",
+      "scan_findings": 0,
+      "status": "passed"
+     },
+     "arm64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639582",
+      "scan_findings": 0,
+      "status": "passed"
+     }
+    },
+    "commit": "bafd07c72683d16aafd120eae13e0987e0d6df85",
+    "date": "2026-11-02T15:19:48Z",
+    "event": "push",
+    "publish": {
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125360466112",
+     "status": "passed"
+    },
+    "run_id": 41466812356,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/41466812356",
+    "status": "passed"
+   },
+   "changes": "Alpine, built from the release tarball with the backends the chart uses (bind, gsqlite3, gpgsql, gmysql), no vim or curl",
+   "context": "images/pdns-auth",
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": null,
+    "medium": null,
+    "open_fixable": 0,
+    "total": 0
+   },
+   "name": "pdns-auth",
+   "page": "images/pdns-auth.html",
+   "ref": "ghcr.io/unxwares/pdns-auth:5.1.5",
+   "tag": "5.1.5",
+   "upstream": "`docker.io/powerdns/pdns-auth-51`"
+  },
+  {
+   "accepted": {},
+   "build": {
+    "arch": {
+     "amd64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639784",
+      "scan_findings": 0,
+      "status": "passed"
+     },
+     "arm64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639807",
+      "scan_findings": 0,
+      "status": "passed"
+     }
+    },
+    "commit": "bafd07c72683d16aafd120eae13e0987e0d6df85",
+    "date": "2026-11-02T15:19:48Z",
+    "event": "push",
+    "publish": {
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125360466142",
+     "status": "passed"
+    },
+    "run_id": 41466812356,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/41466812356",
+    "status": "passed"
+   },
+   "changes": "Alpine, built from the release tarball",
+   "context": "images/pdns-recursor",
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": null,
+    "medium": null,
+    "open_fixable": 0,
+    "total": 0
+   },
+   "name": "pdns-recursor",
+   "page": "images/pdns-recursor.html",
+   "ref": "ghcr.io/unxwares/pdns-recursor:5.4.9",
+   "tag": "5.4.9",
+   "upstream": "`docker.io/powerdns/pdns-recursor-54`"
+  },
+  {
+   "accepted": {},
+   "build": {
+    "arch": {
+     "amd64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639744",
+      "scan_findings": 0,
+      "status": "passed"
+     },
+     "arm64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639701",
+      "scan_findings": 0,
+      "status": "passed"
+     }
+    },
+    "commit": "bafd07c72683d16aafd120eae13e0987e0d6df85",
+    "date": "2026-11-02T15:19:48Z",
+    "event": "push",
+    "publish": {
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125360466267",
+     "status": "passed"
+    },
+    "run_id": 41466812356,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/41466812356",
+    "status": "passed"
+   },
+   "changes": "The PostgreSQL client only, from Alpine packages, instead of a whole server image; latest 18.x at each rebuild",
+   "context": "images/postgresql-client",
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": null,
+    "medium": null,
+    "open_fixable": 0,
+    "total": 0
+   },
+   "name": "postgresql-client",
+   "page": "images/postgresql-client.html",
+   "ref": "ghcr.io/unxwares/postgresql-client:18",
+   "tag": "18",
+   "upstream": "`docker.io/library/postgres` (its `psql`)"
+  },
+  {
+   "accepted": {},
+   "build": {
+    "arch": {
+     "amd64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355640110",
+      "scan_findings": 0,
+      "status": "passed"
+     },
+     "arm64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639990",
+      "scan_findings": 0,
+      "status": "passed"
+     }
+    },
+    "commit": "bafd07c72683d16aafd120eae13e0987e0d6df85",
+    "date": "2026-11-02T15:19:48Z",
+    "event": "push",
+    "publish": {
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125360466909",
+     "status": "passed"
+    },
+    "run_id": 41466812356,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/41466812356",
+    "status": "passed"
+   },
+   "changes": "The MySQL client only, from the signed packages of the official MySQL repository on Oracle Linux 9 slim; latest 8.4.x at each rebuild",
+   "context": "images/mysql-client",
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": null,
+    "medium": null,
+    "open_fixable": 0,
+    "total": 0
+   },
+   "name": "mysql-client",
+   "page": "images/mysql-client.html",
+   "ref": "ghcr.io/unxwares/mysql-client:8.4",
+   "tag": "8.4",
+   "upstream": "`docker.io/library/mysql` (its `mysql`)"
+  },
+  {
+   "accepted": {
+    "CVE-2026-102990": "basic-ftp 5.3.1, bundled in mongosh (listed by its SBOM): an FTP client that mongosh only uses to download a proxy auto-configuration file from an ftp:// URL (proxy-agent, get-uri). The Jobs configure no proxy. Fixed by a newer mongosh release."
+   },
+   "build": {
+    "arch": {
+     "amd64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639834",
+      "scan_findings": 0,
+      "status": "passed"
+     },
+     "arm64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355640313",
+      "scan_findings": 0,
+      "status": "passed"
+     }
+    },
+    "commit": "bafd07c72683d16aafd120eae13e0987e0d6df85",
+    "date": "2026-11-02T15:19:48Z",
+    "event": "push",
+    "publish": {
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125360466152",
+     "status": "passed"
+    },
+    "run_id": 41466812356,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/41466812356",
+    "status": "passed"
+   },
+   "changes": "The official mongosh release, checked against its SHA-256, on a distroless base; its SBOM stays in the image so that scanners see the bundled dependencies",
+   "context": "images/mongosh",
+   "cve": {
+    "accepted": 1,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 1,
+    "high": 1,
+    "low": null,
+    "medium": null,
+    "open_fixable": 0,
+    "total": 47
+   },
+   "name": "mongosh",
+   "page": "images/mongosh.html",
+   "ref": "ghcr.io/unxwares/mongosh:2.14.1",
+   "tag": "2.14.1",
+   "upstream": "`docker.io/library/mongo` (its `mongosh`)"
+  },
+  {
+   "accepted": {},
+   "build": {
+    "arch": {
+     "amd64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639690",
+      "scan_findings": 0,
+      "status": "passed"
+     },
+     "arm64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639856",
+      "scan_findings": 0,
+      "status": "passed"
+     }
+    },
+    "commit": "bafd07c72683d16aafd120eae13e0987e0d6df85",
+    "date": "2026-11-02T15:19:48Z",
+    "event": "push",
+    "publish": {
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125360466094",
+     "status": "passed"
+    },
+    "run_id": 41466812356,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/41466812356",
+    "status": "passed"
+   },
+   "changes": "Built from the release sources with the Go module updates of `patches/` (cloudreve/cloudreve#3618), current Alpine, same thumbnail tools (libvips, FFmpeg, LibreOffice, libheif, libraw); no aria2 or supervisord, no default time zone, non-root (uid 1000)",
+   "context": "images/cloudreve",
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": null,
+    "medium": null,
+    "open_fixable": 0,
+    "total": 3
+   },
+   "name": "cloudreve",
+   "page": "images/cloudreve.html",
+   "ref": "ghcr.io/unxwares/cloudreve:4.19.1",
+   "tag": "4.19.1",
+   "upstream": "`docker.io/cloudreve/cloudreve`"
+  },
+  {
+   "accepted": {},
+   "build": {
+    "arch": {
+     "amd64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355639741",
+      "scan_findings": 0,
+      "status": "passed"
+     },
+     "arm64": {
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125355640084",
+      "scan_findings": 0,
+      "status": "passed"
+     }
+    },
+    "commit": "bafd07c72683d16aafd120eae13e0987e0d6df85",
+    "date": "2026-11-02T15:19:48Z",
+    "event": "push",
+    "publish": {
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/41466812356/job/125360466098",
+     "status": "passed"
+    },
+    "run_id": 41466812356,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/41466812356",
+    "status": "passed"
+   },
+   "changes": "Built from the upstream sources (commit `2b3cee3`, release v1.0.5) with the lockfile update of `patches/` (`npm audit fix`), current Alpine, no npm, su-exec or openssl; nginx on port 8080 and the backend run as uid 1000 with a read-only root filesystem, the backend listens on 127.0.0.1 only and its CORS headers (any origin) are dropped",
+   "context": "images/fossflow",
+   "cve": null,
+   "name": "fossflow",
+   "page": "images/fossflow.html",
+   "ref": "ghcr.io/unxwares/fossflow:1.0.5",
+   "tag": "1.0.5",
+   "upstream": "`docker.io/abrar74774/fossflow`"
+  },
+  {
+   "accepted": {},
+   "build": null,
+   "changes": "Built from the sources of the master branch (commit `bafd56f`, 62 commits after v0.8.0) with Go 1.27 and the `golang.org/x` module updates of `patches/` (prometheus-community/bind_exporter#301), static binary on distroless, same path, flags, port and user (`nobody`)",
+   "context": "images/bind-exporter",
+   "cve": null,
+   "name": "bind-exporter",
+   "page": "images/bind-exporter.html",
+   "ref": "ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f",
+   "tag": "0.8.0-62-gbafd56f",
+   "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
+  }
+ ],
+ "latest_result": "2026-11-02T15:26:39Z",
+ "repository": "UnxWares/helm",
+ "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
+ "site": "https://helm.unxwares.studio"
+}
