@@ -52,6 +52,7 @@ jobs:
                     - { name: postgresql-client, context: images/postgresql-client, suffix: "" }
                     - { name: mysql-client, context: images/mysql-client, suffix: "" }
                     - { name: mongosh, context: images/mongosh, suffix: "" }
+                    - { name: cloudreve, context: images/cloudreve, suffix: "" }
                 platform:
                     - { arch: amd64, runner: ubuntu-24.04, trivy: Linux-64bit }
                     - { arch: arm64, runner: ubuntu-24.04-arm, trivy: Linux-ARM64 }
@@ -133,6 +134,7 @@ jobs:
                     - { name: postgresql-client, context: images/postgresql-client, suffix: "" }
                     - { name: mysql-client, context: images/mysql-client, suffix: "" }
                     - { name: mongosh, context: images/mongosh, suffix: "" }
+                    - { name: cloudreve, context: images/cloudreve, suffix: "" }
         runs-on: ubuntu-24.04
         permissions:
             contents: read
