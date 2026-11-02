@@ -1,13 +1,20 @@
 # -- Number of replicas. With server storage on a ReadWriteOnce volume, keep 1.
 replicaCount: 1
 
+# -- Image provider. `unxwares`: `ghcr.io/unxwares/fossflow`, FossFLOW built from the upstream sources with updated
+# dependencies on a current Alpine, rebuilt twice a week, signed (https://github.com/UnxWares/helm/tree/main/images):
+# nginx on port 8080 and the backend run as a non-root user, with a read-only root filesystem. `upstream`:
+# `docker.io/abrar74774/fossflow`, built by the maintained continuation of FossFLOW (github.com/Abrar74774/FossFLOW),
+# which starts as root (nginx on port 80, backend through su-exec) with a writable root filesystem.
+imageProvider: unxwares  # @schema enum:[unxwares, upstream]
+
 image:
-  # -- FossFLOW image. `abrar74774/fossflow` is built by the maintained continuation of FossFLOW (github.com/Abrar74774/FossFLOW).
-  repository: docker.io/abrar74774/fossflow
+  # -- Image repository. Empty: `ghcr.io/unxwares/fossflow` or `docker.io/abrar74774/fossflow`, from `imageProvider`.
+  repository: ""
   # -- Image pull policy.
   pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
-  # -- Image tag. Upstream only publishes `master-<commit>` tags: `master-2b3cee3` is release v1.0.5.
-  tag: "master-2b3cee3"
+  # -- Image tag. Empty: the chart appVersion for the UnxWares image, `master-2b3cee3` for the upstream one (upstream only publishes `master-<commit>` tags: `master-2b3cee3` is release v1.0.5).
+  tag: ""
   # -- Image digest (`sha256:...`). When set, it takes precedence over the tag.
   digest: ""
 
@@ -21,14 +28,14 @@ fullnameOverride: ""
 storage:
   # -- Save diagrams on the server (Node.js backend + volume). When false, diagrams only live in the browser.
   enabled: true
-  # -- User and group the Node.js backend drops to (`PUID`/`PGID`). nginx keeps its own `nginx` user.
+  # -- User that owns the diagrams. The UnxWares image runs nginx and the backend as this user; the upstream image
+  # starts as root and drops the backend to it (`PUID`), nginx keeping its own `nginx` user.
   uid: 1000
+  # -- Group of the diagrams (`fsGroup` of the pod; `PGID` with the upstream image).
   gid: 1000
 
-# -- Extra environment variables. HTTP_AUTH_USER/HTTP_AUTH_PASSWORD are broken in the upstream image (OpenSSL 3 has no bcrypt): protect FossFLOW at the ingress level instead.
+# -- Extra environment variables. HTTP_AUTH_USER/HTTP_AUTH_PASSWORD do not work: the upstream image fails to build its password file (OpenSSL 3 has no bcrypt) and the UnxWares image refuses to start with them. Protect FossFLOW at the ingress level instead.
 extraEnv: []
-# - name: DIAGRAM_LIST_CACHE_TTL_MS
-#   value: "5000"
 
 # -- Extra envFrom sources.
 extraEnvFrom: []
@@ -48,34 +55,24 @@ podAnnotations: {}
 # -- Pod labels.
 podLabels: {}
 
-# -- Pod security context.
-podSecurityContext:  # @schema skipProperties:true
-  fsGroup: 1000
-  fsGroupChangePolicy: OnRootMismatch
-  seccompProfile:
-    type: RuntimeDefault
+# -- Pod security context. Empty: the defaults of `imageProvider`, `fsGroup` `storage.gid` and seccomp
+# `RuntimeDefault`, plus `runAsNonRoot` as `storage.uid`:`storage.gid` with the UnxWares image (see Security in the
+# README).
+podSecurityContext: {}  # @schema skipProperties:true
 
-# -- Container security context. The image entrypoint must start as root (nginx binds port 80 and rewrites its config,
-# the backend is started through su-exec): every capability is dropped except the five it needs.
-securityContext:  # @schema skipProperties:true
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
-    add:
-      - CHOWN
-      - DAC_OVERRIDE
-      - SETUID
-      - SETGID
-      - NET_BIND_SERVICE
+# -- Container security context. Empty: the defaults of `imageProvider`. UnxWares image: read-only root filesystem,
+# every capability dropped. Upstream image: its entrypoint must start as root (nginx binds port 80 and rewrites its
+# configuration, the backend is started through su-exec), so every capability is dropped except the five it needs.
+securityContext: {}  # @schema skipProperties:true
 
-# -- The image entrypoint does not forward SIGTERM: keep the grace period short.
+# -- Grace period of the pod. The UnxWares image stops nginx and the backend on SIGTERM; the upstream entrypoint
+# does not forward it, so the pod waits for the whole period.
 terminationGracePeriodSeconds: 10
 
 service:
   # -- Service type.
   type: ClusterIP  # @schema enum:[ClusterIP, NodePort, LoadBalancer]
-  # -- Service port (the container listens on 80).
+  # -- Service port (the container listens on 8080 with the UnxWares image, 80 with the upstream one).
   port: 80
 
 ingress:
@@ -142,9 +139,14 @@ readinessProbe:  # @schema skipProperties:true
 autoscaling:
   # -- Enable the HorizontalPodAutoscaler (only without server storage, or with a ReadWriteMany volume).
   enabled: false
+  # -- Minimum replicas.
   minReplicas: 1
+  # -- Maximum replicas.
   maxReplicas: 5
+  # -- Target CPU utilization.
   targetCPUUtilizationPercentage: 80
+  # -- Target memory utilization.
+  targetMemoryUtilizationPercentage: null  # @schema type:[integer, null]
 
 persistence:
   # -- Persist the diagrams (/data/diagrams) when `storage.enabled`.
@@ -160,6 +162,15 @@ persistence:
   size: 1Gi
   # -- PVC annotations.
   annotations: {}
+
+networkPolicy:
+  # -- Create a NetworkPolicy: FossFLOW only accepts traffic on its HTTP port and opens no connection (no egress at all).
+  enabled: false
+  # -- Peers allowed to reach FossFLOW (e.g. your ingress controller). Empty allows any source on the HTTP port; pods of this release are always allowed.
+  ingressFrom: []
+  # - namespaceSelector:
+  #     matchLabels:
+  #       kubernetes.io/metadata.name: ingress-nginx
 
 # -- Additional volumes on the output Deployment definition.
 volumes: []

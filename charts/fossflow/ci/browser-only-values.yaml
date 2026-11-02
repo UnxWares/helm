@@ -1,3 +1,11 @@
+# No server storage: diagrams stay in the browser, stateless pods. With the NetworkPolicy: only the pods of the
+# release and the ingress-nginx namespace may reach FossFLOW (the end-to-end test checks it from other pods).
 storage:
   enabled: false
 replicaCount: 2
+networkPolicy:
+  enabled: true
+  ingressFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx

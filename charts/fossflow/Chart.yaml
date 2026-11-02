@@ -2,7 +2,7 @@ apiVersion: v2
 name: fossflow
 description: FossFLOW, an open source web app to draw isometric infrastructure diagrams, with optional server-side storage of the diagrams.
 type: application
-version: 2026.11.1
+version: 2026.11.2
 appVersion: "1.0.5"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/fossflow
@@ -41,13 +41,23 @@ annotations:
       url: https://github.com/UnxWares/helm/issues
   artifacthub.io/images: |
     - name: fossflow
-      image: docker.io/abrar74774/fossflow:master-2b3cee3
-  artifacthub.io/containsSecurityUpdates: "false"
+      image: ghcr.io/unxwares/fossflow:1.0.5
+  artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/changes: |
+    - kind: security
+      description: "Default image moves to ghcr.io/unxwares/fossflow (imageProvider: unxwares): FossFLOW 1.0.5 built from the upstream sources with updated npm dependencies on a current Alpine, without npm, su-exec or openssl at runtime. It runs as uid 1000 on port 8080 with a read-only root filesystem and no capability. imageProvider: upstream keeps abrar74774/fossflow:master-2b3cee3."
+    - kind: security
+      description: "The storage backend listens on 127.0.0.1 only (BACKEND_HOST), with both images: other pods can no longer read or change the diagrams on port 3001 without going through nginx."
+    - kind: security
+      description: "The UnxWares image drops the CORS headers of the backend (any origin allowed): another site can no longer read or change the diagrams through a visitor's browser."
+    - kind: added
+      description: "Optional NetworkPolicy (networkPolicy.enabled, networkPolicy.ingressFrom): only the HTTP port is open, and the pods open no connection."
+    - kind: added
+      description: "End-to-end test in CI on the image of the commit: diagrams created, listed, read back, updated and kept across a pod replacement through the Service, browser-only mode, and the backend port and the NetworkPolicy checked from other pods."
     - kind: changed
-      description: "README completed: architecture, images, requirements, signed installation, configuration by topic, examples checked with helm template and kubeconform, security, testing, operations, troubleshooting and uninstalling."
+      description: "podSecurityContext and securityContext are empty by default: the chart applies the defaults of imageProvider, with fsGroup taken from storage.gid."
     - kind: fixed
-      description: "The chart description is factual."
+      description: "autoscaling.targetMemoryUtilizationPercentage is a documented value; the helm test pod no longer carries the labels the Service selects; Service environment variables are no longer injected (a Service named backend would have set BACKEND_PORT)."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

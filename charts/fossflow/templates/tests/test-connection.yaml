@@ -3,14 +3,23 @@ kind: Pod
 metadata:
   name: "{{ include "fossflow.fullname" . }}-test-connection"
   labels:
-    {{- include "fossflow.labels" . | nindent 4 }}
+    {{- /* Not the FossFLOW selector labels: the Service and the NetworkPolicy must never pick this pod. */}}
+    helm.sh/chart: {{ include "fossflow.chart" . }}
+    app.kubernetes.io/name: {{ include "fossflow.name" . }}-test
+    app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: test
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
   annotations:
     helm.sh/hook: test
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
 spec:
   restartPolicy: Never
   automountServiceAccountToken: false
+  enableServiceLinks: false
+  {{- with .Values.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   securityContext:
     runAsNonRoot: true
     runAsUser: 65534
@@ -20,6 +29,7 @@ spec:
   containers:
     - name: wget
       image: {{ include "fossflow.image" . | quote }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
       securityContext:
         allowPrivilegeEscalation: false
         readOnlyRootFilesystem: true
