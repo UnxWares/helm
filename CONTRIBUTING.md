@@ -314,7 +314,8 @@ Every pull request runs `.github/workflows/lint-test.yaml`:
 - `ah lint` for the Artifact Hub metadata
 - a check that `values.schema.json` and `README.md` match `./generate-schemas.sh`
 
-`laravel-generic` cannot start without your application image: it is linted and validated but not installed.
+`laravel-generic` cannot start without your application image: chart-testing does not install it, the end-to-end
+test below does, with a Laravel test application built in CI.
 `openeverest-database-tools` needs the OpenEverest operator: chart-testing does not install it, the end-to-end test
 below does.
 
@@ -335,6 +336,10 @@ its chart, its images or its scripts, on every push to main and every Tuesday.
 | `fossflow` | Server storage and browser-only releases in a `restricted` namespace; `helm test`, then a diagram created, listed, read back, updated and kept across a pod replacement, no CORS header for other sites, the browser-only app served, and from other pods: backend port closed, NetworkPolicy enforced |
 | `bind9` | In a `restricted` Pod Security namespace: `helm test`, then from other pods the records of two zones over UDP and TCP, refused transfers, other zones and version, named as uid 53 without capabilities, DNS-only Service, `bind_up 1` from an allowed pod and no metrics from another pod |
 | `powerdns` | Real PostgreSQL (TLS checked with a CA from `extraVolumes`) and MySQL, three releases in a `restricted` namespace: `helm test`, then API key refusals, zone created and changed through the API, answers of the authoritative server and the recursor from another pod, again after a restart, NetworkPolicy on the API |
+| `laravel-generic` | A Laravel 13 test application built in CI (`.github/e2e/laravel-app`), FrankenPHP with SQLite and PHP-FPM + nginx with a real PostgreSQL, in a `restricted` namespace: `helm test`, then the runtime that answers, uid and read-only root filesystem, the generated APP_KEY in every pod, migrations (init container or hook Job), a note written and read back decrypted, session, cache, a queued job run by the queue worker that writes files served by the web pod, the scheduler, PHP-FPM closed to other pods (NetworkPolicy), then a reinstall that keeps the APP_KEY, the session, the files and the data |
+
+`laravel-generic` has no image of its own: its job builds the Laravel test application of `.github/e2e/laravel-app`
+(pinned skeleton commit and `composer.lock`, one Docker target per runtime), which is never published.
 
 To add one: write `.github/scripts/<chart>-e2e.sh` (it receives the namespace and the release name, fails on the
 first wrong answer and prints one `ok:` line per check), add the chart's paths to the `changes` job, and add a job that
