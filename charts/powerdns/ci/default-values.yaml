@@ -1,7 +1,12 @@
-# SQLite backend, API enabled, recursor forwarding a zone to the authoritative server.
+# SQLite backend, API enabled, recursor forwarding a zone to the authoritative server, NetworkPolicy. The end-to-end
+# test (.github/scripts/powerdns-e2e.sh) reaches the API from a pod with the e2e.unxwares.com/api label.
 recursor:
   enabled: true
   authoritativeZones:
     - example.test
 networkPolicy:
   enabled: true
+  apiAllowedFrom:
+    - podSelector:
+        matchLabels:
+          e2e.unxwares.com/api: "true"

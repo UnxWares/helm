@@ -53,10 +53,8 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           workingDir: /var/cache/bind
           command: ["/usr/sbin/named"]
+          # named runs as the user of podSecurityContext (bind, uid 53) from the start: no -u.
           args:
-            # Bind port 53 as root, then run as the unprivileged bind user (uid 53).
-            - "-u"
-            - "bind"
             # Foreground, logs to stderr.
             - "-g"
           {{- with .Values.bind.args }}
@@ -115,7 +113,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "bind9.image" (dict "image" .Values.metrics.image "default" .Values.metrics.image.tag) | quote }}
+          image: {{ include "bind9.exporterImage" . | quote }}
           imagePullPolicy: {{ .Values.metrics.image.pullPolicy }}
           args:
             - --bind.stats-url=http://127.0.0.1:8053/

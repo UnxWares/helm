@@ -108,7 +108,14 @@ Render an image reference from {repository, tag, digest}; an empty repository fo
 PostgreSQL client image of the gpgsql schema init container.
 */}}
 {{- define "powerdns.postgresImage" -}}
-{{- .Values.backend.schemaInit.postgresImage | default (printf "%s:18.6-alpine" (ternary "ghcr.io/unxwares/postgres" "docker.io/library/postgres" (eq .Values.imageProvider "unxwares"))) -}}
+{{- .Values.backend.schemaInit.postgresImage | default (ternary "ghcr.io/unxwares/postgresql-client:18" "docker.io/library/postgres:18.6-alpine" (eq .Values.imageProvider "unxwares")) -}}
+{{- end }}
+
+{{/*
+MySQL client image of the gmysql schema init container.
+*/}}
+{{- define "powerdns.mysqlImage" -}}
+{{- .Values.backend.schemaInit.mysqlImage | default (ternary "ghcr.io/unxwares/mysql-client:8.4" "docker.io/library/mysql:8.4.13" (eq .Values.imageProvider "unxwares")) -}}
 {{- end }}
 
 {{/*
@@ -149,6 +156,14 @@ Settings of the selected SQL backend (gpgsql or gmysql), or an empty dict.
 Environment variables carrying secrets into the config templates rendered by the image startup script.
 */}}
 {{- define "powerdns.secretEnv" -}}
+{{- include "powerdns.apiKeyEnv" . }}
+{{- include "powerdns.dbPasswordEnv" . }}
+{{- end }}
+
+{{/*
+Environment variable carrying the API key, for the server and the `helm test` pod.
+*/}}
+{{- define "powerdns.apiKeyEnv" -}}
 {{- if .Values.api.enabled }}
 - name: PDNS_API_KEY
   valueFrom:
@@ -161,6 +176,12 @@ Environment variables carrying secrets into the config templates rendered by the
       key: api-key
       {{- end }}
 {{- end }}
+{{- end }}
+
+{{/*
+Environment variable carrying the database password (gpgsql, gmysql), for the server and the schema init container.
+*/}}
+{{- define "powerdns.dbPasswordEnv" -}}
 {{- $db := include "powerdns.sqlBackend" . | fromYaml }}
 {{- if $db }}
 - name: PDNS_DB_PASSWORD

@@ -1,0 +1,20 @@
+{{- if and .Values.recursor.enabled .Values.recursor.webserver.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "powerdns.recursor.fullname" . }}-api
+  labels:
+    {{- include "powerdns.labels" . | nindent 4 }}
+    app.kubernetes.io/component: recursor
+    {{- /* Lets the ServiceMonitor select this service only. */}}
+    powerdns.unxwares.com/endpoint: webserver
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: {{ .Values.recursor.webserver.port }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "powerdns.recursor.selectorLabels" . | nindent 4 }}
+{{- end }}

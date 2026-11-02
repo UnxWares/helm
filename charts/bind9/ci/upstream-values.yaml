@@ -1,0 +1,25 @@
+# The Prometheus community exporter image (imageProvider: upstream), one zone.
+imageProvider: upstream
+metrics:
+  enabled: true
+bind:
+  namedConf: |
+    options {
+      directory "/var/cache/bind";
+      listen-on { any; };
+      listen-on-v6 { any; };
+      recursion no;
+      allow-transfer { none; };
+      version none;
+    };
+    zone "example.test" {
+      type primary;
+      file "/etc/bind/example-test.zone";
+    };
+  zones:
+    example-test: |
+      $TTL 3600
+      @   IN SOA ns1.example.test. hostmaster.example.test. ( 2026110201 3H 15M 1W 1H )
+      @   IN NS  ns1.example.test.
+      ns1 IN A   192.0.2.1
+      www IN A   192.0.2.10

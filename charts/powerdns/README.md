@@ -1,6 +1,6 @@
 # PowerDNS Helm Chart
 
-![Version: 2026.11.1](https://img.shields.io/badge/Version-2026.11.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 5.1.5](https://img.shields.io/badge/AppVersion-5.1.5-informational?style=flat-square)
+![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 5.1.5](https://img.shields.io/badge/AppVersion-5.1.5-informational?style=flat-square)
 
 [PowerDNS Authoritative Server](https://doc.powerdns.com/authoritative/) serves DNS zones stored in a database and
 manages them through a REST API. This chart deploys it on Kubernetes with a SQLite, PostgreSQL or MySQL/MariaDB
@@ -10,8 +10,9 @@ UnxWares builds of PowerDNS by default.
 
 ## Features
 
-- **UnxWares images by default**: PowerDNS built from the release tarballs on current Alpine bases, rebuilt twice a
-  week; the official Debian images stay available with `imageProvider: upstream` (see [Images](#images)).
+- **UnxWares images by default**: PowerDNS built from the release tarballs on current Alpine bases, and the database
+  clients alone for the schema init, rebuilt twice a week; the official images stay available with
+  `imageProvider: upstream` (see [Images](#images)).
 - **Authoritative DNS** with DNSSEC, on SQLite (single replica + PVC), PostgreSQL or MySQL/MariaDB (scale out).
 - **Automatic schema creation**: the schema shipped in the PowerDNS image is applied when the database is empty
   (idempotent init container).
@@ -38,11 +39,12 @@ contains `powerdns`). This is `<fullname>` below.
 | Service | `<fullname>` | always | DNS: `dns-udp` and `dns-tcp` on `service.port` (53), to `dns.containerPort` (1053) in the pod |
 | Service | `<fullname>-api` | `webserver.enabled` (default) | `http` on `apiService.port` (8081): REST API and `/metrics` |
 | ConfigMap | `<fullname>` | always | `pdns.conf` and `secrets.j2`, the template of the secret settings (no secret in it) |
-| Secret | `<fullname>` | the API key or a database password is managed by the chart | `api-key` (generated, or `api.key`), `db-password` (inline `backend.<type>.password`) |
+| Secret | `<fullname>` | the API key or a database password is managed by the chart | `api-key` (generated, or `api.key`), `db-password` (inline `backend.<type>.password`); annotated `helm.sh/resource-policy: keep` when the key is generated |
 | PersistentVolumeClaim | `<fullname>` | `gsqlite3` backend, `persistence.enabled` (default), no `persistence.existingClaim` | the SQLite database, annotated `helm.sh/resource-policy: keep` |
 | ServiceAccount | `<fullname>` | `serviceAccount.create` (default) | shared by the server and the recursor, token not mounted |
-| Deployment, Service, ConfigMap | `<fullname>-recursor` | `recursor.enabled` | container `recursor`; Service with DNS on `recursor.service.port` (53) and `http` on `recursor.webserver.port` (8082); ConfigMap `recursor.j2` (the recursor YAML settings) |
-| HorizontalPodAutoscaler | `<fullname>`, `<fullname>-recursor` | `autoscaling.enabled`, `recursor.autoscaling.enabled` | CPU target |
+| Deployment, Service, ConfigMap | `<fullname>-recursor` | `recursor.enabled` | container `recursor`; Service with DNS on `recursor.service.port` (53), nothing else; ConfigMap `recursor.j2` (the recursor YAML settings) |
+| Service | `<fullname>-recursor-api` | `recursor.enabled` and `recursor.webserver.enabled` (default) | `http` on `recursor.webserver.port` (8082): recursor API and `/metrics`, always `ClusterIP` |
+| HorizontalPodAutoscaler | `<fullname>`, `<fullname>-recursor` | `autoscaling.enabled`, `recursor.autoscaling.enabled` | CPU target (and memory target for the server, with `autoscaling.targetMemoryUtilizationPercentage`) |
 | PodDisruptionBudget | `<fullname>`, `<fullname>-recursor` | `podDisruptionBudget.enabled`, `recursor.podDisruptionBudget.enabled` | `minAvailable`, or `maxUnavailable` when set |
 | NetworkPolicy | `<fullname>`, `<fullname>-recursor` | `networkPolicy.enabled` (the second one with `recursor.enabled`) | ingress: DNS open, `http` restricted |
 | ServiceMonitor | `<fullname>`, `<fullname>-recursor` | `metrics.serviceMonitor.enabled`, `recursor.metrics.serviceMonitor.enabled`, the webserver, and the `monitoring.coreos.com/v1` CRD | scrapes `/metrics` |
@@ -54,6 +56,10 @@ Init containers of the authoritative server:
 |---------|-----------------|--------------|
 | `gsqlite3` | `sqlite-init` (PowerDNS image) | creates the SQLite database from the image schema when the file is missing or empty |
 | `gpgsql`, `gmysql` with `backend.schemaInit.enabled` (default) | `copy-schema` (PowerDNS image), then `schema-init` (PostgreSQL or MySQL client image) | copies the schema of the server version, waits for the database (`backend.schemaInit.timeoutSeconds`), creates the schema when the `domains` table is missing |
+
+`schema-init` gets the database password only (not the API key), mounts `extraVolumeMounts` like the server (a CA
+for `sslrootcert`, for example), and has its own memory-backed `/tmp` (1Mi), where the MySQL client reads its
+options file.
 
 Volumes of the `pdns` container: the ConfigMap (`/etc/powerdns/pdns.conf` and
 `/etc/powerdns/templates.d/secrets.j2`, read-only); `/etc/powerdns/pdns.d`, a memory-backed emptyDir (1Mi) that holds
@@ -72,11 +78,14 @@ stored in a ConfigMap, and how the recursor learns the address of the authoritat
 |-----------|--------------------------------------|---------------------------|
 | Authoritative server | `ghcr.io/unxwares/pdns-auth` | `docker.io/powerdns/pdns-auth-51` |
 | Recursor (`recursor.enabled`) | `ghcr.io/unxwares/pdns-recursor` | `docker.io/powerdns/pdns-recursor-54` |
-| PostgreSQL client of the gpgsql schema init | `ghcr.io/unxwares/postgres` | `docker.io/library/postgres` |
+| PostgreSQL client of the gpgsql schema init | `ghcr.io/unxwares/postgresql-client:18` | `docker.io/library/postgres:18.6-alpine` |
+| MySQL client of the gmysql schema init | `ghcr.io/unxwares/mysql-client:8.4` | `docker.io/library/mysql:8.4.13` |
 
-The MySQL client of the gmysql schema init is `docker.io/library/mysql` in both cases. Tags: the authoritative server
-follows the chart `appVersion` (`image.tag`), the recursor `recursor.image.tag` (`5.4.9`), the PostgreSQL client is
-`18.6-alpine`, the MySQL client `8.4.13`. The `helm test` pod uses the authoritative server image, or `tests.image`.
+Tags: the authoritative server follows the chart `appVersion` (`image.tag`), the recursor `recursor.image.tag`
+(`5.4.9`); the client images are whole references (`backend.schemaInit.postgresImage`,
+`backend.schemaInit.mysqlImage`). The UnxWares client images hold the client alone, not a database server: `18` and
+`8.4` take the latest client of the series at each rebuild. The `helm test` pod uses the authoritative server image,
+or `tests.image`.
 
 The UnxWares images are the same PowerDNS versions, built from the release tarballs on current Alpine bases and
 rebuilt twice a week (Monday and Thursday), with the backends the chart supports (bind, gsqlite3, gpgsql, gmysql) and
@@ -85,8 +94,8 @@ the startup script that renders `/etc/powerdns/templates.d`, so the chart config
 They are built for `linux/amd64` and `linux/arm64`. Sources:
 [images/](https://github.com/UnxWares/helm/tree/main/images).
 
-`imageProvider` only fills the repositories left empty: `image.repository`, `recursor.image.repository` and
-`backend.schemaInit.postgresImage` override it for one component.
+`imageProvider` only fills the values left empty: `image.repository`, `recursor.image.repository`,
+`backend.schemaInit.postgresImage` and `backend.schemaInit.mysqlImage` override it for one component.
 
 ```yaml
 imageProvider: upstream
@@ -103,7 +112,7 @@ recursor:
     digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef   # your digest
 backend:
   schemaInit:
-    postgresImage: ghcr.io/unxwares/postgres:18.6-alpine
+    postgresImage: ghcr.io/unxwares/postgresql-client:18-20261102
 ```
 
 Every UnxWares tag is signed with cosign (keyless, by the image workflow of the repository). To verify an image:
@@ -232,9 +241,8 @@ backend:
 
 - `extraConnectionParameters` are libpq parameters, used by the server (`gpgsql-extra-connection-parameters`) and by
   the schema init. The default, `sslmode=prefer`, encrypts when the server offers TLS but checks no certificate.
-- To verify the server certificate against a private CA, mount the CA with `extraVolumes` and `extraVolumeMounts`.
-  These mounts only reach the `pdns` container, not the schema init: create the schema yourself and disable
-  `backend.schemaInit`.
+- To verify the server certificate against a private CA, mount the CA with `extraVolumes` and `extraVolumeMounts`:
+  the `pdns` container and the `schema-init` container both mount them.
 
 ```yaml
 backend:
@@ -243,8 +251,6 @@ backend:
     host: pdns-db-rw.databases.svc
     existingSecret: pdns-db
     extraConnectionParameters: "sslmode=verify-full sslrootcert=/etc/ssl/db/ca.crt"
-  schemaInit:
-    enabled: false
 extraVolumes:
   - name: db-ca
     secret:
@@ -272,8 +278,17 @@ backend:
     existingSecretPasswordKey: password
 ```
 
-The schema init uses `backend.schemaInit.mysqlImage` (`docker.io/library/mysql:8.4.13`), whatever `imageProvider`
-says. The chart has no TLS setting for `gmysql`.
+The schema init uses `backend.schemaInit.mysqlImage`, or the MySQL client image of `imageProvider`. It passes the
+connection settings to the client in an options file on its memory-backed `/tmp`, with the password quoted and
+escaped: quotes, backslashes, `#` and spaces in the password are fine.
+
+TLS: the connection is encrypted when the MySQL server offers TLS, without checking its certificate
+(`backend.gmysql.verifyServerCertificate: false`), like the default of the MySQL client: MySQL servers use a
+self-signed certificate unless configured otherwise. The MariaDB client library of the UnxWares image (Connector/C
+3.4) would otherwise check it and refuse to connect (`TLS/SSL error: self-signed certificate in certificate chain`):
+the chart sets `MARIADB_TLS_DISABLE_PEER_VERIFICATION=1` in the `pdns` container. With a server certificate from a
+public CA, set `verifyServerCertificate: true` to have it checked against the system CAs (UnxWares image only: the
+official image does not check it). The chart has no setting for a private CA with `gmysql`.
 
 #### Schema creation
 
@@ -397,14 +412,19 @@ recursor:
   zone has no chain of trust from the root, and validating it would answer SERVFAIL. Set it to `true` only for zones
   signed and delegated with a DS record from the public root.
 - `recursor.forwardZones` (other servers) get no negative trust anchor. For internal zones there, add the anchors in
-  `recursor.config` (example below).
+  `recursor.config` (example below). Write IPv6 forwarders in brackets: `[2001:db8::53]:53`.
 - `recursor.dnssecValidation` is the recursor's `dnssec.validation` mode (`off`, `process-no-validate`, `process`,
   `log-fail`, `validate`): see the [Recursor DNSSEC documentation](https://doc.powerdns.com/recursor/dnssec.html).
 - `recursor.allowFrom` lists the clients allowed to query. Never leave a recursor open to the Internet; add your pod
   CIDR if it is outside the private ranges.
 - The recursor listens on `recursor.containerPort` (1053) on `recursor.listenAddresses`; its Service exposes DNS on
-  `recursor.service.port` (53) and the webserver (`/metrics`) on `recursor.webserver.port` (8082), restricted to
-  `recursor.webserver.allowFrom`. The chart sets no recursor API key.
+  `recursor.service.port` (53). The webserver (`/metrics`) listens on `recursor.webserver.port` (8082), restricted to
+  `recursor.webserver.allowFrom`, behind its own `ClusterIP` Service `<fullname>-recursor-api`: a `LoadBalancer`
+  recursor Service does not publish it. The chart sets no recursor API key.
+- IPv6: forwarder addresses are `IP:port`, with IPv6 addresses in brackets (`[2001:db8::53]:53`). The chart writes
+  the address of the authoritative Service that way when it is IPv6. On an IPv6-only cluster the recursor also needs
+  an IPv6 source address for its queries: `recursor.config: {outgoing: {source_address: ["::"]}}` (`["0.0.0.0",
+  "::"]` on dual-stack).
 
 `recursor.config` is merged into the generated settings
 ([YAML settings](https://doc.powerdns.com/recursor/yamlsettings.html)). Maps are merged, but a list replaces the
@@ -436,7 +456,7 @@ The settings file is a Jinja2 template rendered at startup: do not put `{{` or `
 
 | Secret value | Where it comes from | Kept across upgrades |
 |--------------|---------------------|----------------------|
-| API key | generated, `api.key`, or `api.existingSecret` / `api.existingSecretKey` | generated: read back from the Secret `<fullname>` at each upgrade |
+| API key | generated, `api.key`, or `api.existingSecret` / `api.existingSecretKey` | generated: read back from the Secret `<fullname>` at each upgrade; the Secret is kept on uninstall, so a reinstall of the same release reuses it |
 | Database password | `backend.<type>.password` (stored in the Secret `<fullname>`, key `db-password`), or `backend.<type>.existingSecret` / `existingSecretPasswordKey` | yes, from your values or your Secret |
 
 They reach the containers as environment variables (`PDNS_API_KEY`, `PDNS_DB_PASSWORD`) read from the Secret, and
@@ -541,7 +561,7 @@ recursor:
         release: kube-prometheus-stack
 ```
 
-The ServiceMonitors scrape `/metrics` on the `http` port of `<fullname>-api` and of `<fullname>-recursor` (the
+The ServiceMonitors scrape `/metrics` on the `http` port of `<fullname>-api` and of `<fullname>-recursor-api` (the
 second one only with `recursor.enabled`). They need the webserver (`webserver.enabled`, `recursor.webserver.enabled`)
 and are only rendered when the `monitoring.coreos.com/v1` CRD exists. Prometheus must also be allowed by
 `webserver.allowFrom` (or `recursor.webserver.allowFrom`) and, with the NetworkPolicy, by
@@ -567,8 +587,8 @@ recursor:
   podAnnotations: {}
 ```
 
-`commonLabels` go on every resource and pod. `extraEnv`, `extraVolumes` and `extraVolumeMounts` apply to the `pdns`
-container only (not to the init containers); the `recursor.*` ones to the recursor.
+`commonLabels` go on every resource and pod. `extraEnv` applies to the `pdns` container only; `extraVolumes` to the
+pod, and `extraVolumeMounts` to the `pdns` and `schema-init` containers; the `recursor.*` ones to the recursor.
 
 ## Examples
 
@@ -703,15 +723,17 @@ What the chart does by default:
 - **Service account**: a dedicated one, shared by the server and the recursor, with
   `automountServiceAccountToken: false` (PowerDNS never calls the Kubernetes API).
 - **Secrets**: the API key and the database password stay in Secrets, reach the containers as environment variables,
-  and are written at startup into a memory-backed volume, never into a ConfigMap.
+  and are written at startup into a memory-backed volume, never into a ConfigMap. Each container only gets the ones
+  it uses (`schema-init` the database password, `helm test` the API key).
 - **PowerDNS defaults**: `version-string=anonymous`; the webserver only accepts private ranges
   (`webserver.allowFrom`); the recursor only answers private ranges (`recursor.allowFrom`).
 - **NetworkPolicy** (`networkPolicy.enabled`, off by default): DNS open, the `http` ports restricted to the pods of
   the release and `networkPolicy.apiAllowedFrom`.
 
 What is exposed: DNS on the `<fullname>` Service (53, UDP and TCP); the API and `/metrics` on `<fullname>-api` (8081,
-plain HTTP, `ClusterIP`); with the recursor, DNS and its webserver on `<fullname>-recursor` (53 and 8082). The API
-requires the key; `/metrics` and the recursor webserver need none.
+plain HTTP, `ClusterIP`); with the recursor, DNS on `<fullname>-recursor` (53) and its webserver on
+`<fullname>-recursor-api` (8082, `ClusterIP`). The API requires the key; `/metrics` and the recursor webserver need
+none.
 
 Caveats:
 
@@ -719,17 +741,15 @@ Caveats:
   node address, which the private ranges of `webserver.allowFrom`, `recursor.allowFrom` and `allow-axfr-ips` accept.
   Set `externalTrafficPolicy: Local` on any Service exposed outside the cluster, and never open the recursor to the
   Internet.
-- The recursor webserver port is on the recursor's DNS Service: a `LoadBalancer` recursor Service publishes 8082 too.
-  Restrict it with `recursor.service.loadBalancerSourceRanges`, `recursor.webserver.allowFrom`, or disable
-  `recursor.webserver.enabled`.
 - The API is plain HTTP and the key is a single shared secret with full write access to every zone. Keep the API
   Service internal and give the key only to the tools that need it.
 - The API key and the database password are visible to anyone who can `kubectl exec` into the pods (environment).
   An inline `api.key` or database password is also stored in the Helm release.
-- The gmysql schema init writes the database password to `/tmp/client.cnf`, a disk-backed emptyDir, for the life of
-  the pod.
+- The gmysql schema init writes the database password to `/tmp/client.cnf`, on a memory-backed emptyDir that only
+  this init container mounts, for the life of the pod.
 - `sslmode=prefer` (default) does not authenticate the PostgreSQL server: use `verify-full` with a CA when the
-  network between PowerDNS and the database is not trusted.
+  network between PowerDNS and the database is not trusted. Likewise, `gmysql` encrypts without checking the server
+  certificate unless `backend.gmysql.verifyServerCertificate` is `true`.
 - With `backend.dnssec`, the DNSSEC private keys are in the database: protect its backups accordingly.
 
 ## Testing
@@ -751,7 +771,25 @@ become ready, then `helm test` runs.
 The test pod `<fullname>-test-api` runs Python from the authoritative server image (or `tests.image`), with the same
 security contexts as the server. It calls `GET /api/v1/servers/localhost` on the `<fullname>-api` Service with the API
 key, and fails on any HTTP error or after 10 seconds without an answer. It does not send DNS queries and does not test
-the recursor or a SQL backend. There is no end-to-end test yet.
+the recursor or a SQL backend; it changes nothing.
+
+The end-to-end test (`.github/workflows/e2e.yaml`, scripts `.github/scripts/powerdns-e2e-env.sh` and
+`.github/scripts/powerdns-e2e.sh`) runs on pull requests that touch the chart or its images, on every push to main
+and every week. It builds the PowerDNS and database client images of the commit, starts PostgreSQL (with TLS) and
+MySQL, and installs three releases in a namespace that enforces the `restricted` Pod Security Standard: SQLite with
+the recursor and the NetworkPolicy (`ci/default-values.yaml`), PostgreSQL with `sslmode=verify-full` against a CA
+mounted with `extraVolumes`, and MySQL; the database password holds `'`, `"`, `\n` (a backslash and an n), `#`, `;`
+and `$`. After `helm test`, for each release:
+
+- the API refuses a request without a key, a wrong key, and a zone sent with a wrong key (which is not created);
+- a zone created through the API with its records is read back, and a record is added to it;
+- the authoritative server answers these records over UDP and TCP from another pod, with the authoritative flag, and
+  NXDOMAIN for an unknown name, again after a restart of the server (the zones are in the database);
+- with the recursor, the same records resolve through it;
+- the server runs as uid 953 with no capability, and the DNS Services only carry DNS;
+- with the NetworkPolicy, a pod of `networkPolicy.apiAllowedFrom` reaches the API, another pod does not.
+
+It does not test DNSSEC, zone transfers, several replicas or the official images (chart-testing installs those).
 
 Run the test after an install:
 
@@ -801,6 +839,20 @@ The schema init only creates a missing schema. When a new PowerDNS version chang
 upgrade SQL given in the [PowerDNS upgrade notes](https://doc.powerdns.com/authoritative/upgrading.html) before
 upgrading the chart.
 
+### To 2026.11.2
+
+- **Recursor webserver**: the `http` port (8082) moved from the `<fullname>-recursor` Service to its own `ClusterIP`
+  Service, `<fullname>-recursor-api`. The recursor ServiceMonitor follows; update any other client or scrape
+  configuration that used `<fullname>-recursor:8082`.
+- **Schema init images**: with `imageProvider: unxwares` (default), the schema init now uses
+  `ghcr.io/unxwares/postgresql-client:18` and `ghcr.io/unxwares/mysql-client:8.4` (the clients alone);
+  `backend.schemaInit.mysqlImage` defaults to empty. Values you set yourself are kept.
+- **Generated API key**: the Secret that holds it is now kept on `helm uninstall` (see [Uninstalling](#uninstalling)).
+- **gmysql and TLS**: the UnxWares image could not connect to a MySQL server with a self-signed certificate; the
+  chart now disables the certificate check of its MariaDB client library (`backend.gmysql.verifyServerCertificate`,
+  default `false`). If your MySQL server has a certificate from a public CA and you relied on the check, set it to
+  `true`.
+
 ### To 2026.10.5 (UnxWares images)
 
 The default images move to `ghcr.io/unxwares/pdns-auth` and `ghcr.io/unxwares/pdns-recursor` (see [Images](#images)):
@@ -827,7 +879,7 @@ kubectl get configmap -n dns dns-powerdns -o jsonpath='{.data.pdns\.conf}'
   in the message.
 - **Pod stuck in `Init`**: `kubectl logs ... -c schema-init`. `Timed out waiting for PostgreSQL` (or MySQL): wrong
   host or port, a NetworkPolicy on the database side, wrong credentials, or a TLS setting the init container cannot
-  satisfy (`sslrootcert` on a volume it does not mount: see [PostgreSQL](#postgresql)).
+  satisfy (`sslrootcert` must be on a volume of `extraVolumeMounts`: see [PostgreSQL](#postgresql)).
 - **Pod `Pending`**: the PVC is not bound (no default StorageClass: set `persistence.storageClass`).
 - **`CrashLoopBackOff` right after start**: read `kubectl logs ... -c pdns --previous`. An error binding `[::]:1053`
   means the pods have no IPv6: remove `[::]` from `dns.listenAddresses` (and `::` from `recursor.listenAddresses`).
@@ -846,6 +898,8 @@ kubectl get configmap -n dns dns-powerdns -o jsonpath='{.data.pdns\.conf}'
 - **The recursor cannot reach the authoritative server after the Service was recreated**: the address is read when
   the recursor pod starts. `kubectl rollout restart deploy/dns-powerdns-recursor -n dns`, or set a fixed
   `service.clusterIP`.
+- **`gmysql Connection failed ... TLS/SSL error: self-signed certificate`**: `backend.gmysql.verifyServerCertificate`
+  is `true` and the MySQL server certificate is not from a public CA. Set it to `false`.
 - **`ImagePullBackOff` on `ghcr.io/unxwares/...`**: the cluster cannot reach GHCR. Mirror the images and set the
   repositories, or use `imageProvider: upstream`.
 
@@ -859,13 +913,16 @@ What stays:
 
 - the PVC `<fullname>` of the SQLite database (`gsqlite3` with `persistence.enabled`), which carries
   `helm.sh/resource-policy: keep`; a claim given through `persistence.existingClaim` is not managed by the chart;
+- the Secret `<fullname>` when it holds a generated API key (annotated `helm.sh/resource-policy: keep`): a new install
+  of the same release in the same namespace reuses the key, so the API clients keep working;
 - your external database and the Secrets you created yourself.
 
-The Secret `<fullname>` is deleted: a new install generates a new API key, unless you set `api.key` or
-`api.existingSecret`. To delete the SQLite data deliberately:
+With `api.key` or `api.existingSecret`, the Secret `<fullname>` (if any) is deleted. To delete the SQLite data and
+the generated key deliberately:
 
 ```bash
 kubectl delete pvc -n dns dns-powerdns
+kubectl delete secret -n dns dns-powerdns
 ```
 
 ## Values
@@ -884,6 +941,7 @@ kubectl delete pvc -n dns dns-powerdns
 | autoscaling.maxReplicas | int | `6` | Maximum number of replicas. |
 | autoscaling.minReplicas | int | `2` | Minimum number of replicas. |
 | autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU utilization (%). |
+| autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Target average memory utilization (%). Empty: no memory target. |
 | backend.dnssec | bool | `true` | Store DNSSEC keys and metadata in the database (`<backend>-dnssec=yes`). |
 | backend.gmysql.dbname | string | `"pdns"` | Database name. |
 | backend.gmysql.existingSecret | string | `""` | Existing secret holding the database password. |
@@ -892,18 +950,19 @@ kubectl delete pvc -n dns dns-powerdns
 | backend.gmysql.password | string | `""` | Database password (ignored when `existingSecret` is set). |
 | backend.gmysql.port | int | `3306` | MySQL/MariaDB port. |
 | backend.gmysql.user | string | `"pdns"` | Database user. |
+| backend.gmysql.verifyServerCertificate | bool | `false` | Check the certificate of the MySQL server. `false`: the connection is encrypted when the server offers TLS, without checking the certificate, like the default of the MySQL client (`--ssl-mode=PREFERRED`): MySQL servers use a self-signed certificate unless configured otherwise. `true`: the MariaDB client library of the UnxWares image checks it against the system CAs and fails on a self-signed or private certificate; the official image does not check it either way. |
 | backend.gpgsql.dbname | string | `"pdns"` | Database name. |
 | backend.gpgsql.existingSecret | string | `""` | Existing secret holding the database password. |
 | backend.gpgsql.existingSecretPasswordKey | string | `"password"` | Key of the password in `existingSecret`. |
-| backend.gpgsql.extraConnectionParameters | string | `"sslmode=prefer"` | Extra libpq connection parameters, e.g. `sslmode=verify-full sslrootcert=/etc/ssl/db/ca.crt`. |
+| backend.gpgsql.extraConnectionParameters | string | `"sslmode=prefer"` | Extra libpq connection parameters, e.g. `sslmode=verify-full sslrootcert=/etc/ssl/db/ca.crt` (mount the CA with `extraVolumes` and `extraVolumeMounts`: the schema init container gets them too). |
 | backend.gpgsql.host | string | `""` | PostgreSQL host. |
 | backend.gpgsql.password | string | `""` | Database password (ignored when `existingSecret` is set). |
 | backend.gpgsql.port | int | `5432` | PostgreSQL port. |
 | backend.gpgsql.user | string | `"pdns"` | Database user. |
 | backend.gsqlite3.database | string | `"/var/lib/powerdns/pdns.sqlite3"` | Path of the SQLite database inside the container. |
 | backend.schemaInit.enabled | bool | `true` | Run the schema init container. |
-| backend.schemaInit.mysqlImage | string | `"docker.io/library/mysql:8.4.13"` | Client image used for gmysql. |
-| backend.schemaInit.postgresImage | string | `""` | Client image used for gpgsql. Empty: `ghcr.io/unxwares/postgres:18.6-alpine` or `docker.io/library/postgres:18.6-alpine`, from `imageProvider`. |
+| backend.schemaInit.mysqlImage | string | `""` | Client image used for gmysql. Empty: `ghcr.io/unxwares/mysql-client:8.4` or `docker.io/library/mysql:8.4.13`, from `imageProvider`. |
+| backend.schemaInit.postgresImage | string | `""` | Client image used for gpgsql. Empty: `ghcr.io/unxwares/postgresql-client:18` or `docker.io/library/postgres:18.6-alpine`, from `imageProvider`. |
 | backend.schemaInit.resources | object | `{}` | Resources of the schema init containers. |
 | backend.schemaInit.timeoutSeconds | int | `120` | Seconds to wait for the database to accept connections. |
 | backend.type | string | `"gsqlite3"` | Database backend: `gsqlite3` (single replica, PVC), `gpgsql` or `gmysql` (external database, can scale out). |
@@ -913,14 +972,14 @@ kubectl delete pvc -n dns dns-powerdns
 | dns.listenAddresses | list | `["0.0.0.0","[::]"]` | Addresses to bind. Drop `[::]` on clusters where pods have IPv6 disabled. |
 | extraConfig | string | `""` | Raw lines appended to pdns.conf. |
 | extraEnv | list | `[]` | Extra environment variables of the server container. |
-| extraVolumeMounts | list | `[]` | Extra volume mounts of the server container. |
+| extraVolumeMounts | list | `[]` | Extra volume mounts of the server container, and of the schema init container (gpgsql, gmysql). |
 | extraVolumes | list | `[]` | Extra volumes. |
 | fullnameOverride | string | `""` | Override the full resource names. |
 | image.digest | string | `""` | Image digest (`sha256:...`). When set, it takes precedence over the tag. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | image.repository | string | `""` | Authoritative server image repository. Empty: `ghcr.io/unxwares/pdns-auth` or `docker.io/powerdns/pdns-auth-51`, from `imageProvider`. |
 | image.tag | string | `""` | Image tag (defaults to the chart appVersion). |
-| imageProvider | string | `"unxwares"` | Images used when `image.repository`, `recursor.image.repository` or `backend.schemaInit.postgresImage` are empty. `unxwares`: `ghcr.io/unxwares` images, PowerDNS built from the release tarballs on current Alpine bases and rebuilt every week (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the official `docker.io/powerdns` images (Debian) and `docker.io/library/postgres`. Both run as the same `pdns` user with the same paths and startup script. |
+| imageProvider | string | `"unxwares"` | Images used when `image.repository`, `recursor.image.repository`, `backend.schemaInit.postgresImage` or `backend.schemaInit.mysqlImage` are empty. `unxwares`: `ghcr.io/unxwares` images, PowerDNS built from the release tarballs on current Alpine bases and the database clients alone, rebuilt twice a week (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the official `docker.io/powerdns` images (Debian), `docker.io/library/postgres` and `docker.io/library/mysql`. Both run as the same `pdns` user with the same paths and startup script. |
 | imagePullSecrets | list | `[]` | Secrets for pulling images from a private registry. |
 | livenessProbe | object | `{"failureThreshold":4,"periodSeconds":15,"tcpSocket":{"port":"dns-tcp"},"timeoutSeconds":3}` | Liveness probe. |
 | metrics.serviceMonitor.enabled | bool | `false` | Create a Prometheus Operator ServiceMonitor scraping `/metrics` on the webserver (rendered only when the CRD exists). |
@@ -959,7 +1018,7 @@ kubectl delete pvc -n dns dns-powerdns
 | recursor.extraEnv | list | `[]` | Extra environment variables. |
 | recursor.extraVolumeMounts | list | `[]` | Extra volume mounts. |
 | recursor.extraVolumes | list | `[]` | Extra volumes. |
-| recursor.forwardZones | list | `[]` | Other forward zones (`zone` + `forwarders` IP:port list). |
+| recursor.forwardZones | list | `[]` | Other forward zones (`zone` + `forwarders` IP:port list, IPv6 addresses in brackets: `[2001:db8::53]:53`). |
 | recursor.forwardZonesRecurse | list | `[]` | Forward everything else to these resolvers instead of recursing from the root (e.g. `["9.9.9.9:53"]`). |
 | recursor.image.digest | string | `""` | Image digest (takes precedence over the tag). |
 | recursor.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
@@ -992,7 +1051,7 @@ kubectl delete pvc -n dns dns-powerdns
 | recursor.topologySpreadConstraints | list | `[]` | Topology spread constraints. |
 | recursor.validateAuthoritativeZones | bool | `false` | Validate the `authoritativeZones` with DNSSEC. Leave it off unless these zones are signed and delegated from the public root with a DS record: otherwise validation answers SERVFAIL for them, so the chart adds them as negative trust anchors. |
 | recursor.webserver.allowFrom | list | `["127.0.0.1/32","::1/128","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16","fc00::/7"]` | Networks allowed to reach the recursor webserver. |
-| recursor.webserver.enabled | bool | `true` | Enable the recursor webserver (API + `/metrics`). |
+| recursor.webserver.enabled | bool | `true` | Enable the recursor webserver (API + `/metrics`), on its own ClusterIP Service `<fullname>-recursor-api`. |
 | recursor.webserver.port | int | `8082` | Webserver port. |
 | replicaCount | int | `1` | Number of authoritative server replicas. Must stay at 1 with the gsqlite3 backend. |
 | resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"50m","memory":"64Mi"}}` | Resource requests and limits. |

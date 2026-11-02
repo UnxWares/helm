@@ -1,4 +1,4 @@
-PowerDNS Authoritative Server {{ .Chart.AppVersion }} is deployed ({{ .Values.backend.type }} backend).
+PowerDNS Authoritative Server is deployed ({{ .Values.backend.type }} backend, {{ include "powerdns.image" (dict "ctx" . "name" "pdns-auth" "image" .Values.image "default" .Chart.AppVersion) }}).
 
 DNS service: {{ include "powerdns.fullname" . }}.{{ .Release.Namespace }}.svc ({{ .Values.service.type }}, port {{ .Values.service.port }}/udp+tcp)
 {{- if eq .Values.service.type "LoadBalancer" }}
@@ -21,7 +21,10 @@ other replicas serve it after their next zone cache refresh):
 {{- end }}
 {{- if .Values.recursor.enabled }}
 
-Recursor: {{ include "powerdns.recursor.fullname" . }}.{{ .Release.Namespace }}.svc ({{ .Values.recursor.service.type }}, port {{ .Values.recursor.service.port }})
+Recursor: {{ include "powerdns.recursor.fullname" . }}.{{ .Release.Namespace }}.svc ({{ .Values.recursor.service.type }}, port {{ .Values.recursor.service.port }}, {{ include "powerdns.image" (dict "ctx" . "name" "pdns-recursor" "image" .Values.recursor.image "default" .Values.recursor.image.tag) }})
+{{- if .Values.recursor.webserver.enabled }}
+Recursor webserver (API, /metrics): http://{{ include "powerdns.recursor.fullname" . }}-api.{{ .Release.Namespace }}.svc:{{ .Values.recursor.webserver.port }}
+{{- end }}
 {{- end }}
 {{- if and (eq .Values.backend.type "gsqlite3") (not .Values.persistence.enabled) }}
 

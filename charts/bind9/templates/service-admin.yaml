@@ -1,0 +1,38 @@
+{{- if or .Values.service.exposeRndc .Values.metrics.enabled }}
+{{- $nodePorts := has .Values.adminService.type (list "NodePort" "LoadBalancer") }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bind9.adminServiceName" . }}
+  labels:
+    {{- include "bind9.labels" . | nindent 4 }}
+    {{- /* Lets the ServiceMonitor select this Service only. */}}
+    bind9.unxwares.com/endpoint: admin
+{{- with .Values.adminService.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+spec:
+  type: {{ .Values.adminService.type }}
+  ports:
+    {{- if .Values.service.exposeRndc }}
+    - name: rndc
+      port: {{ .Values.service.ports.rndc }}
+      targetPort: rndc
+      protocol: TCP
+      {{- if and .Values.service.ports.rndcNodePort $nodePorts }}
+      nodePort: {{ .Values.service.ports.rndcNodePort }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.metrics.enabled }}
+    - name: metrics
+      port: {{ .Values.service.ports.metrics }}
+      targetPort: metrics
+      protocol: TCP
+      {{- if and .Values.service.ports.metricsNodePort $nodePorts }}
+      nodePort: {{ .Values.service.ports.metricsNodePort }}
+      {{- end }}
+    {{- end }}
+  selector:
+    {{- include "bind9.selectorLabels" . | nindent 4 }}
+{{- end }}

@@ -22,4 +22,5 @@ spec:
   selector:
     matchLabels:
       {{- include "powerdns.recursor.selectorLabels" . | nindent 6 }}
+      powerdns.unxwares.com/endpoint: webserver
 {{- end }}

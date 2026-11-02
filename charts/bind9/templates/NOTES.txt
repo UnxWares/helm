@@ -1,4 +1,4 @@
-Bind9 {{ .Values.image.tag | default .Chart.AppVersion }} is deployed.
+Bind9 is deployed ({{ include "bind9.image" (dict "image" .Values.image "default" .Chart.AppVersion) }}).
 
 Release Name: {{ .Release.Name }}
 Namespace:    {{ .Release.Namespace }}
@@ -6,8 +6,15 @@ Namespace:    {{ .Release.Namespace }}
 {{- if .Values.service.enabled }}
 
 DNS service: {{ include "bind9.fullname" . }}.{{ .Release.Namespace }}.svc ({{ .Values.service.type }}, ports {{ .Values.service.ports.dnsUdp }}/udp and {{ .Values.service.ports.dnsTcp }}/tcp)
+{{- end }}
+{{- if or .Values.service.exposeRndc .Values.metrics.enabled }}
+
+Admin service: {{ include "bind9.adminServiceName" . }}.{{ .Release.Namespace }}.svc ({{ .Values.adminService.type }})
 {{- if .Values.service.exposeRndc }}
-rndc:        port {{ .Values.service.ports.rndc }}/tcp (protect it with a key and allow-list in `controls`)
+  rndc:    port {{ .Values.service.ports.rndc }}/tcp (protect it with a key and allow-list in `controls`)
+{{- end }}
+{{- if .Values.metrics.enabled }}
+  metrics: port {{ .Values.service.ports.metrics }}/tcp, path /metrics
 {{- end }}
 {{- end }}
 
@@ -15,7 +22,7 @@ Query the server from inside the pod:
 
   kubectl exec -n {{ .Release.Namespace }} deploy/{{ include "bind9.fullname" . }} -c {{ .Chart.Name }} -- dig @127.0.0.1 <name>
 
-named runs as the unprivileged `bind` user (uid 53) once port 53 is bound.
+named runs as the unprivileged `bind` user (uid 53), without any capability.
 {{- if .Values.persistence.enabled }}
 Dynamic zones and journals are stored in /var/lib/bind (PVC: {{ .Values.persistence.existingClaim | default (printf "%s-pvc" (include "bind9.fullname" .)) }}).
 {{- end }}

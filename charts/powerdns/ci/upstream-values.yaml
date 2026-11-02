@@ -6,3 +6,7 @@ recursor:
     - example.test
 networkPolicy:
   enabled: true
+  apiAllowedFrom:
+    - podSelector:
+        matchLabels:
+          e2e.unxwares.com/api: "true"

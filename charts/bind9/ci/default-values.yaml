@@ -1,9 +1,15 @@
+# Two zones, the metrics sidecar and the NetworkPolicy. The end-to-end test (.github/scripts/bind9-e2e.sh) queries
+# these records and reads the metrics from a pod with the e2e.unxwares.com/admin label.
 metrics:
   enabled: true
 podDisruptionBudget:
   enabled: false
 networkPolicy:
   enabled: true
+  adminAllowedFrom:
+    - podSelector:
+        matchLabels:
+          e2e.unxwares.com/admin: "true"
 bind:
   namedConf: |
     options {
@@ -18,10 +24,24 @@ bind:
       type primary;
       file "/etc/bind/example-test.zone";
     };
+    zone "2.0.192.in-addr.arpa" {
+      type primary;
+      file "/etc/bind/192-0-2.zone";
+    };
   zones:
     example-test: |
       $TTL 3600
-      @   IN SOA ns1.example.test. hostmaster.example.test. ( 2026102001 3H 15 1W 3H )
-      @   IN NS  ns1.example.test.
-      ns1 IN A   192.0.2.1
-      www IN A   192.0.2.10
+      @    IN SOA   ns1.example.test. hostmaster.example.test. ( 2026110201 3H 15M 1W 1H )
+      @    IN NS    ns1.example.test.
+      @    IN MX    10 mail.example.test.
+      @    IN TXT   "v=spf1 -all"
+      ns1  IN A     192.0.2.1
+      www  IN A     192.0.2.10
+      www  IN AAAA  2001:db8::10
+      mail IN A     192.0.2.20
+      docs IN CNAME www.example.test.
+    192-0-2: |
+      $TTL 3600
+      @    IN SOA   ns1.example.test. hostmaster.example.test. ( 2026110201 3H 15M 1W 1H )
+      @    IN NS    ns1.example.test.
+      10   IN PTR   www.example.test.

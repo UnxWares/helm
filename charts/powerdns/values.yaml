@@ -9,10 +9,12 @@ commonLabels: {}
 imagePullSecrets: []
 # - name: my-registry-secret
 
-# -- Images used when `image.repository`, `recursor.image.repository` or `backend.schemaInit.postgresImage` are empty.
-# `unxwares`: `ghcr.io/unxwares` images, PowerDNS built from the release tarballs on current Alpine bases and rebuilt
-# every week (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the official `docker.io/powerdns` images
-# (Debian) and `docker.io/library/postgres`. Both run as the same `pdns` user with the same paths and startup script.
+# -- Images used when `image.repository`, `recursor.image.repository`, `backend.schemaInit.postgresImage` or
+# `backend.schemaInit.mysqlImage` are empty. `unxwares`: `ghcr.io/unxwares` images, PowerDNS built from the release
+# tarballs on current Alpine bases and the database clients alone, rebuilt twice a week
+# (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the official `docker.io/powerdns` images (Debian),
+# `docker.io/library/postgres` and `docker.io/library/mysql`. Both run as the same `pdns` user with the same paths and
+# startup script.
 imageProvider: unxwares  # @schema enum:[unxwares, upstream]
 
 ## PowerDNS Authoritative Server
@@ -60,7 +62,8 @@ backend:
     existingSecret: ""
     # -- Key of the password in `existingSecret`.
     existingSecretPasswordKey: password
-    # -- Extra libpq connection parameters, e.g. `sslmode=verify-full sslrootcert=/etc/ssl/db/ca.crt`.
+    # -- Extra libpq connection parameters, e.g. `sslmode=verify-full sslrootcert=/etc/ssl/db/ca.crt` (mount the CA with
+    # `extraVolumes` and `extraVolumeMounts`: the schema init container gets them too).
     extraConnectionParameters: "sslmode=prefer"
 
   gmysql:
@@ -78,6 +81,12 @@ backend:
     existingSecret: ""
     # -- Key of the password in `existingSecret`.
     existingSecretPasswordKey: password
+    # -- Check the certificate of the MySQL server. `false`: the connection is encrypted when the server offers TLS,
+    # without checking the certificate, like the default of the MySQL client (`--ssl-mode=PREFERRED`): MySQL servers
+    # use a self-signed certificate unless configured otherwise. `true`: the MariaDB client library of the UnxWares
+    # image checks it against the system CAs and fails on a self-signed or private certificate; the official image
+    # does not check it either way.
+    verifyServerCertificate: false
 
   # Create the PowerDNS schema when the database is empty (init container, idempotent).
   # The schema file comes from the PowerDNS image itself, so it always matches the server version.
@@ -86,11 +95,12 @@ backend:
     enabled: true
     # -- Seconds to wait for the database to accept connections.
     timeoutSeconds: 120
-    # -- Client image used for gpgsql. Empty: `ghcr.io/unxwares/postgres:18.6-alpine` or
+    # -- Client image used for gpgsql. Empty: `ghcr.io/unxwares/postgresql-client:18` or
     # `docker.io/library/postgres:18.6-alpine`, from `imageProvider`.
     postgresImage: ""
-    # -- Client image used for gmysql.
-    mysqlImage: docker.io/library/mysql:8.4.13
+    # -- Client image used for gmysql. Empty: `ghcr.io/unxwares/mysql-client:8.4` or `docker.io/library/mysql:8.4.13`,
+    # from `imageProvider`.
+    mysqlImage: ""
     # -- Resources of the schema init containers.
     resources: {}
 
@@ -258,7 +268,7 @@ startupProbe:  # @schema skipProperties:true
 extraEnv: []
 # -- Extra volumes.
 extraVolumes: []
-# -- Extra volume mounts of the server container.
+# -- Extra volume mounts of the server container, and of the schema init container (gpgsql, gmysql).
 extraVolumeMounts: []
 
 autoscaling:
@@ -270,7 +280,8 @@ autoscaling:
   maxReplicas: 6
   # -- Target average CPU utilization (%).
   targetCPUUtilizationPercentage: 75
-  # targetMemoryUtilizationPercentage: 80
+  # -- Target average memory utilization (%). Empty: no memory target.
+  targetMemoryUtilizationPercentage: null  # @schema type:[integer, null]
 
 podDisruptionBudget:
   # -- Create a PodDisruptionBudget (useful with 2+ replicas).
@@ -354,7 +365,7 @@ recursor:
   # public root with a DS record: otherwise validation answers SERVFAIL for them, so the chart adds them as negative
   # trust anchors.
   validateAuthoritativeZones: false
-  # -- Other forward zones (`zone` + `forwarders` IP:port list).
+  # -- Other forward zones (`zone` + `forwarders` IP:port list, IPv6 addresses in brackets: `[2001:db8::53]:53`).
   forwardZones: []
   # - zone: corp.example
   #   forwarders: ["10.0.0.53:53"]
@@ -365,7 +376,7 @@ recursor:
   dnssecValidation: process  # @schema enum:[off, process-no-validate, process, log-fail, validate]
 
   webserver:
-    # -- Enable the recursor webserver (API + `/metrics`).
+    # -- Enable the recursor webserver (API + `/metrics`), on its own ClusterIP Service `<fullname>-recursor-api`.
     enabled: true
     # -- Webserver port.
     port: 8082

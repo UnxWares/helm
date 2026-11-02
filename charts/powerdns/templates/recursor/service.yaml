@@ -37,12 +37,8 @@ spec:
       port: {{ $svc.port }}
       targetPort: dns-tcp
       protocol: TCP
-    {{- if .Values.recursor.webserver.enabled }}
-    - name: http
-      port: {{ .Values.recursor.webserver.port }}
-      targetPort: http
-      protocol: TCP
-    {{- end }}
+    {{- /* The webserver (API, /metrics) is on its own ClusterIP Service (service-api.yaml): a public DNS Service never
+    publishes it. */}}
   selector:
     {{- include "powerdns.recursor.selectorLabels" . | nindent 4 }}
 {{- end }}

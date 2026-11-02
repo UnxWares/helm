@@ -1,12 +1,19 @@
 # -- Number of Bind9 replicas. With `persistence.enabled` and a ReadWriteOnce volume, keep 1.
 replicaCount: 1
 
+# -- Exporter image used when `metrics.image.repository` is empty. `unxwares`: `ghcr.io/unxwares/bind-exporter`,
+# bind_exporter built by UnxWares from its sources (master branch, current Go toolchain and golang.org/x modules) on
+# a distroless base, rebuilt twice a week (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the
+# Prometheus community image `docker.io/prometheuscommunity/bind-exporter`. named always runs the ISC image.
+imageProvider: unxwares  # @schema enum:[unxwares, upstream]
+
 image:
   # -- Bind9 image repository (ISC official image).
   repository: docker.io/internetsystemsconsortium/bind9
   # -- Image pull policy.
   pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
   # -- Image tag (defaults to the chart appVersion, the current ISC stable branch). `9.21` is ISC's development branch.
+  # The ISC image is published for linux/amd64 only: see `nodeSelector`.
   tag: ""
   # -- Image digest (`sha256:...`). When set, it takes precedence over the tag.
   digest: ""
@@ -33,24 +40,28 @@ podAnnotations: {}
 # -- Pod labels.
 podLabels: {}
 
-# -- Pod security context. named starts as root only to bind port 53, then switches to the `bind` user (uid 53) with `-u bind`.
+# -- Pod security context. named runs as the `bind` user of the image (uid 53) from the start, without any
+# capability: the `net.ipv4.ip_unprivileged_port_start` sysctl (a safe sysctl, allowed by the `restricted` Pod Security
+# Standard) lets it bind port 53 in the pod's network namespace. Keep the sysctl if you override this value.
 podSecurityContext:  # @schema skipProperties:true
+  runAsNonRoot: true
+  runAsUser: 53
+  runAsGroup: 53
   fsGroup: 53
   fsGroupChangePolicy: OnRootMismatch
   seccompProfile:
     type: RuntimeDefault
+  sysctls:
+    - name: net.ipv4.ip_unprivileged_port_start
+      value: "53"
 
-# -- Bind9 container security context: every capability is dropped except the three named needs to bind port 53 and switch user.
+# -- Bind9 container security context: every capability dropped, read-only root filesystem.
 securityContext:  # @schema skipProperties:true
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
   capabilities:
     drop:
       - ALL
-    add:
-      - NET_BIND_SERVICE
-      - SETUID
-      - SETGID
 
 service:
   # -- Create the DNS service.
@@ -65,25 +76,34 @@ service:
   loadBalancerSourceRanges: []
   # -- `Local` preserves client source IPs (needed by ACLs such as allow-transfer).
   externalTrafficPolicy: ""
-  # -- Expose the rndc control port through the service. Off by default: rndc is an administrative channel.
+  # -- Expose the rndc control port through the admin Service (`adminService`), never the DNS Service. Off by default:
+  # rndc is an administrative channel.
   exposeRndc: false
   ports:
     # -- DNS TCP port.
     dnsTcp: 53
     # -- DNS UDP port.
     dnsUdp: 53
-    # -- rndc port (only exposed with `service.exposeRndc`).
+    # -- rndc port of the admin Service (only with `service.exposeRndc`).
     rndc: 953
-    # -- Prometheus exporter port.
+    # -- Prometheus exporter port, in the pod and on the admin Service.
     metrics: 9119
     # -- NodePort for DNS over TCP.
     dnsTcpNodePort: null  # @schema type:[integer, null]
     # -- NodePort for DNS over UDP.
     dnsUdpNodePort: null  # @schema type:[integer, null]
-    # -- NodePort for rndc.
+    # -- NodePort for rndc, when `adminService.type` is NodePort or LoadBalancer.
     rndcNodePort: null  # @schema type:[integer, null]
-    # -- NodePort for the metrics port.
+    # -- NodePort for the metrics port, when `adminService.type` is NodePort or LoadBalancer.
     metricsNodePort: null  # @schema type:[integer, null]
+
+# The rndc and metrics ports live on their own Service, `<fullname>-admin`, so that publishing DNS (LoadBalancer,
+# NodePort) never publishes them. It exists when `service.exposeRndc` or `metrics.enabled` is set.
+adminService:
+  # -- Admin Service type. Keep it internal: rndc and the metrics are administrative ports.
+  type: ClusterIP  # @schema enum:[ClusterIP, NodePort, LoadBalancer]
+  # -- Admin Service annotations.
+  annotations: {}
 
 # -- Bind9 container resources.
 resources:  # @schema skipProperties:true
@@ -131,6 +151,8 @@ autoscaling:
   maxReplicas: 10
   # -- Target average CPU utilization (%).
   targetCPUUtilizationPercentage: 80
+  # -- Target average memory utilization (%). Empty: no memory target.
+  targetMemoryUtilizationPercentage: null  # @schema type:[integer, null]
 
 podDisruptionBudget:
   # -- Create a PodDisruptionBudget (useful with 2+ replicas).
@@ -150,16 +172,19 @@ metrics:
     - view
 
   image:
-    # -- Exporter image repository.
-    repository: docker.io/prometheuscommunity/bind-exporter
+    # -- Exporter image repository. Empty: `ghcr.io/unxwares/bind-exporter` or `docker.io/prometheuscommunity/bind-exporter`,
+    # from `imageProvider`.
+    repository: ""
     # -- Exporter image pull policy.
     pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
-    # -- Exporter image tag. v0.8.0 (November 2024) is the latest release, built with an old Go toolchain (114 known CVEs): the default is the master build of 2026-10-14, the same exporter code rebuilt with a current Go toolchain and dependencies, pinned by digest.
-    tag: "master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf"
+    # -- Exporter image tag. Empty: `0.8.0-62-gbafd56f` (unxwares: the master commit bafd56f, 62 commits after v0.8.0)
+    # or `master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf` (upstream: the master build of
+    # 2026-10-14, pinned by digest). v0.8.0, the latest release (November 2024), was built with an old Go toolchain.
+    tag: ""
     # -- Exporter image digest (takes precedence over the tag).
     digest: ""
 
-  # -- Exporter security context (the image runs as `nobody`).
+  # -- Exporter security context (both images run as `nobody`).
   securityContext:  # @schema skipProperties:true
     runAsNonRoot: true
     runAsUser: 65534
@@ -200,7 +225,7 @@ metrics:
       memory: 128Mi
 
   serviceMonitor:
-    # -- Create a Prometheus Operator ServiceMonitor (requires `metrics.enabled`; rendered only when the CRD exists).
+    # -- Create a Prometheus Operator ServiceMonitor on the admin Service (requires `metrics.enabled`; rendered only when the CRD exists).
     enabled: false
     # -- Extra ServiceMonitor labels (e.g. `release: kube-prometheus-stack`).
     labels: {}
@@ -211,7 +236,7 @@ metrics:
 
 # General Bind9 configuration
 bind:
-  # -- Extra arguments passed to named (after `-u bind -g`).
+  # -- Extra arguments passed to named (after `-g`).
   args: []
 
   # -- named.conf content. The default is a minimal authoritative-only server: add your zones (see `bind.zones`).
@@ -284,8 +309,10 @@ networkPolicy:
 
 # -- Priority class of the pods.
 priorityClassName: ""
-# -- Node selector.
-nodeSelector: {}
+# -- Node selector. The ISC image is published for linux/amd64 only, so the pods (and the `helm test` pod) only run on
+# amd64 nodes. With a multi-architecture image, set `kubernetes.io/arch: null` to remove the constraint.
+nodeSelector:
+  kubernetes.io/arch: amd64
 # -- Tolerations.
 tolerations: []
 # -- Affinity rules.

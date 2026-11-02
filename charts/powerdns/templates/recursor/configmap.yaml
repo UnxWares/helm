@@ -2,8 +2,12 @@
 {{- $rec := .Values.recursor }}
 {{- $authIP := .Values.service.clusterIP }}
 {{- if not $authIP }}
-{{- /* Kubernetes injects <SERVICE>_SERVICE_HOST into pods created after the Service: resolved at startup. */}}
-{{- $authIP = printf "{{ %s_SERVICE_HOST }}" (include "powerdns.fullname" . | upper | replace "-" "_") }}
+{{- /* Kubernetes injects <SERVICE>_SERVICE_HOST into pods created after the Service: resolved at startup, with
+brackets around an IPv6 address (IP:port syntax). */}}
+{{- $host := printf "%s_SERVICE_HOST" (include "powerdns.fullname" . | upper | replace "-" "_") }}
+{{- $authIP = printf "{{ (\"[\" ~ %s ~ \"]\") if \":\" in %s else %s }}" $host $host $host }}
+{{- else if contains ":" $authIP }}
+{{- $authIP = printf "[%s]" $authIP }}
 {{- end }}
 {{- $forwardZones := list }}
 {{- range $rec.authoritativeZones }}
