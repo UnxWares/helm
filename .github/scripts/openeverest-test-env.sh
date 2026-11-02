@@ -150,17 +150,19 @@ spec:
     metadata:
       labels: { app: app-mongo }
     spec:
+      # MongoDB 7.0, also supported by OpenEverest: 8.0 and later refuse to start on Linux 6.19 and later, the
+      # kernel of the CI runners (https://jira.mongodb.org/browse/SERVER-121912).
       initContainers:
         # mongod wants a key file only its user can read.
         - name: keyfile
-          image: docker.io/library/mongo:8.0
+          image: docker.io/library/mongo:7.0
           command: ["sh", "-c", "cp /secret/keyfile /keyfile/keyfile && chmod 400 /keyfile/keyfile && chown 999:999 /keyfile/keyfile"]
           volumeMounts:
             - { name: keyfile-secret, mountPath: /secret }
             - { name: keyfile, mountPath: /keyfile }
       containers:
         - name: mongo
-          image: docker.io/library/mongo:8.0
+          image: docker.io/library/mongo:7.0
           args: ["--replSet", "rs0", "--keyFile", "/keyfile/keyfile", "--bind_ip_all"]
           env:
             - { name: MONGO_INITDB_ROOT_USERNAME, valueFrom: { secretKeyRef: { name: everest-secrets-app-mongo, key: MONGODB_ROOT_USER } } }
