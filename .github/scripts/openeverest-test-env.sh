@@ -10,8 +10,8 @@
 set -euo pipefail
 
 NS=everest-databases
+# Throwaway test certificate and key file, in a fresh temporary directory: nothing is deleted.
 TMP=$(mktemp -d)
-trap 'rm -f -- "$TMP"/tls.crt "$TMP"/tls.key "$TMP"/mongo.key; rmdir -- "$TMP"' EXIT
 
 password() { head -c 24 /dev/urandom | base64 | tr -d '/+=' | head -c 24; }
 
