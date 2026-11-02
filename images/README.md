@@ -27,7 +27,7 @@ whose entrypoint is the binary itself (the upstream one starts aria2 under super
 
 ## Tags and rebuilds
 
-- `<version>`: the upstream version, rebuilt every Monday on the current base image and Alpine packages. For
+- `<version>`: the upstream version, rebuilt every Monday and Thursday on the current base image and Alpine packages. For
   `postgresql-client` and `mysql-client` it is a release series (`18`, `8.4`): each rebuild takes its latest client.
 - `<version>-<YYYYMMDD>`: one immutable tag per build, to pin a build.
 - `<version>-amd64`, `<version>-arm64`: the per-architecture images behind the multi-arch tag.

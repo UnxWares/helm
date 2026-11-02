@@ -19,7 +19,7 @@
 
 Helm charts we run ourselves, maintained by UnxWares. Every chart follows the same rules:
 
-- **Pinned, current images**, scanned weekly with Trivy (the [CVE watch](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch)
+- **Pinned, current images**, scanned daily with Trivy (the [CVE watch](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch)
   issue); releases that only bump images for CVEs are flagged `containsSecurityUpdates` on Artifact Hub.
 - **No default passwords**: secrets are generated once and kept across upgrades, or read from your own Secret, and
   reach containers through `secretKeyRef` only.
@@ -47,7 +47,7 @@ Each chart README lists every value, examples and the upgrade notes between rele
 
 ### Images
 
-Some charts use UnxWares images by default (`ghcr.io/unxwares`): the upstream applications rebuilt every week
+Some charts use UnxWares images by default (`ghcr.io/unxwares`): the upstream applications rebuilt twice a week
 on current Alpine bases, run as non-root, scanned with Trivy and signed with cosign. Their sources and the
 differences from the upstream images are in [images/](images/README.md); each chart can still use the upstream
 images.

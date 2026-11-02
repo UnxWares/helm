@@ -2,8 +2,8 @@ name: Container Images
 
 # Builds the images of images/ natively for amd64 and arm64 and scans them with Trivy. Outside pull requests,
 # pushes them to ghcr.io/unxwares as one multi-arch tag per version (plus a dated tag) and signs them with
-# cosign (keyless, GitHub OIDC identity). The weekly run rebuilds every image on the current base images and
-# Alpine packages.
+# cosign (keyless, GitHub OIDC identity). The scheduled runs (Monday and Thursday) rebuild every image on the
+# current base images and Alpine packages.
 on:
     pull_request:
         branches:
@@ -21,6 +21,8 @@ on:
             - .github/scripts/image-tag.sh
     schedule:
         - cron: "41 3 * * 1"
+        # Second rebuild in the week: GitHub may delay or drop a scheduled run under load.
+        - cron: "41 3 * * 4"
     workflow_dispatch:
 
 concurrency:
@@ -93,7 +95,7 @@ jobs:
                   echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
 
             # Pull requests fail on a fixable CRITICAL or HIGH vulnerability, unless the image's .trivyignore
-            # documents why it is accepted. Pushes and the weekly rebuild only report, so that a new upstream
+            # documents why it is accepted. Pushes and the scheduled rebuilds only report, so that a new upstream
             # vulnerability never blocks the rebuild that brings the fixes already available.
             - name: Scan
               env:
