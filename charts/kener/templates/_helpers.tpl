@@ -398,19 +398,37 @@ Environment of the Kener container. Every secret comes from a secretKeyRef.
   value: {{ .senderEmail | quote }}
 {{- end }}
 {{- end }}
-{{- if .Values.proxy.httpProxy }}
+{{- with .Values.proxy }}
+{{- if .existingSecret }}
+# Either key may be missing from your Secret: the variable is then left unset.
 - name: HTTP_PROXY
   valueFrom:
     secretKeyRef:
-      name: {{ include "kener.secretName" . }}
-      key: http-proxy
-{{- end }}
-{{- if .Values.proxy.httpsProxy }}
+      name: {{ .existingSecret }}
+      key: {{ .existingSecretHttpProxyKey }}
+      optional: true
 - name: HTTPS_PROXY
   valueFrom:
     secretKeyRef:
-      name: {{ include "kener.secretName" . }}
+      name: {{ .existingSecret }}
+      key: {{ .existingSecretHttpsProxyKey }}
+      optional: true
+{{- else }}
+{{- if .httpProxy }}
+- name: HTTP_PROXY
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "kener.secretName" $ }}
+      key: http-proxy
+{{- end }}
+{{- if .httpsProxy }}
+- name: HTTPS_PROXY
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "kener.secretName" $ }}
       key: https-proxy
+{{- end }}
+{{- end }}
 {{- end }}
 {{- if .Values.proxy.noProxy }}
 - name: NO_PROXY
@@ -462,13 +480,27 @@ Validate values that would otherwise produce a broken or insecure deployment.
 {{- if or (gt (int .Values.replicaCount) 1) .Values.autoscaling.enabled }}
 {{- fail "SQLite supports a single Kener replica: use PostgreSQL or MySQL (database.url / database.existingSecret) to scale out" }}
 {{- end }}
+{{- if .Values.podDisruptionBudget.enabled }}
+{{- fail "podDisruptionBudget.enabled is refused with SQLite: with its single Kener pod, the budget would block node drains (minAvailable) or protect nothing (maxUnavailable). Disable it, or use PostgreSQL/MySQL with 2+ replicas" }}
+{{- end }}
 {{- range (include "kener.extraVolumeMounts" . | fromYamlArray) }}
 {{- if eq (trimSuffix "/" (toString .mountPath)) "/app/database" }}
 {{- fail "/app/database is mounted by the chart with SQLite: set persistence.existingClaim to your PVC instead of mounting it through volumes/volumeMounts or extraVolumes/extraVolumeMounts" }}
 {{- end }}
 {{- end }}
 {{- end }}
+{{- with .Values.podDisruptionBudget }}
+{{- if and .enabled (not $sqlite) (kindIs "invalid" .maxUnavailable) }}
+{{- $replicas := int (ternary $.Values.autoscaling.minReplicas $.Values.replicaCount $.Values.autoscaling.enabled) }}
+{{- if ge (int .minAvailable) $replicas }}
+{{- fail (printf "podDisruptionBudget.minAvailable (%d) must be lower than the number of Kener replicas (%d), or the budget blocks node drains: raise replicaCount (autoscaling.minReplicas with the HPA), lower minAvailable or set maxUnavailable" (int .minAvailable) $replicas) }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if .Values.redis.enabled }}
+{{- if not (or .Values.redis.image.tag .Values.redis.image.digest) }}
+{{- fail "redis.image.tag or redis.image.digest is required with the bundled Valkey (redis.enabled)" }}
+{{- end }}
 {{- if or .Values.redis.external.url .Values.redis.external.existingSecret }}
 {{- fail "redis.external is only used with redis.enabled=false: pick the bundled Valkey or your own Redis" }}
 {{- end }}

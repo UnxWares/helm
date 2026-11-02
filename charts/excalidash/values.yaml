@@ -93,6 +93,8 @@ frontend:
     maxReplicas: 5
     # -- Target average CPU utilization (%).
     targetCPUUtilizationPercentage: 80
+    # -- Target average memory utilization (%), relative to the memory request. Null leaves memory out.
+    targetMemoryUtilizationPercentage: null  # @schema type:[integer, null]
 
   # -- Additional volumes.
   volumes: []
@@ -172,8 +174,8 @@ backend:
       # -- Redirect URI (defaults to `<frontend.url>/api/auth/oidc/callback`).
       redirectUri: ""
 
-  # -- Trust X-Forwarded-* headers. Only enable it when a trusted proxy (your ingress) sanitizes them.
-  trustProxy: "false"
+  # -- `TRUST_PROXY`: how many proxies in front of the backend it trusts for `X-Forwarded-*` headers. `"1"` trusts the frontend nginx, always in front of it: cookies get the `Secure` flag when the proxy in front of the frontend says HTTPS (`X-Forwarded-Proto`). `"2"` also trusts your Ingress controller or Gateway, so that rate limits see the real client address. `"false"` trusts none (cookies never `Secure`, one rate limit bucket for everybody).
+  trustProxy: "1"
 
   # -- Extra environment variables (SMTP, S3 storage, backups, rate limits...). See the ExcaliDash docs.
   extraEnv: []
@@ -213,9 +215,10 @@ backend:
     seccompProfile:
       type: RuntimeDefault
 
-  # -- Container security context. The entrypoint regenerates files under /app at every start, so the root filesystem stays writable.
+  # -- Container security context, also used by the `copy-app` init container. The entrypoint rewrites `/app/dist/generated` and changes the mode of `/app/uploads` at every start: the chart mounts writable copies of both from an emptyDir, so the root filesystem stays read-only.
   securityContext:  # @schema skipProperties:true
     allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
     capabilities:
       drop:
         - ALL

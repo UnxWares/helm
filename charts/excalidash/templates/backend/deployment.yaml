@@ -42,6 +42,30 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
 
+      initContainers:
+        # The entrypoint replaces /app/dist/generated (the Prisma client of the selected provider) and changes the
+        # mode of /app/uploads (import staging) at every start. With a read-only root filesystem, both come from
+        # this pod's emptyDir: a fresh copy of the image's /app/dist, and an empty uploads directory owned by the
+        # backend user.
+        - name: copy-app
+          {{- with $b.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "excalidash.image" (dict "image" $b.image "default" .Chart.AppVersion) | quote }}
+          imagePullPolicy: {{ $b.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - mkdir -p /runtime/dist /runtime/uploads && cp -R /app/dist/. /runtime/dist/
+          {{- with $b.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: runtime
+              mountPath: /runtime
+
       containers:
         - name: backend
           {{- with $b.securityContext }}
@@ -141,6 +165,12 @@ spec:
               mountPath: /app/prisma
             - name: tmp
               mountPath: /tmp
+            - name: runtime
+              mountPath: /app/dist
+              subPath: dist
+            - name: runtime
+              mountPath: /app/uploads
+              subPath: uploads
             {{- with $b.volumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -154,6 +184,11 @@ spec:
           emptyDir: {}
           {{- end }}
         - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
+        # /app/dist (about 35 MB once the entrypoint has copied the Prisma client) and /app/uploads (import archives
+        # while they are checked, up to the upload size limit).
+        - name: runtime
           emptyDir:
             sizeLimit: 1Gi
         {{- with $b.volumes }}

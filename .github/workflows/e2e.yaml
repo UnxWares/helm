@@ -32,6 +32,8 @@ jobs:
             openeverest: ${{ steps.diff.outputs.openeverest }}
             cloudreve: ${{ steps.diff.outputs.cloudreve }}
             taiga: ${{ steps.diff.outputs.taiga }}
+            kener: ${{ steps.diff.outputs.kener }}
+            excalidash: ${{ steps.diff.outputs.excalidash }}
         steps:
             - name: Checkout
               uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -59,6 +61,12 @@ jobs:
                   fi
                   if matches "$common|^charts/taiga/|^images/(taiga-back|taiga-front|taiga-events|taiga-protected|postgres/17)/|^\.github/scripts/taiga-e2e\.sh$"; then
                       echo "taiga=true" >> "$GITHUB_OUTPUT"
+                  fi
+                  if matches "$common|^charts/kener/|^\.github/scripts/kener-e2e\.sh$"; then
+                      echo "kener=true" >> "$GITHUB_OUTPUT"
+                  fi
+                  if matches "$common|^charts/excalidash/|^\.github/scripts/excalidash-e2e\.sh$"; then
+                      echo "excalidash=true" >> "$GITHUB_OUTPUT"
                   fi
 
     openeverest-database-tools:
@@ -284,3 +292,111 @@ jobs:
                       kubectl --namespace "$RELEASE" logs "$RELEASE-$broker-0" --prefix || true
                       echo "::endgroup::"
                   done
+
+    # The upstream Kener and Valkey images (the chart has no UnxWares image), pulled by kind.
+    kener:
+        name: kener
+        needs: changes
+        if: needs.changes.outputs.kener == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        env:
+            CHART: charts/kener
+            RELEASE: kener
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Create kind cluster
+              uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+
+            - name: Install Helm
+              uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+              with:
+                  version: ${{ env.HELM_VERSION }}
+
+            - name: Install the chart
+              run: &kener-install |
+                  helm install "$RELEASE" "$CHART" --namespace "$RELEASE" --create-namespace \
+                      --values "$CHART/ci/default-values.yaml" --wait --timeout 10m
+
+            - name: helm test
+              run: helm test "$RELEASE" --namespace "$RELEASE"
+
+            - name: Sign up, log in, API key, monitor, status page, NetworkPolicies
+              run: .github/scripts/kener-e2e.sh "$RELEASE" "$RELEASE"
+
+            # The Secret and the SQLite PVC are kept on uninstall: a new install must find the same account,
+            # API key (hashed with KENER_SECRET_KEY) and monitor.
+            - name: Uninstall
+              run: helm uninstall "$RELEASE" --namespace "$RELEASE" --wait
+
+            - name: Install the chart again
+              run: *kener-install
+
+            - name: Check what the reinstall kept
+              run: .github/scripts/kener-e2e.sh "$RELEASE" "$RELEASE" after-reinstall
+
+            - name: Diagnostics
+              if: failure()
+              run: |
+                  kubectl get pods --all-namespaces -o wide
+                  kubectl --namespace "$RELEASE" describe pods
+                  kubectl --namespace "$RELEASE" logs deploy/"$RELEASE" --all-containers --prefix || true
+                  kubectl --namespace "$RELEASE" logs deploy/"$RELEASE"-valkey --all-containers --prefix || true
+
+    # The upstream ExcaliDash images (the chart has no UnxWares image), pulled by kind.
+    excalidash:
+        name: excalidash
+        needs: changes
+        if: needs.changes.outputs.excalidash == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        env:
+            CHART: charts/excalidash
+            RELEASE: excalidash
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Create kind cluster
+              uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+
+            - name: Install Helm
+              uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+              with:
+                  version: ${{ env.HELM_VERSION }}
+
+            - name: Install the chart
+              run: &excalidash-install |
+                  helm install "$RELEASE" "$CHART" --namespace "$RELEASE" --create-namespace \
+                      --values "$CHART/ci/default-values.yaml" --wait --timeout 10m
+
+            - name: helm test
+              run: helm test "$RELEASE" --namespace "$RELEASE"
+
+            - name: Onboarding, log in, drawing, export, import check, cookies, NetworkPolicy
+              run: .github/scripts/excalidash-e2e.sh "$RELEASE" "$RELEASE"
+
+            # The Secret and the PVC are kept on uninstall: a new install must find the same account, drawing and
+            # session (signed with the kept JWT secret).
+            - name: Uninstall
+              run: helm uninstall "$RELEASE" --namespace "$RELEASE" --wait
+
+            - name: Install the chart again
+              run: *excalidash-install
+
+            - name: Check what the reinstall kept
+              run: .github/scripts/excalidash-e2e.sh "$RELEASE" "$RELEASE" after-reinstall
+
+            - name: Diagnostics
+              if: failure()
+              run: |
+                  kubectl get pods --all-namespaces -o wide
+                  kubectl --namespace "$RELEASE" describe pods
+                  kubectl --namespace "$RELEASE" logs deploy/"$RELEASE"-backend --all-containers --prefix || true
+                  kubectl --namespace "$RELEASE" logs deploy/"$RELEASE"-frontend --all-containers --prefix || true

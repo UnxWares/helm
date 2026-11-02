@@ -1,6 +1,6 @@
 # ExcaliDash Helm Chart
 
-![Version: 2026.11.1](https://img.shields.io/badge/Version-2026.11.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.6.7](https://img.shields.io/badge/AppVersion-0.6.7-informational?style=flat-square)
+![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.6.7](https://img.shields.io/badge/AppVersion-0.6.7-informational?style=flat-square)
 
 [ExcaliDash](https://github.com/ZimengXiong/ExcaliDash) is a self-hosted dashboard and organizer for
 [Excalidraw](https://excalidraw.com/) drawings, with live collaboration. This chart, maintained by UnxWares, deploys
@@ -10,13 +10,14 @@ Node.js backend that stores the drawings in SQLite on a persistent volume, or in
 ## Features
 
 - Frontend (nginx) + backend (Node.js) with **persistent SQLite** storage (or PostgreSQL)
-- **Generated secrets** (JWT, CSRF, API key pepper) kept across upgrades, or your own Secret
+- **Generated secrets** (JWT, CSRF, API key pepper) kept across upgrades and reinstalls, or your own Secret
 - Local, hybrid or enforced **OIDC** authentication
 - **Hardened**: non-root pods (frontend uid 101, backend uid 1001), no capabilities, seccomp `RuntimeDefault`,
-  read-only root filesystem for the frontend, no service account token, optional NetworkPolicy isolating the backend
-- Ingress or Gateway API HTTPRoute (WebSockets included), `helm test`
+  read-only root filesystems, no service account token, optional NetworkPolicy isolating the backend, `Secure`
+  cookies behind a proxy that terminates TLS
+- Ingress or Gateway API HTTPRoute (WebSockets included), `helm test`, and an end-to-end test in CI
 - **Validation**: the chart refuses a second backend replica, a PostgreSQL provider without a PostgreSQL URL, and
-  OIDC modes without an issuer
+  OIDC modes without an issuer, a client ID or an `https://` redirect URI
 
 ## Architecture
 
@@ -27,26 +28,31 @@ The names below are those of a release called `excalidash`: resources are named 
 |----------|------|--------------|------|
 | Deployment | `excalidash-frontend` | always | nginx (unprivileged) serving the web application and proxying `/api/` and `/socket.io/` to the backend Service. Container port `8080` (`http`). `frontend.replicaCount` replicas, or the HPA. |
 | Service | `excalidash-frontend` | always | `frontend.service.type` (ClusterIP), port `frontend.service.port` (80) to 8080. |
-| Deployment | `excalidash-backend` | always | Node.js API and Socket.IO server, always 1 replica, `Recreate` strategy. Container port `backend.service.port` (8000). |
+| Deployment | `excalidash-backend` | always | Node.js API and Socket.IO server, always 1 replica, `Recreate` strategy. Container port `backend.service.port` (8000). Init container `copy-app` (see Volumes). |
 | Service | `excalidash-backend` | always | `backend.service.type` (ClusterIP), port `backend.service.port` (8000). |
 | PersistentVolumeClaim | `excalidash-backend` | `backend.persistence.enabled` (default) and no `backend.persistence.existingClaim` | Mounted on `/app/prisma`. Annotated `helm.sh/resource-policy: keep`. |
-| Secret | `excalidash` | always | Generated or given secrets (see [Secrets](#secrets-and-existing-secrets)). |
+| Secret | `excalidash` | always | Generated or given secrets (see [Secrets](#secrets-and-existing-secrets)). Annotated `helm.sh/resource-policy: keep`. |
 | ServiceAccount | `excalidash` | `serviceAccount.create` (default) | Used by both Deployments, token not mounted, no RBAC. |
 | Ingress | `excalidash` | `ingress.enabled` | Sends `/` (every path) of each host to the frontend Service. |
 | HTTPRoute | `excalidash` | `httpRoute.enabled` | Sends each rule to the frontend Service. |
 | NetworkPolicy | `excalidash-backend` | `networkPolicy.enabled` | Only the frontend (and the test pod) may reach the backend. |
-| HorizontalPodAutoscaler | `excalidash-frontend` | `frontend.autoscaling.enabled` | CPU based, frontend only. |
+| HorizontalPodAutoscaler | `excalidash-frontend` | `frontend.autoscaling.enabled` | CPU (and optionally memory) based, frontend only. |
 | Pod | `excalidash-test-health` | `helm test` | See [Testing](#testing). |
 
 Volumes:
 
 - Frontend: `/tmp` (emptyDir, 256Mi) for the nginx configuration generated at startup, its pid and temporary files.
-- Backend: `/app/prisma` (the PVC, or an emptyDir when `backend.persistence.enabled` is false) and `/tmp` (emptyDir,
-  1Gi). At each start the backend entrypoint copies the Prisma schema and the migrations of the selected provider
-  into `/app/prisma`, writes the JWT and CSRF secrets there (`.jwt_secret`, `.csrf_secret`, mode 600), and runs the
-  migrations under a lock directory (`.migration-lock`). With SQLite, the database is `/app/prisma/db.sqlite`.
+- Backend: `/app/prisma` (the PVC, or an emptyDir when `backend.persistence.enabled` is false), `/tmp` (emptyDir,
+  1Gi), and `/app/dist` and `/app/uploads` (two directories of the `runtime` emptyDir, 1Gi). At each start the
+  backend entrypoint copies the Prisma schema and the migrations of the selected provider into `/app/prisma`, writes
+  the JWT and CSRF secrets there (`.jwt_secret`, `.csrf_secret`, mode 600), runs the migrations under a lock
+  directory (`.migration-lock`), replaces `/app/dist/generated` with the Prisma client of the provider and changes
+  the mode of `/app/uploads` (where imports are staged while they are checked). With SQLite, the database is
+  `/app/prisma/db.sqlite`.
 
-There is no init container, Job or CronJob: migrations run in the backend container before the server starts.
+The root filesystem of the backend is read-only, so the `copy-app` init container (same image and security context)
+first copies the image's `/app/dist` into the `runtime` emptyDir and creates the uploads directory there. There is no
+Job or CronJob: migrations run in the backend container before the server starts.
 
 ## Images
 
@@ -75,7 +81,7 @@ backend:
 
 To pull from a mirror, change the repositories and set `global.imagePullSecrets` (or `frontend.imagePullSecrets` /
 `backend.imagePullSecrets`, which replace the global list for one component). The `helm test` pod runs the frontend
-image without pull secrets.
+image with the frontend pull secrets and pull policy.
 
 ```yaml
 global:
@@ -141,9 +147,9 @@ frontend:
   url: https://draw.example.com
 ```
 
-Behind an Ingress or a Gateway that terminates TLS, also set `backend.trustProxy` (see [TLS](#tls-and-proxies)) and
-see [Exposure](#exposure). For a quick test through a port-forward, the URL must be the local one, since an `https`
-URL makes the backend redirect plain HTTP requests to it:
+Behind an Ingress or a Gateway that terminates TLS, see [Exposure](#exposure) and [TLS](#tls-and-proxies) (set
+`backend.trustProxy: "2"` for per-client rate limits). For a quick test through a port-forward, the URL must be the
+local one, since an `https` URL makes the backend redirect plain HTTP requests to it:
 
 ```bash
 helm install excalidash unxwares/excalidash --namespace excalidash --create-namespace \
@@ -152,12 +158,16 @@ kubectl -n excalidash rollout status deploy/excalidash-backend
 kubectl -n excalidash port-forward svc/excalidash-frontend 8080:80
 ```
 
-In `local` (default) and `hybrid` modes, the first administrator account is created in the browser with a one-time
-setup code that the backend prints in its logs at startup (valid 15 minutes; restart the backend to get a new one):
+In `local` mode (the default), open the application right after the install: the first page asks whether to enable
+authentication, and **the first visitor decides**. Once it is enabled, the backend prints a one-time setup code in
+its logs (valid 15 minutes) and the first administrator registers with it:
 
 ```bash
 kubectl -n excalidash logs deploy/excalidash-backend | grep -i setup
 ```
+
+In the OIDC modes, the first user to log in through the provider becomes administrator (see
+[Authentication and SSO](#authentication-and-sso)).
 
 ## Configuration
 
@@ -254,16 +264,21 @@ The chart does not terminate TLS: do it in the Ingress controller or the Gateway
 `https://` URL. `backend.trustProxy` (`TRUST_PROXY`) tells the backend how many proxies in front of it to trust for
 `X-Forwarded-*` headers:
 
-- `"false"` (default): the backend trusts no header. It then sees every request as plain HTTP coming from the
-  frontend pod, so it sets its session cookies **without the `Secure` flag**, and its per-IP rate limits count all
-  users together.
-- `"1"`: trusts the frontend nginx only, which is always in front of the backend. Use it when clients reach the
-  frontend Service directly (`NodePort`, `LoadBalancer`).
-- `"2"`: trusts the frontend nginx and one proxy in front of it (your Ingress controller or Gateway). Use it behind
-  an Ingress or a Gateway that sets `X-Forwarded-For` and `X-Forwarded-Proto`.
+- `"1"` (default): trusts the frontend nginx of the chart, which is always in front of the backend. The backend
+  takes the scheme from `X-Forwarded-Proto`, which nginx passes on from the proxy in front of it: behind an Ingress
+  or a Gateway that terminates TLS, cookies get the `Secure` flag. The address its rate limits see is the one nginx
+  sees: the client with a `NodePort` or `LoadBalancer` Service, the Ingress controller behind an Ingress (all users
+  then share one bucket).
+- `"2"`: also trusts one proxy in front of the frontend (your Ingress controller or Gateway), so that rate limits see
+  the real client address. Use it behind an Ingress or a Gateway that sets `X-Forwarded-For` and
+  `X-Forwarded-Proto`.
+- `"false"`: trusts no header. The backend sees every request as plain HTTP coming from the frontend pod: cookies
+  never get the `Secure` flag, and one rate limit bucket counts all users together.
 
 A value higher than the real number of proxies lets clients choose the address the backend sees, with forged
-headers.
+headers. A client that sends `X-Forwarded-Proto: https` itself over plain HTTP only gets `Secure` cookies that its
+browser will not send back. Without `networkPolicy.enabled`, other pods can reach the backend directly and choose the
+address it sees, whatever the value: enable the NetworkPolicy.
 
 ### Secrets and existing Secrets
 
@@ -307,7 +322,7 @@ Secret changes: run `kubectl -n excalidash rollout restart deploy/excalidash-bac
 | Mode | Behaviour |
 |------|-----------|
 | `local` (default) | Email/password accounts. The first administrator registers with the setup code from the backend logs. |
-| `hybrid` | Local accounts and OpenID Connect. Same setup code for the first administrator. |
+| `hybrid` | Local accounts and OpenID Connect. The first administrator logs in through OIDC (see below), then creates local accounts from the administration page. |
 | `oidc_enforced` | OpenID Connect only. |
 | `disabled` | No authentication at all: every request runs as one shared local user. Never expose it. |
 
@@ -328,7 +343,14 @@ backend:
 ```
 
 ExcaliDash provisions users at their first OIDC login and, while no account exists yet, makes the first of them an
-administrator (`OIDC_FIRST_USER_ADMIN`, on by default): limit who can use the application at the provider. Other
+administrator (`OIDC_FIRST_USER_ADMIN`, on by default): limit who can use the application at the provider. In
+`hybrid` mode, ExcaliDash 0.6.7 prints no setup code on a new database (it only issues one once authentication was
+turned on at the `local` onboarding), so local registration of the first administrator fails with `Bootstrap setup
+code is unavailable or expired`: create the first administrator through OIDC.
+
+The backend refuses to start in production with an `http://` OIDC redirect URI, so the chart requires
+`backend.auth.oidc.clientId`, `backend.auth.oidc.issuerUrl` and an `https://` `frontend.url` (or
+`backend.auth.oidc.redirectUri`) in these modes. Other
 OIDC settings go through `backend.extraEnv`, for example `OIDC_SCOPES`, `OIDC_GROUPS_CLAIM`, `OIDC_ADMIN_GROUPS`,
 `OIDC_JIT_PROVISIONING` or `OIDC_FIRST_USER_ADMIN` (see the
 [ExcaliDash documentation](https://github.com/ZimengXiong/ExcaliDash/tree/main/docs)):
@@ -416,6 +438,7 @@ frontend:
     minReplicas: 2
     maxReplicas: 5
     targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80   # optional, of the memory request
 ```
 
 ### Scheduling
@@ -537,8 +560,9 @@ What the chart does by default:
 
 - **Users**: the frontend runs as uid/gid 101 (nginx-unprivileged), the backend as uid/gid 1001 (`nodejs`), both
   with `runAsNonRoot` and a matching `fsGroup`.
-- **Containers**: `allowPrivilegeEscalation: false`, every capability dropped, seccomp `RuntimeDefault`. The frontend
-  has a read-only root filesystem and listens on 8080 (its image also opens port 80, allowed by the safe sysctl
+- **Containers**: read-only root filesystems (the writable paths are the volumes listed in
+  [Architecture](#architecture)), `allowPrivilegeEscalation: false`, every capability dropped, seccomp
+  `RuntimeDefault`. The frontend listens on 8080 (its image also opens port 80, allowed by the safe sysctl
   `net.ipv4.ip_unprivileged_port_start=80` instead of a capability). Every pod, the test pod included, meets the Pod
   Security Standard `restricted`.
 - **Kubernetes API**: the service account token is not mounted (`serviceAccount.automount: false`), and the chart
@@ -547,6 +571,8 @@ What the chart does by default:
   `secretKeyRef`, never as plain values in the pod spec. See [Secrets](#secrets-and-existing-secrets).
 - **Network**: both Services are `ClusterIP` until you change them or add an Ingress or an HTTPRoute, which only
   point at the frontend. `networkPolicy.enabled` keeps every other pod away from the backend.
+- **Cookies**: `backend.trustProxy: "1"` gives the session and CSRF cookies the `Secure` flag when the proxy in front
+  of the frontend reports HTTPS (see [TLS and proxies](#tls-and-proxies)).
 
 What is exposed, and to whom: the frontend serves the application, the API (`/api/`) and the collaboration socket
 (`/socket.io/`) to anyone who reaches it; authentication is enforced by the backend according to
@@ -554,15 +580,18 @@ What is exposed, and to whom: the frontend serves the application, the API (`/ap
 
 Caveats:
 
-- The backend root filesystem stays writable: its entrypoint rewrites the Prisma schema, migrations and client under
-  `/app` at every start. This cannot be changed without a different image.
+- The backend entrypoint rewrites its Prisma client under `/app/dist` at every start, so the backend runs its
+  compiled code from a copy in an emptyDir that its own user can write (as in the image, where `/app/dist` belongs
+  to that user): a compromised backend process could change that code until the pod is recreated. The init
+  container makes a fresh copy from the image at each pod start.
 - The entrypoint writes the JWT and CSRF secrets into `/app/prisma` (mode 600), and ExcaliDash backups contain a full
   copy of the database: treat volume snapshots and backup files as secrets.
-- `backend.auth.mode: disabled` turns authentication off. In `local` and `hybrid` modes, anyone who can read the
-  backend logs during the first start can claim the administrator account with the setup code. In OIDC modes, the
-  first user to log in while no account exists becomes administrator by default.
-- With the default `backend.trustProxy: "false"`, session cookies are set without the `Secure` flag behind a proxy
-  that terminates TLS (see [TLS and proxies](#tls-and-proxies)).
+- `backend.auth.mode: disabled` turns authentication off. In `local` mode, the first visitor of a new installation
+  chooses whether authentication is enabled at all; then anyone who can read the backend logs can claim the
+  administrator account with the setup code. In OIDC modes, the first user to log in while no account exists
+  becomes administrator by default.
+- With `backend.trustProxy: "false"`, session cookies are set without the `Secure` flag behind a proxy that
+  terminates TLS (see [TLS and proxies](#tls-and-proxies)).
 - The chart runs the upstream images, whose known vulnerabilities are tracked in the
   [CVE watch](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch).
 
@@ -584,19 +613,37 @@ Every pull request of the [repository](https://github.com/UnxWares/helm) runs, f
 The `helm test` pod (`templates/tests/test-health.yaml`) runs `wget` from the frontend image against
 `http://excalidash-frontend:<frontend.service.port>/api/health`. The request takes the same path as a browser: the
 frontend nginx proxies it to the backend `/health`, which checks the database. The test passes when the frontend,
-the proxy to the backend (through the NetworkPolicy when enabled) and the database all work. There is no end-to-end
-test yet (sign-in, drawing, live collaboration). After an install:
+the proxy to the backend (through the NetworkPolicy when enabled) and the database all work. It changes nothing, so
+it is safe on a real instance. After an install:
 
 ```bash
 helm test excalidash -n excalidash --logs
 ```
+
+The end-to-end test (`.github/workflows/e2e.yaml`, script `.github/scripts/excalidash-e2e.sh`) runs on pull requests
+that change the chart, on every push to main and every week. It installs the chart in kind with
+`ci/default-values.yaml` and the upstream images, runs `helm test`, then, through the frontend Service like a
+browser:
+
+- authentication is turned on at onboarding, the backend logs a setup code, and the first administrator registers
+  with it (not with a wrong one) and logs in;
+- cookies have no `Secure` flag over plain HTTP, and have it when the request says it came through a proxy that
+  terminated TLS (`X-Forwarded-Proto: https`, `backend.trustProxy`);
+- an invalid drawing is refused, a valid one is created, listed and read back;
+- the `.excalidash` export is an archive with the drawing, and the import check accepts it (the upload is staged in
+  `/app/uploads`, writable although the root filesystem is read-only);
+- another pod reaches the frontend but not the backend (NetworkPolicy);
+- after `helm uninstall` and a new install, the session opened before is still valid (kept JWT secret), the
+  administrator logs in with the same password and the drawing is still there (kept PVC).
+
+It does not test live collaboration (Socket.IO), OIDC, PostgreSQL, S3 storage, email or scheduled backups.
 
 ## Operations
 
 ### Backup and restore
 
 With SQLite, ExcaliDash can write consistent copies of its database itself, on a schedule, into a directory of the
-volume (its default directory, `/app/backups`, is not on a volume):
+volume (its default directory, `/app/backups`, is on the read-only root filesystem):
 
 ```yaml
 backend:
@@ -660,6 +707,21 @@ helm repo update
 helm upgrade excalidash unxwares/excalidash -n excalidash -f values.yaml
 ```
 
+### To 2026.11.2
+
+- `backend.trustProxy` now defaults to `"1"` instead of `"false"`. `"1"` trusts the chart's own frontend nginx, which
+  is always the hop in front of the backend: behind an Ingress or a Gateway that terminates TLS, the backend now sees
+  HTTPS and sets its session and CSRF cookies with the `Secure` flag (they had none before). Nothing to do unless you
+  set it yourself: keep `"2"` if you use it behind an Ingress, and set `"false"` only to get the previous behaviour.
+- The backend root filesystem is now read-only. An init container, `copy-app`, copies `/app/dist` into an emptyDir
+  that also holds `/app/uploads`. If your `backend.extraEnv` makes the backend write elsewhere in the container, move
+  that path to a volume: `BACKUP_DIR` must point into `/app/prisma` (for example `/app/prisma/backups`), or the
+  scheduled backups fail. To go back, set `backend.securityContext.readOnlyRootFilesystem: false`.
+- The `excalidash` Secret (generated JWT and CSRF secrets, API key pepper) is now kept on `helm uninstall`, like the
+  PVC. Delete it yourself when you remove ExcaliDash for good (see [Uninstalling](#uninstalling)).
+- In the OIDC modes the chart now also requires `backend.auth.oidc.clientId`, and an `https://` redirect URI in
+  production (the backend did not start without it).
+
 ### To 2026.10.1 (ExcaliDash 0.4.27 → 0.6.5)
 
 - The SQLite database now lives in a PVC mounted at `/app/prisma` (`backend.persistence`). Previous releases had no
@@ -673,10 +735,12 @@ helm upgrade excalidash unxwares/excalidash -n excalidash -f values.yaml
 
 **`helm install` fails with an `execution error`**: the chart refuses `backend.replicaCount > 1`,
 `backend.autoscaling.enabled`, `provider: postgresql` without a PostgreSQL URL or existing Secret, and the OIDC modes
-without `backend.auth.oidc.issuerUrl`.
+without `backend.auth.oidc.issuerUrl`, without `backend.auth.oidc.clientId`, or with an `http://` redirect URI in
+production.
 
-**No setup code in the logs, or it expired**: the code is only printed while no administrator exists, in `local`
-and `hybrid` modes. Restart the backend to get a new one:
+**No setup code in the logs, or it expired**: in `local` mode the code is printed once authentication is enabled on
+the first page, and only while no administrator exists (in `hybrid` mode ExcaliDash 0.6.7 prints none: see
+[Authentication and SSO](#authentication-and-sso)). Restart the backend to get a new one:
 
 ```bash
 kubectl -n excalidash rollout restart deploy/excalidash-backend
@@ -687,8 +751,13 @@ kubectl -n excalidash logs deploy/excalidash-backend | grep -i setup
 **The browser is redirected to the `https://` URL, or login fails**: `frontend.url` must be the URL in the browser
 (scheme, host and port). Behind a proxy that terminates TLS, the proxy must send `X-Forwarded-Proto: https`.
 
-**`Rate limit exceeded` for every user**: with `backend.trustProxy: "false"`, all requests seem to come from the
-frontend pod and share one rate limit bucket. Set `trustProxy` (see [TLS and proxies](#tls-and-proxies)).
+**`Rate limit exceeded` for every user**: behind an Ingress with `backend.trustProxy: "1"` (or with `"false"`), all
+requests seem to come from the Ingress controller (or the frontend pod) and share one rate limit bucket. Set
+`trustProxy: "2"` (see [TLS and proxies](#tls-and-proxies)).
+
+**The backend logs `EROFS: read-only file system`**: something writes outside the volumes, usually the scheduled
+backups with the default `BACKUP_DIR`. Point `BACKUP_DIR` into `/app/prisma` (see
+[Backup and restore](#backup-and-restore)) or mount a volume through `backend.volumes`.
 
 **`413 Request Entity Too Large` on large drawings or imports**: raise the body size limit of the Ingress controller
 or Gateway (the frontend nginx accepts 50 MB).
@@ -719,19 +788,19 @@ tool renders the chart offline, or after a reinstall. Use your own Secret (see
 helm uninstall excalidash -n excalidash
 ```
 
-This deletes the Deployments, Services, ServiceAccount, Ingress/HTTPRoute, NetworkPolicy, HPA and the `excalidash`
-Secret, generated JWT, CSRF and API key pepper included. It keeps:
+This deletes the Deployments, Services, ServiceAccount, Ingress/HTTPRoute, NetworkPolicy and HPA. It keeps, annotated
+`helm.sh/resource-policy: keep`:
 
-- the `excalidash-backend` PVC (SQLite database, backups written there), annotated `helm.sh/resource-policy: keep`;
-- the PVC and Secrets you created yourself (`existingClaim`, `existingSecret`), which the chart never manages.
+- the `excalidash-backend` PVC (SQLite database, backups written there);
+- the `excalidash` Secret, generated JWT, CSRF and API key pepper included.
 
-The chart creates no StatefulSet, so no other PVC is left behind. A new install under the same release name and
-namespace takes the kept PVC over again, with new generated secrets unless you saved them and pass them back
-(`backend.secrets.*` or `backend.secrets.existingSecret`): users log in again and API keys must be re-created. To
-delete the data for good:
+It never touches the PVC and Secrets you created yourself (`existingClaim`, `existingSecret`). The chart creates no
+StatefulSet, so no other PVC is left behind. A new install under the same release name and namespace takes the kept
+PVC and Secret over again: sessions and API keys keep working. To delete the data and the secrets for good:
 
 ```bash
 kubectl -n excalidash delete pvc excalidash-backend
+kubectl -n excalidash delete secret excalidash
 ```
 
 ## Values
@@ -781,12 +850,12 @@ kubectl -n excalidash delete pvc excalidash-backend
 | backend.secrets.csrfSecret | string | `""` | CSRF secret. |
 | backend.secrets.existingSecret | string | `""` | Existing secret with the keys `jwt-secret`, `csrf-secret` and `api-key-hash-pepper` (overrides the values above). |
 | backend.secrets.jwtSecret | string | `""` | JWT signing secret (32+ characters). |
-| backend.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]}}` | Container security context. The entrypoint regenerates files under /app at every start, so the root filesystem stays writable. |
+| backend.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | Container security context, also used by the `copy-app` init container. The entrypoint rewrites `/app/dist/generated` and changes the mode of `/app/uploads` at every start: the chart mounts writable copies of both from an emptyDir, so the root filesystem stays read-only. |
 | backend.service.port | int | `8000` | Backend port (also used for the PORT environment variable). |
 | backend.service.type | string | `"ClusterIP"` | Backend service type. |
 | backend.startupProbe | object | `{"failureThreshold":60,"httpGet":{"path":"/health","port":"http"},"periodSeconds":5}` | Startup probe (database migrations run at startup, with a 120 s lock timeout). |
 | backend.tolerations | list | `[]` | Tolerations (defaults to global.pod.tolerations). |
-| backend.trustProxy | string | `"false"` | Trust X-Forwarded-* headers. Only enable it when a trusted proxy (your ingress) sanitizes them. |
+| backend.trustProxy | string | `"1"` | `TRUST_PROXY`: how many proxies in front of the backend it trusts for `X-Forwarded-*` headers. `"1"` trusts the frontend nginx, always in front of it: cookies get the `Secure` flag when the proxy in front of the frontend says HTTPS (`X-Forwarded-Proto`). `"2"` also trusts your Ingress controller or Gateway, so that rate limits see the real client address. `"false"` trusts none (cookies never `Secure`, one rate limit bucket for everybody). |
 | backend.volumeMounts | list | `[]` | Additional volume mounts. |
 | backend.volumes | list | `[]` | Additional volumes. |
 | frontend.affinity | object | `{}` | Affinity (defaults to global.pod.affinity). |
@@ -794,6 +863,7 @@ kubectl -n excalidash delete pvc excalidash-backend
 | frontend.autoscaling.maxReplicas | int | `5` | Maximum number of frontend replicas. |
 | frontend.autoscaling.minReplicas | int | `1` | Minimum number of frontend replicas. |
 | frontend.autoscaling.targetCPUUtilizationPercentage | int | `80` | Target average CPU utilization (%). |
+| frontend.autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Target average memory utilization (%), relative to the memory request. Null leaves memory out. |
 | frontend.extraEnv | list | `[]` | Extra environment variables. |
 | frontend.extraEnvFrom | list | `[]` | Extra envFrom sources. |
 | frontend.image.digest | string | `""` | Image digest (takes precedence over the tag). |

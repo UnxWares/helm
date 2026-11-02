@@ -138,7 +138,13 @@ Validate values that would otherwise produce a broken deployment.
 {{- if and (eq .Values.backend.database.provider "postgresql") (not .Values.backend.database.existingSecret) (not (hasPrefix "postgres" .Values.backend.database.url)) }}
 {{- fail "backend.database.provider=postgresql needs a postgresql:// backend.database.url or backend.database.existingSecret" }}
 {{- end }}
-{{- if and (has .Values.backend.auth.mode (list "hybrid" "oidc_enforced")) (not .Values.backend.auth.oidc.issuerUrl) }}
-{{- fail "backend.auth.oidc.issuerUrl and clientId are required with backend.auth.mode hybrid or oidc_enforced" }}
+{{- if and (has .Values.backend.auth.mode (list "hybrid" "oidc_enforced")) (not (and .Values.backend.auth.oidc.issuerUrl .Values.backend.auth.oidc.clientId)) }}
+{{- fail "backend.auth.oidc.issuerUrl and backend.auth.oidc.clientId are required with backend.auth.mode hybrid or oidc_enforced" }}
+{{- end }}
+{{- if and (has .Values.backend.auth.mode (list "hybrid" "oidc_enforced")) (eq .Values.backend.nodeEnv "production") }}
+{{- $redirectUri := .Values.backend.auth.oidc.redirectUri | default (printf "%s/api/auth/oidc/callback" (trimSuffix "/" .Values.frontend.url)) }}
+{{- if not (regexMatch "^(?i)https://" $redirectUri) }}
+{{- fail (printf "the OIDC redirect URI %s must be https:// (the backend refuses to start otherwise in production): set frontend.url, or backend.auth.oidc.redirectUri, to an https:// URL" $redirectUri) }}
+{{- end }}
 {{- end }}
 {{- end }}

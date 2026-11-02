@@ -451,7 +451,7 @@
             "type": "object",
             "properties": {
                 "enabled": {
-                    "description": "Create a PodDisruptionBudget for Kener (useful with 2+ replicas).",
+                    "description": "Create a PodDisruptionBudget for Kener. Refused with SQLite (single replica) and when `minAvailable` is not lower than the replica count: such a budget blocks node drains.",
                     "type": "boolean"
                 },
                 "maxUnavailable": {
@@ -463,7 +463,7 @@
                     ]
                 },
                 "minAvailable": {
-                    "description": "Minimum available pods.",
+                    "description": "Minimum available pods (lower than `replicaCount`, or `autoscaling.minReplicas` with the HPA).",
                     "type": "integer"
                 }
             }
@@ -483,12 +483,24 @@
         "proxy": {
             "type": "object",
             "properties": {
+                "existingSecret": {
+                    "description": "Existing secret holding the proxy URLs instead of `httpProxy` and `httpsProxy` (either key may be missing).",
+                    "type": "string"
+                },
+                "existingSecretHttpProxyKey": {
+                    "description": "Key of the `HTTP_PROXY` URL in `existingSecret`.",
+                    "type": "string"
+                },
+                "existingSecretHttpsProxyKey": {
+                    "description": "Key of the `HTTPS_PROXY` URL in `existingSecret`.",
+                    "type": "string"
+                },
                 "httpProxy": {
-                    "description": "`HTTP_PROXY` (stored in a Secret: it may carry credentials, percent-encoded).",
+                    "description": "`HTTP_PROXY` (stored in a Secret: it may carry credentials, percent-encoded). Ignored when `existingSecret` is set.",
                     "type": "string"
                 },
                 "httpsProxy": {
-                    "description": "`HTTPS_PROXY` (stored in a Secret).",
+                    "description": "`HTTPS_PROXY` (stored in a Secret). Ignored when `existingSecret` is set.",
                     "type": "string"
                 },
                 "noProxy": {
@@ -571,7 +583,7 @@
                             "type": "string"
                         },
                         "tag": {
-                            "description": "Valkey image tag.",
+                            "description": "Valkey image tag (required unless `digest` is set).",
                             "type": "string"
                         }
                     }
