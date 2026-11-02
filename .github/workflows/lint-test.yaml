@@ -109,7 +109,8 @@ jobs:
 
             # Linted above but not installed, they need external prerequisites:
             # laravel-generic needs the user's application image,
-            # openeverest-database-tools needs the OpenEverest operator and its DatabaseClusters.
+            # openeverest-database-tools needs the OpenEverest operator and its DatabaseClusters: e2e.yaml
+            # installs it next to real database servers and a stand-in for the operator.
             - name: ct install
               if: steps.list-changed.outputs.changed == 'true'
               run: ct install --config ct.yaml --excluded-charts laravel-generic,openeverest-database-tools

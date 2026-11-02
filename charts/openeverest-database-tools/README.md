@@ -1,6 +1,6 @@
 # OpenEverest Database Tools Helm Chart
 
-![Version: 2026.10.2](https://img.shields.io/badge/Version-2026.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.17.0](https://img.shields.io/badge/AppVersion-1.17.0-informational?style=flat-square)
+![Version: 2026.11.1](https://img.shields.io/badge/Version-2026.11.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.17.0](https://img.shields.io/badge/AppVersion-1.17.0-informational?style=flat-square)
 
 Database initialization Jobs for [OpenEverest](https://openeverest.io) by UnxWares. Each Job waits until an
 OpenEverest `DatabaseCluster` is ready, then creates databases, users and grants and runs your init scripts on
@@ -13,8 +13,11 @@ PostgreSQL, MySQL (Percona XtraDB Cluster) or MongoDB (Percona Server for MongoD
   `status.status: ready`, then the client retries until the admin user can log in.
 - **Idempotent**: databases and users are created when missing, grants are re-applied and user passwords are
   re-synced from their Secret. Running a Job twice is harmless.
-- **No runtime downloads**: pinned official client images (`postgres`, `mysql`, `mongo`) and the distroless
+- **Small, patched images**: the UnxWares client images (`psql`, `mysql` and `mongosh` alone, rebuilt every week,
+  signed, see [images/](https://github.com/UnxWares/helm/tree/main/images)) and the distroless
   `registry.k8s.io/kubectl`; nothing is installed when the Job starts, every image is scanned by Artifact Hub.
+- **Tested end to end**: in CI, the Jobs run against real PostgreSQL, MySQL and MongoDB servers, then the
+  application users log in and their rights and the init scripts are checked, before and after a password rotation.
 - **Injection-safe**: usernames and passwords stay in Secrets and environment variables, never in SQL or
   JavaScript text. Database, collection, role and privilege names are validated when rendering.
 - **Least privilege**: a dedicated ServiceAccount that can only read DatabaseClusters, its token mounted only into
@@ -29,7 +32,7 @@ PostgreSQL, MySQL (Percona XtraDB Cluster) or MongoDB (Percona Server for MongoD
 - The Jobs, their ConfigMaps and RBAC are created in `global.namespace` (default `everest-databases`), which must
   be a [namespace managed by OpenEverest](https://openeverest.io/documentation/current/administer/manage_namespaces.html)
   holding the DatabaseClusters and their credential Secrets. Leave it empty to use the release namespace.
-- The nodes must be able to pull from `docker.io` and `registry.k8s.io` (or your mirror, see `image.*`).
+- The nodes must be able to pull from `ghcr.io` and `registry.k8s.io` (or your mirror, see `image.*`).
 
 ## Installation
 
@@ -222,6 +225,20 @@ runs again. Either way the Job spec is never patched, so upgrades cannot fail on
 
 ## Upgrading
 
+### To 2026.11.1
+
+No value to change, unless you pin the client images:
+
+- The default client images are now `ghcr.io/unxwares/postgresql-client`, `ghcr.io/unxwares/mysql-client` and
+  `ghcr.io/unxwares/mongosh`: the clients alone instead of whole database server images (297 known vulnerabilities
+  down to 47). The official `postgres`, `mysql` and `mongo` images still work through `image.*`; allow pulls from
+  `ghcr.io` if your nodes go through a mirror.
+- PostgreSQL: the application user also gets the default privileges on sequences of the `public` schema. Before,
+  inserting into a table with a `serial` or identity column created by an init script failed with
+  `permission denied for sequence`. Default privileges only apply to objects created afterwards: for such tables
+  created by an earlier version, grant the sequences once, as the admin user
+  (`GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO "<user>";` in the application database).
+
 ### To 2026.10.1
 
 - **Images (BREAKING)**: the Jobs no longer run `apk add` on `alpine:3.19`. `image.postgresql`, `image.mysql` and
@@ -294,14 +311,14 @@ Kubernetes: `>=1.27.0-0`
 | image.kubectl.repository | string | `"registry.k8s.io/kubectl"` | kubectl image repository (distroless, used by the wait init containers). |
 | image.kubectl.tag | string | `"v1.37.2"` | kubectl image tag. |
 | image.mongodb.digest | string | `""` | MongoDB client image digest (`sha256:...`). |
-| image.mongodb.repository | string | `"docker.io/library/mongo"` | MongoDB client image repository (mongosh). |
-| image.mongodb.tag | string | `"8.0.34"` | MongoDB client image tag. |
+| image.mongodb.repository | string | `"ghcr.io/unxwares/mongosh"` | MongoDB client image repository (mongosh). `docker.io/library/mongo` also works. |
+| image.mongodb.tag | string | `"2.14.1"` | MongoDB client image tag (mongosh version). |
 | image.mysql.digest | string | `""` | MySQL client image digest (`sha256:...`). |
-| image.mysql.repository | string | `"docker.io/library/mysql"` | MySQL client image repository (mysql). |
-| image.mysql.tag | string | `"8.4.13"` | MySQL client image tag. |
+| image.mysql.repository | string | `"ghcr.io/unxwares/mysql-client"` | MySQL client image repository (mysql). `docker.io/library/mysql` also works. |
+| image.mysql.tag | string | `"8.4"` | MySQL client image tag (MySQL release series, latest client at each weekly rebuild). |
 | image.postgresql.digest | string | `""` | PostgreSQL client image digest (`sha256:...`). |
-| image.postgresql.repository | string | `"docker.io/library/postgres"` | PostgreSQL client image repository (psql). |
-| image.postgresql.tag | string | `"18.6-alpine"` | PostgreSQL client image tag. |
+| image.postgresql.repository | string | `"ghcr.io/unxwares/postgresql-client"` | PostgreSQL client image repository (psql). `docker.io/library/postgres` with an `-alpine` tag also works. |
+| image.postgresql.tag | string | `"18"` | PostgreSQL client image tag (PostgreSQL major version, latest minor release at each weekly rebuild). |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy of every container. |
 | imagePullSecrets | list | `[]` | Secrets for pulling images from a private registry. |
 | labels | object | `{}` | Labels added to every Job and its pods. |

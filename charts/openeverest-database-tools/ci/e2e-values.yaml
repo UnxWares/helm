@@ -1,0 +1,79 @@
+# End-to-end test (job "openeverest-database-tools e2e" of .github/workflows/lint-test.yaml): the Jobs run against
+# the real servers of .github/scripts/openeverest-test-env.sh, which creates the clusters and Secrets named here,
+# then .github/scripts/openeverest-test-verify.sh checks what they created.
+global:
+  argocd:
+    enabled: false
+  # Keep the finished Jobs: the test reads their logs.
+  ttlSecondsAfterFinished: null
+  backoffLimit: 2
+  waitTimeoutSeconds: 300
+  connectTimeoutSeconds: 120
+databases:
+  postgresql:
+    - name: app-pg-init
+      clusterName: app-pg
+      adminCredentialsSecret: everest-secrets-app-pg
+      databases:
+        - laravel-app
+        - reporting
+      users:
+        - credentialsSecret: laravel-app-db
+          databases:
+            - laravel-app
+      initScriptsDatabase: laravel-app
+      initScripts:
+        - CREATE EXTENSION IF NOT EXISTS pg_trgm;
+        - CREATE TABLE IF NOT EXISTS init_log (id serial PRIMARY KEY, message text);
+  mysql:
+    - name: app-mysql-init
+      clusterName: app-mysql
+      adminCredentialsSecret: everest-secrets-app-mysql
+      host: app-mysql-haproxy
+      adminUser: root
+      passwordKey: root
+      databases:
+        - wordpress
+      users:
+        - credentialsSecret: wordpress-db
+          databases:
+            - wordpress
+          privileges:
+            - SELECT
+            - INSERT
+            - UPDATE
+            - DELETE
+            - CREATE
+            - ALTER
+            - INDEX
+            - DROP
+      initScripts:
+        - CREATE TABLE IF NOT EXISTS wordpress.init_log (id INT AUTO_INCREMENT PRIMARY KEY, message VARCHAR(255));
+  mongodb:
+    # Users with the user administrator, collections and scripts with the database administrator, as the README
+    # recommends for the system users of OpenEverest.
+    - name: app-mongo-users
+      clusterName: app-mongo
+      adminCredentialsSecret: everest-secrets-app-mongo
+      host: app-mongo-rs0
+      userKey: MONGODB_USER_ADMIN_USER
+      passwordKey: MONGODB_USER_ADMIN_PASSWORD
+      uriOptions: replicaSet=rs0
+      users:
+        - credentialsSecret: appdb-user
+          databases:
+            - appdb
+    - name: app-mongo-collections
+      clusterName: app-mongo
+      adminCredentialsSecret: everest-secrets-app-mongo
+      host: app-mongo-rs0
+      userKey: MONGODB_DATABASE_ADMIN_USER
+      passwordKey: MONGODB_DATABASE_ADMIN_PASSWORD
+      uriOptions: replicaSet=rs0
+      databases:
+        - appdb
+      collections:
+        - name: users
+          database: appdb
+      initScripts:
+        - 'db.users.createIndex({ email: 1 }, { unique: true });'

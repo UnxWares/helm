@@ -175,11 +175,11 @@
                             "type": "string"
                         },
                         "repository": {
-                            "description": "MongoDB client image repository (mongosh).",
+                            "description": "MongoDB client image repository (mongosh). `docker.io/library/mongo` also works.",
                             "type": "string"
                         },
                         "tag": {
-                            "description": "MongoDB client image tag.",
+                            "description": "MongoDB client image tag (mongosh version).",
                             "type": "string"
                         }
                     }
@@ -195,11 +195,11 @@
                             "type": "string"
                         },
                         "repository": {
-                            "description": "MySQL client image repository (mysql).",
+                            "description": "MySQL client image repository (mysql). `docker.io/library/mysql` also works.",
                             "type": "string"
                         },
                         "tag": {
-                            "description": "MySQL client image tag.",
+                            "description": "MySQL client image tag (MySQL release series, latest client at each weekly rebuild).",
                             "type": "string"
                         }
                     }
@@ -215,11 +215,11 @@
                             "type": "string"
                         },
                         "repository": {
-                            "description": "PostgreSQL client image repository (psql).",
+                            "description": "PostgreSQL client image repository (psql). `docker.io/library/postgres` with an `-alpine` tag also works.",
                             "type": "string"
                         },
                         "tag": {
-                            "description": "PostgreSQL client image tag.",
+                            "description": "PostgreSQL client image tag (PostgreSQL major version, latest minor release at each weekly rebuild).",
                             "type": "string"
                         }
                     }

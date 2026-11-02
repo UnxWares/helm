@@ -75,6 +75,7 @@ SELECT format('ALTER SCHEMA public OWNER TO %I', :'username')\gexec
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 SELECT format('GRANT ALL ON SCHEMA public TO %I', :'username')\gexec
 SELECT format('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO %I', :'username')\gexec
+SELECT format('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO %I', :'username')\gexec
 \connect "{{ $db.adminDatabase | default "postgres" }}"
 {{- end }}
 \unset username

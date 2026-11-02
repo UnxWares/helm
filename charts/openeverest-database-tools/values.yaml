@@ -92,27 +92,28 @@ databases:
   #     - 'db.users.createIndex({ email: 1 }, { unique: true });'
 
 ## Client images. Each one is a {repository, tag, digest} object (digest takes precedence over tag).
-## The clients are part of the images: nothing is installed at runtime.
+## The clients are part of the images: nothing is installed at runtime. The defaults are the UnxWares client images
+## (ghcr.io/unxwares, rebuilt every week, signed): the client alone instead of a whole database server image.
 image:
   postgresql:  # @schema type:[object, string]
-    # -- PostgreSQL client image repository (psql).
-    repository: docker.io/library/postgres
-    # -- PostgreSQL client image tag.
-    tag: 18.6-alpine
+    # -- PostgreSQL client image repository (psql). `docker.io/library/postgres` with an `-alpine` tag also works.
+    repository: ghcr.io/unxwares/postgresql-client
+    # -- PostgreSQL client image tag (PostgreSQL major version, latest minor release at each weekly rebuild).
+    tag: "18"
     # -- PostgreSQL client image digest (`sha256:...`).
     digest: ""
   mysql:  # @schema type:[object, string]
-    # -- MySQL client image repository (mysql).
-    repository: docker.io/library/mysql
-    # -- MySQL client image tag.
-    tag: 8.4.13
+    # -- MySQL client image repository (mysql). `docker.io/library/mysql` also works.
+    repository: ghcr.io/unxwares/mysql-client
+    # -- MySQL client image tag (MySQL release series, latest client at each weekly rebuild).
+    tag: "8.4"
     # -- MySQL client image digest (`sha256:...`).
     digest: ""
   mongodb:  # @schema type:[object, string]
-    # -- MongoDB client image repository (mongosh).
-    repository: docker.io/library/mongo
-    # -- MongoDB client image tag.
-    tag: 8.0.34
+    # -- MongoDB client image repository (mongosh). `docker.io/library/mongo` also works.
+    repository: ghcr.io/unxwares/mongosh
+    # -- MongoDB client image tag (mongosh version).
+    tag: 2.14.1
     # -- MongoDB client image digest (`sha256:...`).
     digest: ""
   kubectl:  # @schema type:[object, string]
