@@ -4,6 +4,76 @@ entries:
   - annotations:
       artifacthub.io/category: networking
       artifacthub.io/changes: |
+        - kind: security
+          description: "named runs as the bind user (uid 53) from the start, without any capability: the net.ipv4.ip_unprivileged_port_start sysctl lets it bind port 53 in the pod. The pods meet the restricted Pod Security Standard."
+        - kind: security
+          description: "The metrics and rndc ports move from the DNS Service to their own Service, <fullname>-admin (ClusterIP by default): a LoadBalancer or NodePort DNS Service no longer publishes them."
+        - kind: security
+          description: "Default exporter image moves to ghcr.io/unxwares/bind-exporter (imageProvider: unxwares): bind_exporter master built from its sources with Go 1.27 and current golang.org/x modules (proposed upstream in prometheus-community/bind_exporter#301), on a distroless base. imageProvider: upstream keeps the Prometheus community image."
+        - kind: fixed
+          description: "nodeSelector defaults to kubernetes.io/arch: amd64, the only architecture of the ISC image, for the pods and the helm test pod (no more exec format error on arm64 nodes)."
+        - kind: fixed
+          description: "The NOTES show the image actually deployed, digest included; autoscaling.targetMemoryUtilizationPercentage is a documented value; the helm test pod uses imagePullSecrets."
+        - kind: added
+          description: "End-to-end test in CI, in a namespace that enforces the restricted Pod Security Standard: the zones answer their records over UDP and TCP from another pod, transfers and other zones are refused, the exporter reports bind_up 1, and the NetworkPolicy keeps the metrics from other pods."
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: ISC Bind9
+      artifacthub.io/images: |
+        - name: bind9
+          image: docker.io/internetsystemsconsortium/bind9:9.20
+        - name: bind-exporter
+          image: ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/bind9
+        - name: Upstream
+          url: https://www.isc.org/bind/
+        - name: BIND 9 documentation
+          url: https://bind9.readthedocs.io/
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: "9.20"
+    created: "2026-11-02T17:17:01.992737616Z"
+    description: A flexible and production-ready Helm chart for running ISC Bind9
+      DNS server on Kubernetes.
+    digest: 9fea7b253adfbde48b4b8d5effb362f7f338801411eb8b552ee05e12e352698a
+    home: https://github.com/UnxWares/helm/tree/main/charts/bind9
+    icon: https://avatars.githubusercontent.com/u/3965132?v=4
+    keywords:
+    - dns
+    - bind
+    - bind9
+    - authoritative-dns
+    - kubernetes
+    - helm
+    - network
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: bind9
+    sources:
+    - https://gitlab.isc.org/isc-projects/bind9
+    - https://github.com/isc-projects/bind9-docker
+    - https://hub.docker.com/r/internetsystemsconsortium/bind9
+    - https://github.com/prometheus-community/bind_exporter
+    - https://github.com/UnxWares/helm/tree/main/charts/bind9
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/bind9-2026.11.2/bind9-2026.11.2.tgz
+    version: 2026.11.2
+  - annotations:
+      artifacthub.io/category: networking
+      artifacthub.io/changes: |
         - kind: changed
           description: "README completed: architecture, images, requirements, signed installation, configuration by topic, examples checked with helm template and kubeconform, security, testing, operations, troubleshooting and uninstalling."
         - kind: fixed
@@ -3289,6 +3359,83 @@ entries:
   - annotations:
       artifacthub.io/category: networking
       artifacthub.io/changes: |
+        - kind: security
+          description: "The recursor webserver (API, /metrics) moves from the recursor DNS Service to its own ClusterIP Service, <fullname>-recursor-api: a LoadBalancer recursor Service no longer publishes it."
+        - kind: security
+          description: "gmysql schema init: the MySQL client options file, which holds the password, is written to a memory-backed /tmp private to the init container instead of the disk-backed /tmp shared with the server; the password is escaped, so quotes and backslashes no longer break it."
+        - kind: security
+          description: "The Secret holding a generated API key is kept on uninstall (helm.sh/resource-policy: keep), so that a reinstall reuses the key; the schema init container only gets the database password and the helm test pod only the API key."
+        - kind: fixed
+          description: "The schema init container mounts extraVolumeMounts, so a CA given in backend.gpgsql.extraConnectionParameters (sslrootcert) works with the schema init enabled."
+        - kind: fixed
+          description: "gmysql with the UnxWares image: the server connects to a MySQL server with a self-signed certificate (the default of MySQL), encrypted without checking the certificate like the MySQL client; backend.gmysql.verifyServerCertificate: true keeps the check."
+        - kind: fixed
+          description: "An IPv6 address of the authoritative Service (service.clusterIP or the injected variable) is written in brackets in the recursor forwarders."
+        - kind: changed
+          description: "Schema init images: ghcr.io/unxwares/postgresql-client:18 and ghcr.io/unxwares/mysql-client:8.4 with imageProvider: unxwares (the clients alone), docker.io/library/postgres:18.6-alpine and docker.io/library/mysql:8.4.13 with upstream. backend.schemaInit.mysqlImage defaults to empty."
+        - kind: fixed
+          description: "The NOTES show the images actually deployed (tag or digest); autoscaling.targetMemoryUtilizationPercentage is a documented value."
+        - kind: added
+          description: "End-to-end test in CI on SQLite with the recursor, PostgreSQL over verified TLS and MySQL, in a namespace that enforces the restricted Pod Security Standard: the API refuses wrong keys and manages zones, the records are answered by the authoritative server and the recursor, and survive a restart."
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: PowerDNS
+      artifacthub.io/images: |
+        - name: pdns-auth
+          image: ghcr.io/unxwares/pdns-auth:5.1.5
+        - name: pdns-recursor
+          image: ghcr.io/unxwares/pdns-recursor:5.4.9
+        - name: postgresql-client
+          image: ghcr.io/unxwares/postgresql-client:18
+        - name: mysql-client
+          image: ghcr.io/unxwares/mysql-client:8.4
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/powerdns
+        - name: PowerDNS documentation
+          url: https://doc.powerdns.com/
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 5.1.5
+    created: "2026-11-02T17:17:02.237414637Z"
+    description: PowerDNS Authoritative Server with its REST API, SQLite/PostgreSQL/MySQL
+      backends and an optional PowerDNS Recursor, hardened for Kubernetes.
+    digest: 60f43f21a95105a17138fa32cc87839b44e585fbd55147164d89eda07058f6ba
+    home: https://github.com/UnxWares/helm/tree/main/charts/powerdns
+    icon: https://raw.githubusercontent.com/PowerDNS/pdns/master/docs/common/powerdns-logo-500px.png
+    keywords:
+    - dns
+    - powerdns
+    - pdns
+    - authoritative-dns
+    - recursor
+    - dnssec
+    - external-dns
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: powerdns
+    sources:
+    - https://github.com/PowerDNS/pdns
+    - https://hub.docker.com/r/powerdns/pdns-auth-51
+    - https://hub.docker.com/r/powerdns/pdns-recursor-54
+    - https://github.com/UnxWares/helm/tree/main/charts/powerdns
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/powerdns-2026.11.2/powerdns-2026.11.2.tgz
+    version: 2026.11.2
+  - annotations:
+      artifacthub.io/category: networking
+      artifacthub.io/changes: |
         - kind: changed
           description: "README completed: architecture, images, requirements, signed installation, configuration by topic, examples checked with helm template and kubeconform, security, testing, operations, troubleshooting and uninstalling."
         - kind: fixed
@@ -4361,4 +4508,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-11-02T15:28:08.015901169Z"
+generated: "2026-11-02T17:17:02.237738876Z"
