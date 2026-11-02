@@ -145,13 +145,13 @@
         "runs": 1
        }
       ],
-      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
-      "date": "2026-11-02T17:42:04Z",
+      "commit": "7e0be87a4e1306cf2eafe3d77af2aa277bc173fb",
+      "date": "2026-11-02T17:54:00Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162628",
-      "run_id": 41489635804,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41493719574/job/125443142604",
+      "run_id": 41493719574,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41493719574",
       "status": "passed",
       "steps": [
        {
@@ -388,13 +388,13 @@
         "runs": 1
        }
       ],
-      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
-      "date": "2026-11-02T17:42:04Z",
+      "commit": "7e0be87a4e1306cf2eafe3d77af2aa277bc173fb",
+      "date": "2026-11-02T17:54:00Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162828",
-      "run_id": 41489635804,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41493719574/job/125443142586",
+      "run_id": 41493719574,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41493719574",
       "status": "passed",
       "steps": [
        {
@@ -675,13 +675,13 @@
         "runs": 1
        }
       ],
-      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
-      "date": "2026-11-02T17:42:04Z",
+      "commit": "7e0be87a4e1306cf2eafe3d77af2aa277bc173fb",
+      "date": "2026-11-02T17:54:00Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162989",
-      "run_id": 41489635804,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41493719574/job/125443142540",
+      "run_id": 41493719574,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41493719574",
       "status": "passed",
       "steps": [
        {
@@ -943,13 +943,13 @@
         "runs": 1
        }
       ],
-      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
-      "date": "2026-11-02T17:42:04Z",
+      "commit": "7e0be87a4e1306cf2eafe3d77af2aa277bc173fb",
+      "date": "2026-11-02T17:54:00Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162652",
-      "run_id": 41489635804,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41493719574/job/125443142531",
+      "run_id": 41493719574,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41493719574",
       "status": "passed",
       "steps": [
        {
@@ -1237,13 +1237,13 @@
         "runs": 1
        }
       ],
-      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
-      "date": "2026-11-02T17:42:04Z",
+      "commit": "7e0be87a4e1306cf2eafe3d77af2aa277bc173fb",
+      "date": "2026-11-02T17:54:00Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162742",
-      "run_id": 41489635804,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41493719574/job/125443142473",
+      "run_id": 41493719574,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41493719574",
       "status": "passed",
       "steps": [
        {
@@ -1701,13 +1701,13 @@
         "runs": 2
        }
       ],
-      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
-      "date": "2026-11-02T17:42:04Z",
+      "commit": "7e0be87a4e1306cf2eafe3d77af2aa277bc173fb",
+      "date": "2026-11-02T17:54:00Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162939",
-      "run_id": 41489635804,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41493719574/job/125443142469",
+      "run_id": 41493719574,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41493719574",
       "status": "passed",
       "steps": [
        {
@@ -2656,13 +2656,14 @@
   }
  ],
  "cve_watch": {
-  "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
-  "date": "2026-11-02T17:32:11Z",
+  "commit": "7561ecba707e26e3d34fdb6898cba4da3d84f93b",
+  "date": "2026-11-02T17:54:39Z",
   "event": "workflow_run",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
     "charts": [
-     "fossflow"
+     "fossflow",
+     "official image replaced by fossflow:1.0.5"
     ],
     "eosl": false,
     "fixable": {
@@ -2686,7 +2687,8 @@
    },
    "docker.io/cloudreve/cloudreve:4.19.1": {
     "charts": [
-     "cloudreve"
+     "cloudreve",
+     "official image replaced by cloudreve:4.19.1"
     ],
     "eosl": false,
     "fixable": {
@@ -2732,8 +2734,57 @@
     },
     "total": 2
    },
+   "docker.io/library/mongo:8.0": {
+    "charts": [
+     "official image replaced by mongosh:2.14.1"
+    ],
+    "eosl": false,
+    "fixable": {
+     "CRITICAL": 1,
+     "HIGH": 28,
+     "LOW": 3,
+     "MEDIUM": 33,
+     "UNKNOWN": 3
+    },
+    "image": "docker.io/library/mongo:8.0",
+    "os": "ubuntu 24.04",
+    "ours": false,
+    "severity": {
+     "CRITICAL": 1,
+     "HIGH": 28,
+     "LOW": 7,
+     "MEDIUM": 67,
+     "UNKNOWN": 4
+    },
+    "total": 107
+   },
+   "docker.io/library/mysql:8.4": {
+    "charts": [
+     "official image replaced by mysql-client:8.4"
+    ],
+    "eosl": false,
+    "fixable": {
+     "CRITICAL": 2,
+     "HIGH": 33,
+     "LOW": 6,
+     "MEDIUM": 40,
+     "UNKNOWN": 1
+    },
+    "image": "docker.io/library/mysql:8.4",
+    "os": "oracle 9.8",
+    "ours": false,
+    "severity": {
+     "CRITICAL": 2,
+     "HIGH": 33,
+     "LOW": 7,
+     "MEDIUM": 40,
+     "UNKNOWN": 1
+    },
+    "total": 83
+   },
    "docker.io/library/postgres:17.11-alpine": {
     "charts": [
+     "official image replaced by postgres:17.11-alpine",
      "taiga"
     ],
     "eosl": false,
@@ -2755,6 +2806,54 @@
      "UNKNOWN": 1
     },
     "total": 61
+   },
+   "docker.io/library/postgres:18-alpine": {
+    "charts": [
+     "official image replaced by postgresql-client:18"
+    ],
+    "eosl": false,
+    "fixable": {
+     "CRITICAL": 2,
+     "HIGH": 26,
+     "LOW": 25,
+     "MEDIUM": 32,
+     "UNKNOWN": 1
+    },
+    "image": "docker.io/library/postgres:18-alpine",
+    "os": "alpine 3.24.3",
+    "ours": false,
+    "severity": {
+     "CRITICAL": 2,
+     "HIGH": 26,
+     "LOW": 25,
+     "MEDIUM": 32,
+     "UNKNOWN": 1
+    },
+    "total": 86
+   },
+   "docker.io/library/postgres:18.6-alpine": {
+    "charts": [
+     "official image replaced by postgres:18.6-alpine"
+    ],
+    "eosl": false,
+    "fixable": {
+     "CRITICAL": 2,
+     "HIGH": 26,
+     "LOW": 25,
+     "MEDIUM": 32,
+     "UNKNOWN": 1
+    },
+    "image": "docker.io/library/postgres:18.6-alpine",
+    "os": "alpine 3.24.3",
+    "ours": false,
+    "severity": {
+     "CRITICAL": 2,
+     "HIGH": 26,
+     "LOW": 25,
+     "MEDIUM": 32,
+     "UNKNOWN": 1
+    },
+    "total": 86
    },
    "docker.io/library/rabbitmq:4.4.0-management-alpine": {
     "charts": [
@@ -2807,6 +2906,7 @@
    },
    "docker.io/powerdns/pdns-auth-51:5.1.5": {
     "charts": [
+     "official image replaced by pdns-auth:5.1.5",
      "powerdns"
     ],
     "eosl": false,
@@ -2831,6 +2931,7 @@
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
+     "official image replaced by pdns-recursor:5.4.9",
      "powerdns"
     ],
     "eosl": false,
@@ -2852,6 +2953,30 @@
      "UNKNOWN": 20
     },
     "total": 377
+   },
+   "docker.io/prometheuscommunity/bind-exporter:master": {
+    "charts": [
+     "official image replaced by bind-exporter:0.8.0-62-gbafd56f"
+    ],
+    "eosl": false,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 2,
+     "LOW": 0,
+     "MEDIUM": 4,
+     "UNKNOWN": 2
+    },
+    "image": "docker.io/prometheuscommunity/bind-exporter:master",
+    "os": "",
+    "ours": false,
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 2,
+     "LOW": 0,
+     "MEDIUM": 4,
+     "UNKNOWN": 3
+    },
+    "total": 9
    },
    "docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf": {
     "charts": [
@@ -2927,6 +3052,7 @@
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
+     "official image replaced by taiga-back:6.10.2",
      "taiga"
     ],
     "eosl": false,
@@ -2951,6 +3077,7 @@
    },
    "docker.io/taigaio/taiga-events:6.10.0": {
     "charts": [
+     "official image replaced by taiga-events:6.10.0",
      "taiga"
     ],
     "eosl": true,
@@ -2975,6 +3102,7 @@
    },
    "docker.io/taigaio/taiga-front:6.10.3": {
     "charts": [
+     "official image replaced by taiga-front:6.10.3",
      "taiga"
     ],
     "eosl": true,
@@ -2999,6 +3127,7 @@
    },
    "docker.io/taigaio/taiga-protected:6.10.1": {
     "charts": [
+     "official image replaced by taiga-protected:6.10.1",
      "taiga"
     ],
     "eosl": false,
@@ -3095,6 +3224,7 @@
    },
    "ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f": {
     "charts": [
+     "UnxWares image",
      "bind9"
     ],
     "eosl": false,
@@ -3129,6 +3259,7 @@
    },
    "ghcr.io/unxwares/cloudreve:4.19.1": {
     "charts": [
+     "UnxWares image",
      "cloudreve"
     ],
     "eosl": false,
@@ -3179,6 +3310,7 @@
    },
    "ghcr.io/unxwares/fossflow:1.0.5": {
     "charts": [
+     "UnxWares image",
      "fossflow"
     ],
     "eosl": false,
@@ -3213,6 +3345,7 @@
    },
    "ghcr.io/unxwares/mongosh:2.14.1": {
     "charts": [
+     "UnxWares image",
      "openeverest-database-tools"
     ],
     "eosl": false,
@@ -3615,6 +3748,7 @@
    },
    "ghcr.io/unxwares/mysql-client:8.4": {
     "charts": [
+     "UnxWares image",
      "openeverest-database-tools",
      "powerdns"
     ],
@@ -3641,6 +3775,7 @@
    },
    "ghcr.io/unxwares/pdns-auth:5.1.5": {
     "charts": [
+     "UnxWares image",
      "powerdns"
     ],
     "eosl": false,
@@ -3666,6 +3801,7 @@
    },
    "ghcr.io/unxwares/pdns-recursor:5.4.9": {
     "charts": [
+     "UnxWares image",
      "powerdns"
     ],
     "eosl": false,
@@ -3691,6 +3827,7 @@
    },
    "ghcr.io/unxwares/postgres:17.11-alpine": {
     "charts": [
+     "UnxWares image",
      "taiga"
     ],
     "eosl": false,
@@ -3714,8 +3851,34 @@
     "total": 0,
     "vulnerabilities": []
    },
+   "ghcr.io/unxwares/postgres:18.6-alpine": {
+    "charts": [
+     "UnxWares image"
+    ],
+    "eosl": false,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
+    "image": "ghcr.io/unxwares/postgres:18.6-alpine",
+    "os": "alpine 3.24.3",
+    "ours": true,
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
+    "total": 0,
+    "vulnerabilities": []
+   },
    "ghcr.io/unxwares/postgresql-client:18": {
     "charts": [
+     "UnxWares image",
      "openeverest-database-tools",
      "powerdns"
     ],
@@ -3742,6 +3905,7 @@
    },
    "ghcr.io/unxwares/taiga-back:6.10.2": {
     "charts": [
+     "UnxWares image",
      "taiga"
     ],
     "eosl": false,
@@ -3888,6 +4052,7 @@
    },
    "ghcr.io/unxwares/taiga-events:6.10.0": {
     "charts": [
+     "UnxWares image",
      "taiga"
     ],
     "eosl": false,
@@ -3913,6 +4078,7 @@
    },
    "ghcr.io/unxwares/taiga-front:6.10.3": {
     "charts": [
+     "UnxWares image",
      "taiga"
     ],
     "eosl": false,
@@ -3938,6 +4104,7 @@
    },
    "ghcr.io/unxwares/taiga-protected:6.10.1": {
     "charts": [
+     "UnxWares image",
      "taiga"
     ],
     "eosl": false,
@@ -3986,8 +4153,8 @@
     "total": 12
    }
   },
-  "run_id": 41491737246,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/41491737246",
+  "run_id": 41495246472,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/41495246472",
   "source": "report"
  },
  "files": [
@@ -4081,7 +4248,17 @@
    },
    "changes": "Alpine packages upgraded, `su-exec` instead of `gosu` (built with an old Go toolchain)",
    "context": "images/postgres/18",
-   "cve": null,
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": 0,
+    "medium": 0,
+    "open_fixable": 0,
+    "total": 0
+   },
    "name": "postgres",
    "ref": "ghcr.io/unxwares/postgres:18.6-alpine",
    "tag": "18.6-alpine",
@@ -4658,7 +4835,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-02T17:52:56Z",
+ "latest_result": "2026-11-02T17:54:39Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
