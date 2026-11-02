@@ -1,0 +1,189 @@
+suite: persistence of /var/lib/bind and writable paths
+templates:
+  # deployment.yaml includes configmap.yaml for its checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+  - pvc.yaml
+release:
+  name: my-dns
+  namespace: dns-system
+tests:
+  - it: keeps /var/lib/bind in an emptyDir without persistence
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: bind-data
+            emptyDir: {}
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: bind-data
+            mountPath: /var/lib/bind
+        template: deployment.yaml
+
+  - it: caps the emptyDir with persistence.emptyDirSizeLimit
+    template: deployment.yaml
+    set:
+      persistence.emptyDirSizeLimit: 256Mi
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: bind-data
+            emptyDir:
+              sizeLimit: 256Mi
+
+  - it: gives named small emptyDirs for its working directory, pid file and /tmp (read-only root)
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: bind-cache
+            emptyDir:
+              sizeLimit: 64Mi
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: bind-run
+            emptyDir:
+              sizeLimit: 1Mi
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir:
+              sizeLimit: 16Mi
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: bind-cache
+            mountPath: /var/cache/bind
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: bind-run
+            mountPath: /run/named
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp
+
+  - it: creates a 1Gi ReadWriteOnce claim kept on uninstall
+    template: pvc.yaml
+    set:
+      persistence.enabled: true
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+      - equal:
+          path: metadata.name
+          value: my-dns-bind9-pvc
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+      - equal:
+          path: spec.accessModes
+          value:
+            - ReadWriteOnce
+      - equal:
+          path: spec.resources.requests.storage
+          value: 1Gi
+      - notExists:
+          path: spec.storageClassName
+
+  - it: sets the storage class, size and access mode
+    template: pvc.yaml
+    set:
+      persistence:
+        enabled: true
+        size: 5Gi
+        storageClass: standard
+        accessMode: ReadWriteMany
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: standard
+      - equal:
+          path: spec.resources.requests.storage
+          value: 5Gi
+      - equal:
+          path: spec.accessModes
+          value:
+            - ReadWriteMany
+
+  - it: mounts the claim and replaces the pod with the Recreate strategy on a ReadWriteOnce volume
+    template: deployment.yaml
+    set:
+      persistence.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: bind-data
+            persistentVolumeClaim:
+              claimName: my-dns-bind9-pvc
+      - equal:
+          path: spec.strategy
+          value:
+            type: Recreate
+
+  - it: keeps the rolling update on a ReadWriteMany volume
+    template: deployment.yaml
+    set:
+      persistence:
+        enabled: true
+        accessMode: ReadWriteMany
+    asserts:
+      - notExists:
+          path: spec.strategy
+
+  - it: mounts an existing claim and creates none
+    set:
+      persistence:
+        enabled: true
+        existingClaim: my-bind-data
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: bind-data
+            persistentVolumeClaim:
+              claimName: my-bind-data
+        template: deployment.yaml
+
+  - it: adds extra volumes to the pod and extra mounts to the named container
+    template: deployment.yaml
+    set:
+      volumes:
+        - name: custom-config
+          configMap:
+            name: custom-config
+      volumeMounts:
+        - name: custom-config
+          mountPath: /etc/bind/custom.conf
+          subPath: custom.conf
+          readOnly: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: custom-config
+            configMap:
+              name: custom-config
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: custom-config
+            mountPath: /etc/bind/custom.conf
+            subPath: custom.conf
+            readOnly: true

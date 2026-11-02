@@ -1,3 +1,7 @@
+{{- $preStopSleep := int .Values.preStopSleepSeconds }}
+{{- if and (gt $preStopSleep 0) (le (int .Values.terminationGracePeriodSeconds) $preStopSleep) }}
+{{- fail (printf "terminationGracePeriodSeconds (%d) must be greater than preStopSleepSeconds (%d)" (int .Values.terminationGracePeriodSeconds) $preStopSleep) }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -39,6 +43,7 @@ spec:
       {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}
       {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- with .Values.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -79,6 +84,20 @@ spec:
           {{- with .Values.readinessProbe }}
           readinessProbe:
             {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if gt $preStopSleep 0 }}
+          # named keeps answering while the pod leaves the Service endpoints, so that queries routed to it in the
+          # meantime are not refused.
+          lifecycle:
+            preStop:
+              {{- if semverCompare ">=1.30-0" .Capabilities.KubeVersion.Version }}
+              sleep:
+                seconds: {{ $preStopSleep }}
+              {{- else }}
+              # The sleep action needs Kubernetes 1.30: run sleep from the image instead.
+              exec:
+                command: ["sleep", "{{ $preStopSleep }}"]
+              {{- end }}
           {{- end }}
           {{- with .Values.resources }}
           resources:

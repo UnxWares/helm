@@ -1,6 +1,6 @@
 # Bind9 Helm Chart
 
-![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 9.20](https://img.shields.io/badge/AppVersion-9.20-informational?style=flat-square)
+![Version: 2026.11.3](https://img.shields.io/badge/Version-2026.11.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 9.20](https://img.shields.io/badge/AppVersion-9.20-informational?style=flat-square)
 
 [ISC BIND 9](https://www.isc.org/bind/) is the reference implementation of the DNS protocol: it serves as an
 authoritative server, a recursive resolver or both. This chart runs `named` from the official
@@ -95,6 +95,9 @@ Known vulnerabilities of the images the charts of this repository can deploy are
 
 Kubernetes: `>=1.27.0-0`
 
+- **Kubernetes 1.27 to 1.29**: supported; the preStop hook (see
+  [Shutdown and rolling updates](#shutdown-and-rolling-updates)) runs `sleep` from the image there, and uses the
+  `sleep` lifecycle action from 1.30, where that action is enabled by default.
 - **Node architecture**: `linux/amd64`. The ISC image has no arm64 build: the default `nodeSelector`
   (`kubernetes.io/arch: amd64`) keeps the pods on amd64 nodes, so a cluster needs at least one (see
   [Scheduling](#scheduling)).
@@ -350,6 +353,27 @@ The liveness and readiness probes run `dig @127.0.0.1 version.bind txt chaos`, w
 answers, whatever the answer. Override `livenessProbe` and `readinessProbe` (or `metrics.livenessProbe` and
 `metrics.readinessProbe`) to change them.
 
+### Shutdown and rolling updates
+
+```yaml
+preStopSleepSeconds: 5             # 0 removes the preStop hook
+terminationGracePeriodSeconds: 30  # must be greater than preStopSleepSeconds
+```
+
+When a pod is deleted (rolling update, drain, scale down), Kubernetes removes it from the Service endpoints and stops
+its containers at the same time. Nodes and load balancers take a moment to stop sending it traffic: without a delay,
+named would already be gone and the queries sent to it meanwhile would be refused. A `preStop` hook keeps named
+answering for `preStopSleepSeconds` (5 s) before it gets SIGTERM; the exporter stops at once.
+
+- On Kubernetes 1.30 and later the hook is the `sleep` lifecycle action. On older clusters, where that action is off
+  by default, the chart renders an `exec` hook that runs `sleep` from the image instead (the ISC image has it; check
+  a custom `image.repository` does too). The chart picks the form from the Kubernetes version Helm reports: with
+  `helm template`, pass `--kube-version`.
+- `terminationGracePeriodSeconds` covers the sleep and the stop of named after SIGTERM: the chart refuses a value
+  that is not greater than `preStopSleepSeconds`.
+- With a single replica on a `ReadWriteOnce` volume (`Recreate` strategy), there is no other pod to take over: the
+  delay keeps the old pod answering a little longer, but the restart still interrupts DNS.
+
 ### NetworkPolicy
 
 ```yaml
@@ -561,6 +585,7 @@ Caveats:
     fsGroup: 53
     seccompProfile:
       type: RuntimeDefault
+    sysctls: null        # Helm merges maps: null removes the default sysctl
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
@@ -618,6 +643,14 @@ Run the test after an install:
 helm test my-dns -n dns-system --logs
 ```
 
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the security contexts of named, the exporter and the test pod (uid 53, the port sysctl, no
+capability, with both exporter images), the image selection (ISC tag, digest, exporter provider, repository, tag and
+digest), `named.conf` and the zone files, persistence and the `Recreate` strategy, the DNS and admin Services and
+their ports, the ServiceMonitor, the NetworkPolicy, the HPA and PDB, the preStop hook on both sides of Kubernetes 1.30
+and its grace period check, the release notes, and the examples of this README.
+
 ## Operations
 
 - **Backup**: zones from `bind.zones` live in your values: keep them in version control. With persistence, the PVC
@@ -638,6 +671,13 @@ kubectl exec -n dns-system deploy/my-dns-bind9 -c bind9 -- cat /etc/bind/named.c
 ```
 
 ## Upgrading
+
+### To 2026.11.3
+
+- **preStop hook**: pods keep answering for 5 s after they are asked to stop, so they take 5 s longer to go away
+  (see [Shutdown and rolling updates](#shutdown-and-rolling-updates)). `preStopSleepSeconds: 0` restores the previous
+  behavior. `terminationGracePeriodSeconds` (30, the Kubernetes default) is now set by the chart and must stay
+  greater than the sleep.
 
 ### To 2026.11.2
 
@@ -781,6 +821,7 @@ kubectl delete pvc -n dns-system my-dns-bind9-pvc
 | podDisruptionBudget.minAvailable | int | `1` | Minimum available pods. |
 | podLabels | object | `{}` | Pod labels. |
 | podSecurityContext | object | `{"fsGroup":53,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":53,"runAsNonRoot":true,"runAsUser":53,"seccompProfile":{"type":"RuntimeDefault"},"sysctls":[{"name":"net.ipv4.ip_unprivileged_port_start","value":"53"}]}` | Pod security context. named runs as the `bind` user of the image (uid 53) from the start, without any capability: the `net.ipv4.ip_unprivileged_port_start` sysctl (a safe sysctl, allowed by the `restricted` Pod Security Standard) lets it bind port 53 in the pod's network namespace. Keep the sysctl if you override this value. |
+| preStopSleepSeconds | int | `5` | Seconds named keeps answering after its pod is marked for deletion, before it gets SIGTERM (preStop hook). The pod leaves the Service endpoints while it stops: without this delay, queries still routed to it during a rolling update or a drain are refused. 0 removes the hook. The hook uses the `sleep` action on Kubernetes 1.30 and later, and runs `sleep` from the image on older clusters. |
 | priorityClassName | string | `""` | Priority class of the pods. |
 | readinessProbe | object | `{"exec":{"command":["dig","+time=2","+tries=1","@127.0.0.1","version.bind","txt","chaos"]},"initialDelaySeconds":5,"periodSeconds":10,"timeoutSeconds":5}` | Readiness probe. |
 | replicaCount | int | `1` | Number of Bind9 replicas. With `persistence.enabled` and a ReadWriteOnce volume, keep 1. |
@@ -805,6 +846,7 @@ kubectl delete pvc -n dns-system my-dns-bind9-pvc
 | serviceAccount.automount | bool | `false` | Bind9 never talks to the Kubernetes API: the token is not mounted. |
 | serviceAccount.create | bool | `true` | Create a dedicated service account. |
 | serviceAccount.name | string | `""` | Service account name (generated when empty). |
+| terminationGracePeriodSeconds | int | `30` | Grace period of the pods: the preStop sleep, then the time named has to stop after SIGTERM. Must be greater than `preStopSleepSeconds`. |
 | tolerations | list | `[]` | Tolerations. |
 | topologySpreadConstraints | list | `[]` | Topology spread constraints. |
 | volumeMounts | list | `[]` | Additional volumeMounts on the Bind9 container. |

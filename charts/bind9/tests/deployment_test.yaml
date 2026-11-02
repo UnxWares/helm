@@ -1,0 +1,254 @@
+suite: deployment, probes and scheduling
+templates:
+  # deployment.yaml includes configmap.yaml for its checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+release:
+  name: my-dns
+  namespace: dns-system
+tests:
+  - it: runs one replica with the default rolling update and the release selector
+    template: deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: my-dns-bind9
+      - equal:
+          path: spec.replicas
+          value: 1
+      - notExists:
+          path: spec.strategy
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: bind9
+            app.kubernetes.io/instance: my-dns
+
+  - it: uses the release name alone when it already contains the chart name
+    template: deployment.yaml
+    release:
+      name: bind9-public
+    asserts:
+      - equal:
+          path: metadata.name
+          value: bind9-public
+
+  - it: runs named in the foreground from its writable working directory, with the extra arguments
+    template: deployment.yaml
+    set:
+      bind.args: ["-4"]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].workingDir
+          value: /var/cache/bind
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - -g
+            - "-4"
+
+  - it: listens on DNS over TCP and UDP and on rndc in the pod
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
+            - name: dns-udp
+              containerPort: 53
+              protocol: UDP
+            - name: rndc
+              containerPort: 953
+              protocol: TCP
+
+  - it: probes named with dig on 127.0.0.1
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            exec:
+              command: [dig, +time=2, +tries=1, "@127.0.0.1", version.bind, txt, chaos]
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            exec:
+              command: [dig, +time=2, +tries=1, "@127.0.0.1", version.bind, txt, chaos]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+
+  - it: leaves a probe out when it is set to null
+    template: deployment.yaml
+    set:
+      livenessProbe: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  - it: requests 50m CPU and 64Mi and limits memory to 512Mi by default
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+
+  - it: runs the exporter against the local statistics channel, on the metrics port, with HTTP probes
+    template: deployment.yaml
+    set:
+      metrics.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].args
+          value:
+            - --bind.stats-url=http://127.0.0.1:8053/
+            - --bind.stats-groups=server,view
+            - --web.listen-address=:9119
+      - equal:
+          path: spec.template.spec.containers[1].ports
+          value:
+            - name: metrics
+              containerPort: 9119
+              protocol: TCP
+      - equal:
+          path: spec.template.spec.containers[1].readinessProbe.httpGet
+          value:
+            path: /
+            port: metrics
+            scheme: HTTP
+      - equal:
+          path: spec.template.spec.containers[1].resources
+          value:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+
+  - it: follows the statistics groups and the metrics port
+    template: deployment.yaml
+    set:
+      metrics:
+        enabled: true
+        statsGroups: [server, view, tasks]
+      service.ports.metrics: 9200
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --bind.stats-groups=server,view,tasks
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --web.listen-address=:9200
+      - equal:
+          path: spec.template.spec.containers[1].ports[0].containerPort
+          value: 9200
+
+  - it: keeps the pods on amd64 nodes by default (the ISC image is amd64 only)
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: amd64
+
+  - it: removes the architecture constraint with kubernetes.io/arch null and adds other keys
+    template: deployment.yaml
+    set:
+      nodeSelector:
+        kubernetes.io/arch: null
+        dns: "true"
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            dns: "true"
+
+  - it: places the pod with tolerations, affinity, topology spread and priority class
+    template: deployment.yaml
+    set:
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: dns
+          effect: NoSchedule
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: bind9
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: bind9
+      priorityClassName: system-cluster-critical
+    asserts:
+      - equal:
+          path: spec.template.spec.tolerations[0].value
+          value: dns
+      - equal:
+          path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight
+          value: 100
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].topologyKey
+          value: topology.kubernetes.io/zone
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: system-cluster-critical
+
+  - it: sets no topology spread constraint by default
+    template: deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.topologySpreadConstraints
+      - notExists:
+          path: spec.template.spec.affinity
+      - notExists:
+          path: spec.template.spec.priorityClassName
+
+  - it: adds pod labels and annotations next to the release labels
+    template: deployment.yaml
+    set:
+      podLabels:
+        team: dns
+      podAnnotations:
+        example.com/scrape: "false"
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: dns
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/instance"]
+          value: my-dns
+      - equal:
+          path: spec.template.metadata.annotations["example.com/scrape"]
+          value: "false"
+      - exists:
+          path: spec.template.metadata.annotations["checksum/config"]
+
+  - it: annotates the pod with the checksum of the ConfigMap, to restart it when named.conf or a zone changes
+    template: deployment.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/config"]
+          pattern: ^[0-9a-f]{64}$

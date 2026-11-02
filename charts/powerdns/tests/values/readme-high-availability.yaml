@@ -1,0 +1,16 @@
+# README example "High availability (PostgreSQL backend, 3 replicas)", as written in the README.
+backend:
+  type: gpgsql
+  gpgsql:
+    host: pdns-db-rw.databases.svc
+    dbname: pdns
+    user: pdns
+    existingSecret: pdns-db        # key: password
+    extraConnectionParameters: "sslmode=require"
+replicaCount: 3                    # or autoscaling.enabled: true
+podDisruptionBudget:
+  enabled: true
+recursor:
+  replicaCount: 2
+  podDisruptionBudget:
+    enabled: true

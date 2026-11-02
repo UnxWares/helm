@@ -1,0 +1,48 @@
+suite: release notes
+templates:
+  - NOTES.txt
+release:
+  name: my-dns
+  namespace: dns-system
+chart:
+  appVersion: "9.20"
+tests:
+  - it: shows the image actually deployed and the DNS Service
+    asserts:
+      - matchRegexRaw:
+          pattern: 'Bind9 is deployed \(docker\.io/internetsystemsconsortium/bind9:9\.20\)\.'
+      - matchRegexRaw:
+          pattern: 'DNS service: my-dns-bind9\.dns-system\.svc \(ClusterIP, ports 53/udp and 53/tcp\)'
+      - notMatchRegexRaw:
+          pattern: "Admin service"
+
+  - it: shows the digest when the image is pinned by digest
+    set:
+      image.digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    asserts:
+      - matchRegexRaw:
+          pattern: 'Bind9 is deployed \(docker\.io/internetsystemsconsortium/bind9@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\)\.'
+
+  - it: lists the admin Service ports that exist
+    set:
+      metrics.enabled: true
+      service.exposeRndc: true
+    asserts:
+      - matchRegexRaw:
+          pattern: 'Admin service: my-dns-bind9-admin\.dns-system\.svc \(ClusterIP\)\n  rndc:    port 953/tcp'
+      - matchRegexRaw:
+          pattern: '  metrics: port 9119/tcp, path /metrics'
+
+  - it: names the claim with persistence
+    set:
+      persistence.enabled: true
+    asserts:
+      - matchRegexRaw:
+          pattern: 'Dynamic zones and journals are stored in /var/lib/bind \(PVC: my-dns-bind9-pvc\)\.'
+
+  - it: warns that the ServiceMonitor needs metrics.enabled
+    set:
+      metrics.serviceMonitor.enabled: true
+    asserts:
+      - matchRegexRaw:
+          pattern: "NOTE: metrics.serviceMonitor.enabled has no effect while metrics.enabled is false."

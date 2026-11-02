@@ -1,0 +1,181 @@
+suite: security contexts and service account
+templates:
+  # the Deployments include their ConfigMap for the checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+  - recursor/configmap.yaml
+  - recursor/deployment.yaml
+  - serviceaccount.yaml
+  - tests/test-api.yaml
+release:
+  name: dns
+  namespace: dns
+tests:
+  - it: runs the server pod as uid and gid 953, non-root, with fsGroup 953 and the RuntimeDefault seccomp profile
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 953
+            runAsGroup: 953
+            fsGroup: 953
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: hardens the server and the sqlite-init containers (read-only root, no privilege escalation, no capability)
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: pdns
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value: &locked
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: sqlite-init
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext
+          value: *locked
+
+  - it: hardens both schema init containers of a SQL backend the same way
+    template: deployment.yaml
+    values:
+      - values/gpgsql.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 2
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext
+          value: *locked
+      - equal:
+          path: spec.template.spec.initContainers[1].securityContext
+          value: *locked
+
+  - it: runs the recursor with the same pod and container security contexts
+    template: recursor/deployment.yaml
+    values:
+      - values/recursor.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 953
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: keeps the same security contexts with the official images
+    values:
+      - values/recursor.yaml
+    set:
+      imageProvider: upstream
+    templates:
+      - deployment.yaml
+      - recursor/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 953
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop
+          value:
+            - ALL
+
+  - it: does not mount the service account token in the server and recursor pods
+    values:
+      - values/recursor.yaml
+    templates:
+      - deployment.yaml
+      - recursor/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: dns-powerdns
+
+  - it: creates a dedicated service account without token automount
+    template: serviceaccount.yaml
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: dns-powerdns
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: uses an existing service account when creation is disabled
+    set:
+      serviceAccount:
+        create: false
+        name: shared
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: serviceaccount.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: shared
+        template: deployment.yaml
+
+  - it: replaces the security contexts with the given ones
+    template: deployment.yaml
+    set:
+      podSecurityContext:
+        runAsUser: 2000
+      securityContext:
+        runAsUser: 2000
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 2000
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsUser
+          value: 2000
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.runAsUser
+          value: 2000
+
+  - it: hardens the helm test pod like the server and does not mount its token
+    template: tests/test-api.yaml
+    asserts:
+      - equal:
+          path: spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.securityContext.runAsUser
+          value: 953
+      - equal:
+          path: spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+      - equal:
+          path: spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL

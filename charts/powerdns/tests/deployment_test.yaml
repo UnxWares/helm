@@ -1,0 +1,436 @@
+suite: authoritative server Deployment
+templates:
+  # deployment.yaml includes configmap.yaml for its checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+release:
+  name: dns
+  namespace: dns
+tests:
+  - it: runs one replica of the authoritative component, recreated on its SQLite volume
+    template: deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: dns-powerdns
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.strategy
+          value:
+            type: Recreate
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: powerdns
+            app.kubernetes.io/instance: dns
+            app.kubernetes.io/component: authoritative
+
+  - it: ignores updateStrategy with SQLite and persistence
+    template: deployment.yaml
+    set:
+      updateStrategy:
+        type: RollingUpdate
+    asserts:
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+
+  - it: applies updateStrategy with a SQL backend (README example)
+    template: deployment.yaml
+    values:
+      - values/gpgsql.yaml
+    set:
+      replicaCount: 3
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+      - equal:
+          path: spec.strategy
+          value:
+            type: RollingUpdate
+            rollingUpdate:
+              maxUnavailable: 0
+
+  - it: leaves the replica count to the HPA
+    template: deployment.yaml
+    values:
+      - values/gpgsql.yaml
+    set:
+      autoscaling.enabled: true
+    asserts:
+      - notExists:
+          path: spec.replicas
+
+  - it: creates the SQLite database in sqlite-init when it is missing, on the data volume
+    template: deployment.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 1
+      - equal:
+          path: spec.template.spec.initContainers[0].env
+          value:
+            - name: DB
+              value: /var/lib/powerdns/pdns.sqlite3
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].command[2]
+          pattern: 'sqlite3 "\$DB" < /usr/local/share/doc/pdns/schema.sqlite3.sql'
+      - equal:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          value:
+            - name: data
+              mountPath: /var/lib/powerdns
+
+  - it: copies the PostgreSQL schema of the server version, then creates it when the domains table is missing
+    template: deployment.yaml
+    values:
+      - values/gpgsql.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: copy-schema
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value:
+            - cp
+            - /usr/local/share/doc/pdns/schema.pgsql.sql
+            - /schema/schema.sql
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: schema-init
+      - matchRegex:
+          path: spec.template.spec.initContainers[1].command[2]
+          pattern: "SELECT to_regclass\\('domains'\\) IS NOT NULL"
+
+  - it: copies the MySQL schema and passes the password through an options file on a private memory-backed /tmp
+    template: deployment.yaml
+    values:
+      - values/gmysql.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].command[1]
+          value: /usr/local/share/doc/pdns/schema.mysql.sql
+      - matchRegex:
+          path: spec.template.spec.initContainers[1].command[2]
+          pattern: "--defaults-extra-file=/tmp/client.cnf"
+      - equal:
+          path: spec.template.spec.initContainers[1].volumeMounts
+          value:
+            - name: schema
+              mountPath: /schema
+              readOnly: true
+            - name: schema-init-tmp
+              mountPath: /tmp
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: schema-init-tmp
+            emptyDir:
+              medium: Memory
+              sizeLimit: 1Mi
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: schema-init-tmp
+          any: true
+
+  - it: skips the schema init with backend.schemaInit.enabled false
+    template: deployment.yaml
+    values:
+      - values/gpgsql.yaml
+    set:
+      backend.schemaInit.enabled: false
+    asserts:
+      - notExists:
+          path: spec.template.spec.initContainers[0]
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: schema
+          any: true
+
+  - it: sizes the schema init containers and follows its timeout
+    template: deployment.yaml
+    values:
+      - values/gpgsql.yaml
+    set:
+      backend.schemaInit:
+        timeoutSeconds: 300
+        resources:
+          limits:
+            memory: 64Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[1].resources
+          value:
+            limits:
+              memory: 64Mi
+      - equal:
+          path: spec.template.spec.initContainers[0].resources
+          value:
+            limits:
+              memory: 64Mi
+      - contains:
+          path: spec.template.spec.initContainers[1].env
+          content:
+            name: TIMEOUT
+            value: "300"
+
+  - it: listens on DNS over UDP and TCP and on the webserver port
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: dns-udp
+              containerPort: 1053
+              protocol: UDP
+            - name: dns-tcp
+              containerPort: 1053
+              protocol: TCP
+            - name: http
+              containerPort: 8081
+              protocol: TCP
+
+  - it: has no http port without the webserver
+    template: deployment.yaml
+    set:
+      webserver.enabled: false
+      api.enabled: false
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers[0].ports
+          count: 2
+
+  - it: probes the DNS TCP port, with 150 seconds to start
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            tcpSocket:
+              port: dns-tcp
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 4
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            tcpSocket:
+              port: dns-tcp
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            tcpSocket:
+              port: dns-tcp
+            periodSeconds: 5
+            failureThreshold: 30
+
+  - it: leaves a probe out when it is set to null
+    template: deployment.yaml
+    set:
+      startupProbe: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].startupProbe
+      - exists:
+          path: spec.template.spec.containers[0].livenessProbe
+
+  - it: requests 50m CPU and 64Mi and limits memory to 512Mi by default
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+
+  - it: keeps the rendered secrets on a memory-backed volume and the configuration read-only
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: pdns-d
+            emptyDir:
+              medium: Memory
+              sizeLimit: 1Mi
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: config
+              mountPath: /etc/powerdns/pdns.conf
+              subPath: pdns.conf
+              readOnly: true
+            - name: config
+              mountPath: /etc/powerdns/templates.d/secrets.j2
+              subPath: secrets.j2
+              readOnly: true
+            - name: pdns-d
+              mountPath: /etc/powerdns/pdns.d
+            - name: run
+              mountPath: /run/pdns
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: /var/lib/powerdns
+
+  - it: mounts extraVolumeMounts in the server and in the schema init container
+    template: deployment.yaml
+    values:
+      - values/gpgsql.yaml
+    set:
+      extraVolumes:
+        - name: db-ca
+          secret:
+            secretName: pdns-db-ca
+      extraVolumeMounts:
+        - name: db-ca
+          mountPath: /etc/ssl/db
+          readOnly: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: db-ca
+            secret:
+              secretName: pdns-db-ca
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content: &ca
+            name: db-ca
+            mountPath: /etc/ssl/db
+            readOnly: true
+      - contains:
+          path: spec.template.spec.initContainers[1].volumeMounts
+          content: *ca
+
+  - it: spreads the replicas across nodes, then zones, without blocking scheduling
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints
+          value:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: powerdns
+                  app.kubernetes.io/instance: dns
+                  app.kubernetes.io/component: authoritative
+            - maxSkew: 1
+              topologyKey: topology.kubernetes.io/zone
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: powerdns
+                  app.kubernetes.io/instance: dns
+                  app.kubernetes.io/component: authoritative
+
+  - it: replaces the default spread with topologySpreadConstraints
+    template: deployment.yaml
+    set:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: authoritative
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.topologySpreadConstraints
+          count: 1
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].whenUnsatisfiable
+          value: DoNotSchedule
+
+  - it: sets no spread with spreadAcrossNodes false
+    template: deployment.yaml
+    set:
+      spreadAcrossNodes: false
+    asserts:
+      - notExists:
+          path: spec.template.spec.topologySpreadConstraints
+
+  - it: places the pod with nodeSelector, tolerations, affinity and priority class
+    template: deployment.yaml
+    set:
+      nodeSelector:
+        dns: "true"
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: dns
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: dns
+                    operator: Exists
+      priorityClassName: system-cluster-critical
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            dns: "true"
+      - equal:
+          path: spec.template.spec.tolerations[0].value
+          value: dns
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: dns
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: system-cluster-critical
+
+  - it: adds commonLabels to the Deployment and the pod, podLabels and podAnnotations to the pod
+    template: deployment.yaml
+    set:
+      commonLabels:
+        team: dns
+      podLabels:
+        tier: edge
+      podAnnotations:
+        example.com/scrape: "false"
+    asserts:
+      - equal:
+          path: metadata.labels.team
+          value: dns
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: dns
+      - equal:
+          path: spec.template.metadata.labels.tier
+          value: edge
+      - equal:
+          path: spec.template.metadata.annotations["example.com/scrape"]
+          value: "false"
+
+  - it: annotates the pod with checksums of the configuration and of the inline secrets, to restart it on change
+    template: deployment.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/config"]
+          pattern: ^[0-9a-f]{64}$
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/secret"]
+          pattern: ^[0-9a-f]{64}$

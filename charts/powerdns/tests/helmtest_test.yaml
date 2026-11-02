@@ -1,0 +1,91 @@
+suite: helm test pod
+templates:
+  - tests/test-api.yaml
+release:
+  name: dns
+  namespace: dns
+tests:
+  - it: is a test hook labelled as the test component of the release
+    asserts:
+      - isKind:
+          of: Pod
+      - equal:
+          path: metadata.name
+          value: dns-powerdns-test-api
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: test
+      - equal:
+          path: metadata.annotations["helm.sh/hook-delete-policy"]
+          value: before-hook-creation,hook-succeeded
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: test
+      - equal:
+          path: spec.restartPolicy
+          value: Never
+
+  - it: reads the server description through the API Service with a GET, and changes nothing
+    asserts:
+      - equal:
+          path: spec.containers[0].command[0]
+          value: python3
+      - matchRegex:
+          path: spec.containers[0].command[2]
+          pattern: 'url = "http://dns-powerdns-api:8081/api/v1/servers/localhost"'
+      - matchRegex:
+          path: spec.containers[0].command[2]
+          pattern: 'urllib\.request\.Request\(url, headers=\{"X-API-Key": os\.environ\["PDNS_API_KEY"\]\}\)'
+      - notMatchRegex:
+          path: spec.containers[0].command[2]
+          pattern: "method=|data="
+
+  - it: follows the API Service port
+    set:
+      apiService.port: 8443
+    asserts:
+      - matchRegex:
+          path: spec.containers[0].command[2]
+          pattern: "http://dns-powerdns-api:8443/api/v1/servers/localhost"
+
+  - it: gets the API key only, never the database password
+    values:
+      - values/gpgsql.yaml
+    asserts:
+      - equal:
+          path: spec.containers[0].env
+          value:
+            - name: PDNS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dns-powerdns
+                  key: api-key
+
+  - it: reads the key from an existing Secret
+    set:
+      api:
+        existingSecret: powerdns-api-key
+        existingSecretKey: key
+    asserts:
+      - equal:
+          path: spec.containers[0].env[0].valueFrom.secretKeyRef
+          value:
+            name: powerdns-api-key
+            key: key
+
+  - it: uses the pull secrets of the release
+    set:
+      imagePullSecrets:
+        - name: registry-credentials
+    asserts:
+      - equal:
+          path: spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+
+  - it: renders no test pod without the API
+    set:
+      api.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

@@ -1,0 +1,88 @@
+suite: NetworkPolicies
+templates:
+  - networkpolicy.yaml
+release:
+  name: dns
+  namespace: dns
+tests:
+  - it: renders no NetworkPolicy by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: keeps DNS open and lets only the release pods reach the server webserver
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec
+          value:
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/name: powerdns
+                app.kubernetes.io/instance: dns
+                app.kubernetes.io/component: authoritative
+            policyTypes:
+              - Ingress
+            ingress:
+              - ports:
+                  - port: dns-udp
+                    protocol: UDP
+                  - port: dns-tcp
+                    protocol: TCP
+              - ports:
+                  - port: http
+                    protocol: TCP
+                from:
+                  - podSelector:
+                      matchLabels:
+                        app.kubernetes.io/name: powerdns
+                        app.kubernetes.io/instance: dns
+
+  - it: adds the allowed peers to both components (README example)
+    set:
+      networkPolicy:
+        enabled: true
+        apiAllowedFrom:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: external-dns
+      recursor.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: spec.ingress[1].from
+          value:
+            - podSelector:
+                matchLabels:
+                  app.kubernetes.io/name: powerdns
+                  app.kubernetes.io/instance: dns
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: external-dns
+      - equal:
+          path: spec.podSelector.matchLabels["app.kubernetes.io/component"]
+          value: recursor
+        documentSelector:
+          path: metadata.name
+          value: dns-powerdns-recursor
+
+  - it: keeps only the DNS rule when the webservers are off
+    set:
+      networkPolicy.enabled: true
+      webserver.enabled: false
+      api.enabled: false
+      recursor:
+        enabled: true
+        webserver:
+          enabled: false
+    asserts:
+      - lengthEqual:
+          path: spec.ingress
+          count: 1
+      - equal:
+          path: spec.ingress[0].ports[0].port
+          value: dns-udp

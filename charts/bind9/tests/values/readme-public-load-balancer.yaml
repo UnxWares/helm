@@ -1,0 +1,14 @@
+# README example "Public authoritative server behind a load balancer", as written in the README.
+replicaCount: 3
+service:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+podDisruptionBudget:
+  enabled: true
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: bind9

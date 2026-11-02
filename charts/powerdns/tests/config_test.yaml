@@ -1,0 +1,142 @@
+suite: pdns.conf and the secrets template
+templates:
+  - configmap.yaml
+release:
+  name: dns
+  namespace: dns
+tests:
+  - it: writes the SQLite settings, the webserver and the API, and no secret
+    asserts:
+      - equal:
+          path: data["pdns.conf"]
+          value: |
+            # Managed by Helm. Secrets (API key, database password) are not stored here:
+            # they are rendered at startup into /etc/powerdns/pdns.d/secrets.conf.
+            local-address=0.0.0.0:1053,[::]:1053
+            socket-dir=/run/pdns
+            include-dir=/etc/powerdns/pdns.d
+            launch=gsqlite3
+            gsqlite3-database=/var/lib/powerdns/pdns.sqlite3
+            gsqlite3-dnssec=yes
+            webserver=yes
+            webserver-address=0.0.0.0
+            webserver-port=8081
+            webserver-allow-from=127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7
+            api=yes
+            loglevel=4
+            version-string=anonymous
+
+  - it: templates the API key only, from the environment
+    asserts:
+      - equal:
+          path: data["secrets.j2"]
+          value: |
+            api-key={{ PDNS_API_KEY }}
+
+  - it: writes the PostgreSQL settings, and templates its password next to the API key
+    values:
+      - values/gpgsql.yaml
+    set:
+      backend.dnssec: false
+    asserts:
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^launch=gpgsql\\ngpgsql-host=pdns-db-rw.databases.svc\\ngpgsql-port=5432\\ngpgsql-dbname=pdns\\ngpgsql-user=pdns\\ngpgsql-dnssec=no\\ngpgsql-extra-connection-parameters=sslmode=prefer$"
+      - notMatchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^gpgsql-password|db-pass"
+      - equal:
+          path: data["secrets.j2"]
+          value: |
+            api-key={{ PDNS_API_KEY }}
+            gpgsql-password={{ PDNS_DB_PASSWORD }}
+
+  - it: writes the MySQL settings and templates its password
+    values:
+      - values/gmysql.yaml
+    set:
+      api.enabled: false
+    asserts:
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^launch=gmysql\\ngmysql-host=mariadb.databases.svc\\ngmysql-port=3306\\ngmysql-dbname=pdns\\ngmysql-user=pdns\\ngmysql-dnssec=yes$"
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^api=no$"
+      - equal:
+          path: data["secrets.j2"]
+          value: |
+            gmysql-password={{ PDNS_DB_PASSWORD }}
+
+  - it: turns the webserver off
+    set:
+      webserver.enabled: false
+      api.enabled: false
+    asserts:
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^webserver=no\\napi=no$"
+
+  - it: follows the listen addresses, port and webserver settings
+    set:
+      dns:
+        containerPort: 5300
+        listenAddresses: [0.0.0.0]
+      webserver:
+        port: 9000
+        allowFrom: [10.42.0.0/16]
+    asserts:
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^local-address=0.0.0.0:5300$"
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^webserver-port=9000\\nwebserver-allow-from=10.42.0.0/16$"
+
+  - it: appends the config entries and extraConfig after the chart settings (README example)
+    set:
+      config:
+        default-soa-content: ns1.example.com. hostmaster.@ 0 10800 3600 604800 3600
+        primary: "yes"
+        allow-axfr-ips: 192.0.2.0/24
+      extraConfig: |
+        # Raw lines appended to pdns.conf
+        max-tcp-connections=50
+    asserts:
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^api=yes\\nallow-axfr-ips=192.0.2.0/24\\ndefault-soa-content=ns1.example.com. hostmaster.@ 0 10800 3600 604800 3600\\nloglevel=4\\nprimary=yes\\nversion-string=anonymous\\n# Raw lines appended to pdns.conf\\nmax-tcp-connections=50$"
+
+  - it: keeps the PowerDNS zone cache default with one replica
+    asserts:
+      - notMatchRegex:
+          path: data["pdns.conf"]
+          pattern: zone-cache-refresh-interval
+
+  - it: refreshes the zone cache every 30 seconds with several replicas
+    values:
+      - values/gpgsql.yaml
+    set:
+      replicaCount: 3
+    asserts:
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^zone-cache-refresh-interval=30$"
+
+  - it: refreshes the zone cache every 30 seconds with the HPA
+    values:
+      - values/gpgsql.yaml
+    set:
+      autoscaling.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^zone-cache-refresh-interval=30$"
+
+  - it: writes zoneCacheRefreshInterval as given, 0 included (cache disabled)
+    set:
+      zoneCacheRefreshInterval: 0
+    asserts:
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^zone-cache-refresh-interval=0$"

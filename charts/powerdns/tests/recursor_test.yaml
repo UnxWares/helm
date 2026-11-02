@@ -1,0 +1,223 @@
+suite: recursor
+templates:
+  - recursor/configmap.yaml
+  - recursor/deployment.yaml
+release:
+  name: dns
+  namespace: dns
+tests:
+  - it: renders no recursor by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: forwards the authoritative zones to the address Kubernetes injects for the server Service, brackets for IPv6
+    template: recursor/configmap.yaml
+    values:
+      - values/recursor.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: dns-powerdns-recursor
+      - matchRegex:
+          path: data["recursor.j2"]
+          pattern: 'forward_zones:\n  - forwarders:\n    - ''\{\{ \("\[" ~ DNS_POWERDNS_SERVICE_HOST ~ "\]"\) if ":" in DNS_POWERDNS_SERVICE_HOST\s+else DNS_POWERDNS_SERVICE_HOST \}\}:53''\n    zone: example\.com'
+
+  - it: forwards to service.clusterIP when it is set
+    template: recursor/configmap.yaml
+    values:
+      - values/recursor.yaml
+    set:
+      service.clusterIP: 10.96.0.53
+    asserts:
+      - matchRegex:
+          path: data["recursor.j2"]
+          pattern: "forwarders:\\n    - 10\\.96\\.0\\.53:53\\n    zone: example\\.com"
+
+  - it: writes an IPv6 service.clusterIP in brackets
+    template: recursor/configmap.yaml
+    values:
+      - values/recursor.yaml
+    set:
+      service.clusterIP: fd00:10:96::53
+    asserts:
+      - matchRegex:
+          path: data["recursor.j2"]
+          pattern: "forwarders:\\n    - '\\[fd00:10:96::53\\]:53'\\n    zone: example\\.com"
+
+  - it: adds the authoritative zones as negative trust anchors unless they are validated
+    template: recursor/configmap.yaml
+    values:
+      - values/recursor.yaml
+    asserts:
+      - matchRegex:
+          path: data["recursor.j2"]
+          pattern: "negative_trustanchors:\\n  - name: example\\.com\\n    reason: served by the PowerDNS authoritative server of this release\\n  validation: process"
+
+  - it: adds no negative trust anchor with validateAuthoritativeZones
+    template: recursor/configmap.yaml
+    values:
+      - values/recursor.yaml
+    set:
+      recursor.validateAuthoritativeZones: true
+    asserts:
+      - notMatchRegex:
+          path: data["recursor.j2"]
+          pattern: negative_trustanchors
+
+  - it: adds other forward zones and forwards everything else to upstream resolvers
+    template: recursor/configmap.yaml
+    set:
+      recursor:
+        enabled: true
+        forwardZones:
+          - zone: corp.example
+            forwarders: ["10.0.0.53:53"]
+        forwardZonesRecurse: ["9.9.9.9:53"]
+    asserts:
+      - matchRegex:
+          path: data["recursor.j2"]
+          pattern: "forward_zones:\\n  - forwarders:\\n    - 10\\.0\\.0\\.53:53\\n    zone: corp\\.example\\n  forward_zones_recurse:\\n  - forwarders:\\n    - 9\\.9\\.9\\.9:53\\n    zone: \\."
+      - notMatchRegex:
+          path: data["recursor.j2"]
+          pattern: negative_trustanchors
+
+  - it: listens on the container port, answers the allowed clients only, and serves its webserver on 8082
+    template: recursor/configmap.yaml
+    values:
+      - values/recursor.yaml
+    asserts:
+      - matchRegex:
+          path: data["recursor.j2"]
+          pattern: "incoming:\\n  allow_from:\\n  - 127\\.0\\.0\\.0/8\\n  - ::1/128\\n  - 10\\.0\\.0\\.0/8\\n  - 172\\.16\\.0\\.0/12\\n  - 192\\.168\\.0\\.0/16\\n  - fc00::/7\\n  listen:\\n  - 0\\.0\\.0\\.0\\n  - '::'\\n  port: 1053"
+      - matchRegex:
+          path: data["recursor.j2"]
+          pattern: "webservice:\\n  address: 0\\.0\\.0\\.0\\n  allow_from:\\n(  - .*\\n)+  port: 8082\\n  webserver: true"
+
+  - it: merges recursor.config into the generated settings (README example)
+    template: recursor/configmap.yaml
+    values:
+      - values/recursor.yaml
+    set:
+      recursor.config:
+        logging:
+          loglevel: 6
+        recordcache:
+          max_entries: 1000000
+        incoming:
+          port: 5300
+    asserts:
+      - matchRegex:
+          path: data["recursor.j2"]
+          pattern: "logging:\\n  loglevel: 6"
+      - matchRegex:
+          path: data["recursor.j2"]
+          pattern: "recordcache:\\n  max_entries: 1000000"
+      - matchRegex:
+          path: data["recursor.j2"]
+          pattern: "listen:\\n  - 0\\.0\\.0\\.0\\n  - '::'\\n  port: 5300\\n"
+      - matchRegex:
+          path: data["recursor.j2"]
+          pattern: "allow_from:\\n  - 127\\.0\\.0\\.0/8"
+
+  - it: runs the recursor from its rendered settings, with the Service variables injected
+    template: recursor/deployment.yaml
+    values:
+      - values/recursor.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: dns-powerdns-recursor
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: powerdns
+            app.kubernetes.io/instance: dns
+            app.kubernetes.io/component: recursor
+      - equal:
+          path: spec.template.spec.enableServiceLinks
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - --config-dir=/etc/powerdns/recursor.d
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/config"]
+          pattern: ^[0-9a-f]{64}$
+
+  - it: listens on DNS and on the webserver port, probed on DNS over TCP
+    template: recursor/deployment.yaml
+    values:
+      - values/recursor.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: dns-udp
+              containerPort: 1053
+              protocol: UDP
+            - name: dns-tcp
+              containerPort: 1053
+              protocol: TCP
+            - name: http
+              containerPort: 8082
+              protocol: TCP
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            tcpSocket:
+              port: dns-tcp
+            periodSeconds: 10
+            timeoutSeconds: 3
+
+  - it: writes its settings to small emptyDirs and mounts its template read-only
+    template: recursor/deployment.yaml
+    values:
+      - values/recursor.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: config
+              mountPath: /etc/powerdns/templates.d/recursor.j2
+              subPath: recursor.j2
+              readOnly: true
+            - name: recursor-d
+              mountPath: /etc/powerdns/recursor.d
+            - name: run
+              mountPath: /run/pdns-recursor
+            - name: tmp
+              mountPath: /tmp
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: recursor-d
+            emptyDir:
+              sizeLimit: 1Mi
+
+  - it: spreads the recursor replicas on their own label, and uses its own scheduling values
+    template: recursor/deployment.yaml
+    values:
+      - values/recursor.yaml
+    set:
+      nodeSelector:
+        ignored: "true"
+      recursor:
+        replicaCount: 2
+        nodeSelector:
+          dns: recursor
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            dns: recursor
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].labelSelector.matchLabels["app.kubernetes.io/component"]
+          value: recursor

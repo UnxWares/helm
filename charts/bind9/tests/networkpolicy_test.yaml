@@ -1,0 +1,83 @@
+suite: NetworkPolicy
+templates:
+  - networkpolicy.yaml
+release:
+  name: my-dns
+  namespace: dns-system
+tests:
+  - it: renders no NetworkPolicy by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: keeps DNS open to everyone and lets nobody reach rndc or the metrics without allowed peers
+    set:
+      networkPolicy.enabled: true
+      metrics.enabled: true
+    asserts:
+      - isKind:
+          of: NetworkPolicy
+      - equal:
+          path: spec
+          value:
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/name: bind9
+                app.kubernetes.io/instance: my-dns
+            policyTypes:
+              - Ingress
+            ingress:
+              - ports:
+                  - port: dns-udp
+                    protocol: UDP
+                  - port: dns-tcp
+                    protocol: TCP
+
+  - it: opens rndc and the metrics to the allowed peers only (README example)
+    set:
+      networkPolicy:
+        enabled: true
+        adminAllowedFrom:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: monitoring
+      metrics.enabled: true
+    asserts:
+      - equal:
+          path: spec.ingress[1]
+          value:
+            ports:
+              - port: rndc
+                protocol: TCP
+              - port: metrics
+                protocol: TCP
+            from:
+              - namespaceSelector:
+                  matchLabels:
+                    kubernetes.io/metadata.name: monitoring
+
+  - it: leaves the metrics port out of the admin rule without metrics.enabled
+    set:
+      networkPolicy:
+        enabled: true
+        adminAllowedFrom:
+          - podSelector:
+              matchLabels:
+                role: dns-admin
+    asserts:
+      - equal:
+          path: spec.ingress[1].ports
+          value:
+            - port: rndc
+              protocol: TCP
+
+  - it: restricts ingress only, never egress (recursion, transfers and NOTIFY need it)
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - equal:
+          path: spec.policyTypes
+          value:
+            - Ingress
+      - notExists:
+          path: spec.egress

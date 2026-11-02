@@ -289,6 +289,11 @@
             "description": "Pod security context. named runs as the `bind` user of the image (uid 53) from the start, without any capability: the `net.ipv4.ip_unprivileged_port_start` sysctl (a safe sysctl, allowed by the `restricted` Pod Security Standard) lets it bind port 53 in the pod's network namespace. Keep the sysctl if you override this value.",
             "type": "object"
         },
+        "preStopSleepSeconds": {
+            "description": "Seconds named keeps answering after its pod is marked for deletion, before it gets SIGTERM (preStop hook). The pod leaves the Service endpoints while it stops: without this delay, queries still routed to it during a rolling update or a drain are refused. 0 removes the hook. The hook uses the `sleep` action on Kubernetes 1.30 and later, and runs `sleep` from the image on older clusters.",
+            "type": "integer",
+            "minimum": 0
+        },
         "priorityClassName": {
             "description": "Priority class of the pods.",
             "type": "string"
@@ -416,6 +421,11 @@
                     "type": "string"
                 }
             }
+        },
+        "terminationGracePeriodSeconds": {
+            "description": "Grace period of the pods: the preStop sleep, then the time named has to stop after SIGTERM. Must be greater than `preStopSleepSeconds`.",
+            "type": "integer",
+            "minimum": 0
         },
         "tolerations": {
             "description": "Tolerations.",

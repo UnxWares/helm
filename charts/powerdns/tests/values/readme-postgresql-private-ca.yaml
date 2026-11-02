@@ -1,0 +1,15 @@
+# README section "PostgreSQL": server certificate checked against a private CA, as written in the README.
+backend:
+  type: gpgsql
+  gpgsql:
+    host: pdns-db-rw.databases.svc
+    existingSecret: pdns-db
+    extraConnectionParameters: "sslmode=verify-full sslrootcert=/etc/ssl/db/ca.crt"
+extraVolumes:
+  - name: db-ca
+    secret:
+      secretName: pdns-db-ca
+extraVolumeMounts:
+  - name: db-ca
+    mountPath: /etc/ssl/db
+    readOnly: true

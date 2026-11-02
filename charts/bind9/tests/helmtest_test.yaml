@@ -1,0 +1,72 @@
+suite: helm test pod
+templates:
+  - tests/test-dns.yaml
+release:
+  name: my-dns
+  namespace: dns-system
+tests:
+  - it: labels the pod as the test component of the release
+    asserts:
+      - isKind:
+          of: Pod
+      - equal:
+          path: metadata.name
+          value: my-dns-bind9-test-dns
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: test
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: my-dns
+
+  - it: queries version.bind through the Service over UDP then TCP, read-only
+    asserts:
+      - equal:
+          path: spec.containers[0].command[0]
+          value: sh
+      - matchRegex:
+          path: spec.containers[0].command[2]
+          pattern: "(?m)^query \\+time=3 \\+tries=1 @my-dns-bind9 -p 53$"
+      - matchRegex:
+          path: spec.containers[0].command[2]
+          pattern: "(?m)^query \\+tcp \\+time=3 \\+tries=1 @my-dns-bind9 -p 53$"
+      - matchRegex:
+          path: spec.containers[0].command[2]
+          pattern: 'until dig "\$@" version.bind txt chaos; do'
+      - notMatchRegex:
+          path: spec.containers[0].command[2]
+          pattern: "nsupdate|rndc|axfr"
+
+  - it: follows the Service ports
+    set:
+      service.ports.dnsUdp: 5353
+      service.ports.dnsTcp: 5354
+    asserts:
+      - matchRegex:
+          path: spec.containers[0].command[2]
+          pattern: "(?m)^query \\+time=3 \\+tries=1 @my-dns-bind9 -p 5353$"
+      - matchRegex:
+          path: spec.containers[0].command[2]
+          pattern: "(?m)^query \\+tcp \\+time=3 \\+tries=1 @my-dns-bind9 -p 5354$"
+
+  - it: uses the pull secrets, node selector and tolerations of the release (same image, same architecture)
+    set:
+      imagePullSecrets:
+        - name: registry-credentials
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: dns
+          effect: NoSchedule
+    asserts:
+      - equal:
+          path: spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+      - equal:
+          path: spec.nodeSelector
+          value:
+            kubernetes.io/arch: amd64
+      - equal:
+          path: spec.tolerations[0].value
+          value: dns

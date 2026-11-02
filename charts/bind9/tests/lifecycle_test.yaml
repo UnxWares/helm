@@ -1,0 +1,112 @@
+suite: preStop sleep and grace period
+templates:
+  # deployment.yaml includes configmap.yaml for its checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+release:
+  name: my-dns
+  namespace: dns-system
+# The native sleep action is enabled by default since Kubernetes 1.30 (beta, GA in 1.34).
+capabilities:
+  majorVersion: "1"
+  minorVersion: "31"
+tests:
+  - it: keeps named answering 5 seconds with the sleep action before SIGTERM, within a 30 second grace period
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle
+          value:
+            preStop:
+              sleep:
+                seconds: 5
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 30
+
+  - it: uses the sleep action on Kubernetes 1.30, the first version that enables it by default
+    template: deployment.yaml
+    capabilities:
+      majorVersion: "1"
+      minorVersion: "30"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.sleep.seconds
+          value: 5
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec
+
+  - it: runs sleep from the image on Kubernetes 1.29 and older, where the sleep action is off
+    template: deployment.yaml
+    capabilities:
+      majorVersion: "1"
+      minorVersion: "29"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle
+          value:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+
+  - it: follows preStopSleepSeconds and terminationGracePeriodSeconds
+    template: deployment.yaml
+    set:
+      preStopSleepSeconds: 15
+      terminationGracePeriodSeconds: 60
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.sleep.seconds
+          value: 15
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 60
+
+  - it: removes the hook with preStopSleepSeconds 0 and keeps the grace period
+    template: deployment.yaml
+    set:
+      preStopSleepSeconds: 0
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 30
+
+  - it: accepts any grace period when the hook is off
+    template: deployment.yaml
+    set:
+      preStopSleepSeconds: 0
+      terminationGracePeriodSeconds: 2
+    asserts:
+      - notFailedTemplate: {}
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 2
+
+  - it: refuses a grace period that is not longer than the sleep
+    template: deployment.yaml
+    set:
+      preStopSleepSeconds: 30
+    asserts:
+      - failedTemplate:
+          errorMessage: terminationGracePeriodSeconds (30) must be greater than preStopSleepSeconds (30)
+
+  - it: refuses a grace period shorter than the sleep
+    template: deployment.yaml
+    set:
+      preStopSleepSeconds: 10
+      terminationGracePeriodSeconds: 5
+    asserts:
+      - failedTemplate:
+          errorMessage: terminationGracePeriodSeconds (5) must be greater than preStopSleepSeconds (10)
+
+  - it: adds no hook to the exporter, which is not behind the DNS Service
+    template: deployment.yaml
+    set:
+      metrics.enabled: true
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].lifecycle
+      - notExists:
+          path: spec.template.spec.containers[1].lifecycle

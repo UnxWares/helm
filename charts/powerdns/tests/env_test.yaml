@@ -1,0 +1,185 @@
+suite: container environment and secret references
+templates:
+  # the Deployments include their ConfigMap for the checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+  - recursor/configmap.yaml
+  - recursor/deployment.yaml
+release:
+  name: dns
+  namespace: dns
+tests:
+  - it: gives the server the API key from the release Secret and asks the image to render secrets.j2
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: TEMPLATE_FILES
+              value: secrets
+            - name: PDNS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dns-powerdns
+                  key: api-key
+
+  - it: renders no template and passes no secret without the API on SQLite
+    template: deployment.yaml
+    set:
+      api.enabled: false
+    asserts:
+      - isNullOrEmpty:
+          path: spec.template.spec.containers[0].env
+
+  - it: reads the API key from an existing Secret
+    template: deployment.yaml
+    set:
+      api:
+        existingSecret: powerdns-api-key
+        existingSecretKey: key
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PDNS_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: powerdns-api-key
+                key: key
+
+  - it: gives the server the database password, and the schema init the database password only
+    template: deployment.yaml
+    values:
+      - values/gpgsql.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PDNS_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: dns-powerdns
+                key: db-password
+      - equal:
+          path: spec.template.spec.initContainers[1].env
+          value:
+            - name: TIMEOUT
+              value: "120"
+            - name: DB_HOST
+              value: pdns-db-rw.databases.svc
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: pdns
+            - name: DB_USER
+              value: pdns
+            - name: DB_EXTRA
+              value: sslmode=prefer
+            - name: PDNS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dns-powerdns
+                  key: db-password
+
+  - it: reads the database password from an existing Secret and key, in both containers
+    template: deployment.yaml
+    values:
+      - values/gmysql.yaml
+    set:
+      backend.gmysql:
+        existingSecret: pdns-db
+        existingSecretPasswordKey: mysql-password
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: &password
+            name: PDNS_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: pdns-db
+                key: mysql-password
+      - contains:
+          path: spec.template.spec.initContainers[1].env
+          content: *password
+      - notContains:
+          path: spec.template.spec.initContainers[1].env
+          content:
+            name: DB_EXTRA
+          any: true
+
+  - it: never passes a secret as a plain value
+    template: deployment.yaml
+    values:
+      - values/gpgsql.yaml
+    set:
+      api.key: an-api-key-given-by-the-user
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            value: an-api-key-given-by-the-user
+          any: true
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            value: db-pass
+          any: true
+      - notContains:
+          path: spec.template.spec.initContainers[1].env
+          content:
+            name: PDNS_API_KEY
+          any: true
+
+  - it: lets the MariaDB client of gmysql encrypt without checking a self-signed server certificate
+    template: deployment.yaml
+    values:
+      - values/gmysql.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MARIADB_TLS_DISABLE_PEER_VERIFICATION
+            value: "1"
+
+  - it: checks the MySQL server certificate with verifyServerCertificate
+    template: deployment.yaml
+    values:
+      - values/gmysql.yaml
+    set:
+      backend.gmysql.verifyServerCertificate: true
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MARIADB_TLS_DISABLE_PEER_VERIFICATION
+          any: true
+
+  - it: appends extraEnv to the server container
+    template: deployment.yaml
+    set:
+      extraEnv:
+        - name: TZ
+          value: Europe/Paris
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TZ
+            value: Europe/Paris
+
+  - it: gives the recursor its template name and extraEnv, and no secret
+    template: recursor/deployment.yaml
+    values:
+      - values/recursor.yaml
+    set:
+      recursor.extraEnv:
+        - name: TZ
+          value: Europe/Paris
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: TEMPLATE_FILES
+              value: recursor
+            - name: TZ
+              value: Europe/Paris

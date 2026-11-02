@@ -1,0 +1,101 @@
+suite: required values
+templates:
+  - configmap.yaml
+release:
+  name: dns
+  namespace: dns
+tests:
+  - it: renders with the default values (SQLite, API with a generated key)
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: dns-powerdns
+
+  - it: refuses several replicas with the SQLite backend
+    set:
+      replicaCount: 2
+    asserts:
+      - failedTemplate:
+          errorMessage: "the gsqlite3 backend supports a single replica: use gpgsql or gmysql to scale out"
+
+  - it: refuses the HPA with the SQLite backend
+    set:
+      autoscaling.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "the gsqlite3 backend supports a single replica: use gpgsql or gmysql to scale out"
+
+  - it: requires the PostgreSQL host
+    set:
+      backend:
+        type: gpgsql
+        gpgsql:
+          password: db-pass
+    asserts:
+      - failedTemplate:
+          errorMessage: backend.gpgsql.host is required
+
+  - it: requires the MySQL password or Secret
+    set:
+      backend:
+        type: gmysql
+        gmysql:
+          host: mariadb.databases.svc
+    asserts:
+      - failedTemplate:
+          errorMessage: backend.gmysql.password or backend.gmysql.existingSecret is required
+
+  - it: accepts an existing Secret instead of the database password
+    set:
+      backend:
+        type: gpgsql
+        gpgsql:
+          host: pdns-db-rw.databases.svc
+          existingSecret: pdns-db
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: lets a SQL backend scale out
+    values:
+      - values/gpgsql.yaml
+    set:
+      replicaCount: 3
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: requires the webserver for the API
+    set:
+      webserver.enabled: false
+    asserts:
+      - failedTemplate:
+          errorMessage: api.enabled requires webserver.enabled
+
+  - it: accepts no webserver without the API
+    set:
+      webserver.enabled: false
+      api.enabled: false
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: rejects an unknown backend (schema)
+    set:
+      backend.type: gldap
+    asserts:
+      - failedTemplate:
+          errorPattern: backend.type
+
+  - it: rejects an unknown image provider (schema)
+    set:
+      imageProvider: dockerhub
+    asserts:
+      - failedTemplate:
+          errorPattern: imageProvider
+
+  - it: rejects a negative preStop sleep (schema)
+    set:
+      recursor.preStopSleepSeconds: -1
+    asserts:
+      - failedTemplate:
+          errorPattern: preStopSleepSeconds

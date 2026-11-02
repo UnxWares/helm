@@ -1,0 +1,51 @@
+suite: release notes
+templates:
+  - NOTES.txt
+release:
+  name: dns
+  namespace: dns
+chart:
+  appVersion: 5.1.5
+tests:
+  - it: shows the backend, the image actually deployed, the Services and how to read the generated key
+    asserts:
+      - matchRegexRaw:
+          pattern: 'PowerDNS Authoritative Server is deployed \(gsqlite3 backend, ghcr\.io/unxwares/pdns-auth:5\.1\.5\)\.'
+      - matchRegexRaw:
+          pattern: 'DNS service: dns-powerdns\.dns\.svc \(ClusterIP, port 53/udp\+tcp\)'
+      - matchRegexRaw:
+          pattern: 'REST API: http://dns-powerdns-api\.dns\.svc:8081/api/v1'
+      - matchRegexRaw:
+          pattern: "kubectl get secret -n dns dns-powerdns -o jsonpath='\\{\\.data\\.api-key\\}' \\| base64 -d"
+      - matchRegexRaw:
+          pattern: "NOTE: the API key was generated\\."
+
+  - it: shows the digest of the images and the recursor Services
+    set:
+      image.digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      recursor.enabled: true
+    asserts:
+      - matchRegexRaw:
+          pattern: 'ghcr\.io/unxwares/pdns-auth@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\)\.'
+      - matchRegexRaw:
+          pattern: 'Recursor: dns-powerdns-recursor\.dns\.svc \(ClusterIP, port 53, ghcr\.io/unxwares/pdns-recursor:5\.4\.9\)'
+      - matchRegexRaw:
+          pattern: 'Recursor webserver \(API, /metrics\): http://dns-powerdns-recursor-api\.dns\.svc:8082'
+
+  - it: reads the key from the existing Secret and drops the GitOps note
+    set:
+      api:
+        existingSecret: powerdns-api-key
+        existingSecretKey: key
+    asserts:
+      - matchRegexRaw:
+          pattern: "kubectl get secret -n dns powerdns-api-key -o jsonpath='\\{\\.data\\.key\\}' \\| base64 -d"
+      - notMatchRegexRaw:
+          pattern: "NOTE: the API key was generated"
+
+  - it: warns that zones are lost without persistence on SQLite
+    set:
+      persistence.enabled: false
+    asserts:
+      - matchRegexRaw:
+          pattern: "WARNING: persistence is disabled, zones are lost when the pod restarts\\."

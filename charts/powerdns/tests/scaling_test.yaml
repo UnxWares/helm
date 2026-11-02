@@ -1,0 +1,121 @@
+suite: autoscaling and disruption budgets
+templates:
+  - hpa.yaml
+  - pdb.yaml
+  - recursor/hpa.yaml
+  - recursor/pdb.yaml
+release:
+  name: dns
+  namespace: dns
+values:
+  - values/gpgsql.yaml
+tests:
+  - it: renders none by default
+    set:
+      recursor.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: scales the server Deployment on CPU, and on memory when set
+    template: hpa.yaml
+    set:
+      autoscaling.enabled: true
+      autoscaling.targetMemoryUtilizationPercentage: 70
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - equal:
+          path: spec.scaleTargetRef
+          value:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: dns-powerdns
+      - equal:
+          path: spec.minReplicas
+          value: 2
+      - equal:
+          path: spec.maxReplicas
+          value: 6
+      - equal:
+          path: spec.metrics
+          value:
+            - type: Resource
+              resource:
+                name: cpu
+                target:
+                  type: Utilization
+                  averageUtilization: 75
+            - type: Resource
+              resource:
+                name: memory
+                target:
+                  type: Utilization
+                  averageUtilization: 70
+
+  - it: scales the recursor Deployment on its own
+    template: recursor/hpa.yaml
+    set:
+      recursor:
+        enabled: true
+        autoscaling:
+          enabled: true
+          maxReplicas: 4
+    asserts:
+      - equal:
+          path: spec.scaleTargetRef.name
+          value: dns-powerdns-recursor
+      - equal:
+          path: spec.maxReplicas
+          value: 4
+
+  - it: keeps one server pod available by default
+    template: pdb.yaml
+    set:
+      podDisruptionBudget.enabled: true
+    asserts:
+      - equal:
+          path: spec.minAvailable
+          value: 1
+      - notExists:
+          path: spec.maxUnavailable
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: powerdns
+            app.kubernetes.io/instance: dns
+            app.kubernetes.io/component: authoritative
+
+  - it: uses maxUnavailable instead of minAvailable for the recursor when set
+    template: recursor/pdb.yaml
+    set:
+      recursor:
+        enabled: true
+        podDisruptionBudget:
+          enabled: true
+          maxUnavailable: 1
+    asserts:
+      - equal:
+          path: spec.maxUnavailable
+          value: 1
+      - notExists:
+          path: spec.minAvailable
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/component"]
+          value: recursor
+
+  - it: renders no recursor HPA or PDB without the recursor
+    set:
+      recursor:
+        enabled: false
+        autoscaling:
+          enabled: true
+        podDisruptionBudget:
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: recursor/hpa.yaml
+      - hasDocuments:
+          count: 0
+        template: recursor/pdb.yaml

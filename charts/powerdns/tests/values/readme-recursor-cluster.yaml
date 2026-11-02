@@ -1,0 +1,7 @@
+# README example "Recursor for the cluster", as written in the README.
+recursor:
+  enabled: true
+  authoritativeZones:
+    - example.com
+    - 10.in-addr.arpa
+  # forwardZonesRecurse: ["9.9.9.9:53"]   # use an upstream resolver instead of the root servers
