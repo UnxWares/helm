@@ -837,8 +837,32 @@ On every pull request, the repository CI runs for this chart:
   `generate-schemas.sh` produces.
 
 When the pull request changes the chart, `ct lint` (chart-testing: lint, YAML lint, version increment check) runs as
-well. The chart is **not installed** by `ct install`: it needs your application image, so the `helm test` pod is
-never run in CI and there is no end-to-end test.
+well. `ct install` does not install this chart: the `ci/` files only use placeholder images, since the chart needs a
+Laravel application image. The end-to-end test installs it instead.
+
+**End-to-end test** (`.github/workflows/e2e.yaml`, on pull requests that touch the chart, every push to main and
+every Tuesday). A Laravel 13 test application, `.github/e2e/laravel-app` (the laravel/laravel skeleton at a pinned
+commit, a committed `composer.lock`, a few routes, a queued job, a scheduled task and a migration), is built in CI for
+both runtimes and never published. Two releases run in a namespace that enforces the `restricted` Pod Security
+Standard:
+
+- FrankenPHP (official image, `/app`), SQLite on the persistent volume, scheduler CronJob, NetworkPolicy
+  (`ci/default-values.yaml`);
+- PHP-FPM (official Alpine image, `appPath: /var/www/html`) behind the nginx sidecar, an external PostgreSQL with the
+  password in an existing Secret, `schedule:work` Deployment, NetworkPolicy.
+
+After `helm test`, `.github/scripts/laravel-generic-e2e.sh` checks through the Service: the runtime that answers
+(PHP SAPI, and with `fpm` the nginx headers and the static files of the public copy), uid 33 on a read-only root
+filesystem, the generated APP_KEY of the chart Secret in the web, migration, queue worker and scheduler pods, where
+the migrations ran (init container of the web pod with SQLite, hook Job otherwise, the Job and its Secret copy gone
+afterwards), a note written to the database and read back with its encrypted copy, a session counter (database store,
+encrypted cookie, Blade view), a cache value, a queued job run by a queue worker pod that writes to `storage/app` (read
+back by the web pod; the public disk served under `/storage/`), the every-minute scheduled task, and with `fpm` that
+another pod reaches nginx but not PHP-FPM. Both releases are then uninstalled and installed again: the kept Secret and
+PVC must give back the same APP_KEY, the note (still decrypted), the session, the files and the SQLite database.
+
+Not installed in CI (the unit tests render some of them): Laravel Octane, Redis, MySQL, MariaDB and SQL Server, S3,
+Ingress and HTTPRoute, the HPA, the egress NetworkPolicy, several nodes, and upgrades from a previous chart version.
 
 The test pod, `<fullname>-test-http`, runs `tests.image` (default: the nginx image) as uid 101 with a read-only root
 filesystem and no capabilities, and requests `http://<fullname>:<service.port><tests.path>` (`/up`) with `wget`
@@ -926,6 +950,12 @@ kubectl -n shop create job --from=cronjob/shop-laravel-generic-scheduler schedul
 A `helm upgrade` with a new `image.tag` runs the migrations Job first; the web, queue and scheduler pods roll out only
 when it succeeds. With SQLite, the new web pod migrates in its init container.
 
+### To 2026.11.4
+
+An empty `workload.nginx.image.tag` or `workload.nginx.image.repository` now fails rendering instead of giving the
+nginx sidecar and the `helm test` pod an image without a tag. If your values set one of them to `""`, remove it (the
+default applies) or set `workload.nginx.image.digest`.
+
 ### To 2026.10.2
 
 The nginx sidecar image is now `nginxinc/nginx-unprivileged:1.30.6-alpine-slim` (no njs, xslt, image-filter or geoip
@@ -954,7 +984,8 @@ This release fixes a chart that could not work as published (invalid image, unus
   the fix: `image.repository is required`, `image.tag (or image.digest) is required`, `laravel.database.host is
   required`, `laravel.database.password or laravel.database.existingSecret (+ secretKeys.password) is required`,
   `SQLite supports a single web replica`, `persistence uses a ReadWriteOnce volume`, `the SQLite file needs a
-  dedicated directory`, `persistence.paths is empty`. `helm lint` does not catch these: use `helm template`.
+  dedicated directory`, `persistence.paths is empty`, `workload.nginx.image.tag (or workload.nginx.image.digest) is
+  required`. `helm lint` does not catch these: use `helm template`.
 - **Migrations failed** (`pre-install`/`pre-upgrade` hook error): the Job and its Secret stay for inspection, the
   previous pods keep running.
 

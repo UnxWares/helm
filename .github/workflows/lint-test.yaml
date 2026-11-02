@@ -108,7 +108,8 @@ jobs:
               uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
 
             # Linted above but not installed, they need external prerequisites:
-            # laravel-generic needs the user's application image,
+            # laravel-generic needs the user's application image (e2e.yaml installs it with a test application
+            # built there),
             # openeverest-database-tools needs the OpenEverest operator and its DatabaseClusters: e2e.yaml
             # installs it next to real database servers and a stand-in for the operator.
             - name: ct install

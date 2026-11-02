@@ -12,11 +12,20 @@ set -euo pipefail
 
 NAMESPACE=$1
 RELEASE=$2
-PORT=15380
+# One local port per release: the script runs once per release, and a port-forward that is still stopping must not
+# answer for the next release.
+PORT=$((15380 + $(printf '%s' "$RELEASE" | cksum | cut -d' ' -f1) % 90))
 BASE="http://127.0.0.1:$PORT"
 # Scratch files stay in a fresh temporary directory: nothing is deleted.
 WORK=$(mktemp -d)
-stop_forward() { [ -n "${FORWARD_PID:-}" ] && kill "$FORWARD_PID" 2>/dev/null || true; }
+stop_forward() {
+  if [ -n "${FORWARD_PID:-}" ]; then
+    # The forward exits on TERM (status 143): neither this nor kill may fail the script under set -e.
+    kill "$FORWARD_PID" 2>/dev/null || true
+    wait "$FORWARD_PID" 2>/dev/null || true
+  fi
+  true
+}
 trap stop_forward EXIT
 
 fail() { echo "FAIL: $*" >&2; exit 1; }

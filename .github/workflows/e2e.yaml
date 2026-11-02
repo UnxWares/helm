@@ -37,6 +37,7 @@ jobs:
             fossflow: ${{ steps.diff.outputs.fossflow }}
             bind9: ${{ steps.diff.outputs.bind9 }}
             powerdns: ${{ steps.diff.outputs.powerdns }}
+            laravel: ${{ steps.diff.outputs.laravel }}
         steps:
             - name: Checkout
               uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -79,6 +80,9 @@ jobs:
                   fi
                   if matches "$common|^charts/powerdns/|^images/(pdns-auth|pdns-recursor|postgresql-client|mysql-client)/|^\.github/scripts/powerdns-e2e"; then
                       echo "powerdns=true" >> "$GITHUB_OUTPUT"
+                  fi
+                  if matches "$common|^charts/laravel-generic/|^\.github/e2e/laravel-app/|^\.github/scripts/laravel-generic-e2e"; then
+                      echo "laravel=true" >> "$GITHUB_OUTPUT"
                   fi
 
     openeverest-database-tools:
@@ -629,3 +633,144 @@ jobs:
                       kubectl --namespace "$NAMESPACE" logs deploy/"$release" --all-containers --prefix || true
                   done
                   kubectl --namespace "$NAMESPACE" logs deploy/powerdns-recursor --prefix || true
+
+    # The chart runs the user's own image: a Laravel test application (.github/e2e/laravel-app), built here for both
+    # runtimes and never published.
+    laravel-generic:
+        name: laravel-generic
+        needs: changes
+        if: needs.changes.outputs.laravel == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 45
+        env:
+            CHART: charts/laravel-generic
+            RELEASE: laravel-generic
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            # Composer downloads the packages through the GitHub API: the token (a BuildKit secret, kept out of the
+            # image) raises its rate limit.
+            - name: Build the test application images
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+              run: |
+                  for target in frankenphp fpm; do
+                      docker build --target "$target" --tag "local/laravel-generic-e2e:$target" \
+                          --secret id=github_token,env=GITHUB_TOKEN .github/e2e/laravel-app
+                  done
+
+            - name: Create kind cluster
+              uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+
+            - name: Load the test application images
+              run: |
+                  for target in frankenphp fpm; do
+                      kind load docker-image "local/laravel-generic-e2e:$target" --name chart-testing
+                  done
+
+            - name: Install Helm
+              uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+              with:
+                  version: ${{ env.HELM_VERSION }}
+
+            - name: Restricted namespace and PostgreSQL
+              run: .github/scripts/laravel-generic-e2e-env.sh "$RELEASE" "$RELEASE-db"
+
+            # Two releases in a namespace that enforces the restricted Pod Security Standard: FrankenPHP with SQLite
+            # on the persistent volume (migrated by an init container of the web pod), the scheduler CronJob and the
+            # NetworkPolicy (ci/default-values.yaml); PHP-FPM behind the nginx sidecar with the application in
+            # /var/www/html, PostgreSQL with the password in an existing Secret (migrated by the hook Job), the
+            # schedule:work Deployment and the NetworkPolicy.
+            - name: Install the chart
+              run: &laravel-install |
+                  helm install "$RELEASE" "$CHART" --namespace "$RELEASE" \
+                      --values "$CHART/ci/default-values.yaml" \
+                      --set image.repository=local/laravel-generic-e2e --set image.tag=frankenphp \
+                      --wait --timeout 10m
+                  helm install "$RELEASE-fpm" "$CHART" --namespace "$RELEASE" \
+                      --set image.repository=local/laravel-generic-e2e --set image.tag=fpm \
+                      --wait --timeout 10m --values - <<'EOF'
+                  appPath: /var/www/html
+                  workload:
+                    runtime:
+                      type: fpm
+                    scheduler:
+                      mode: deployment
+                  laravel:
+                    database:
+                      connection: pgsql
+                      host: laravel-generic-pg.laravel-generic-db.svc
+                      database: laravel
+                      username: laravel
+                      existingSecret: laravel-generic-db
+                      secretKeys:
+                        host: ""
+                        port: ""
+                        database: ""
+                        username: ""
+                        password: password
+                  networkPolicy:
+                    enabled: true
+                  EOF
+
+            - name: helm test
+              run: |
+                  helm test "$RELEASE" --namespace "$RELEASE"
+                  helm test "$RELEASE-fpm" --namespace "$RELEASE"
+
+            - name: Runtime, APP_KEY, migrations, database, session, cache, queue, files, scheduler, NetworkPolicy
+              run: |
+                  for release in "$RELEASE" "$RELEASE-fpm"; do
+                      echo "::group::$release"
+                      .github/scripts/laravel-generic-e2e.sh "$RELEASE" "$release"
+                      echo "::endgroup::"
+                  done
+
+            # The Secret holding the generated APP_KEY and the PVC are kept on uninstall (helm.sh/resource-policy:
+            # keep): a new install must start on them, with the same key, session, files and SQLite database.
+            - name: Uninstall, keeping the Secrets and the volumes
+              run: |
+                  for release in "$RELEASE" "$RELEASE-fpm"; do
+                      helm uninstall "$release" --namespace "$RELEASE" --wait
+                      kubectl --namespace "$RELEASE" get "secret/$release" "pvc/$release"
+                      kubectl --namespace "$RELEASE" wait --for=delete pod -l "app.kubernetes.io/instance=$release" --timeout=300s
+                  done
+
+            - name: Install the chart again
+              run: *laravel-install
+
+            - name: helm test after the reinstall
+              run: |
+                  helm test "$RELEASE" --namespace "$RELEASE"
+                  helm test "$RELEASE-fpm" --namespace "$RELEASE"
+
+            - name: Check what the reinstall kept
+              run: |
+                  for release in "$RELEASE" "$RELEASE-fpm"; do
+                      echo "::group::$release"
+                      .github/scripts/laravel-generic-e2e.sh "$RELEASE" "$release" after-reinstall
+                      echo "::endgroup::"
+                  done
+
+            - name: Diagnostics
+              if: failure()
+              run: |
+                  kubectl get pods --all-namespaces -o wide
+                  kubectl --namespace "$RELEASE" describe pods
+                  kubectl --namespace "$RELEASE" get events --sort-by=.lastTimestamp
+                  for release in "$RELEASE" "$RELEASE-fpm"; do
+                      for deployment in "$release" "$release-queue"; do
+                          echo "::group::$deployment"
+                          kubectl --namespace "$RELEASE" logs deploy/"$deployment" --all-containers --prefix || true
+                          echo "::endgroup::"
+                      done
+                  done
+                  for component in scheduler migrations; do
+                      echo "::group::$component"
+                      kubectl --namespace "$RELEASE" logs -l "app.kubernetes.io/component=$component" --all-containers --prefix --tail=100 || true
+                      echo "::endgroup::"
+                  done
+                  kubectl --namespace "$RELEASE-db" logs deploy/laravel-generic-pg || true

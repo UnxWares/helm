@@ -33,6 +33,16 @@ tests:
           path: spec.template.spec.containers[?(@.name == "nginx")].image
           value: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim
 
+  - it: accepts an nginx image digest without a tag
+    template: deployment.yaml
+    set:
+      workload.nginx.image.tag: ""
+      workload.nginx.image.digest: sha256:5d8bb9437d74a600ec5dbf90c035451c724dc33eac8d3a71078f6f8612c345f6
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "nginx")].image
+          value: docker.io/nginxinc/nginx-unprivileged@sha256:5d8bb9437d74a600ec5dbf90c035451c724dc33eac8d3a71078f6f8612c345f6
+
   - it: gives PHP-FPM TCP probes and nginx the HTTP probes
     template: deployment.yaml
     asserts:

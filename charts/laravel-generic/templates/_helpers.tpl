@@ -756,6 +756,16 @@ Validate values that would otherwise produce a broken deployment.
 {{- if not (has (toString .Values.workload.scheduler.mode) (list "cronjob" "deployment")) }}
 {{- fail (printf "workload.scheduler.mode must be cronjob or deployment (got %q)" (toString .Values.workload.scheduler.mode)) }}
 {{- end }}
+{{- /* The nginx image runs the sidecar of the fpm runtime, and the helm test pod unless tests.image is set. */}}
+{{- if or (include "laravel-generic.fpm" .) (not .Values.tests.image) }}
+{{- $nginx := .Values.workload.nginx.image }}
+{{- if not $nginx.repository }}
+{{- fail "workload.nginx.image.repository is required: it runs the nginx sidecar of the fpm runtime and the helm test pod (unless tests.image is set); leave it unset to keep the default image" }}
+{{- end }}
+{{- if and (not $nginx.tag) (not $nginx.digest) }}
+{{- fail "workload.nginx.image.tag (or workload.nginx.image.digest) is required: it runs the nginx sidecar of the fpm runtime and the helm test pod (unless tests.image is set); leave it unset to keep the default tag" }}
+{{- end }}
+{{- end }}
 {{- $scaled := or (gt (int .Values.replicaCount) 1) .Values.autoscaling.enabled }}
 {{- if include "laravel-generic.sqlite" . }}
 {{- if not .Values.persistence.enabled }}

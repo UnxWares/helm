@@ -24,6 +24,44 @@ tests:
     asserts:
       - notFailedTemplate: {}
 
+  - it: requires an nginx image tag or digest with the fpm runtime
+    values:
+      - values/image.yaml
+    set:
+      workload.runtime.type: fpm
+      workload.nginx.image.tag: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: "workload.nginx.image.tag (or workload.nginx.image.digest) is required: it runs the nginx sidecar of the fpm runtime and the helm test pod (unless tests.image is set); leave it unset to keep the default tag"
+
+  - it: requires an nginx image tag or digest for the helm test pod with FrankenPHP
+    values:
+      - values/image.yaml
+    set:
+      workload.nginx.image.tag: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: "workload.nginx.image.tag (or workload.nginx.image.digest) is required: it runs the nginx sidecar of the fpm runtime and the helm test pod (unless tests.image is set); leave it unset to keep the default tag"
+
+  - it: requires an nginx image repository
+    values:
+      - values/image.yaml
+    set:
+      workload.runtime.type: fpm
+      workload.nginx.image.repository: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: "workload.nginx.image.repository is required: it runs the nginx sidecar of the fpm runtime and the helm test pod (unless tests.image is set); leave it unset to keep the default image"
+
+  - it: needs no nginx image with FrankenPHP and tests.image
+    values:
+      - values/image.yaml
+    set:
+      workload.nginx.image.tag: ""
+      tests.image: docker.io/library/busybox:1.37
+    asserts:
+      - notFailedTemplate: {}
+
   - it: rejects an unknown runtime through the values schema
     values:
       - values/image.yaml

@@ -45,7 +45,7 @@ the same rules:
 | [excalidash](charts/excalidash) | ExcaliDash 0.6 | Upstream | Install, `helm test` (health endpoint), end to end |
 | [fossflow](charts/fossflow) | FossFLOW 1.0 | UnxWares | Install (UnxWares and upstream images), `helm test`, end to end |
 | [kener](charts/kener) | Kener 4.1 | Upstream (Kener, Valkey) | Install, `helm test` (strict health check), end to end |
-| [laravel-generic](charts/laravel-generic) | Laravel 12 | Your image, nginx-unprivileged | Lint and schema validation only (needs your image) |
+| [laravel-generic](charts/laravel-generic) | Laravel 12 | Your image, nginx-unprivileged | `helm test`, end to end (a Laravel test application built in CI, FrankenPHP and PHP-FPM) |
 | [openeverest-database-tools](charts/openeverest-database-tools) | OpenEverest 1.17 | UnxWares (database clients), kubectl | End to end |
 | [powerdns](charts/powerdns) | PowerDNS Auth 5.1 / Recursor 5.4 | UnxWares | Install (UnxWares and upstream images), `helm test` (API), end to end |
 | [taiga](charts/taiga) | Taiga 6.10 | UnxWares | Install (UnxWares and upstream images), `helm test`, end to end |
@@ -124,6 +124,13 @@ The end-to-end tests:
 - **powerdns**: SQLite with the recursor, PostgreSQL over verified TLS and MySQL; the API refuses wrong keys, creates
   a zone and adds a record, the authoritative server and the recursor answer them from another pod, and they are
   still answered after a restart.
+- **laravel-generic**: a Laravel 13 test application built in CI, in a namespace that enforces the `restricted` Pod
+  Security Standard: FrankenPHP with SQLite on the persistent volume, and PHP-FPM behind the nginx sidecar with
+  PostgreSQL. Laravel answers through the expected runtime as uid 33 on a read-only root filesystem, every pod uses
+  the generated APP_KEY, the migrations ran in the init container or the hook Job, a note is written to the database
+  and read back decrypted, the session and the cache keep their values, a queued job runs in the queue worker and
+  writes files that the web pod serves, the scheduler runs every minute, and other pods cannot reach PHP-FPM
+  (NetworkPolicy); a reinstall keeps the APP_KEY, the session, the files and the data.
 
 Unit tests ([helm-unittest](https://github.com/helm-unittest/helm-unittest) suites in `charts/<chart>/tests`, run by
 [`unit.yaml`](.github/workflows/unit.yaml)) render the templates without a cluster and check the security contexts,
