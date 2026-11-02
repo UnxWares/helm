@@ -145,13 +145,13 @@
         "runs": 1
        }
       ],
-      "commit": "7561ecba707e26e3d34fdb6898cba4da3d84f93b",
-      "date": "2026-11-02T18:08:40Z",
+      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
+      "date": "2026-11-02T19:31:39Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41495247342/job/125449233823",
-      "run_id": 41495247342,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41495247342",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489664035",
+      "run_id": 41507247509,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
       "status": "passed",
       "steps": [
        {
@@ -388,13 +388,13 @@
         "runs": 1
        }
       ],
-      "commit": "7561ecba707e26e3d34fdb6898cba4da3d84f93b",
-      "date": "2026-11-02T18:08:40Z",
+      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
+      "date": "2026-11-02T19:31:39Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41495247342/job/125449233817",
-      "run_id": 41495247342,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41495247342",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489663877",
+      "run_id": 41507247509,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
       "status": "passed",
       "steps": [
        {
@@ -675,13 +675,13 @@
         "runs": 1
        }
       ],
-      "commit": "7561ecba707e26e3d34fdb6898cba4da3d84f93b",
-      "date": "2026-11-02T18:08:40Z",
+      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
+      "date": "2026-11-02T19:31:39Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41495247342/job/125449234125",
-      "run_id": 41495247342,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41495247342",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489664075",
+      "run_id": 41507247509,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
       "status": "passed",
       "steps": [
        {
@@ -943,13 +943,13 @@
         "runs": 1
        }
       ],
-      "commit": "7561ecba707e26e3d34fdb6898cba4da3d84f93b",
-      "date": "2026-11-02T18:08:40Z",
+      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
+      "date": "2026-11-02T19:31:39Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41495247342/job/125449233712",
-      "run_id": 41495247342,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41495247342",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489663717",
+      "run_id": 41507247509,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
       "status": "passed",
       "steps": [
        {
@@ -1233,13 +1233,13 @@
         "runs": 1
        }
       ],
-      "commit": "7561ecba707e26e3d34fdb6898cba4da3d84f93b",
-      "date": "2026-11-02T18:08:40Z",
+      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
+      "date": "2026-11-02T19:31:39Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41495247342/job/125449233751",
-      "run_id": 41495247342,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41495247342",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489663634",
+      "run_id": 41507247509,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
       "status": "passed",
       "steps": [
        {
@@ -1697,13 +1697,13 @@
         "runs": 2
        }
       ],
-      "commit": "7561ecba707e26e3d34fdb6898cba4da3d84f93b",
-      "date": "2026-11-02T18:08:40Z",
+      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
+      "date": "2026-11-02T19:31:39Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41495247342/job/125449233706",
-      "run_id": 41495247342,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41495247342",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489663884",
+      "run_id": 41507247509,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
       "status": "passed",
       "steps": [
        {
@@ -2069,13 +2069,13 @@
         "runs": 3
        }
       ],
-      "commit": "7561ecba707e26e3d34fdb6898cba4da3d84f93b",
-      "date": "2026-11-02T18:08:40Z",
+      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
+      "date": "2026-11-02T19:31:39Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41495247342/job/125449233780",
-      "run_id": 41495247342,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41495247342",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489664043",
+      "run_id": 41507247509,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
       "status": "passed",
       "steps": [
        {
@@ -2452,13 +2452,13 @@
         "runs": 1
        }
       ],
-      "commit": "7561ecba707e26e3d34fdb6898cba4da3d84f93b",
-      "date": "2026-11-02T18:08:40Z",
+      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
+      "date": "2026-11-02T19:31:39Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41495247342/job/125449233732",
-      "run_id": 41495247342,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41495247342",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489663835",
+      "run_id": 41507247509,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
       "status": "passed",
       "steps": [
        {
@@ -4831,7 +4831,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-02T19:23:45Z",
+ "latest_result": "2026-11-02T19:31:39Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
