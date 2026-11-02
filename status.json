@@ -48,7 +48,17 @@
      "ours": false
     },
     {
-     "cve": null,
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": 0,
+      "medium": 0,
+      "open_fixable": 0,
+      "total": 1
+     },
      "image": "ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f",
      "name": "bind-exporter",
      "ours": true
@@ -2387,8 +2397,8 @@
   }
  ],
  "cve_watch": {
-  "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
-  "date": "2026-11-02T15:44:38Z",
+  "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
+  "date": "2026-11-02T17:32:11Z",
   "event": "workflow_run",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
@@ -2823,6 +2833,40 @@
      "UNKNOWN": 0
     },
     "total": 0
+   },
+   "ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f": {
+    "charts": [
+     "bind9"
+    ],
+    "eosl": false,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
+    "image": "ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f",
+    "os": "debian 13.7",
+    "ours": true,
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 1
+    },
+    "total": 1,
+    "vulnerabilities": [
+     {
+      "fixed": "",
+      "id": "GO-2026-5932",
+      "installed": "v0.58.0",
+      "package": "golang.org/x/crypto",
+      "severity": "UNKNOWN",
+      "type": "gobinary"
+     }
+    ]
    },
    "ghcr.io/unxwares/cloudreve:4.19.1": {
     "charts": [
@@ -3312,7 +3356,8 @@
    },
    "ghcr.io/unxwares/mysql-client:8.4": {
     "charts": [
-     "openeverest-database-tools"
+     "openeverest-database-tools",
+     "powerdns"
     ],
     "eosl": false,
     "fixable": {
@@ -3412,7 +3457,8 @@
    },
    "ghcr.io/unxwares/postgresql-client:18": {
     "charts": [
-     "openeverest-database-tools"
+     "openeverest-database-tools",
+     "powerdns"
     ],
     "eosl": false,
     "fixable": {
@@ -3681,8 +3727,8 @@
     "total": 12
    }
   },
-  "run_id": 41474251281,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/41474251281",
+  "run_id": 41491737246,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/41491737246",
   "source": "report"
  },
  "files": [
@@ -4372,7 +4418,17 @@
    },
    "changes": "Built from the sources of the master branch (commit `bafd56f`, 62 commits after v0.8.0) with Go 1.27 and the `golang.org/x` module updates of `patches/` (prometheus-community/bind_exporter#301), static binary on distroless, same path, flags, port and user (`nobody`)",
    "context": "images/bind-exporter",
-   "cve": null,
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": 0,
+    "medium": 0,
+    "open_fixable": 0,
+    "total": 1
+   },
    "name": "bind-exporter",
    "page": "images/bind-exporter.html",
    "ref": "ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f",
@@ -4380,7 +4436,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-02T17:29:57Z",
+ "latest_result": "2026-11-02T17:32:11Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
