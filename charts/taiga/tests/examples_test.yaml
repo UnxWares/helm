@@ -1,0 +1,276 @@
+suite: README examples
+templates:
+  - secret.yaml
+  - rabbitmq-configmap.yaml
+  - gateway/configmap.yaml
+  - pvcs.yaml
+  - db/pvc.yaml
+  - backend/deployment.yaml
+  - async/deployment.yaml
+  - frontend/deployment.yaml
+  - events/deployment.yaml
+  - gateway/deployment.yaml
+  - db/deployment.yaml
+  - asyncRabbitmq/statefulset.yaml
+  - ingress.yaml
+  - httproute.yaml
+release:
+  name: taiga
+  namespace: taiga
+tests:
+  - it: "Small team: the bundled database on a 10Gi claim with a generated password"
+    values:
+      - values/readme-small-team.yaml
+    asserts:
+      - equal:
+          path: spec.resources.requests.storage
+          value: 10Gi
+        template: db/pvc.yaml
+      - matchRegex:
+          path: data["db-password"]
+          decodeBase64: true
+          pattern: ^[A-Za-z0-9]{32}$
+        template: secret.yaml
+      - notExists:
+          path: data["postgres-password"]
+        template: secret.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_HOST
+            value: taiga-db
+        template: backend/deployment.yaml
+
+  - it: "Small team: SMTP with STARTTLS and the credentials of taiga-smtp, for the backend and the workers"
+    values:
+      - values/readme-small-team.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_HOST_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: taiga-smtp
+                key: EMAIL_HOST_PASSWORD
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_USE_TLS
+            value: "True"
+        template: async/deployment.yaml
+      - notExists:
+          path: data["email-password"]
+        template: secret.yaml
+
+  - it: "Small team: the Ingress terminates TLS for the domain the front points to"
+    values:
+      - values/readme-small-team.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: taiga.example.com
+        template: ingress.yaml
+      - equal:
+          path: spec.tls[0].secretName
+          value: taiga-tls
+        template: ingress.yaml
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.name
+          value: taiga-gateway
+        template: ingress.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TAIGA_URL
+            value: https://taiga.example.com
+        template: frontend/deployment.yaml
+
+  - it: "External PostgreSQL and an Ingress with TLS: the connection settings come from taiga-db, not from the values"
+    values:
+      - values/readme-external-postgresql-ingress.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_HOST
+            valueFrom:
+              secretKeyRef:
+                name: taiga-db
+                key: database-host
+        template: backend/deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_HOST
+            value: postgres.databases.svc
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_SSLMODE
+            value: require
+        template: backend/deployment.yaml
+      - notExists:
+          path: data["postgres-password"]
+        template: secret.yaml
+      - hasDocuments:
+          count: 0
+        template: db/deployment.yaml
+      - equal:
+          path: spec.tls[0].secretName
+          value: taiga-example-com-tls
+        template: ingress.yaml
+
+  - it: "Gateway API, shared media and several replicas: a 50Gi ReadWriteMany media claim, no pod affinity"
+    values:
+      - values/readme-gateway-api-shared-media.yaml
+    asserts:
+      - equal:
+          path: spec.accessModes
+          value:
+            - ReadWriteMany
+        template: pvcs.yaml
+      - equal:
+          path: spec.resources.requests.storage
+          value: 50Gi
+        template: pvcs.yaml
+      - equal:
+          path: spec.storageClassName
+          value: nfs-client
+        template: pvcs.yaml
+      - notExists:
+          path: spec.template.spec.affinity
+        template: backend/deployment.yaml
+      - notExists:
+          path: spec.template.spec.affinity
+        template: gateway/deployment.yaml
+
+  - it: "Gateway API, shared media and several replicas: two replicas of the backend, front and gateway behind the HTTPRoute"
+    values:
+      - values/readme-gateway-api-shared-media.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 2
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 2
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.hostnames
+          value:
+            - taiga.example.com
+        template: httproute.yaml
+      - equal:
+          path: spec.parentRefs[0].namespace
+          value: gateway-system
+        template: httproute.yaml
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: taiga-gateway
+        template: httproute.yaml
+
+  - it: "GitOps: the chart Secret has nothing to generate"
+    values:
+      - values/readme-gitops.yaml
+    template: secret.yaml
+    asserts:
+      - isNullOrEmpty:
+          path: data
+
+  - it: "GitOps: every credential comes from taiga-secrets, taiga-oidc and taiga-smtp"
+    values:
+      - values/readme-gitops.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TAIGA_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: taiga-secrets
+                key: SECRET_KEY
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: taiga-secrets
+                key: POSTGRES_PASSWORD
+        template: db/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RABBITMQ_DEFAULT_PASS
+            valueFrom:
+              secretKeyRef:
+                name: taiga-secrets
+                key: RABBITMQ_PASS
+        template: asyncRabbitmq/statefulset.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RABBITMQ_PASS
+            valueFrom:
+              secretKeyRef:
+                name: taiga-secrets
+                key: RABBITMQ_PASS
+        template: events/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: taiga-oidc
+                key: oidc-client-secret
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EMAIL_USE_SSL
+            value: "True"
+        template: backend/deployment.yaml
+
+  - it: "Official Taiga images: official images, front on port 80, entrypoint capabilities"
+    values:
+      - values/readme-official-images.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/taigaio/taiga-back:6.10.2
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/library/postgres:17.11-alpine
+        template: db/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 80
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities.add
+          value:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+            - SETUID
+            - SETGID
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].command[0]
+          value: gosu
+        template: async/deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 70
+        template: db/deployment.yaml

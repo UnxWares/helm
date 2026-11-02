@@ -1,0 +1,109 @@
+suite: named.conf and zone files
+templates:
+  - configmap.yaml
+  - deployment.yaml
+release:
+  name: my-dns
+  namespace: dns-system
+tests:
+  - it: ships an authoritative-only named.conf by default (no recursion, no transfer, version hidden)
+    template: configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: my-dns-bind9-config
+      - matchRegex:
+          path: data["named.conf"]
+          pattern: 'directory "/var/cache/bind";'
+      - matchRegex:
+          path: data["named.conf"]
+          pattern: "recursion no;"
+      - matchRegex:
+          path: data["named.conf"]
+          pattern: "allow-transfer \\{ none; \\};"
+      - matchRegex:
+          path: data["named.conf"]
+          pattern: "version none;"
+      - notMatchRegex:
+          path: data["named.conf"]
+          pattern: statistics-channels
+
+  - it: opens the statistics channel on 127.0.0.1 only, before the user configuration, with metrics enabled
+    template: configmap.yaml
+    set:
+      metrics.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["named.conf"]
+          pattern: "^statistics-channels \\{\\n  inet 127\\.0\\.0\\.1 port 8053 allow \\{ 127\\.0\\.0\\.1; \\};\\n\\};\\noptions \\{"
+
+  - it: writes each zone as <key>.zone and mounts it read-only under /etc/bind
+    set:
+      bind.zones:
+        example-org: |
+          $TTL 3600
+          @ IN SOA ns1.example.org. hostmaster.example.org. ( 1 3H 15M 1W 1H )
+        192-0-2: |
+          $TTL 3600
+    asserts:
+      - equal:
+          path: data["example-org.zone"]
+          value: |
+            $TTL 3600
+            @ IN SOA ns1.example.org. hostmaster.example.org. ( 1 3H 15M 1W 1H )
+        template: configmap.yaml
+      - exists:
+          path: data["192-0-2.zone"]
+        template: configmap.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: bind-config
+            mountPath: /etc/bind/example-org.zone
+            subPath: example-org.zone
+            readOnly: true
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: bind-config
+            mountPath: /etc/bind/192-0-2.zone
+            subPath: 192-0-2.zone
+            readOnly: true
+        template: deployment.yaml
+
+  - it: mounts named.conf read-only from the ConfigMap
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: bind-config
+            mountPath: /etc/bind/named.conf
+            subPath: named.conf
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: bind-config
+            configMap:
+              name: my-dns-bind9-config
+
+  - it: replaces the whole named.conf with bind.namedConf
+    template: configmap.yaml
+    set:
+      bind.namedConf: |
+        options {
+          directory "/var/cache/bind";
+          recursion yes;
+        };
+    asserts:
+      - equal:
+          path: data["named.conf"]
+          value: |
+            options {
+              directory "/var/cache/bind";
+              recursion yes;
+            };

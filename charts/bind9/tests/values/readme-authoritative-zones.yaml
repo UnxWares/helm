@@ -1,0 +1,33 @@
+# README example "Authoritative DNS server with zones", as written in the README.
+bind:
+  namedConf: |
+    options {
+      directory "/var/cache/bind";
+      listen-on { any; };
+      listen-on-v6 { any; };
+      recursion no;
+      allow-transfer { none; };
+      version none;
+    };
+
+    zone "example.com" {
+      type primary;
+      file "/etc/bind/example-com.zone";
+    };
+
+  zones:
+    example-com: |
+      $TTL 3600
+      @       IN      SOA     ns1.example.com. admin.example.com. (
+                              2026102001 ; Serial
+                              3600       ; Refresh
+                              900        ; Retry
+                              604800     ; Expire
+                              86400 )    ; Minimum TTL
+
+      @       IN      NS      ns1.example.com.
+      @       IN      A       192.0.2.1
+      ns1     IN      A       192.0.2.1
+      www     IN      A       192.0.2.10
+      mail    IN      A       192.0.2.20
+      @       IN      MX  10  mail.example.com.

@@ -31,6 +31,27 @@ tests:
       - failedTemplate:
           errorMessage: database.password or database.existingSecret is required when database.type is not sqlite
 
+  - it: refuses a URL key without the existing Secret that holds it
+    set:
+      database:
+        type: postgres
+        password: db-pass
+        existingSecretKeys:
+          url: url
+    asserts:
+      - failedTemplate:
+          errorMessage: "database.existingSecretKeys.url is a key of database.existingSecret: set database.existingSecret, or database.url"
+
+  - it: accepts a URL key of an existing Secret
+    set:
+      database:
+        type: postgres
+        existingSecret: cloudreve-db
+        existingSecretKeys:
+          url: url
+    asserts:
+      - notFailedTemplate: {}
+
   - it: accepts a connection URL instead of a host and a password
     set:
       database:

@@ -1,0 +1,123 @@
+suite: persistence of /data/diagrams
+templates:
+  - deployment.yaml
+  - pvc.yaml
+release:
+  name: diagrams
+  namespace: tools
+tests:
+  - it: creates a 1Gi ReadWriteOnce claim kept on uninstall
+    template: pvc.yaml
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+      - equal:
+          path: metadata.name
+          value: diagrams-fossflow
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/resource-policy: keep
+      - equal:
+          path: spec.accessModes
+          value:
+            - ReadWriteOnce
+      - equal:
+          path: spec.resources.requests.storage
+          value: 1Gi
+      - notExists:
+          path: spec.storageClassName
+
+  - it: mounts the claim on /data/diagrams
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: diagrams-fossflow
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /data/diagrams
+
+  - it: sets the storage class, size, access modes and annotations (README example)
+    template: pvc.yaml
+    set:
+      persistence:
+        storageClass: longhorn
+        size: 2Gi
+        accessModes:
+          - ReadWriteMany
+        annotations:
+          backup: daily
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: longhorn
+      - equal:
+          path: spec.resources.requests.storage
+          value: 2Gi
+      - equal:
+          path: spec.accessModes
+          value:
+            - ReadWriteMany
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/resource-policy: keep
+            backup: daily
+
+  - it: uses an existing claim without creating one (README example)
+    set:
+      persistence:
+        existingClaim: fossflow-diagrams
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: fossflow-diagrams
+        template: deployment.yaml
+
+  - it: keeps the diagrams in an emptyDir when persistence is disabled
+    set:
+      persistence:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            emptyDir: {}
+        template: deployment.yaml
+
+  - it: creates no claim and mounts no data volume in browser-only mode
+    set:
+      storage:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: pvc.yaml
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+          any: true
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: tmp
+              mountPath: /tmp
+        template: deployment.yaml

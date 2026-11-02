@@ -1,0 +1,20 @@
+# README example "Official Taiga images", as written in the README.
+global:
+  imageProvider: upstream
+  domain: taiga.example.com
+externalDatabase:
+  enabled: false
+db:
+  enabled: true
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: taiga.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: taiga-tls
+      hosts:
+        - taiga.example.com

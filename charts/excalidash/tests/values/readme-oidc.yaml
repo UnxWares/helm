@@ -1,0 +1,9 @@
+# README example "OIDC (Authentik, Keycloak, ...)", as written in the README.
+backend:
+  auth:
+    mode: oidc_enforced
+    oidc:
+      providerName: Authentik
+      issuerUrl: https://auth.example.com/application/o/excalidash/
+      clientId: excalidash
+      existingSecret: excalidash-oidc   # key: oidc-client-secret

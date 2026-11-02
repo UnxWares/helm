@@ -93,6 +93,9 @@ Known vulnerabilities of the images the charts of this repository can deploy are
 
 {{ template "chart.requirementsSection" . }}
 
+- **Kubernetes 1.27 to 1.29**: supported; the preStop hook (see
+  [Shutdown and rolling updates](#shutdown-and-rolling-updates)) runs `sleep` from the image there, and uses the
+  `sleep` lifecycle action from 1.30, where that action is enabled by default.
 - **Node architecture**: `linux/amd64`. The ISC image has no arm64 build: the default `nodeSelector`
   (`kubernetes.io/arch: amd64`) keeps the pods on amd64 nodes, so a cluster needs at least one (see
   [Scheduling](#scheduling)).
@@ -348,6 +351,27 @@ The liveness and readiness probes run `dig @127.0.0.1 version.bind txt chaos`, w
 answers, whatever the answer. Override `livenessProbe` and `readinessProbe` (or `metrics.livenessProbe` and
 `metrics.readinessProbe`) to change them.
 
+### Shutdown and rolling updates
+
+```yaml
+preStopSleepSeconds: 5             # 0 removes the preStop hook
+terminationGracePeriodSeconds: 30  # must be greater than preStopSleepSeconds
+```
+
+When a pod is deleted (rolling update, drain, scale down), Kubernetes removes it from the Service endpoints and stops
+its containers at the same time. Nodes and load balancers take a moment to stop sending it traffic: without a delay,
+named would already be gone and the queries sent to it meanwhile would be refused. A `preStop` hook keeps named
+answering for `preStopSleepSeconds` (5 s) before it gets SIGTERM; the exporter stops at once.
+
+- On Kubernetes 1.30 and later the hook is the `sleep` lifecycle action. On older clusters, where that action is off
+  by default, the chart renders an `exec` hook that runs `sleep` from the image instead (the ISC image has it; check
+  a custom `image.repository` does too). The chart picks the form from the Kubernetes version Helm reports: with
+  `helm template`, pass `--kube-version`.
+- `terminationGracePeriodSeconds` covers the sleep and the stop of named after SIGTERM: the chart refuses a value
+  that is not greater than `preStopSleepSeconds`.
+- With a single replica on a `ReadWriteOnce` volume (`Recreate` strategy), there is no other pod to take over: the
+  delay keeps the old pod answering a little longer, but the restart still interrupts DNS.
+
 ### NetworkPolicy
 
 ```yaml
@@ -559,6 +583,7 @@ Caveats:
     fsGroup: 53
     seccompProfile:
       type: RuntimeDefault
+    sysctls: null        # Helm merges maps: null removes the default sysctl
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
@@ -616,6 +641,14 @@ Run the test after an install:
 helm test my-dns -n dns-system --logs
 ```
 
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the security contexts of named, the exporter and the test pod (uid 53, the port sysctl, no
+capability, with both exporter images), the image selection (ISC tag, digest, exporter provider, repository, tag and
+digest), `named.conf` and the zone files, persistence and the `Recreate` strategy, the DNS and admin Services and
+their ports, the ServiceMonitor, the NetworkPolicy, the HPA and PDB, the preStop hook on both sides of Kubernetes 1.30
+and its grace period check, the release notes, and the examples of this README.
+
 ## Operations
 
 - **Backup**: zones from `bind.zones` live in your values: keep them in version control. With persistence, the PVC
@@ -636,6 +669,13 @@ kubectl exec -n dns-system deploy/my-dns-bind9 -c bind9 -- cat /etc/bind/named.c
 ```
 
 ## Upgrading
+
+### To 2026.11.3
+
+- **preStop hook**: pods keep answering for 5 s after they are asked to stop, so they take 5 s longer to go away
+  (see [Shutdown and rolling updates](#shutdown-and-rolling-updates)). `preStopSleepSeconds: 0` restores the previous
+  behavior. `terminationGracePeriodSeconds` (30, the Kubernetes default) is now set by the chart and must stay
+  greater than the sleep.
 
 ### To 2026.11.2
 

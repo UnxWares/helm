@@ -71,6 +71,58 @@ tests:
           path: spec.template.spec.containers[0].image
           value: ghcr.io/unxwares/postgresql-client@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 
+  - it: uses the tag of a database entry even when the default image has a digest
+    template: templates/postgresql-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      image.postgresql.digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: everest-secrets-pg
+          databases:
+            - app
+          image:
+            tag: "17"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/postgresql-client:17
+
+  - it: uses the digest of a database entry over the default one
+    template: templates/postgresql-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      image.postgresql.digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: everest-secrets-pg
+          databases:
+            - app
+          image:
+            digest: sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/postgresql-client@sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+
+  - it: keeps the default digest for an entry without its own image
+    template: templates/postgresql-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      image.postgresql.digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/postgresql-client@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
   - it: keeps the default repository when only the tag is overridden
     template: templates/mysql-jobs.yaml
     documentSelector:

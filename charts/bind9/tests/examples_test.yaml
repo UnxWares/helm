@@ -1,0 +1,108 @@
+suite: README examples
+templates:
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - pdb.yaml
+  - pvc.yaml
+release:
+  name: my-dns
+  namespace: dns-system
+tests:
+  - it: "Authoritative DNS server with zones: the zone file is in the ConfigMap and mounted where named.conf reads it"
+    values:
+      - values/readme-authoritative-zones.yaml
+    asserts:
+      - matchRegex:
+          path: data["named.conf"]
+          pattern: 'zone "example\.com" \{\n  type primary;\n  file "/etc/bind/example-com\.zone";\n\};'
+        template: configmap.yaml
+      - matchRegex:
+          path: data["example-com.zone"]
+          pattern: "(?m)^www     IN      A       192\\.0\\.2\\.10$"
+        template: configmap.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: bind-config
+            mountPath: /etc/bind/example-com.zone
+            subPath: example-com.zone
+            readOnly: true
+        template: deployment.yaml
+
+  - it: "Public authoritative server behind a load balancer: three spread replicas, a disruption budget, client addresses kept"
+    values:
+      - values/readme-public-load-balancer.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].whenUnsatisfiable
+          value: DoNotSchedule
+        template: deployment.yaml
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+        template: service.yaml
+      - equal:
+          path: spec.externalTrafficPolicy
+          value: Local
+        template: service.yaml
+      - equal:
+          path: spec.minAvailable
+          value: 1
+        template: pdb.yaml
+
+  - it: "Secondary server with persistence: the claim holds /var/lib/bind and the pod is recreated on upgrade"
+    values:
+      - values/readme-secondary-persistence.yaml
+    asserts:
+      - equal:
+          path: spec.resources.requests.storage
+          value: 1Gi
+        template: pvc.yaml
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: bind-data
+            persistentVolumeClaim:
+              claimName: my-dns-bind9-pvc
+        template: deployment.yaml
+      - matchRegex:
+          path: data["named.conf"]
+          pattern: 'file "/var/lib/bind/example\.com\.db";'
+        template: configmap.yaml
+
+  - it: "rndc and keys from Secrets: the keys are mounted read-only from the Secret, never put in the ConfigMap"
+    values:
+      - values/readme-keys-from-secrets.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: bind-keys
+            secret:
+              secretName: bind9-keys
+              defaultMode: 0440
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: bind-keys
+            mountPath: /etc/bind/keys
+            readOnly: true
+        template: deployment.yaml
+      - matchRegex:
+          path: data["named.conf"]
+          pattern: '(?m)^include "/etc/bind/keys/rndc\.key";$'
+        template: configmap.yaml
+      - notMatchRegex:
+          path: data["named.conf"]
+          pattern: "secret \""
+        template: configmap.yaml

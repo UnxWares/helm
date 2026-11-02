@@ -1,0 +1,17 @@
+# README "Security" caveat: named starts as root and switches to bind itself, for clusters that forbid the sysctl.
+podSecurityContext:
+  runAsNonRoot: false
+  runAsUser: 0
+  runAsGroup: 0
+  fsGroup: 53
+  seccompProfile:
+    type: RuntimeDefault
+  sysctls: null
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+    add: [NET_BIND_SERVICE, SETUID, SETGID]
+bind:
+  args: ["-u", "bind"]

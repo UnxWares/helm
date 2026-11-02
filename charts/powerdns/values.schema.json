@@ -409,6 +409,11 @@
             "description": "Pod security context.",
             "type": "object"
         },
+        "preStopSleepSeconds": {
+            "description": "Seconds the server keeps answering after its pod is marked for deletion, before it gets SIGTERM (preStop hook). The pod leaves the Service endpoints while it stops: without this delay, queries still routed to it during a rolling update or a drain are refused. 0 removes the hook. The hook uses the `sleep` action on Kubernetes 1.30 and later, and runs `sleep` from the image on older clusters.",
+            "type": "integer",
+            "minimum": 0
+        },
         "priorityClassName": {
             "description": "Priority class of the pods.",
             "type": "string"
@@ -595,6 +600,11 @@
                     "description": "Pod labels.",
                     "type": "object"
                 },
+                "preStopSleepSeconds": {
+                    "description": "Seconds the recursor keeps answering after its pod is marked for deletion, before it gets SIGTERM (preStop hook), like `preStopSleepSeconds` for the server. 0 removes the hook.",
+                    "type": "integer",
+                    "minimum": 0
+                },
                 "readinessProbe": {
                     "description": "Readiness probe.",
                     "type": "object"
@@ -648,6 +658,11 @@
                 "spreadAcrossNodes": {
                     "description": "When `topologySpreadConstraints` is empty, spread the replicas across nodes, then zones (ScheduleAnyway).",
                     "type": "boolean"
+                },
+                "terminationGracePeriodSeconds": {
+                    "description": "Grace period of the recursor pods. Must be greater than `recursor.preStopSleepSeconds`.",
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "tolerations": {
                     "description": "Tolerations.",
@@ -788,6 +803,11 @@
         "startupProbe": {
             "description": "Startup probe.",
             "type": "object"
+        },
+        "terminationGracePeriodSeconds": {
+            "description": "Grace period of the server pods: the preStop sleep, then the time PowerDNS has to stop after SIGTERM. Must be greater than `preStopSleepSeconds`.",
+            "type": "integer",
+            "minimum": 0
         },
         "tests": {
             "type": "object",

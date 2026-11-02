@@ -1,0 +1,138 @@
+suite: README examples
+templates:
+  # the Deployments include their ConfigMap for the checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+  - secret.yaml
+  - service.yaml
+  - pdb.yaml
+  - networkpolicy.yaml
+  - recursor/configmap.yaml
+  - recursor/deployment.yaml
+  - recursor/pdb.yaml
+release:
+  name: dns
+  namespace: dns
+tests:
+  - it: "High availability: three spread servers on PostgreSQL with the user's Secret, a faster zone cache refresh"
+    values:
+      - values/readme-high-availability.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].topologyKey
+          value: kubernetes.io/hostname
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PDNS_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: pdns-db
+                key: password
+        template: deployment.yaml
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^gpgsql-extra-connection-parameters=sslmode=require\\nwebserver=yes"
+        template: configmap.yaml
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^zone-cache-refresh-interval=30$"
+        template: configmap.yaml
+      - notExists:
+          path: data["db-password"]
+        template: secret.yaml
+      - equal:
+          path: spec.minAvailable
+          value: 1
+        template: pdb.yaml
+
+  - it: "High availability: no recursor unless enabled, even with its replicas and budget set"
+    values:
+      - values/readme-high-availability.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: recursor/deployment.yaml
+      - hasDocuments:
+          count: 0
+        template: recursor/pdb.yaml
+
+  - it: "PostgreSQL with a private CA: libpq checks the certificate in the server and in the schema init"
+    values:
+      - values/readme-postgresql-private-ca.yaml
+    asserts:
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^gpgsql-extra-connection-parameters=sslmode=verify-full sslrootcert=/etc/ssl/db/ca.crt$"
+        template: configmap.yaml
+      - contains:
+          path: spec.template.spec.initContainers[1].env
+          content:
+            name: DB_EXTRA
+            value: sslmode=verify-full sslrootcert=/etc/ssl/db/ca.crt
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.initContainers[1].volumeMounts
+          content:
+            name: db-ca
+            mountPath: /etc/ssl/db
+            readOnly: true
+        template: deployment.yaml
+
+  - it: "ExternalDNS: the key comes from the shared Secret and the API accepts the external-dns namespace"
+    values:
+      - values/readme-externaldns.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PDNS_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: powerdns-api-key
+                key: api-key
+        template: deployment.yaml
+      - hasDocuments:
+          count: 0
+        template: secret.yaml
+      - contains:
+          path: spec.ingress[1].from
+          content:
+            namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: external-dns
+        template: networkpolicy.yaml
+
+  - it: "Expose DNS outside the cluster: a LoadBalancer that keeps client addresses, the SOA default in pdns.conf"
+    values:
+      - values/readme-expose-dns.yaml
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+        template: service.yaml
+      - equal:
+          path: spec.externalTrafficPolicy
+          value: Local
+        template: service.yaml
+      - matchRegex:
+          path: data["pdns.conf"]
+          pattern: "(?m)^default-soa-content=ns1.example.com. hostmaster.@ 0 10800 3600 604800 3600$"
+        template: configmap.yaml
+
+  - it: "Recursor for the cluster: both zones go to the authoritative Service, as negative trust anchors"
+    values:
+      - values/readme-recursor-cluster.yaml
+    template: recursor/configmap.yaml
+    asserts:
+      - matchRegex:
+          path: data["recursor.j2"]
+          pattern: "(?s)forward_zones:\\n.*DNS_POWERDNS_SERVICE_HOST \\}\\}:53'\\n    zone: example\\.com\\n.*DNS_POWERDNS_SERVICE_HOST \\}\\}:53'\\n    zone: 10\\.in-addr\\.arpa\\n  socket_dir"
+      - matchRegex:
+          path: data["recursor.j2"]
+          pattern: "negative_trustanchors:\\n  - name: example\\.com\\n(.*\\n)  - name: 10\\.in-addr\\.arpa\\n(.*\\n)  validation: process"

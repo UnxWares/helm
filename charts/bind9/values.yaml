@@ -142,6 +142,15 @@ readinessProbe:  # @schema skipProperties:true
   periodSeconds: 10
   timeoutSeconds: 5
 
+# -- Seconds named keeps answering after its pod is marked for deletion, before it gets SIGTERM (preStop hook). The pod
+# leaves the Service endpoints while it stops: without this delay, queries still routed to it during a rolling update
+# or a drain are refused. 0 removes the hook. The hook uses the `sleep` action on Kubernetes 1.30 and later, and runs
+# `sleep` from the image on older clusters.
+preStopSleepSeconds: 5  # @schema minimum:0
+# -- Grace period of the pods: the preStop sleep, then the time named has to stop after SIGTERM. Must be greater than
+# `preStopSleepSeconds`.
+terminationGracePeriodSeconds: 30  # @schema minimum:0
+
 autoscaling:
   # -- Enable the HorizontalPodAutoscaler (static zones only: no persistence).
   enabled: false

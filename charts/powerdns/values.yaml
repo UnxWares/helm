@@ -264,6 +264,15 @@ startupProbe:  # @schema skipProperties:true
   periodSeconds: 5
   failureThreshold: 30
 
+# -- Seconds the server keeps answering after its pod is marked for deletion, before it gets SIGTERM (preStop hook).
+# The pod leaves the Service endpoints while it stops: without this delay, queries still routed to it during a rolling
+# update or a drain are refused. 0 removes the hook. The hook uses the `sleep` action on Kubernetes 1.30 and later,
+# and runs `sleep` from the image on older clusters.
+preStopSleepSeconds: 5  # @schema minimum:0
+# -- Grace period of the server pods: the preStop sleep, then the time PowerDNS has to stop after SIGTERM. Must be
+# greater than `preStopSleepSeconds`.
+terminationGracePeriodSeconds: 30  # @schema minimum:0
+
 # -- Extra environment variables of the server container.
 extraEnv: []
 # -- Extra volumes.
@@ -436,6 +445,11 @@ recursor:
       port: dns-tcp
     periodSeconds: 10
     timeoutSeconds: 3
+  # -- Seconds the recursor keeps answering after its pod is marked for deletion, before it gets SIGTERM (preStop
+  # hook), like `preStopSleepSeconds` for the server. 0 removes the hook.
+  preStopSleepSeconds: 5  # @schema minimum:0
+  # -- Grace period of the recursor pods. Must be greater than `recursor.preStopSleepSeconds`.
+  terminationGracePeriodSeconds: 30  # @schema minimum:0
   # -- Extra environment variables.
   extraEnv: []
   # -- Extra volumes.

@@ -3,9 +3,9 @@
 # End-to-end check of a fresh taiga release, through its gateway Service, as the browser uses it: the front serves its
 # configuration, a superuser created with manage.py logs in through the API, creates a project and a user story and
 # reads them back, an attachment is uploaded and served back through taiga-protected (and refused without its
-# signed token), and a websocket client subscribed on /events receives the change of the user story. Then the
-# Celery beat scheduler runs once, in its own pod, and, when the release has its NetworkPolicies, a pod outside the
-# release reaches the gateway and nothing else.
+# signed token), a project export is downloaded, and a websocket client subscribed on /events receives the change of
+# the user story. Then the Celery beat scheduler runs once, in its own pod, and, when the release has its
+# NetworkPolicies, a pod outside the release reaches the gateway and nothing else.
 #
 # usage: taiga-e2e.sh <namespace> <release>
 set -euo pipefail
@@ -197,6 +197,26 @@ code=$(curl -sS -o /dev/null -w '%{http_code}' "${plain%%\?*}")
 code=$(curl -sS -o /dev/null -w '%{http_code}' "${plain%%\?*}?token=forged:token")
 [ "$code" = 403 ] || fail "the attachment with a forged token got HTTP $code instead of 403"
 ok "the attachment is refused without its token or with a forged one"
+
+# --- Project export --------------------------------------------------------------------------------------------------
+# The worker writes the export to the media volume as exports/<project id>/<slug>-<task id>.json, and the e-mail
+# links to it under /media/exports/, which the gateway serves from the volume.
+slug=$(api "$API/projects/$project_id" | jq -r .slug)
+export_id=$(api "$API/exporter/$project_id" | jq -r .export_id)
+[ -n "$export_id" ] && [ "$export_id" != null ] || fail "the export request returned no export id"
+# The file appears as soon as the worker starts writing it: wait until it is complete JSON.
+code=000
+for _ in $(seq 60); do
+  code=$(curl -sS -o "$WORK/export.json" -w '%{http_code}' "$BASE/media/exports/$project_id/$slug-$export_id.json")
+  if [ "$code" = 200 ] && jq -e . "$WORK/export.json" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 2
+done
+[ "$code" = 200 ] || fail "the project export is not served on /media/exports/ (HTTP $code)"
+[ "$(jq -r .slug "$WORK/export.json" 2>/dev/null)" = "$slug" ] ||
+  fail "the export is not the project's: $(head -c 200 "$WORK/export.json")"
+ok "a project export is written by the worker and downloaded through the gateway"
 
 # --- Celery beat -----------------------------------------------------------------------------------------------------
 # The beat pod sends the periodic tasks and the workers run them. The bulk email task is due every 120 seconds after

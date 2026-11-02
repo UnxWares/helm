@@ -1,0 +1,143 @@
+suite: named and exporter images
+templates:
+  # deployment.yaml includes configmap.yaml for its checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+  - tests/test-dns.yaml
+release:
+  name: my-dns
+  namespace: dns-system
+chart:
+  appVersion: "9.20"
+tests:
+  - it: runs the ISC image tagged with the chart appVersion
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/internetsystemsconsortium/bind9:9.20
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: follows the chart appVersion when the tag is empty
+    template: deployment.yaml
+    chart:
+      appVersion: "9.22"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/internetsystemsconsortium/bind9:9.22
+
+  - it: keeps a numeric-looking tag as written (9.21, the ISC development branch)
+    template: deployment.yaml
+    set:
+      image.tag: "9.21"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/internetsystemsconsortium/bind9:9.21
+
+  - it: prefers the digest over the tag
+    template: deployment.yaml
+    set:
+      image:
+        tag: "9.20"
+        digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/internetsystemsconsortium/bind9@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+  - it: runs named from the ISC image whatever imageProvider says
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/internetsystemsconsortium/bind9:9.20
+
+  - it: applies the pull policy and pull secrets to the pod
+    template: deployment.yaml
+    set:
+      image.pullPolicy: Always
+      imagePullSecrets:
+        - name: registry-credentials
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+
+  - it: runs no exporter by default
+    template: deployment.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
+
+  - it: uses the UnxWares exporter image by default
+    template: deployment.yaml
+    set:
+      metrics.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].image
+          value: ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f
+      - equal:
+          path: spec.template.spec.containers[1].imagePullPolicy
+          value: IfNotPresent
+
+  - it: switches to the Prometheus community exporter, pinned by digest, with imageProvider upstream
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+      metrics.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].image
+          value: docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf
+
+  - it: keeps the provider repository with an explicit exporter tag
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+      metrics:
+        enabled: true
+        image:
+          tag: v0.8.0
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].image
+          value: docker.io/prometheuscommunity/bind-exporter:v0.8.0
+
+  - it: lets an explicit exporter repository, digest and pull policy override the provider
+    template: deployment.yaml
+    set:
+      metrics:
+        enabled: true
+        image:
+          repository: registry.example.com/mirror/bind-exporter
+          tag: ignored
+          digest: sha256:1111111111111111111111111111111111111111111111111111111111111111
+          pullPolicy: Always
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].image
+          value: registry.example.com/mirror/bind-exporter@sha256:1111111111111111111111111111111111111111111111111111111111111111
+      - equal:
+          path: spec.template.spec.containers[1].imagePullPolicy
+          value: Always
+
+  - it: runs the helm test pod with the named image, digest included
+    template: tests/test-dns.yaml
+    set:
+      image.digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    asserts:
+      - equal:
+          path: spec.containers[0].image
+          value: docker.io/internetsystemsconsortium/bind9@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef

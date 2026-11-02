@@ -1,0 +1,82 @@
+suite: container environment
+templates:
+  - deployment.yaml
+release:
+  name: diagrams
+  namespace: tools
+tests:
+  - it: starts the storage backend on 127.0.0.1 with the diagrams directory
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: ENABLE_SERVER_STORAGE
+              value: "true"
+            - name: STORAGE_PATH
+              value: /data/diagrams
+            - name: BACKEND_HOST
+              value: 127.0.0.1
+      - notExists:
+          path: spec.template.spec.containers[0].envFrom
+
+  - it: adds PUID and PGID from storage.uid and storage.gid with the upstream image
+    set:
+      imageProvider: upstream
+      storage:
+        uid: 1001
+        gid: 1002
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: ENABLE_SERVER_STORAGE
+              value: "true"
+            - name: STORAGE_PATH
+              value: /data/diagrams
+            - name: BACKEND_HOST
+              value: 127.0.0.1
+            - name: PUID
+              value: "1001"
+            - name: PGID
+              value: "1002"
+
+  - it: only disables server storage in browser-only mode
+    set:
+      storage:
+        enabled: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: ENABLE_SERVER_STORAGE
+              value: "false"
+
+  - it: sets no PUID or PGID in browser-only mode with the upstream image
+    set:
+      imageProvider: upstream
+      storage:
+        enabled: false
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers[0].env
+          count: 1
+
+  - it: appends extraEnv and sets extraEnvFrom
+    set:
+      extraEnv:
+        - name: NODE_ENV
+          value: production
+      extraEnvFrom:
+        - configMapRef:
+            name: fossflow-settings
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[3]
+          value:
+            name: NODE_ENV
+            value: production
+      - equal:
+          path: spec.template.spec.containers[0].envFrom
+          value:
+            - configMapRef:
+                name: fossflow-settings

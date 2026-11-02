@@ -605,7 +605,7 @@ autoscaling:
   minReplicas: 2
   # -- Maximum replicas.
   maxReplicas: 10
-  # -- Target CPU utilization.
+  # -- Target CPU utilization (percent). With neither target set, Kubernetes scales on 80% average CPU utilization.
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 

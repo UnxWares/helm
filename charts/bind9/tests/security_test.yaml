@@ -1,0 +1,225 @@
+suite: security contexts and service account
+templates:
+  # deployment.yaml includes configmap.yaml for its checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+  - serviceaccount.yaml
+  - tests/test-dns.yaml
+release:
+  name: my-dns
+  namespace: dns-system
+tests:
+  - it: runs the pod as the bind user (uid and gid 53), non-root, with the unprivileged port sysctl and RuntimeDefault
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 53
+            runAsGroup: 53
+            fsGroup: 53
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+            sysctls:
+              - name: net.ipv4.ip_unprivileged_port_start
+                value: "53"
+
+  - it: hardens the named container (read-only root, no privilege escalation, no capability)
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: bind9
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: starts named without -u, as the user of the pod security context
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - /usr/sbin/named
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - -g
+
+  - it: runs the exporter as nobody (65534) with the same hardening
+    template: deployment.yaml
+    set:
+      metrics.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: bind9-exporter
+      - equal:
+          path: spec.template.spec.containers[1].securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: keeps the same security contexts with the official exporter image
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+      metrics.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 53
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop
+          value:
+            - ALL
+      - equal:
+          path: spec.template.spec.containers[1].securityContext.runAsUser
+          value: 65534
+      - equal:
+          path: spec.template.spec.containers[1].securityContext.readOnlyRootFilesystem
+          value: true
+
+  - it: does not mount the service account token
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: my-dns-bind9
+
+  - it: creates a dedicated service account without token automount
+    template: serviceaccount.yaml
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: my-dns-bind9
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: names the service account and annotates it
+    template: serviceaccount.yaml
+    set:
+      serviceAccount:
+        name: named
+        annotations:
+          example.com/owner: dns-team
+    asserts:
+      - equal:
+          path: metadata.name
+          value: named
+      - equal:
+          path: metadata.annotations
+          value:
+            example.com/owner: dns-team
+
+  - it: uses an existing service account when creation is disabled
+    set:
+      serviceAccount:
+        create: false
+        name: shared
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: serviceaccount.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: shared
+        template: deployment.yaml
+
+  - it: falls back to the default service account when creation is disabled without a name
+    template: deployment.yaml
+    set:
+      serviceAccount:
+        create: false
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: default
+
+  - it: keeps the default sysctl when only some security context keys are overridden (Helm merges the maps)
+    template: deployment.yaml
+    set:
+      podSecurityContext:
+        runAsUser: 1053
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1053
+      - equal:
+          path: spec.template.spec.securityContext.sysctls
+          value:
+            - name: net.ipv4.ip_unprivileged_port_start
+              value: "53"
+
+  - it: starts named as root with the README fallback for clusters that forbid the sysctl
+    template: deployment.yaml
+    values:
+      - values/readme-root-fallback.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 0
+      - notExists:
+          path: spec.template.spec.securityContext.sysctls
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities
+          value:
+            drop: [ALL]
+            add: [NET_BIND_SERVICE, SETUID, SETGID]
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - -g
+            - -u
+            - bind
+
+  - it: hardens the helm test pod, runs it as uid 53 and does not mount its token
+    template: tests/test-dns.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: test
+      - equal:
+          path: metadata.annotations["helm.sh/hook-delete-policy"]
+          value: before-hook-creation,hook-succeeded
+      - equal:
+          path: spec.restartPolicy
+          value: Never
+      - equal:
+          path: spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 53
+            runAsGroup: 53
+            seccompProfile:
+              type: RuntimeDefault
+      - equal:
+          path: spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL

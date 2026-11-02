@@ -1,0 +1,681 @@
+suite: security contexts, service account and helm test pod
+templates:
+  # the pods include secret.yaml, rabbitmq-configmap.yaml and gateway/configmap.yaml for their checksum annotations
+  - secret.yaml
+  - rabbitmq-configmap.yaml
+  - gateway/configmap.yaml
+  - backend/deployment.yaml
+  - async/deployment.yaml
+  - async/beat-deployment.yaml
+  - frontend/deployment.yaml
+  - events/deployment.yaml
+  - protected/deployment.yaml
+  - gateway/deployment.yaml
+  - db/deployment.yaml
+  - asyncRabbitmq/statefulset.yaml
+  - eventsRabbitmq/statefulset.yaml
+  - serviceaccount.yaml
+  - tests/test-gateway.yaml
+release:
+  name: taiga
+  namespace: taiga
+values:
+  - values/external-database.yaml
+tests:
+  - it: runs the backend and the workers as uid/gid 999, non-root, with fsGroup 999 for the media volume
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+        template: async/deployment.yaml
+
+  - it: runs the beat scheduler, events and protected as uid/gid 999 without fsGroup, and the front as uid/gid 101
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+        template: async/beat-deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+        template: events/deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+        template: protected/deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
+        template: frontend/deployment.yaml
+
+  - it: hardens every Taiga container with the UnxWares images (read-only root, no privilege escalation, no capability)
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        template: async/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        template: async/beat-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        template: events/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        template: protected/deployment.yaml
+
+  - it: lets the official Taiga images start as root, with seccomp and the fsGroup of the media volume only
+    set:
+      global:
+        imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            fsGroup: 999
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            seccompProfile:
+              type: RuntimeDefault
+        template: events/deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            seccompProfile:
+              type: RuntimeDefault
+        template: frontend/deployment.yaml
+
+  - it: drops every capability of the official images but the ones their entrypoints need, root filesystem writable
+    set:
+      global:
+        imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+                - DAC_OVERRIDE
+                - FOWNER
+                - SETUID
+                - SETGID
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+                - DAC_OVERRIDE
+                - FOWNER
+                - SETUID
+                - SETGID
+        template: async/beat-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+                - DAC_OVERRIDE
+                - SETUID
+                - SETGID
+                - NET_BIND_SERVICE
+        template: frontend/deployment.yaml
+
+  - it: applies global.podSecurityContext and global.securityContext to the Taiga components with empty values
+    set:
+      global:
+        podSecurityContext:
+          runAsNonRoot: true
+          runAsUser: 2000
+        securityContext:
+          readOnlyRootFilesystem: true
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 2000
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 2000
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            readOnlyRootFilesystem: true
+        template: events/deployment.yaml
+
+  - it: keeps a component's own security contexts over the global ones
+    set:
+      global:
+        podSecurityContext:
+          runAsUser: 2000
+      protected:
+        podSecurityContext:
+          runAsUser: 3000
+        securityContext:
+          runAsUser: 3000
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsUser: 3000
+        template: protected/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            runAsUser: 3000
+        template: protected/deployment.yaml
+
+  - it: keeps the defaults of the gateway, the database and the brokers when global security contexts are set
+    values:
+      - values/bundled-database.yaml
+    set:
+      global:
+        podSecurityContext:
+          runAsUser: 2000
+        securityContext:
+          privileged: false
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 101
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 70
+        template: db/deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 100
+        template: asyncRabbitmq/statefulset.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+        template: eventsRabbitmq/statefulset.yaml
+
+  - it: applies the global security contexts to the gateway when its own are null
+    set:
+      global:
+        podSecurityContext:
+          runAsUser: 2000
+        securityContext:
+          runAsUser: 2000
+      gateway:
+        podSecurityContext: null
+        securityContext: null
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsUser: 2000
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext
+          value:
+            runAsUser: 2000
+        template: gateway/deployment.yaml
+
+  - it: runs the gateway and its init container as uid 101, read-only, with both providers
+    set:
+      global:
+        imageProvider: upstream
+    template: gateway/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: runs the bundled PostgreSQL as uid/gid 70, read-only, with both providers
+    template: db/deployment.yaml
+    values:
+      - values/bundled-database.yaml
+    set:
+      global:
+        imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 70
+            runAsGroup: 70
+            fsGroup: 70
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: runs both brokers as uid 100 and gid 101, read-only, with both providers
+    set:
+      global:
+        imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 101
+            fsGroup: 101
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+        template: asyncRabbitmq/statefulset.yaml
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 101
+            fsGroup: 101
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+        template: eventsRabbitmq/statefulset.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        template: eventsRabbitmq/statefulset.yaml
+
+  - it: gives each read-only container an emptyDir for /tmp
+    values:
+      - values/bundled-database.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir:
+              sizeLimit: 64Mi
+        template: async/beat-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp
+        template: frontend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp
+        template: events/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp
+        template: protected/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir:
+              sizeLimit: 256Mi
+        template: gateway/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: run
+            emptyDir:
+              sizeLimit: 1Mi
+        template: db/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir:
+              sizeLimit: 64Mi
+        template: asyncRabbitmq/statefulset.yaml
+
+  - it: creates a dedicated service account without token automount
+    template: serviceaccount.yaml
+    set:
+      global:
+        serviceAccount:
+          annotations:
+            owner: ops
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: taiga
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+      - equal:
+          path: metadata.annotations.owner
+          value: ops
+
+  - it: does not mount the service account token in any pod
+    values:
+      - values/bundled-database.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: async/deployment.yaml
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: async/beat-deployment.yaml
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: events/deployment.yaml
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: protected/deployment.yaml
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: db/deployment.yaml
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: asyncRabbitmq/statefulset.yaml
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+        template: eventsRabbitmq/statefulset.yaml
+      - equal:
+          path: spec.automountServiceAccountToken
+          value: false
+        template: tests/test-gateway.yaml
+
+  - it: mounts the token only when global.serviceAccount.automount is true
+    set:
+      global:
+        serviceAccount:
+          automount: true
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: true
+        template: backend/deployment.yaml
+      - equal:
+          path: automountServiceAccountToken
+          value: true
+        template: serviceaccount.yaml
+      - equal:
+          path: spec.automountServiceAccountToken
+          value: false
+        template: tests/test-gateway.yaml
+
+  - it: uses an existing service account when creation is disabled
+    set:
+      global:
+        serviceAccount:
+          create: false
+          name: shared
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: serviceaccount.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: shared
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: shared
+        template: gateway/deployment.yaml
+
+  - it: falls back to the default service account when creation is disabled without a name
+    template: events/deployment.yaml
+    set:
+      global:
+        serviceAccount:
+          create: false
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: default
+
+  - it: runs the helm test pod with the gateway image and security contexts, once, without token
+    template: tests/test-gateway.yaml
+    asserts:
+      - isKind:
+          of: Pod
+      - equal:
+          path: metadata.name
+          value: taiga-test
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/hook: test
+            helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+      - equal:
+          path: spec.restartPolicy
+          value: Never
+      - equal:
+          path: spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
+      - equal:
+          path: spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      - equal:
+          path: spec.containers[0].resources
+          value:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+
+  - it: labels the helm test pod as a test pod of the release, which the gateway NetworkPolicy lets in
+    template: tests/test-gateway.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: taiga
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: taiga
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: test
+
+  - it: only reads through the gateway in the helm test, and points it to the public URLs
+    template: tests/test-gateway.yaml
+    asserts:
+      - equal:
+          path: spec.containers[0].env
+          value:
+            - name: GATEWAY
+              value: taiga-gateway:80
+            - name: EXPECTED_API
+              value: https://taiga.example.com/api/v1/
+            - name: EXPECTED_EVENTS
+              value: wss://taiga.example.com/events
+      - notMatchRegex:
+          path: spec.containers[0].command[2]
+          pattern: "(POST|PUT|PATCH|DELETE|--post|kubectl)"
+      - matchRegex:
+          path: spec.containers[0].command[2]
+          pattern: 'case "\$denied" in \*" 403 "\*\)'
+
+  - it: follows the public URL, the sub-path and the gateway Service port in the helm test
+    template: tests/test-gateway.yaml
+    set:
+      global:
+        scheme: http
+        websocketsScheme: ws
+        domain: localhost
+        subPath: /taiga
+      gateway:
+        service:
+          port: 8080
+    asserts:
+      - equal:
+          path: spec.containers[0].env
+          value:
+            - name: GATEWAY
+              value: taiga-gateway:8080
+            - name: EXPECTED_API
+              value: http://localhost/taiga/api/v1/
+            - name: EXPECTED_EVENTS
+              value: ws://localhost/taiga/events

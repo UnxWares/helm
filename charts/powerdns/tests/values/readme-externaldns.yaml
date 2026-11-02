@@ -1,0 +1,9 @@
+# README example "ExternalDNS" (PowerDNS values), as written in the README.
+api:
+  existingSecret: powerdns-api-key
+networkPolicy:
+  enabled: true
+  apiAllowedFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: external-dns

@@ -57,14 +57,11 @@ data:
             add_header Content-disposition "attachment";
         }
 
-        # Protected files
+        # Project exports: served from the media volume, as the upstream gateway does (their links, sent by e-mail,
+        # carry no token for taiga-protected).
         location /media/exports/ {
-            proxy_pass http://{{ include "taiga.fullname" . }}-protected:{{ .Values.protected.service.port }}/;
-            proxy_pass_header Server;
-            proxy_set_header Host $http_host;
-            proxy_redirect off;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Scheme $scheme;
+            alias /taiga/media/exports/;
+            add_header Content-disposition "attachment";
         }
 
         location /media/ {

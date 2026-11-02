@@ -1,0 +1,33 @@
+# README example "Small team: bundled PostgreSQL, ingress-nginx, SMTP", as written in the README.
+global:
+  domain: taiga.example.com
+externalDatabase:
+  enabled: false
+db:
+  enabled: true
+  persistence:
+    size: 10Gi
+backend:
+  email:
+    backend: smtp
+    host: smtp.example.com
+    port: 587
+    useTLS: true
+    defaultFrom: taiga@example.com
+    existingSecret: taiga-smtp   # keys: EMAIL_HOST_USER, EMAIL_HOST_PASSWORD
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/proxy-body-size: 100m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+  hosts:
+    - host: taiga.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: taiga-tls
+      hosts:
+        - taiga.example.com

@@ -2,7 +2,7 @@ apiVersion: v2
 name: powerdns
 description: PowerDNS Authoritative Server with its REST API, SQLite/PostgreSQL/MySQL backends and an optional PowerDNS Recursor, hardened for Kubernetes.
 type: application
-version: 2026.11.2
+version: 2026.11.3
 appVersion: "5.1.5"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/powerdns
@@ -51,26 +51,12 @@ annotations:
       image: ghcr.io/unxwares/postgresql-client:18
     - name: mysql-client
       image: ghcr.io/unxwares/mysql-client:8.4
-  artifacthub.io/containsSecurityUpdates: "true"
+  artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
-    - kind: security
-      description: "The recursor webserver (API, /metrics) moves from the recursor DNS Service to its own ClusterIP Service, <fullname>-recursor-api: a LoadBalancer recursor Service no longer publishes it."
-    - kind: security
-      description: "gmysql schema init: the MySQL client options file, which holds the password, is written to a memory-backed /tmp private to the init container instead of the disk-backed /tmp shared with the server; the password is escaped, so quotes and backslashes no longer break it."
-    - kind: security
-      description: "The Secret holding a generated API key is kept on uninstall (helm.sh/resource-policy: keep), so that a reinstall reuses the key; the schema init container only gets the database password and the helm test pod only the API key."
-    - kind: fixed
-      description: "The schema init container mounts extraVolumeMounts, so a CA given in backend.gpgsql.extraConnectionParameters (sslrootcert) works with the schema init enabled."
-    - kind: fixed
-      description: "gmysql with the UnxWares image: the server connects to a MySQL server with a self-signed certificate (the default of MySQL), encrypted without checking the certificate like the MySQL client; backend.gmysql.verifyServerCertificate: true keeps the check."
-    - kind: fixed
-      description: "An IPv6 address of the authoritative Service (service.clusterIP or the injected variable) is written in brackets in the recursor forwarders."
-    - kind: changed
-      description: "Schema init images: ghcr.io/unxwares/postgresql-client:18 and ghcr.io/unxwares/mysql-client:8.4 with imageProvider: unxwares (the clients alone), docker.io/library/postgres:18.6-alpine and docker.io/library/mysql:8.4.13 with upstream. backend.schemaInit.mysqlImage defaults to empty."
-    - kind: fixed
-      description: "The NOTES show the images actually deployed (tag or digest); autoscaling.targetMemoryUtilizationPercentage is a documented value."
     - kind: added
-      description: "End-to-end test in CI on SQLite with the recursor, PostgreSQL over verified TLS and MySQL, in a namespace that enforces the restricted Pod Security Standard: the API refuses wrong keys and manages zones, the records are answered by the authoritative server and the recursor, and survive a restart."
+      description: "Unit tests (helm-unittest, 156 tests) of the required values, security contexts, image selection, API key and database password Secrets, container env, pdns.conf, recursor settings, Services, ServiceMonitors, NetworkPolicies, HPAs and PDBs, persistence, preStop hooks, helm test pod, release notes and README examples, run in CI on every pull request and push to main. They also showed that the helm test pod ignored imagePullSecrets: it now uses them."
+    - kind: fixed
+      description: "A rolling update or a drain no longer refuses queries while the old pod stops: preStop hooks keep the server and the recursor answering for preStopSleepSeconds and recursor.preStopSleepSeconds (5 s) while the pod leaves the Service endpoints (the sleep action on Kubernetes 1.30 and later, sleep from the image on older clusters; 0 removes them). terminationGracePeriodSeconds and recursor.terminationGracePeriodSeconds (30) are set by the chart and must be greater."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

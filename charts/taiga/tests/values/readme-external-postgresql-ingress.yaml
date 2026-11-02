@@ -1,0 +1,26 @@
+# README example "External PostgreSQL and an Ingress with TLS", as written in the README.
+global:
+  domain: taiga.example.com
+externalDatabase:
+  enabled: true
+  host: postgres.databases.svc
+  database: taiga
+  username: taiga
+  existingSecret: taiga-db   # keys: database-host, database-port, database-name, database-username, database-password
+  sslmode: require
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/proxy-body-size: 100m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+  hosts:
+    - host: taiga.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: taiga-example-com-tls
+      hosts:
+        - taiga.example.com

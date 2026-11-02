@@ -1,6 +1,6 @@
 # PowerDNS Helm Chart
 
-![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 5.1.5](https://img.shields.io/badge/AppVersion-5.1.5-informational?style=flat-square)
+![Version: 2026.11.3](https://img.shields.io/badge/Version-2026.11.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 5.1.5](https://img.shields.io/badge/AppVersion-5.1.5-informational?style=flat-square)
 
 [PowerDNS Authoritative Server](https://doc.powerdns.com/authoritative/) serves DNS zones stored in a database and
 manages them through a REST API. This chart deploys it on Kubernetes with a SQLite, PostgreSQL or MySQL/MariaDB
@@ -132,6 +132,9 @@ vulnerabilities of every image the chart can deploy, upstream images included, a
 
 Kubernetes: `>=1.27.0-0`
 
+- **Kubernetes 1.27 to 1.29**: supported; the preStop hooks (see
+  [Shutdown and rolling updates](#shutdown-and-rolling-updates)) run `sleep` from the image there, and use the
+  `sleep` lifecycle action from 1.30, where that action is enabled by default.
 - **Node architecture**: `linux/amd64` or `linux/arm64` (all default images are multi-architecture).
 - **Storage**: the default `gsqlite3` backend asks for a 1Gi `ReadWriteOnce` PVC from the default StorageClass (or
   `persistence.storageClass`, or `persistence.existingClaim`). The SQL backends need no volume.
@@ -524,6 +527,32 @@ The probes open a TCP connection to the DNS port. The startup probe gives the se
 the liveness probe then restarts it after 4 failures 15 s apart. Override `livenessProbe`, `readinessProbe`,
 `startupProbe`, `recursor.livenessProbe` and `recursor.readinessProbe` to change them.
 
+### Shutdown and rolling updates
+
+```yaml
+preStopSleepSeconds: 5             # 0 removes the preStop hook
+terminationGracePeriodSeconds: 30  # must be greater than preStopSleepSeconds
+recursor:
+  preStopSleepSeconds: 5
+  terminationGracePeriodSeconds: 30
+```
+
+When a pod is deleted (rolling update, drain, scale down), Kubernetes removes it from the Service endpoints and stops
+its containers at the same time. Nodes and load balancers take a moment to stop sending it traffic: without a delay,
+PowerDNS would already be gone and the queries sent to it meanwhile would be refused. A `preStop` hook keeps the
+server (`preStopSleepSeconds`) and the recursor (`recursor.preStopSleepSeconds`) answering for 5 s before they get
+SIGTERM.
+
+- On Kubernetes 1.30 and later the hook is the `sleep` lifecycle action. On older clusters, where that action is off
+  by default, the chart renders an `exec` hook that runs `sleep` from the image instead (the UnxWares and the official
+  images have it; check a custom image does too). The chart picks the form from the Kubernetes version Helm reports:
+  with `helm template`, pass `--kube-version`.
+- `terminationGracePeriodSeconds` covers the sleep and the stop of PowerDNS after SIGTERM: the chart refuses a value
+  that is not greater than the sleep.
+- With `gsqlite3` and persistence (`Recreate` strategy), there is no other pod to take over: the delay keeps the old
+  pod answering a little longer, but the restart still interrupts DNS. Use a SQL backend and several replicas for
+  updates without interruption.
+
 ### NetworkPolicy
 
 ```yaml
@@ -769,9 +798,9 @@ also run: the chart is installed on a kind cluster once per `ci/*-values.yaml` (
 become ready, then `helm test` runs.
 
 The test pod `<fullname>-test-api` runs Python from the authoritative server image (or `tests.image`), with the same
-security contexts as the server. It calls `GET /api/v1/servers/localhost` on the `<fullname>-api` Service with the API
-key, and fails on any HTTP error or after 10 seconds without an answer. It does not send DNS queries and does not test
-the recursor or a SQL backend; it changes nothing.
+security contexts and `imagePullSecrets` as the server. It calls `GET /api/v1/servers/localhost` on the
+`<fullname>-api` Service with the API key, and fails on any HTTP error or after 10 seconds without an answer. It does
+not send DNS queries and does not test the recursor or a SQL backend; it changes nothing.
 
 The end-to-end test (`.github/workflows/e2e.yaml`, scripts `.github/scripts/powerdns-e2e-env.sh` and
 `.github/scripts/powerdns-e2e.sh`) runs on pull requests that touch the chart or its images, on every push to main
@@ -796,6 +825,16 @@ Run the test after an install:
 ```bash
 helm test dns -n dns --logs
 ```
+
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the messages of the required values, the security contexts of every container with both image
+providers, the image selection (provider, repository, tag, digest, database client images), the API key generated
+once, reused at upgrade and kept on uninstall, secrets passed through `secretKeyRef` only and to the containers that
+use them, `pdns.conf` and the secrets template for each backend, the zone cache refresh, the init containers, the
+recursor settings (forward zones, IPv6 addresses, negative trust anchors), Services, ServiceMonitors, NetworkPolicies,
+HPAs and PDBs, persistence, the preStop hooks on both sides of Kubernetes 1.30 and their grace period check, the
+`helm test` pod, the release notes, and the examples of this README.
 
 ## Operations
 
@@ -838,6 +877,14 @@ kubectl exec -n dns deploy/dns-powerdns-recursor -c recursor -- \
 The schema init only creates a missing schema. When a new PowerDNS version changes the database schema, apply the
 upgrade SQL given in the [PowerDNS upgrade notes](https://doc.powerdns.com/authoritative/upgrading.html) before
 upgrading the chart.
+
+### To 2026.11.3
+
+- **preStop hooks**: the server and recursor pods keep answering for 5 s after they are asked to stop, so they take
+  5 s longer to go away (see [Shutdown and rolling updates](#shutdown-and-rolling-updates)). `preStopSleepSeconds: 0`
+  and `recursor.preStopSleepSeconds: 0` restore the previous behavior. `terminationGracePeriodSeconds` and
+  `recursor.terminationGracePeriodSeconds` (30, the Kubernetes default) are now set by the chart and must stay greater
+  than the sleep.
 
 ### To 2026.11.2
 
@@ -1002,6 +1049,7 @@ kubectl delete secret -n dns dns-powerdns
 | podDisruptionBudget.minAvailable | int | `1` | Minimum available pods. |
 | podLabels | object | `{}` | Pod labels. |
 | podSecurityContext | object | `{"fsGroup":953,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":953,"runAsNonRoot":true,"runAsUser":953,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. |
+| preStopSleepSeconds | int | `5` | Seconds the server keeps answering after its pod is marked for deletion, before it gets SIGTERM (preStop hook). The pod leaves the Service endpoints while it stops: without this delay, queries still routed to it during a rolling update or a drain are refused. 0 removes the hook. The hook uses the `sleep` action on Kubernetes 1.30 and later, and runs `sleep` from the image on older clusters. |
 | priorityClassName | string | `""` | Priority class of the pods. |
 | readinessProbe | object | `{"failureThreshold":3,"periodSeconds":10,"tcpSocket":{"port":"dns-tcp"},"timeoutSeconds":3}` | Readiness probe. |
 | recursor.affinity | object | `{}` | Affinity rules. |
@@ -1036,6 +1084,7 @@ kubectl delete secret -n dns dns-powerdns
 | recursor.podDisruptionBudget.maxUnavailable | string | `nil` | Maximum unavailable recursor pods (takes precedence over `minAvailable`). |
 | recursor.podDisruptionBudget.minAvailable | int | `1` | Minimum available recursor pods (used when `maxUnavailable` is null). |
 | recursor.podLabels | object | `{}` | Pod labels. |
+| recursor.preStopSleepSeconds | int | `5` | Seconds the recursor keeps answering after its pod is marked for deletion, before it gets SIGTERM (preStop hook), like `preStopSleepSeconds` for the server. 0 removes the hook. |
 | recursor.readinessProbe | object | `{"periodSeconds":10,"tcpSocket":{"port":"dns-tcp"},"timeoutSeconds":3}` | Readiness probe. |
 | recursor.replicaCount | int | `1` | Recursor replicas. |
 | recursor.resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"50m","memory":"128Mi"}}` | Resources. |
@@ -1047,6 +1096,7 @@ kubectl delete secret -n dns dns-powerdns
 | recursor.service.port | int | `53` | Recursor DNS port. |
 | recursor.service.type | string | `"ClusterIP"` | Recursor service type. |
 | recursor.spreadAcrossNodes | bool | `true` | When `topologySpreadConstraints` is empty, spread the replicas across nodes, then zones (ScheduleAnyway). |
+| recursor.terminationGracePeriodSeconds | int | `30` | Grace period of the recursor pods. Must be greater than `recursor.preStopSleepSeconds`. |
 | recursor.tolerations | list | `[]` | Tolerations. |
 | recursor.topologySpreadConstraints | list | `[]` | Topology spread constraints. |
 | recursor.validateAuthoritativeZones | bool | `false` | Validate the `authoritativeZones` with DNSSEC. Leave it off unless these zones are signed and delegated from the public root with a DS record: otherwise validation answers SERVFAIL for them, so the chart adds them as negative trust anchors. |
@@ -1073,6 +1123,7 @@ kubectl delete secret -n dns dns-powerdns
 | serviceAccount.name | string | `""` | Service account name (generated when empty). |
 | spreadAcrossNodes | bool | `true` | When `topologySpreadConstraints` is empty, spread the replicas across nodes, then zones (ScheduleAnyway: never blocks scheduling). |
 | startupProbe | object | `{"failureThreshold":30,"periodSeconds":5,"tcpSocket":{"port":"dns-tcp"}}` | Startup probe. |
+| terminationGracePeriodSeconds | int | `30` | Grace period of the server pods: the preStop sleep, then the time PowerDNS has to stop after SIGTERM. Must be greater than `preStopSleepSeconds`. |
 | tests.image | string | `""` | Image used by `helm test` (defaults to the authoritative server image, which ships Python). |
 | tolerations | list | `[]` | Tolerations. |
 | topologySpreadConstraints | list | `[]` | Topology spread constraints. |

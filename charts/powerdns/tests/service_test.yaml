@@ -1,0 +1,243 @@
+suite: Services and ServiceMonitors
+templates:
+  - service.yaml
+  - service-api.yaml
+  - servicemonitor.yaml
+  - recursor/service.yaml
+  - recursor/service-api.yaml
+  - recursor/servicemonitor.yaml
+release:
+  name: dns
+  namespace: dns
+tests:
+  - it: exposes DNS on 53 over UDP and TCP to the container port of the authoritative pods, and nothing else
+    template: service.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: dns-powerdns
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports
+          value:
+            - name: dns-udp
+              port: 53
+              targetPort: dns-udp
+              protocol: UDP
+            - name: dns-tcp
+              port: 53
+              targetPort: dns-tcp
+              protocol: TCP
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: powerdns
+            app.kubernetes.io/instance: dns
+            app.kubernetes.io/component: authoritative
+
+  - it: publishes DNS with a LoadBalancer, its address, source ranges, traffic policy and node ports
+    template: service.yaml
+    set:
+      service:
+        type: LoadBalancer
+        loadBalancerIP: 192.0.2.53
+        loadBalancerSourceRanges: [192.0.2.0/24]
+        externalTrafficPolicy: Local
+        nodePorts:
+          udp: 30053
+          tcp: 30054
+    asserts:
+      - equal:
+          path: spec.loadBalancerIP
+          value: 192.0.2.53
+      - equal:
+          path: spec.loadBalancerSourceRanges
+          value: [192.0.2.0/24]
+      - equal:
+          path: spec.externalTrafficPolicy
+          value: Local
+      - equal:
+          path: spec.ports[0].nodePort
+          value: 30053
+      - equal:
+          path: spec.ports[1].nodePort
+          value: 30054
+
+  - it: ignores node ports, load balancer settings and traffic policy on a ClusterIP Service
+    template: service.yaml
+    set:
+      service:
+        loadBalancerIP: 192.0.2.53
+        externalTrafficPolicy: Local
+        nodePorts:
+          udp: 30053
+    asserts:
+      - notExists:
+          path: spec.loadBalancerIP
+      - notExists:
+          path: spec.externalTrafficPolicy
+      - notExists:
+          path: spec.ports[0].nodePort
+
+  - it: sets a fixed cluster IP and the IP families
+    template: service.yaml
+    set:
+      service:
+        clusterIP: 10.96.0.53
+        ipFamilyPolicy: PreferDualStack
+        ipFamilies: [IPv4, IPv6]
+    asserts:
+      - equal:
+          path: spec.clusterIP
+          value: 10.96.0.53
+      - equal:
+          path: spec.ipFamilyPolicy
+          value: PreferDualStack
+      - equal:
+          path: spec.ipFamilies
+          value: [IPv4, IPv6]
+
+  - it: puts the API and /metrics on their own ClusterIP Service, labelled for the ServiceMonitor
+    template: service-api.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: dns-powerdns-api
+      - equal:
+          path: metadata.labels["powerdns.unxwares.com/endpoint"]
+          value: webserver
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports
+          value:
+            - name: http
+              port: 8081
+              targetPort: http
+              protocol: TCP
+      - equal:
+          path: spec.selector["app.kubernetes.io/component"]
+          value: authoritative
+
+  - it: renders no API Service without the webserver
+    template: service-api.yaml
+    set:
+      webserver.enabled: false
+      api.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: exposes the recursor DNS only, and its webserver on a separate ClusterIP Service
+    set:
+      recursor:
+        enabled: true
+        service:
+          type: LoadBalancer
+    asserts:
+      - equal:
+          path: spec.ports
+          value:
+            - name: dns-udp
+              port: 53
+              targetPort: dns-udp
+              protocol: UDP
+            - name: dns-tcp
+              port: 53
+              targetPort: dns-tcp
+              protocol: TCP
+        template: recursor/service.yaml
+      - equal:
+          path: spec.selector["app.kubernetes.io/component"]
+          value: recursor
+        template: recursor/service.yaml
+      - equal:
+          path: metadata.name
+          value: dns-powerdns-recursor-api
+        template: recursor/service-api.yaml
+      - equal:
+          path: spec.type
+          value: ClusterIP
+        template: recursor/service-api.yaml
+      - equal:
+          path: spec.ports[0].port
+          value: 8082
+        template: recursor/service-api.yaml
+
+  - it: renders no ServiceMonitor without the Prometheus Operator CRD
+    set:
+      metrics.serviceMonitor.enabled: true
+      recursor:
+        enabled: true
+        metrics:
+          serviceMonitor:
+            enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: servicemonitor.yaml
+      - hasDocuments:
+          count: 0
+        template: recursor/servicemonitor.yaml
+
+  - it: scrapes /metrics on the API Service of each component (README example)
+    capabilities:
+      apiVersions:
+        - monitoring.coreos.com/v1/ServiceMonitor
+    set:
+      metrics.serviceMonitor:
+        enabled: true
+        labels:
+          release: kube-prometheus-stack
+      recursor:
+        enabled: true
+        metrics:
+          serviceMonitor:
+            enabled: true
+    asserts:
+      - equal:
+          path: spec.endpoints
+          value:
+            - port: http
+              path: /metrics
+              interval: 30s
+              scrapeTimeout: 10s
+        template: servicemonitor.yaml
+      - equal:
+          path: metadata.labels.release
+          value: kube-prometheus-stack
+        template: servicemonitor.yaml
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: powerdns
+            app.kubernetes.io/instance: dns
+            app.kubernetes.io/component: authoritative
+            powerdns.unxwares.com/endpoint: webserver
+        template: servicemonitor.yaml
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: powerdns
+            app.kubernetes.io/instance: dns
+            app.kubernetes.io/component: recursor
+            powerdns.unxwares.com/endpoint: webserver
+        template: recursor/servicemonitor.yaml
+
+  - it: renders no ServiceMonitor without the webserver, even with the CRD
+    template: servicemonitor.yaml
+    capabilities:
+      apiVersions:
+        - monitoring.coreos.com/v1/ServiceMonitor
+    set:
+      metrics.serviceMonitor.enabled: true
+      webserver.enabled: false
+      api.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

@@ -1,0 +1,287 @@
+suite: DNS Service, admin Service and ServiceMonitor
+templates:
+  - service.yaml
+  - service-admin.yaml
+  - servicemonitor.yaml
+  - tests/test-dns.yaml
+release:
+  name: my-dns
+  namespace: dns-system
+tests:
+  - it: exposes DNS over TCP and UDP on 53, and nothing else
+    template: service.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: my-dns-bind9
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports
+          value:
+            - name: dns-tcp
+              port: 53
+              targetPort: dns-tcp
+              protocol: TCP
+            - name: dns-udp
+              port: 53
+              targetPort: dns-udp
+              protocol: UDP
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: bind9
+            app.kubernetes.io/instance: my-dns
+
+  - it: keeps the metrics and rndc ports off the DNS Service
+    template: service.yaml
+    set:
+      metrics.enabled: true
+      service.exposeRndc: true
+    asserts:
+      - lengthEqual:
+          path: spec.ports
+          count: 2
+      - notContains:
+          path: spec.ports
+          content:
+            name: metrics
+          any: true
+      - notContains:
+          path: spec.ports
+          content:
+            name: rndc
+          any: true
+
+  - it: publishes DNS with a LoadBalancer, its address, source ranges, traffic policy and annotations
+    template: service.yaml
+    set:
+      service:
+        type: LoadBalancer
+        loadBalancerIP: 192.0.2.53
+        loadBalancerSourceRanges: [192.0.2.0/24]
+        externalTrafficPolicy: Local
+        annotations:
+          metallb.universe.tf/allow-shared-ip: dns
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: spec.loadBalancerIP
+          value: 192.0.2.53
+      - equal:
+          path: spec.loadBalancerSourceRanges
+          value: [192.0.2.0/24]
+      - equal:
+          path: spec.externalTrafficPolicy
+          value: Local
+      - equal:
+          path: metadata.annotations
+          value:
+            metallb.universe.tf/allow-shared-ip: dns
+
+  - it: sets the node ports of a NodePort Service (README example)
+    template: service.yaml
+    set:
+      service:
+        type: NodePort
+        ports:
+          dnsTcpNodePort: 30053
+          dnsUdpNodePort: 30053
+    asserts:
+      - equal:
+          path: spec.ports[0].nodePort
+          value: 30053
+      - equal:
+          path: spec.ports[1].nodePort
+          value: 30053
+
+  - it: ignores node ports, load balancer settings and traffic policy on a ClusterIP Service
+    template: service.yaml
+    set:
+      service:
+        loadBalancerIP: 192.0.2.53
+        loadBalancerSourceRanges: [192.0.2.0/24]
+        externalTrafficPolicy: Local
+        ports:
+          dnsTcpNodePort: 30053
+          dnsUdpNodePort: 30053
+    asserts:
+      - notExists:
+          path: spec.loadBalancerIP
+      - notExists:
+          path: spec.loadBalancerSourceRanges
+      - notExists:
+          path: spec.externalTrafficPolicy
+      - notExists:
+          path: spec.ports[0].nodePort
+      - notExists:
+          path: spec.ports[1].nodePort
+
+  - it: changes the Service ports only (named keeps 53 in the pod)
+    template: service.yaml
+    set:
+      service.ports.dnsTcp: 5353
+      service.ports.dnsUdp: 5354
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 5353
+      - equal:
+          path: spec.ports[0].targetPort
+          value: dns-tcp
+      - equal:
+          path: spec.ports[1].port
+          value: 5354
+
+  - it: renders no DNS Service and no helm test pod with service.enabled false
+    set:
+      service.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: service.yaml
+      - hasDocuments:
+          count: 0
+        template: tests/test-dns.yaml
+
+  - it: renders no admin Service by default
+    template: service-admin.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: puts the metrics port on the ClusterIP admin Service, labelled for the ServiceMonitor
+    template: service-admin.yaml
+    set:
+      metrics.enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: my-dns-bind9-admin
+      - equal:
+          path: metadata.labels["bind9.unxwares.com/endpoint"]
+          value: admin
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports
+          value:
+            - name: metrics
+              port: 9119
+              targetPort: metrics
+              protocol: TCP
+
+  - it: adds rndc to the admin Service with service.exposeRndc
+    template: service-admin.yaml
+    set:
+      service.exposeRndc: true
+    asserts:
+      - equal:
+          path: spec.ports
+          value:
+            - name: rndc
+              port: 953
+              targetPort: rndc
+              protocol: TCP
+
+  - it: sets the admin node ports only when adminService.type publishes them
+    template: service-admin.yaml
+    set:
+      metrics.enabled: true
+      service:
+        exposeRndc: true
+        ports:
+          rndcNodePort: 30953
+          metricsNodePort: 30119
+      adminService:
+        type: NodePort
+        annotations:
+          example.com/internal: "true"
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+      - equal:
+          path: spec.ports[0].nodePort
+          value: 30953
+      - equal:
+          path: spec.ports[1].nodePort
+          value: 30119
+      - equal:
+          path: metadata.annotations
+          value:
+            example.com/internal: "true"
+
+  - it: ignores the admin node ports on a ClusterIP admin Service
+    template: service-admin.yaml
+    set:
+      metrics.enabled: true
+      service.ports.metricsNodePort: 30119
+    asserts:
+      - notExists:
+          path: spec.ports[0].nodePort
+
+  - it: renders no ServiceMonitor without the Prometheus Operator CRD
+    template: servicemonitor.yaml
+    set:
+      metrics.enabled: true
+      metrics.serviceMonitor.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders no ServiceMonitor without metrics.enabled, even with the CRD
+    template: servicemonitor.yaml
+    capabilities:
+      apiVersions:
+        - monitoring.coreos.com/v1/ServiceMonitor
+    set:
+      metrics.serviceMonitor.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: scrapes the admin Service only, with the given labels and endpoints (README example)
+    template: servicemonitor.yaml
+    capabilities:
+      apiVersions:
+        - monitoring.coreos.com/v1/ServiceMonitor
+    set:
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+          labels:
+            release: kube-prometheus-stack
+          endpoints:
+            - port: metrics
+              scheme: http
+              interval: 30s
+    asserts:
+      - isKind:
+          of: ServiceMonitor
+      - equal:
+          path: metadata.labels.release
+          value: kube-prometheus-stack
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: bind9
+            app.kubernetes.io/instance: my-dns
+            bind9.unxwares.com/endpoint: admin
+      - equal:
+          path: spec.namespaceSelector.matchNames
+          value:
+            - dns-system
+      - equal:
+          path: spec.endpoints
+          value:
+            - port: metrics
+              scheme: http
+              interval: 30s

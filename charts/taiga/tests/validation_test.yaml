@@ -1,0 +1,266 @@
+suite: required values and their error messages
+templates:
+  # taiga.validate is called by secret.yaml, which every Taiga pod includes for its checksum annotation
+  - secret.yaml
+release:
+  name: taiga
+  namespace: taiga
+tests:
+  - it: refuses the default values, which have no database password
+    asserts:
+      - failedTemplate:
+          errorMessage: externalDatabase.password or externalDatabase.existingSecret is required
+
+  - it: accepts the external database with a password
+    values:
+      - values/external-database.yaml
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: accepts the external database with an existing Secret instead of a password
+    set:
+      externalDatabase:
+        existingSecret: taiga-db
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: refuses the external and the bundled database together
+    values:
+      - values/external-database.yaml
+    set:
+      db:
+        enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "enable either externalDatabase or db (bundled PostgreSQL), not both"
+
+  - it: refuses a release without any database
+    set:
+      externalDatabase:
+        enabled: false
+    asserts:
+      - failedTemplate:
+          errorMessage: "a database is required: enable externalDatabase or db"
+
+  - it: accepts the bundled database alone, without any password
+    values:
+      - values/bundled-database.yaml
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: requires the OIDC client secret
+    values:
+      - values/external-database.yaml
+    set:
+      global:
+        oidc:
+          enabled: true
+          issuer: https://keycloak.example.com/realms/example
+          clientId: taiga
+    asserts:
+      - failedTemplate:
+          errorMessage: global.oidc.clientSecret or global.oidc.existingSecret is required when OIDC is enabled
+
+  - it: accepts OIDC with an existing Secret instead of the client secret
+    values:
+      - values/external-database.yaml
+    set:
+      global:
+        oidc:
+          enabled: true
+          existingSecret: taiga-oidc
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: refuses OIDC with the upstream images, which have no OIDC plugin
+    values:
+      - values/external-database.yaml
+    set:
+      global:
+        imageProvider: upstream
+        oidc:
+          enabled: true
+          existingSecret: taiga-oidc
+    asserts:
+      - failedTemplate:
+          errorMessage: "OIDC needs the UnxWares images (global.imageProvider: unxwares, the plugin is built in) or OIDC-enabled images in global.oidc.backend.overrideImage and global.oidc.frontend.overrideImage"
+
+  - it: refuses OIDC with the upstream images when only the backend image is replaced
+    values:
+      - values/external-database.yaml
+    set:
+      global:
+        imageProvider: upstream
+        oidc:
+          enabled: true
+          existingSecret: taiga-oidc
+          backend:
+            overrideImage:
+              name: registry.example.com/taiga-back-oidc
+              tag: 6.10.2
+    asserts:
+      - failedTemplate:
+          errorPattern: "OIDC needs the UnxWares images"
+
+  - it: accepts OIDC with the upstream images when both images are replaced
+    values:
+      - values/external-database.yaml
+    set:
+      global:
+        imageProvider: upstream
+        oidc:
+          enabled: true
+          existingSecret: taiga-oidc
+          backend:
+            overrideImage:
+              name: registry.example.com/taiga-back-oidc
+              tag: 6.10.2
+          frontend:
+            overrideImage:
+              name: registry.example.com/taiga-front-oidc
+              tag: 6.10.3
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: refuses an async command that runs the image entrypoint, which starts a beat scheduler
+    values:
+      - values/external-database.yaml
+    set:
+      async:
+        command:
+          - docker/async_entrypoint.sh
+    asserts:
+      - failedTemplate:
+          errorMessage: "async.command and async.extraArgs must not start a beat scheduler (docker/async_entrypoint.sh, -B or --beat): the chart runs it once, in the async-beat pod. Remove async.command to use the default worker command"
+
+  - it: refuses -B in async.extraArgs
+    values:
+      - values/external-database.yaml
+    set:
+      async:
+        extraArgs:
+          - -B
+    asserts:
+      - failedTemplate:
+          errorPattern: "must not start a beat scheduler"
+
+  - it: refuses --beat in async.command
+    values:
+      - values/external-database.yaml
+    set:
+      async:
+        command:
+          - celery
+          - -A
+          - taiga.celery
+          - worker
+          - --beat
+    asserts:
+      - failedTemplate:
+          errorPattern: "must not start a beat scheduler"
+
+  - it: accepts worker options such as --concurrency and -Q
+    values:
+      - values/external-database.yaml
+    set:
+      async:
+        extraArgs:
+          - --concurrency
+          - "2"
+          - -Q
+          - celery
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: refuses a media claim created as ReadWriteOncePod by a previous release
+    values:
+      - values/external-database.yaml
+    kubernetesProvider:
+      scheme:
+        "v1/PersistentVolumeClaim":
+          gvr:
+            version: v1
+            resource: persistentvolumeclaims
+          namespaced: true
+      objects:
+        - apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: taiga-media
+            namespace: taiga
+          spec:
+            accessModes:
+              - ReadWriteOncePod
+    asserts:
+      - failedTemplate:
+          errorMessage: "global.persistence.media.accessMode cannot be ReadWriteOncePod: backend, async and gateway mount the same volume"
+
+  - it: accepts that claim when media persistence is disabled
+    values:
+      - values/external-database.yaml
+    set:
+      global:
+        persistence:
+          media:
+            enabled: false
+    kubernetesProvider:
+      scheme:
+        "v1/PersistentVolumeClaim":
+          gvr:
+            version: v1
+            resource: persistentvolumeclaims
+          namespaced: true
+      objects:
+        - apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: taiga-media
+            namespace: taiga
+          spec:
+            accessModes:
+              - ReadWriteOncePod
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: rejects ReadWriteOncePod in the values through the schema
+    values:
+      - values/external-database.yaml
+    set:
+      global:
+        persistence:
+          media:
+            accessMode: ReadWriteOncePod
+    asserts:
+      - failedTemplate:
+          errorPattern: accessMode
+
+  - it: rejects an unknown image provider through the schema
+    values:
+      - values/external-database.yaml
+    set:
+      global:
+        imageProvider: dockerhub
+    asserts:
+      - failedTemplate:
+          errorPattern: imageProvider
+
+  - it: rejects an unknown public URL scheme through the schema
+    values:
+      - values/external-database.yaml
+    set:
+      global:
+        scheme: ftp
+    asserts:
+      - failedTemplate:
+          errorPattern: scheme
+
+  - it: rejects an unknown email backend through the schema
+    values:
+      - values/external-database.yaml
+    set:
+      backend:
+        email:
+          backend: sendmail
+    asserts:
+      - failedTemplate:
+          errorPattern: email

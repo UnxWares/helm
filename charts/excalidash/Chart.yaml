@@ -2,7 +2,7 @@ apiVersion: v2
 name: excalidash
 description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer for Excalidraw with live collaboration features
 type: application
-version: 2026.11.2
+version: 2026.11.3
 appVersion: "0.6.7"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/excalidash
@@ -44,24 +44,12 @@ annotations:
       image: docker.io/zimengxiong/excalidash-frontend:0.6.7
     - name: excalidash-backend
       image: docker.io/zimengxiong/excalidash-backend:0.6.7
-  artifacthub.io/containsSecurityUpdates: "true"
+  artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
-    - kind: security
-      description: "backend.trustProxy defaults to \"1\", the chart's own frontend nginx: behind an Ingress or a Gateway that terminates TLS, session and CSRF cookies now get the Secure flag. See Upgrading in the README."
-    - kind: changed
-      description: "The backend runs with a read-only root filesystem: an init container copies /app/dist into an emptyDir, which also holds /app/uploads."
-    - kind: fixed
-      description: "The chart Secret is kept on uninstall (helm.sh/resource-policy: keep), like the PVC: a new install keeps sessions and API keys valid."
-    - kind: fixed
-      description: "The OIDC modes require backend.auth.oidc.clientId as well as issuerUrl, and an https:// redirect URI in production, without which the backend does not start."
-    - kind: fixed
-      description: "helm test uses the image pull secrets and pull policy of the frontend, and sets resources."
     - kind: added
-      description: "frontend.autoscaling.targetMemoryUtilizationPercentage, already read by the HPA template."
+      description: "Unit tests (helm-unittest, 106 tests) of the security contexts, image selection, required values and their messages, the chart Secret (generated values, lookup reuse, keep policy), container env, probes, persistence, Services, the NetworkPolicy, the frontend HPA, the helm test pod, the release notes and the README examples, run in CI on every pull request and push to main; the values are unchanged."
     - kind: fixed
-      description: "NOTES explain how the first administrator is created in each authentication mode."
-    - kind: added
-      description: "End-to-end test in CI: onboarding with the setup code, login, drawing created, listed, exported and accepted by the import check, Secure cookies behind TLS, NetworkPolicy, then what a new install keeps."
+      description: "helm upgrade (or a new install over the kept Secret) no longer fails with \"index of untyped nil\" when the chart Secret has no data, which a release whose secrets all come from your own Secrets leaves behind: the chart now generates the values."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

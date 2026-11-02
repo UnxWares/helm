@@ -1,0 +1,58 @@
+suite: helm test pod
+templates:
+  - tests/test-health.yaml
+release:
+  name: excalidash
+  namespace: excalidash
+tests:
+  - it: is a helm test hook, deleted once it succeeds
+    asserts:
+      - isKind:
+          of: Pod
+      - equal:
+          path: metadata.name
+          value: excalidash-test-health
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/hook: test
+            helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+      - equal:
+          path: spec.restartPolicy
+          value: Never
+
+  - it: carries the test component label the backend NetworkPolicy allows, which no Service selects
+    asserts:
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/name: excalidash
+            app.kubernetes.io/instance: excalidash
+            app.kubernetes.io/component: test
+
+  - it: only reads /api/health through the frontend Service, like a browser
+    asserts:
+      - equal:
+          path: spec.containers[0].command
+          value:
+            - wget
+            - -qO-
+            - http://excalidash-frontend:80/api/health
+      - notExists:
+          path: spec.containers[0].args
+      - equal:
+          path: spec.containers[0].resources
+          value:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+
+  - it: follows the frontend Service port
+    set:
+      frontend.service.port: 8081
+    asserts:
+      - equal:
+          path: spec.containers[0].command[2]
+          value: http://excalidash-frontend:8081/api/health

@@ -3,7 +3,7 @@ name: bind9
 description: A flexible and production-ready Helm chart for running ISC Bind9 DNS server on Kubernetes.
 type: application
 
-version: 2026.11.2
+version: 2026.11.3
 appVersion: "9.20"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/bind9
@@ -51,20 +51,12 @@ annotations:
       image: docker.io/internetsystemsconsortium/bind9:9.20
     - name: bind-exporter
       image: ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f
-  artifacthub.io/containsSecurityUpdates: "true"
+  artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
-    - kind: security
-      description: "named runs as the bind user (uid 53) from the start, without any capability: the net.ipv4.ip_unprivileged_port_start sysctl lets it bind port 53 in the pod. The pods meet the restricted Pod Security Standard."
-    - kind: security
-      description: "The metrics and rndc ports move from the DNS Service to their own Service, <fullname>-admin (ClusterIP by default): a LoadBalancer or NodePort DNS Service no longer publishes them."
-    - kind: security
-      description: "Default exporter image moves to ghcr.io/unxwares/bind-exporter (imageProvider: unxwares): bind_exporter master built from its sources with Go 1.27 and current golang.org/x modules (proposed upstream in prometheus-community/bind_exporter#301), on a distroless base. imageProvider: upstream keeps the Prometheus community image."
-    - kind: fixed
-      description: "nodeSelector defaults to kubernetes.io/arch: amd64, the only architecture of the ISC image, for the pods and the helm test pod (no more exec format error on arm64 nodes)."
-    - kind: fixed
-      description: "The NOTES show the image actually deployed, digest included; autoscaling.targetMemoryUtilizationPercentage is a documented value; the helm test pod uses imagePullSecrets."
     - kind: added
-      description: "End-to-end test in CI, in a namespace that enforces the restricted Pod Security Standard: the zones answer their records over UDP and TCP from another pod, transfers and other zones are refused, the exporter reports bind_up 1, and the NetworkPolicy keeps the metrics from other pods."
+      description: "Unit tests (helm-unittest, 107 tests) of the security contexts, image selection, named.conf and zone files, persistence, Services, ServiceMonitor, NetworkPolicy, HPA and PDB, preStop hook, helm test pod, release notes and README examples, run in CI on every pull request and push to main. They also showed that the README fallback for clusters that forbid the port sysctl kept it (Helm merges maps): the example now sets sysctls: null."
+    - kind: fixed
+      description: "A rolling update or a drain no longer refuses queries while the old pod stops: a preStop hook keeps named answering for preStopSleepSeconds (5 s) while the pod leaves the Service endpoints (the sleep action on Kubernetes 1.30 and later, sleep from the image on older clusters; 0 removes it). terminationGracePeriodSeconds (30) is set by the chart and must be greater."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

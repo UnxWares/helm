@@ -2,7 +2,7 @@ apiVersion: v2
 name: openeverest-database-tools
 description: Jobs that wait for an OpenEverest DatabaseCluster to be ready, then create PostgreSQL, MySQL and MongoDB databases, users, grants and run init scripts.
 type: application
-version: 2026.11.3
+version: 2026.11.4
 # OpenEverest release the chart is tested against (DatabaseCluster everest.percona.com/v1alpha1, 1.x series).
 appVersion: "1.17.0"
 kubeVersion: ">=1.27.0-0"
@@ -54,8 +54,8 @@ annotations:
       image: registry.k8s.io/kubectl:v1.37.2
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
-    - kind: added
-      description: "Unit tests (helm-unittest, 118 tests) of the security contexts, image selection, required values, Secrets, probes and README examples, run in CI on every pull request and push to main. The templates and values are unchanged."
+    - kind: fixed
+      description: "A database entry that sets its own image repository or tag no longer inherits the digest of the engine image (image.<engine>.digest), which silently replaced its tag."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

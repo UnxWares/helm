@@ -1,0 +1,28 @@
+# README example "Server storage behind ingress-nginx, HTTPS and basic auth", as written in the README.
+persistence:
+  storageClass: longhorn
+  size: 2Gi
+networkPolicy:
+  enabled: true
+  ingressFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: fossflow-basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: FossFLOW
+  hosts:
+    - host: diagrams.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: fossflow-tls
+      hosts:
+        - diagrams.example.com

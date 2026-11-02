@@ -1,0 +1,6 @@
+# README example "Expose DNS outside the cluster", as written in the README.
+service:
+  type: LoadBalancer
+  externalTrafficPolicy: Local   # keep client IPs (ACLs, AXFR)
+config:
+  default-soa-content: ns1.example.com. hostmaster.@ 0 10800 3600 604800 3600

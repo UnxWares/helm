@@ -1,0 +1,189 @@
+suite: image provider and image references
+templates:
+  # the Deployments include their ConfigMap for the checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+  - recursor/configmap.yaml
+  - recursor/deployment.yaml
+  - tests/test-api.yaml
+release:
+  name: dns
+  namespace: dns
+chart:
+  appVersion: 5.1.5
+tests:
+  - it: defaults to the UnxWares server image tagged with the chart appVersion, sqlite-init included
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/pdns-auth:5.1.5
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: ghcr.io/unxwares/pdns-auth:5.1.5
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: follows the chart appVersion when the tag is empty
+    template: deployment.yaml
+    chart:
+      appVersion: 5.1.9
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/pdns-auth:5.1.9
+
+  - it: switches to the official server image with imageProvider upstream
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/powerdns/pdns-auth-51:5.1.5
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: docker.io/powerdns/pdns-auth-51:5.1.5
+
+  - it: lets an explicit repository and tag override the provider
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+      image:
+        repository: registry.example.com/mirror/pdns-auth
+        tag: 5.1.4
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/mirror/pdns-auth:5.1.4
+
+  - it: prefers the digest over the tag
+    template: deployment.yaml
+    set:
+      image:
+        tag: 5.1.4
+        digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/pdns-auth@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+  - it: applies the pull policy to every server container and the pull secrets to the pod
+    template: deployment.yaml
+    values:
+      - values/gpgsql.yaml
+    set:
+      image.pullPolicy: Always
+      imagePullSecrets:
+        - name: registry-credentials
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+      - equal:
+          path: spec.template.spec.initContainers[0].imagePullPolicy
+          value: Always
+      - equal:
+          path: spec.template.spec.initContainers[1].imagePullPolicy
+          value: Always
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+
+  - it: copies the schema with the server image and runs the UnxWares PostgreSQL client
+    template: deployment.yaml
+    values:
+      - values/gpgsql.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: ghcr.io/unxwares/pdns-auth:5.1.5
+      - equal:
+          path: spec.template.spec.initContainers[1].image
+          value: ghcr.io/unxwares/postgresql-client:18
+
+  - it: runs the UnxWares MySQL client for gmysql
+    template: deployment.yaml
+    values:
+      - values/gmysql.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[1].image
+          value: ghcr.io/unxwares/mysql-client:8.4
+
+  - it: runs the official database images with imageProvider upstream
+    template: deployment.yaml
+    values:
+      - values/gpgsql.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[1].image
+          value: docker.io/library/postgres:18.6-alpine
+
+  - it: runs the official MySQL image with imageProvider upstream
+    template: deployment.yaml
+    values:
+      - values/gmysql.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[1].image
+          value: docker.io/library/mysql:8.4.13
+
+  - it: keeps the database client images given in the values
+    template: deployment.yaml
+    values:
+      - values/gpgsql.yaml
+    set:
+      backend.schemaInit.postgresImage: registry.example.com/postgres:17
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[1].image
+          value: registry.example.com/postgres:17
+
+  - it: runs the UnxWares recursor image with its own tag and pull policy
+    template: recursor/deployment.yaml
+    values:
+      - values/recursor.yaml
+    set:
+      recursor.image.pullPolicy: Always
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/pdns-recursor:5.4.9
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+
+  - it: switches to the official recursor image with imageProvider upstream, and pins it by digest
+    template: recursor/deployment.yaml
+    values:
+      - values/recursor.yaml
+    set:
+      imageProvider: upstream
+      recursor.image.digest: sha256:1111111111111111111111111111111111111111111111111111111111111111
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/powerdns/pdns-recursor-54@sha256:1111111111111111111111111111111111111111111111111111111111111111
+
+  - it: runs the helm test pod with the server image by default
+    template: tests/test-api.yaml
+    asserts:
+      - equal:
+          path: spec.containers[0].image
+          value: ghcr.io/unxwares/pdns-auth:5.1.5
+
+  - it: runs the helm test pod with tests.image when set
+    template: tests/test-api.yaml
+    set:
+      tests.image: registry.example.com/python:3.13-alpine
+    asserts:
+      - equal:
+          path: spec.containers[0].image
+          value: registry.example.com/python:3.13-alpine

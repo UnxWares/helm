@@ -1,0 +1,183 @@
+suite: Services, Ingress and HTTPRoute
+templates:
+  - frontend/service.yaml
+  - backend/service.yaml
+  - ingress.yaml
+  - httproute.yaml
+release:
+  name: excalidash
+  namespace: excalidash
+tests:
+  - it: exposes the frontend on port 80 to its http port (8080) inside the cluster
+    template: frontend/service.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: excalidash-frontend
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports
+          value:
+            - port: 80
+              targetPort: http
+              protocol: TCP
+              name: http
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: excalidash
+            app.kubernetes.io/instance: excalidash
+            app.kubernetes.io/component: frontend
+
+  - it: exposes the backend on port 8000 inside the cluster, to the backend pod only
+    template: backend/service.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: excalidash-backend
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports
+          value:
+            - port: 8000
+              targetPort: http
+              protocol: TCP
+              name: http
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: excalidash
+            app.kubernetes.io/instance: excalidash
+            app.kubernetes.io/component: backend
+
+  - it: applies the frontend Service type and port (README NodePort example)
+    template: frontend/service.yaml
+    set:
+      frontend.service.type: NodePort
+      frontend.service.port: 8081
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+      - equal:
+          path: spec.ports[0].port
+          value: 8081
+
+  - it: creates neither an Ingress nor an HTTPRoute by default
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: ingress.yaml
+      - hasDocuments:
+          count: 0
+        template: httproute.yaml
+
+  - it: routes / of every Ingress host to the frontend Service, whatever paths are given
+    template: ingress.yaml
+    set:
+      frontend.service.port: 8081
+      ingress.enabled: true
+      ingress.hosts:
+        - host: draw.example.com
+          paths:
+            - path: /api
+              pathType: Exact
+        - host: draw.internal.example.com
+    asserts:
+      - equal:
+          path: spec.rules
+          value:
+            - host: draw.example.com
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: excalidash-frontend
+                        port:
+                          number: 8081
+            - host: draw.internal.example.com
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: excalidash-frontend
+                        port:
+                          number: 8081
+      - notExists:
+          path: spec.tls
+      - notExists:
+          path: spec.ingressClassName
+
+  - it: sends every HTTPRoute rule to the frontend Service (README Gateway API example)
+    template: httproute.yaml
+    set:
+      httpRoute.enabled: true
+      httpRoute.parentRefs:
+        - name: main-gateway
+          namespace: gateway-system
+          sectionName: https
+      httpRoute.hostnames:
+        - draw.example.com
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1
+      - equal:
+          path: spec.parentRefs
+          value:
+            - name: main-gateway
+              namespace: gateway-system
+              sectionName: https
+      - equal:
+          path: spec.hostnames
+          value:
+            - draw.example.com
+      - equal:
+          path: spec.rules
+          value:
+            - matches:
+                - path:
+                    type: PathPrefix
+                    value: /
+              backendRefs:
+                - name: excalidash-frontend
+                  port: 80
+                  weight: 1
+
+  - it: keeps the filters of an HTTPRoute rule, and accepts a rule without matches
+    template: httproute.yaml
+    set:
+      httpRoute.enabled: true
+      httpRoute.rules:
+        - filters:
+            - type: RequestHeaderModifier
+              requestHeaderModifier:
+                set:
+                  - name: X-Forwarded-Proto
+                    value: https
+    asserts:
+      - equal:
+          path: spec.rules
+          value:
+            - filters:
+                - type: RequestHeaderModifier
+                  requestHeaderModifier:
+                    set:
+                      - name: X-Forwarded-Proto
+                        value: https
+              backendRefs:
+                - name: excalidash-frontend
+                  port: 80
+                  weight: 1

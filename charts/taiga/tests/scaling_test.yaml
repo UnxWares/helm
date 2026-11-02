@@ -1,0 +1,142 @@
+suite: autoscaling
+templates:
+  # the Deployments include secret.yaml for their checksum annotation
+  - secret.yaml
+  - backend/hpa.yaml
+  - async/hpa.yaml
+  - frontend/hpa.yaml
+  - backend/deployment.yaml
+  - async/deployment.yaml
+  - async/beat-deployment.yaml
+  - frontend/deployment.yaml
+release:
+  name: taiga
+  namespace: taiga
+values:
+  - values/external-database.yaml
+tests:
+  - it: renders no HorizontalPodAutoscaler by default
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: backend/hpa.yaml
+      - hasDocuments:
+          count: 0
+        template: async/hpa.yaml
+      - hasDocuments:
+          count: 0
+        template: frontend/hpa.yaml
+
+  - it: scales the backend on CPU and leaves its replica count to the autoscaler
+    set:
+      backend:
+        replicaCount: 3
+        autoscaling:
+          enabled: true
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+        template: backend/hpa.yaml
+      - equal:
+          path: metadata.name
+          value: taiga-backend
+        template: backend/hpa.yaml
+      - equal:
+          path: spec.scaleTargetRef
+          value:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: taiga-backend
+        template: backend/hpa.yaml
+      - equal:
+          path: spec.minReplicas
+          value: 1
+        template: backend/hpa.yaml
+      - equal:
+          path: spec.maxReplicas
+          value: 5
+        template: backend/hpa.yaml
+      - equal:
+          path: spec.metrics
+          value:
+            - type: Resource
+              resource:
+                name: cpu
+                target:
+                  type: Utilization
+                  averageUtilization: 80
+        template: backend/hpa.yaml
+      - notExists:
+          path: spec.replicas
+        template: backend/deployment.yaml
+
+  - it: adds a memory target when set
+    template: async/hpa.yaml
+    set:
+      async:
+        autoscaling:
+          enabled: true
+          targetMemoryUtilizationPercentage: 75
+    asserts:
+      - lengthEqual:
+          path: spec.metrics
+          count: 2
+      - equal:
+          path: spec.metrics[1].resource
+          value:
+            name: memory
+            target:
+              type: Utilization
+              averageUtilization: 75
+
+  - it: scales the workers but never the beat scheduler
+    set:
+      async:
+        autoscaling:
+          enabled: true
+          maxReplicas: 8
+    asserts:
+      - equal:
+          path: spec.scaleTargetRef.name
+          value: taiga-async
+        template: async/hpa.yaml
+      - equal:
+          path: spec.maxReplicas
+          value: 8
+        template: async/hpa.yaml
+      - notExists:
+          path: spec.replicas
+        template: async/deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 1
+        template: async/beat-deployment.yaml
+
+  - it: scales the front as in the README example
+    set:
+      frontend:
+        autoscaling:
+          enabled: true
+          minReplicas: 2
+          maxReplicas: 4
+          targetCPUUtilizationPercentage: 70
+    asserts:
+      - equal:
+          path: spec.scaleTargetRef.name
+          value: taiga-frontend
+        template: frontend/hpa.yaml
+      - equal:
+          path: spec.minReplicas
+          value: 2
+        template: frontend/hpa.yaml
+      - equal:
+          path: spec.maxReplicas
+          value: 4
+        template: frontend/hpa.yaml
+      - equal:
+          path: spec.metrics[0].resource.target.averageUtilization
+          value: 70
+        template: frontend/hpa.yaml
+      - notExists:
+          path: spec.replicas
+        template: frontend/deployment.yaml

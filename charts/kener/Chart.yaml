@@ -2,7 +2,7 @@ apiVersion: v2
 name: kener
 description: Kener 4 status page with SQLite/PostgreSQL/MySQL, a bundled hardened Valkey for its queues, and secure defaults for Kubernetes.
 type: application
-version: 2026.11.3
+version: 2026.11.4
 appVersion: "4.1.11"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/kener
@@ -47,16 +47,10 @@ annotations:
     - name: valkey
       image: docker.io/valkey/valkey:9.1.3-alpine
   artifacthub.io/changes: |
-    - kind: fixed
-      description: "The chart Secret is kept on uninstall (helm.sh/resource-policy: keep), like the SQLite PVC: a new install reads the generated KENER_SECRET_KEY back, so sessions and API keys keep working."
-    - kind: fixed
-      description: "podDisruptionBudget.enabled is refused with SQLite, and when minAvailable is not lower than the number of replicas: such a budget blocked node drains."
-    - kind: fixed
-      description: "An empty redis.image.tag no longer falls back to a Valkey tag hidden in the templates: the chart asks for a tag or a digest."
     - kind: added
-      description: "proxy.existingSecret (keys existingSecretHttpProxyKey and existingSecretHttpsProxyKey) reads HTTP_PROXY and HTTPS_PROXY from your own Secret."
-    - kind: added
-      description: "End-to-end test in CI: first account and login, API key, monitor created through the REST API and run from the queue, status page and badge, Valkey password and NetworkPolicies, then what a new install keeps."
+      description: "Unit tests (helm-unittest, 160 tests) of the security contexts (ping monitors included), image and tag selection, required values and their messages, the chart Secret (generated values, lookup reuse, keep policy), container env, probes, persistence, the bundled Valkey, Services, NetworkPolicies, HPA and PDB, the helm test pod, the release notes and the README examples, run in CI on every pull request and push to main; the values are unchanged."
+    - kind: fixed
+      description: "Reading back the generated values no longer fails on an existing chart Secret without data."
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B

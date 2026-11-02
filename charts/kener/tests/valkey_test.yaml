@@ -1,0 +1,295 @@
+suite: bundled Valkey
+templates:
+  - valkey-configmap.yaml
+  - valkey-deployment.yaml
+release:
+  name: status
+  namespace: status
+tests:
+  - it: writes a valkey.conf for queues, without password, persistence or eviction
+    template: valkey-configmap.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: status-kener-valkey
+      - matchRegex:
+          path: data["valkey.conf"]
+          pattern: "(?m)^bind \\* -::\\*\\nport 6379\\ndir /data$"
+      - matchRegex:
+          path: data["valkey.conf"]
+          pattern: "(?m)^maxmemory-policy noeviction$"
+      - matchRegex:
+          path: data["valkey.conf"]
+          pattern: "(?m)^save \"\"\\nappendonly no$"
+      - notMatchRegex:
+          path: data["valkey.conf"]
+          pattern: requirepass
+
+  - it: turns on the append-only file with persistence, and appends extraConfig
+    template: valkey-configmap.yaml
+    set:
+      redis.persistence.enabled: true
+      redis.extraConfig: |
+        maxmemory 200mb
+    asserts:
+      - matchRegex:
+          path: data["valkey.conf"]
+          pattern: "(?m)^appendonly yes\\nappendfsync everysec\\nmaxmemory 200mb$"
+      - notMatchRegex:
+          path: data["valkey.conf"]
+          pattern: "save \"\""
+
+  - it: passes the password on standard input, never in the ConfigMap or the arguments
+    set:
+      redis.auth.password: s3cret-valkey
+    asserts:
+      - notMatchRegex:
+          path: data["valkey.conf"]
+          pattern: s3cret
+        template: valkey-configmap.yaml
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - sh
+            - -c
+            - |
+              exec valkey-server /etc/valkey/valkey.conf - <<EOF
+              requirepass "$VALKEYCLI_AUTH"
+              EOF
+        template: valkey-deployment.yaml
+        documentSelector:
+          path: kind
+          value: Deployment
+      - notExists:
+          path: spec.template.spec.containers[0].command
+        template: valkey-deployment.yaml
+        documentSelector:
+          path: kind
+          value: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: VALKEYCLI_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: status-kener
+                  key: redis-password
+        template: valkey-deployment.yaml
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: reads the password from an existing Secret with a custom key
+    template: valkey-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      redis.auth.existingSecret: kener-valkey
+      redis.auth.existingSecretPasswordKey: password
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0].valueFrom.secretKeyRef
+          value:
+            name: kener-valkey
+            key: password
+
+  - it: runs one Valkey pod, replaced with Recreate, with labels Kener's selector never matches
+    template: valkey-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Deployment
+    asserts:
+      - equal:
+          path: metadata.name
+          value: status-kener-valkey
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: kener-valkey
+            app.kubernetes.io/instance: status
+            app.kubernetes.io/component: redis
+      - equal:
+          path: metadata.labels["app.kubernetes.io/part-of"]
+          value: kener
+
+  - it: annotates the pod with checksums of valkey.conf and of the password values
+    template: valkey-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Deployment
+    asserts:
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/config"]
+          pattern: ^[0-9a-f]{64}$
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/secret"]
+          pattern: ^[0-9a-f]{64}$
+
+  - it: checks the TCP port for liveness and an authenticated ping for readiness
+    template: valkey-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Deployment
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            tcpSocket:
+              port: redis
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 4
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.exec.command
+          value:
+            - sh
+            - -c
+            - '[ "$(valkey-cli -h 127.0.0.1 -p 6379 ping)" = PONG ]'
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              memory: 256Mi
+
+  - it: mounts valkey.conf read-only and keeps data and /tmp in size-limited emptyDirs
+    template: valkey-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Deployment
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: config
+              mountPath: /etc/valkey
+              readOnly: true
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      - equal:
+          path: spec.template.spec.volumes
+          value:
+            - name: config
+              configMap:
+                name: status-kener-valkey
+            - name: data
+              emptyDir:
+                sizeLimit: 1Gi
+            - name: tmp
+              emptyDir:
+                sizeLimit: 16Mi
+
+  - it: keeps the data on an existing claim with persistence
+    template: valkey-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      redis.persistence.enabled: true
+      redis.persistence.existingClaim: valkey-data
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: valkey-data
+
+  - it: exposes Valkey on its Service port, to the Valkey pod only
+    template: valkey-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Service
+    set:
+      redis.service.port: 6380
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports
+          value:
+            - name: redis
+              port: 6380
+              targetPort: redis
+              protocol: TCP
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: kener-valkey
+            app.kubernetes.io/instance: status
+            app.kubernetes.io/component: redis
+
+  - it: places the Valkey pod with its own scheduling values
+    template: valkey-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      nodeSelector:
+        ignored: "true"
+      redis.nodeSelector:
+        kubernetes.io/arch: arm64
+      redis.tolerations:
+        - key: dedicated
+          operator: Equal
+          value: monitoring
+          effect: NoSchedule
+      redis.affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution: []
+      redis.priorityClassName: high
+      redis.podLabels:
+        tier: cache
+      redis.podAnnotations:
+        scrape: "false"
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: arm64
+      - equal:
+          path: spec.template.spec.tolerations[0].value
+          value: monitoring
+      - exists:
+          path: spec.template.spec.affinity.podAffinity
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: high
+      - equal:
+          path: spec.template.metadata.labels.tier
+          value: cache
+      - equal:
+          path: spec.template.metadata.annotations.scrape
+          value: "false"
+
+  - it: deploys no Valkey with an external Redis
+    set:
+      redis.enabled: false
+      redis.external.url: redis://redis.example.com:6379
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: valkey-configmap.yaml
+      - hasDocuments:
+          count: 0
+        template: valkey-deployment.yaml

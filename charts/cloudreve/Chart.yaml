@@ -1,6 +1,6 @@
 apiVersion: v2
 name: cloudreve
-version: 2026.11.2
+version: 2026.11.3
 kubeVersion: ">=1.27.0-0"
 description: Self-hosted file management and sharing system (Cloudreve v4), supports multiple storage providers.
 type: application
@@ -38,8 +38,10 @@ annotations:
       image: ghcr.io/unxwares/cloudreve:4.19.1
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
-    - kind: added
-      description: "Unit tests (helm-unittest, 95 tests) of the security contexts, image selection, required values, Secrets, probes and README examples, run in CI on every pull request and push to main. The templates and values are unchanged."
+    - kind: fixed
+      description: "database.existingSecretKeys.url without database.existingSecret is refused with a message: it rendered an empty database URL."
+    - kind: changed
+      description: "The chart Secret is kept on uninstall (helm.sh/resource-policy: keep), like the data volume: a reinstall reads the session secret back, and a kept Secret without data no longer breaks the next install."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

@@ -1,0 +1,19 @@
+# README example "Secondary server with persistence", as written in the README.
+persistence:
+  enabled: true
+  size: 1Gi
+bind:
+  namedConf: |
+    options {
+      directory "/var/cache/bind";
+      listen-on { any; };
+      listen-on-v6 { any; };
+      recursion no;
+      allow-transfer { none; };
+      version none;
+    };
+    zone "example.com" {
+      type secondary;
+      primaries { 192.0.2.53; };
+      file "/var/lib/bind/example.com.db";
+    };

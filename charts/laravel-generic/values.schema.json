@@ -30,7 +30,7 @@
                     "type": "integer"
                 },
                 "targetCPUUtilizationPercentage": {
-                    "description": "Target CPU utilization.",
+                    "description": "Target CPU utilization (percent). With neither target set, Kubernetes scales on 80% average CPU utilization.",
                     "type": "integer"
                 }
             }

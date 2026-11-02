@@ -41,6 +41,7 @@ spec:
       {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}
       {{- end }}
+      terminationGracePeriodSeconds: {{ $rec.terminationGracePeriodSeconds }}
       {{- with .Values.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -80,6 +81,9 @@ spec:
           {{- with $rec.readinessProbe }}
           readinessProbe:
             {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with include "powerdns.preStop" (dict "ctx" $ "values" $rec "prefix" "recursor.") | trim }}
+          {{- . | nindent 10 }}
           {{- end }}
           {{- with $rec.resources }}
           resources:

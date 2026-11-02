@@ -108,7 +108,7 @@ Session secret: explicit value, else the one already stored in the release secre
 {{- .Values.cloudreve.sessionSecret -}}
 {{- else -}}
 {{- $secret := lookup "v1" "Secret" (include "cloudreve.namespace" .) (include "cloudreve.secretName" .) -}}
-{{- if and $secret (index $secret.data "session-secret") -}}
+{{- if and $secret $secret.data (index $secret.data "session-secret") -}}
 {{- index $secret.data "session-secret" | b64dec -}}
 {{- else -}}
 {{- randAlphaNum 64 -}}
@@ -171,6 +171,9 @@ Validate values that would otherwise produce a broken deployment.
 {{- if ne .Values.database.type "sqlite" }}
 {{- if and (not .Values.database.url) (not .Values.database.existingSecretKeys.url) (not .Values.database.host) }}
 {{- fail "database.host (or database.url) is required when database.type is not sqlite" }}
+{{- end }}
+{{- if and .Values.database.existingSecretKeys.url (not .Values.database.existingSecret) }}
+{{- fail "database.existingSecretKeys.url is a key of database.existingSecret: set database.existingSecret, or database.url" }}
 {{- end }}
 {{- if and (not .Values.database.existingSecret) (not .Values.database.password) (not .Values.database.url) }}
 {{- fail "database.password or database.existingSecret is required when database.type is not sqlite" }}

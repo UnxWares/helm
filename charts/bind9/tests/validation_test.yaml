@@ -1,0 +1,43 @@
+suite: values checked by the schema
+templates:
+  # deployment.yaml includes configmap.yaml for its checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+release:
+  name: my-dns
+  namespace: dns-system
+tests:
+  - it: renders with the default values (no zone, no metrics)
+    template: deployment.yaml
+    asserts:
+      - notFailedTemplate: {}
+      - isKind:
+          of: Deployment
+
+  - it: rejects an unknown image provider
+    set:
+      imageProvider: dockerhub
+    asserts:
+      - failedTemplate:
+          errorPattern: imageProvider
+
+  - it: rejects an unknown Service type
+    set:
+      service.type: ExternalName
+    asserts:
+      - failedTemplate:
+          errorPattern: service.type
+
+  - it: rejects a negative preStop sleep
+    set:
+      preStopSleepSeconds: -1
+    asserts:
+      - failedTemplate:
+          errorPattern: preStopSleepSeconds
+
+  - it: rejects a preStop sleep given as a string
+    set:
+      preStopSleepSeconds: "5"
+    asserts:
+      - failedTemplate:
+          errorPattern: preStopSleepSeconds

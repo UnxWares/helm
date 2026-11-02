@@ -1,0 +1,6 @@
+# PostgreSQL backend with an inline password.
+backend:
+  type: gpgsql
+  gpgsql:
+    host: pdns-db-rw.databases.svc
+    password: db-pass

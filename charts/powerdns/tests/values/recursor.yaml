@@ -1,0 +1,5 @@
+# Recursor forwarding one zone to the authoritative server of the release.
+recursor:
+  enabled: true
+  authoritativeZones:
+    - example.com

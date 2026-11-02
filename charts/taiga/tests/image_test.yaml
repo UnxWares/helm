@@ -1,0 +1,565 @@
+suite: image provider, image references, ports and commands
+templates:
+  # the pods include secret.yaml, rabbitmq-configmap.yaml and gateway/configmap.yaml for their checksum annotations
+  - secret.yaml
+  - rabbitmq-configmap.yaml
+  - gateway/configmap.yaml
+  - backend/deployment.yaml
+  - async/deployment.yaml
+  - async/beat-deployment.yaml
+  - frontend/deployment.yaml
+  - events/deployment.yaml
+  - protected/deployment.yaml
+  - gateway/deployment.yaml
+  - db/deployment.yaml
+  - asyncRabbitmq/statefulset.yaml
+  - eventsRabbitmq/statefulset.yaml
+  - tests/test-gateway.yaml
+release:
+  name: taiga
+  namespace: taiga
+values:
+  - values/external-database.yaml
+tests:
+  - it: uses the UnxWares images of the Taiga components by default
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/taiga-back:6.10.2
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/taiga-back:6.10.2
+        template: async/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/taiga-back:6.10.2
+        template: async/beat-deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: ghcr.io/unxwares/taiga-back:6.10.2
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/taiga-front:6.10.3
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/taiga-events:6.10.0
+        template: events/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/taiga-protected:6.10.1
+        template: protected/deployment.yaml
+
+  - it: uses the UnxWares PostgreSQL image for the bundled database
+    template: db/deployment.yaml
+    values:
+      - values/bundled-database.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/postgres:17.11-alpine
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: switches the Taiga components and the database to the official images with imageProvider upstream
+    values:
+      - values/bundled-database.yaml
+    set:
+      global:
+        imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/taigaio/taiga-back:6.10.2
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/taigaio/taiga-back:6.10.2
+        template: async/beat-deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: docker.io/taigaio/taiga-back:6.10.2
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/taigaio/taiga-front:6.10.3
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/taigaio/taiga-events:6.10.0
+        template: events/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/taigaio/taiga-protected:6.10.1
+        template: protected/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/library/postgres:17.11-alpine
+        template: db/deployment.yaml
+
+  - it: runs the same broker, gateway and helm test images with both providers
+    set:
+      global:
+        imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/library/rabbitmq:4.4.0-management-alpine
+        template: asyncRabbitmq/statefulset.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/library/rabbitmq:4.4.0-management-alpine
+        template: eventsRabbitmq/statefulset.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.containers[0].image
+          value: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim
+        template: tests/test-gateway.yaml
+
+  - it: lets an explicit repository override the provider, and each component its tag
+    set:
+      global:
+        imageProvider: upstream
+      backend:
+        image:
+          repository: registry.example.com/mirror/taiga-back
+          tag: 6.10.1
+      async:
+        image:
+          tag: 6.10.0
+      events:
+        image:
+          repository: registry.example.com/mirror/taiga-events
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/mirror/taiga-back:6.10.1
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: registry.example.com/mirror/taiga-back:6.10.1
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/taigaio/taiga-back:6.10.0
+        template: async/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/taigaio/taiga-back:6.10.0
+        template: async/beat-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/mirror/taiga-events:6.10.0
+        template: events/deployment.yaml
+
+  - it: replaces the backend and front images with the OIDC images, the digest winning over the tag
+    set:
+      global:
+        oidc:
+          enabled: true
+          existingSecret: taiga-oidc
+          backend:
+            overrideImage:
+              name: registry.example.com/taiga-back-oidc
+              tag: 6.10.2
+              digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          frontend:
+            overrideImage:
+              name: registry.example.com/taiga-front-oidc
+              tag: 6.10.3-oidc
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/taiga-back-oidc@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/taiga-back-oidc@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        template: async/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/taiga-back-oidc@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        template: async/beat-deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: registry.example.com/taiga-back-oidc@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/taiga-front-oidc:6.10.3-oidc
+        template: frontend/deployment.yaml
+
+  - it: ignores the OIDC images while OIDC is disabled
+    set:
+      global:
+        oidc:
+          backend:
+            overrideImage:
+              name: registry.example.com/taiga-back-oidc
+              tag: 6.10.2
+          frontend:
+            overrideImage:
+              name: registry.example.com/taiga-front-oidc
+              tag: 6.10.3
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/taiga-back:6.10.2
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/taiga-front:6.10.3
+        template: frontend/deployment.yaml
+
+  - it: applies the pull policy of each component, the backend one to the gateway init container
+    set:
+      backend:
+        image:
+          pullPolicy: Always
+      gateway:
+        image:
+          pullPolicy: Never
+      asyncRabbitmq:
+        image:
+          pullPolicy: Always
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].imagePullPolicy
+          value: Always
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Never
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.containers[0].imagePullPolicy
+          value: Never
+        template: tests/test-gateway.yaml
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+        template: asyncRabbitmq/statefulset.yaml
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+        template: eventsRabbitmq/statefulset.yaml
+
+  - it: gives global.imagePullSecrets to every pod
+    values:
+      - values/bundled-database.yaml
+    set:
+      global:
+        imagePullSecrets:
+          - name: registry-credentials
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: async/deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: events/deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: protected/deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: db/deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: asyncRabbitmq/statefulset.yaml
+      - equal:
+          path: spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: tests/test-gateway.yaml
+
+  - it: replaces the global pull secrets with the backend ones on the backend, and adds them to every pod running the backend image
+    set:
+      global:
+        imagePullSecrets:
+          - name: registry-credentials
+      backend:
+        imagePullSecrets:
+          - name: taiga-back-registry
+          - name: registry-credentials
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: taiga-back-registry
+            - name: registry-credentials
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+            - name: taiga-back-registry
+        template: async/deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+            - name: taiga-back-registry
+        template: async/beat-deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+            - name: taiga-back-registry
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: events/deployment.yaml
+
+  - it: replaces the global pull secrets with the front ones on the front
+    set:
+      global:
+        imagePullSecrets:
+          - name: registry-credentials
+      frontend:
+        imagePullSecrets:
+          - name: taiga-front-registry
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: taiga-front-registry
+        template: frontend/deployment.yaml
+
+  - it: sets no pull secret by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.imagePullSecrets
+        template: backend/deployment.yaml
+      - notExists:
+          path: spec.template.spec.imagePullSecrets
+        template: async/deployment.yaml
+      - notExists:
+          path: spec.imagePullSecrets
+        template: tests/test-gateway.yaml
+
+  - it: serves the UnxWares front on port 8080
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+        template: frontend/deployment.yaml
+
+  - it: serves the official front on port 80
+    template: frontend/deployment.yaml
+    set:
+      global:
+        imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 80
+
+  - it: names the container ports used by the Services, the probes and the NetworkPolicies
+    values:
+      - values/bundled-database.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: http
+              containerPort: 8888
+              protocol: TCP
+            - name: health
+              containerPort: 3023
+              protocol: TCP
+        template: events/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: http
+              containerPort: 8003
+              protocol: TCP
+        template: protected/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+        template: db/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: amqp
+              containerPort: 5672
+              protocol: TCP
+            - name: management
+              containerPort: 15672
+              protocol: TCP
+        template: asyncRabbitmq/statefulset.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].ports
+        template: async/deployment.yaml
+
+  - it: runs the Celery worker without beat, 4 processes, instead of the image entrypoint
+    template: async/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - celery
+            - -A
+            - taiga.celery
+            - worker
+            - --concurrency
+            - "4"
+            - -l
+            - INFO
+      - notExists:
+          path: spec.template.spec.containers[0].args
+
+  - it: runs the beat scheduler alone, with its state in /tmp
+    template: async/beat-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: beat
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - celery
+            - -A
+            - taiga.celery
+            - beat
+            - --schedule
+            - /tmp/celerybeat-schedule
+            - -l
+            - INFO
+
+  - it: switches the Celery commands to the taiga user with gosu on the official images
+    set:
+      global:
+        imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - gosu
+            - taiga
+            - celery
+            - -A
+            - taiga.celery
+            - worker
+            - --concurrency
+            - "4"
+            - -l
+            - INFO
+        template: async/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - gosu
+            - taiga
+            - celery
+            - -A
+            - taiga.celery
+            - beat
+            - --schedule
+            - /tmp/celerybeat-schedule
+            - -l
+            - INFO
+        template: async/beat-deployment.yaml
+
+  - it: replaces the worker command with async.command and adds async.extraArgs
+    template: async/deployment.yaml
+    set:
+      async:
+        command:
+          - celery
+          - -A
+          - taiga.celery
+          - worker
+          - -Q
+          - celery
+        extraArgs:
+          - --concurrency
+          - "2"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - celery
+            - -A
+            - taiga.celery
+            - worker
+            - -Q
+            - celery
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - --concurrency
+            - "2"
+
+  - it: copies the Django static files from the backend image in the gateway init container
+    template: gateway/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: copy-static
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value:
+            - cp
+            - -R
+            - /taiga-back/static/.
+            - /static/

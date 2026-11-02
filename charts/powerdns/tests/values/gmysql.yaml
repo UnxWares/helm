@@ -1,0 +1,6 @@
+# MySQL backend with an inline password.
+backend:
+  type: gmysql
+  gmysql:
+    host: mariadb.databases.svc
+    password: db-pass

@@ -1,0 +1,252 @@
+suite: security contexts and service account
+templates:
+  - deployment.yaml
+  # valkey-deployment.yaml includes valkey-configmap.yaml for its checksum annotation
+  - valkey-configmap.yaml
+  - valkey-deployment.yaml
+  - serviceaccount.yaml
+  - tests/test-healthcheck.yaml
+release:
+  name: status
+  namespace: status
+tests:
+  - it: runs Kener as uid and gid 1000, non-root, with fsGroup 1000 and the RuntimeDefault seccomp profile
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: hardens the Kener container (read-only root, no privilege escalation, no capability)
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: runs Valkey as uid 999 and gid 1000 with the same hardening
+    template: valkey-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Deployment
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: adds the ping sysctl and NET_RAW, in the bounding set only, with pingMonitors.enabled
+    template: deployment.yaml
+    set:
+      pingMonitors.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.sysctls
+          value:
+            - name: net.ipv4.ping_group_range
+              value: "0 2147483647"
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_RAW
+
+  - it: neither repeats the ping sysctl nor NET_RAW when they are already set, and keeps other sysctls
+    template: deployment.yaml
+    set:
+      pingMonitors.enabled: true
+      podSecurityContext.sysctls:
+        - name: net.ipv4.ip_unprivileged_port_start
+          value: "0"
+        - name: net.ipv4.ping_group_range
+          value: "1000 1000"
+      securityContext.capabilities.add:
+        - NET_RAW
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.sysctls
+          value:
+            - name: net.ipv4.ip_unprivileged_port_start
+              value: "0"
+            - name: net.ipv4.ping_group_range
+              value: "1000 1000"
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities.add
+          value:
+            - NET_RAW
+
+  - it: leaves the Valkey and helm test pods out of the ping settings
+    set:
+      pingMonitors.enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.securityContext.sysctls
+        template: valkey-deployment.yaml
+        documentSelector:
+          path: kind
+          value: Deployment
+      - notExists:
+          path: spec.template.spec.containers[0].securityContext.capabilities.add
+        template: valkey-deployment.yaml
+        documentSelector:
+          path: kind
+          value: Deployment
+      - notExists:
+          path: spec.securityContext.sysctls
+        template: tests/test-healthcheck.yaml
+      - notExists:
+          path: spec.containers[0].securityContext.capabilities.add
+        template: tests/test-healthcheck.yaml
+
+  - it: applies the given security contexts over the defaults
+    template: deployment.yaml
+    set:
+      podSecurityContext.runAsUser: 2000
+      securityContext.runAsUser: 2000
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 2000
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsUser
+          value: 2000
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+
+  - it: mounts neither the service account token nor the Service variables in the Kener pods
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.template.spec.enableServiceLinks
+          value: false
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: status-kener
+
+  - it: never mounts the service account token in the Valkey pod, even when Kener gets it
+    template: valkey-deployment.yaml
+    documentSelector:
+      path: kind
+      value: Deployment
+    set:
+      serviceAccount.automount: true
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.template.spec.enableServiceLinks
+          value: false
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: status-kener
+
+  - it: creates a dedicated service account without token automount
+    template: serviceaccount.yaml
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: status-kener
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: uses an existing service account when creation is disabled
+    set:
+      serviceAccount.create: false
+      serviceAccount.name: shared
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: serviceaccount.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: shared
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: shared
+        template: valkey-deployment.yaml
+        documentSelector:
+          path: kind
+          value: Deployment
+
+  - it: falls back to the default service account when creation is disabled without a name
+    template: deployment.yaml
+    set:
+      serviceAccount.create: false
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: default
+
+  - it: hardens the helm test pod like the Kener pod and does not mount its token
+    template: tests/test-healthcheck.yaml
+    asserts:
+      - equal:
+          path: spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.enableServiceLinks
+          value: false
+      - equal:
+          path: spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+      - equal:
+          path: spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL

@@ -110,7 +110,13 @@ Usage: include "openeverest-database-tools.image" (dict "image" $image "default"
 {{- define "openeverest-database-tools.image" -}}
 {{- $image := .image | default .default }}
 {{- if and (kindIs "map" $image) (kindIs "map" .default) }}
+{{- $own := .image | default dict }}
 {{- $image = merge (dict) $image .default }}
+{{- /* An entry that names its own repository or tag without a digest does not inherit the default digest, which
+would otherwise take precedence over its tag. */}}
+{{- if and (kindIs "map" $own) (or $own.repository $own.tag) (not $own.digest) }}
+{{- $_ := set $image "digest" "" }}
+{{- end }}
 {{- end }}
 {{- $ref := "" }}
 {{- if kindIs "string" $image }}

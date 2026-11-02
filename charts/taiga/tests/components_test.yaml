@@ -1,0 +1,732 @@
+suite: workloads, probes, resources, scheduling and checksum annotations
+templates:
+  # the pods include secret.yaml, rabbitmq-configmap.yaml and gateway/configmap.yaml for their checksum annotations
+  - secret.yaml
+  - rabbitmq-configmap.yaml
+  - gateway/configmap.yaml
+  - backend/deployment.yaml
+  - async/deployment.yaml
+  - async/beat-deployment.yaml
+  - frontend/deployment.yaml
+  - events/deployment.yaml
+  - protected/deployment.yaml
+  - gateway/deployment.yaml
+  - db/deployment.yaml
+  - asyncRabbitmq/statefulset.yaml
+  - eventsRabbitmq/statefulset.yaml
+release:
+  name: taiga
+  namespace: taiga
+values:
+  - values/external-database.yaml
+tests:
+  - it: names each workload after the release and labels it with its component
+    asserts:
+      - equal:
+          path: metadata.name
+          value: taiga-backend
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: taiga
+            app.kubernetes.io/instance: taiga
+            app.kubernetes.io/component: backend
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: backend
+        template: backend/deployment.yaml
+      - equal:
+          path: metadata.name
+          value: taiga-async
+        template: async/deployment.yaml
+      - equal:
+          path: metadata.name
+          value: taiga-async-beat
+        template: async/beat-deployment.yaml
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/component"]
+          value: async-beat
+        template: async/beat-deployment.yaml
+      - equal:
+          path: metadata.name
+          value: taiga-frontend
+        template: frontend/deployment.yaml
+      - equal:
+          path: metadata.name
+          value: taiga-events
+        template: events/deployment.yaml
+      - equal:
+          path: metadata.name
+          value: taiga-protected
+        template: protected/deployment.yaml
+      - equal:
+          path: metadata.name
+          value: taiga-gateway
+        template: gateway/deployment.yaml
+      - equal:
+          path: metadata.name
+          value: taiga-async-rabbitmq
+        template: asyncRabbitmq/statefulset.yaml
+      - equal:
+          path: spec.serviceName
+          value: taiga-async-rabbitmq
+        template: asyncRabbitmq/statefulset.yaml
+      - equal:
+          path: metadata.name
+          value: taiga-events-rabbitmq
+        template: eventsRabbitmq/statefulset.yaml
+      - hasDocuments:
+          count: 0
+        template: db/deployment.yaml
+
+  - it: prefixes the names with the release name when it does not contain taiga
+    release:
+      name: pm
+    asserts:
+      - equal:
+          path: metadata.name
+          value: pm-taiga-backend
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TAIGA_ASYNC_RABBITMQ_HOST
+            value: pm-taiga-async-rabbitmq
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].env[0].valueFrom.secretKeyRef.name
+          value: pm-taiga
+        template: events/deployment.yaml
+      - equal:
+          path: spec.template.spec.volumes[1].configMap.name
+          value: pm-taiga-gateway
+        template: gateway/deployment.yaml
+
+  - it: runs one replica of each component by default and follows replicaCount
+    set:
+      backend:
+        replicaCount: 2
+      frontend:
+        replicaCount: 3
+      events:
+        replicaCount: 2
+      protected:
+        replicaCount: 2
+      gateway:
+        replicaCount: 2
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 3
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 2
+        template: events/deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 2
+        template: protected/deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 2
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 1
+        template: async/deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 1
+        template: asyncRabbitmq/statefulset.yaml
+
+  - it: keeps a single beat scheduler, stopped before its replacement starts, whatever the number of workers
+    set:
+      async:
+        replicaCount: 3
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+        template: async/deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 1
+        template: async/beat-deployment.yaml
+      - equal:
+          path: spec.strategy
+          value:
+            type: Recreate
+        template: async/beat-deployment.yaml
+
+  - it: runs the bundled database as one pod with the Recreate strategy
+    template: db/deployment.yaml
+    values:
+      - values/bundled-database.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: taiga-db
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.strategy
+          value:
+            type: Recreate
+
+  - it: merges the backend probes with global.defaultProbes and keeps its startup probe for the migrations
+    template: backend/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /api/v1/
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /api/v1/
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            httpGet:
+              path: /api/v1/
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+
+  - it: probes taiga-events on its health port, taiga-protected over TCP, the front and the gateway at /
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+        template: events/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet
+          value:
+            path: /healthz
+            port: health
+        template: events/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+        template: protected/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet
+          value:
+            path: /
+            port: http
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet
+          value:
+            path: /
+            port: http
+        template: gateway/deployment.yaml
+
+  - it: lets the values of a probe win over global.defaultProbes
+    set:
+      global:
+        defaultProbes:
+          liveness:
+            periodSeconds: 60
+      backend:
+        livenessProbe:
+          timeoutSeconds: 10
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /api/v1/
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.periodSeconds
+          value: 60
+        template: gateway/deployment.yaml
+
+  - it: leaves a probe out when it is set to null
+    set:
+      backend:
+        startupProbe: null
+      frontend:
+        livenessProbe: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].startupProbe
+        template: backend/deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+        template: frontend/deployment.yaml
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe
+        template: frontend/deployment.yaml
+
+  - it: gives the Celery pods no probe
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+        template: async/deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe
+        template: async/beat-deployment.yaml
+
+  - it: probes the bundled database with pg_isready on the timings of db.healthcheck
+    template: db/deployment.yaml
+    values:
+      - values/bundled-database.yaml
+    set:
+      db:
+        healthcheck:
+          interval: 15s
+          timeout: 4s
+          retries: 6
+          startPeriod: 20s
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - exec pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" -h 127.0.0.1
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 4
+            failureThreshold: 6
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.exec.command[2]
+          value: exec pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" -h 127.0.0.1
+
+  - it: drops the database probes when db.healthcheck is disabled
+    template: db/deployment.yaml
+    values:
+      - values/bundled-database.yaml
+    set:
+      db:
+        healthcheck:
+          enabled: false
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  - it: probes the brokers with rabbitmq-diagnostics
+    template: eventsRabbitmq/statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 15
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.exec.command
+          value: ["rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+
+  - it: gives every component requests and a memory limit, without CPU limit
+    values:
+      - values/bundled-database.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 100m
+              memory: 384Mi
+            limits:
+              memory: 1Gi
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+        template: async/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 10m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+        template: async/beat-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 20m
+              memory: 96Mi
+            limits:
+              memory: 512Mi
+        template: events/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 20m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+        template: protected/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].resources
+          value:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+        template: gateway/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 1Gi
+        template: db/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              memory: 1Gi
+        template: asyncRabbitmq/statefulset.yaml
+
+  - it: uses global.resources for a component whose resources are null (README example)
+    set:
+      global:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+      events:
+        resources: null
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+        template: events/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 384Mi
+        template: backend/deployment.yaml
+
+  - it: places every pod with global.pod and lets a component replace it (README example)
+    values:
+      - values/bundled-database.yaml
+    set:
+      global:
+        pod:
+          nodeSelector:
+            kubernetes.io/arch: arm64
+          tolerations:
+            - key: dedicated
+              operator: Equal
+              value: taiga
+              effect: NoSchedule
+      db:
+        nodeSelector:
+          node-role.example.com/database: "true"
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: arm64
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.tolerations[0].value
+          value: taiga
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: arm64
+        template: async/beat-deployment.yaml
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: arm64
+        template: eventsRabbitmq/statefulset.yaml
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            node-role.example.com/database: "true"
+        template: db/deployment.yaml
+      - equal:
+          path: spec.template.spec.tolerations[0].key
+          value: dedicated
+        template: db/deployment.yaml
+
+  - it: sets the global affinity on the pods without the media volume
+    set:
+      global:
+        pod:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: disk
+                        operator: In
+                        values: [ssd]
+    asserts:
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: disk
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: disk
+        template: asyncRabbitmq/statefulset.yaml
+
+  - it: sets no node selector, toleration or affinity on the pods without the media volume by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.nodeSelector
+        template: frontend/deployment.yaml
+      - notExists:
+          path: spec.template.spec.tolerations
+        template: events/deployment.yaml
+      - notExists:
+          path: spec.template.spec.affinity
+        template: protected/deployment.yaml
+      - notExists:
+          path: spec.template.spec.affinity
+        template: async/beat-deployment.yaml
+
+  - it: restarts the Taiga pods and the brokers when the chart Secret changes, and the gateway on a new configuration
+    asserts:
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/secret"]
+          pattern: ^[0-9a-f]{64}$
+        template: backend/deployment.yaml
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/secret"]
+          pattern: ^[0-9a-f]{64}$
+        template: async/deployment.yaml
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/secret"]
+          pattern: ^[0-9a-f]{64}$
+        template: async/beat-deployment.yaml
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/secret"]
+          pattern: ^[0-9a-f]{64}$
+        template: events/deployment.yaml
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/secret"]
+          pattern: ^[0-9a-f]{64}$
+        template: protected/deployment.yaml
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/secret"]
+          pattern: ^[0-9a-f]{64}$
+        template: asyncRabbitmq/statefulset.yaml
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/config"]
+          pattern: ^[0-9a-f]{64}$
+        template: eventsRabbitmq/statefulset.yaml
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/config"]
+          pattern: ^[0-9a-f]{64}$
+        template: gateway/deployment.yaml
+
+  - it: does not restart the front or the bundled database on a Secret change
+    values:
+      - values/bundled-database.yaml
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations
+        template: frontend/deployment.yaml
+      - notExists:
+          path: spec.template.metadata.annotations
+        template: db/deployment.yaml
+
+  - it: adds pod annotations and labels next to the chart ones
+    set:
+      backend:
+        podAnnotations:
+          scrape: "false"
+        podLabels:
+          tier: api
+      frontend:
+        podAnnotations:
+          scrape: "false"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations.scrape
+          value: "false"
+        template: backend/deployment.yaml
+      - exists:
+          path: spec.template.metadata.annotations["checksum/secret"]
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.metadata.labels.tier
+          value: api
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: backend
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            scrape: "false"
+        template: frontend/deployment.yaml
+
+  - it: adds extra volumes and mounts to the backend, the workers, the beat scheduler, the front and the gateway
+    set:
+      backend:
+        extraVolumes:
+          - name: custom-config
+            configMap:
+              name: taiga-back-config
+        extraVolumeMounts:
+          - name: custom-config
+            mountPath: /taiga-back/settings/config.py
+            subPath: config.py
+      async:
+        extraVolumes:
+          - name: worker-config
+            configMap:
+              name: taiga-worker-config
+        extraVolumeMounts:
+          - name: worker-config
+            mountPath: /taiga-back/settings/config.py
+            subPath: config.py
+      frontend:
+        extraVolumes:
+          - name: conf
+            configMap:
+              name: taiga-front-conf
+        extraVolumeMounts:
+          - name: conf
+            mountPath: /usr/share/nginx/html/conf.json
+            subPath: conf.json
+      gateway:
+        extraVolumes:
+          - name: errors
+            configMap:
+              name: taiga-error-pages
+        extraVolumeMounts:
+          - name: errors
+            mountPath: /usr/share/nginx/errors
+            readOnly: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: custom-config
+            mountPath: /taiga-back/settings/config.py
+            subPath: config.py
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: custom-config
+            configMap:
+              name: taiga-back-config
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: worker-config
+            configMap:
+              name: taiga-worker-config
+        template: async/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: worker-config
+            mountPath: /taiga-back/settings/config.py
+            subPath: config.py
+        template: async/beat-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: conf
+            mountPath: /usr/share/nginx/html/conf.json
+            subPath: conf.json
+        template: frontend/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: errors
+            configMap:
+              name: taiga-error-pages
+        template: gateway/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: errors
+            mountPath: /usr/share/nginx/errors
+            readOnly: true
+        template: gateway/deployment.yaml

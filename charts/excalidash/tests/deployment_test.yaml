@@ -1,0 +1,389 @@
+suite: Deployments, probes and scheduling
+templates:
+  - backend/deployment.yaml
+  - frontend/deployment.yaml
+release:
+  name: excalidash
+  namespace: excalidash
+tests:
+  - it: runs a single backend replica, replaced with the Recreate strategy
+    template: backend/deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: excalidash-backend
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.strategy
+          value:
+            type: Recreate
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: excalidash
+            app.kubernetes.io/instance: excalidash
+            app.kubernetes.io/component: backend
+
+  - it: runs the given number of frontend replicas
+    template: frontend/deployment.yaml
+    set:
+      frontend.replicaCount: 3
+    asserts:
+      - equal:
+          path: metadata.name
+          value: excalidash-frontend
+      - equal:
+          path: spec.replicas
+          value: 3
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: excalidash
+            app.kubernetes.io/instance: excalidash
+            app.kubernetes.io/component: frontend
+
+  - it: leaves the frontend replica count to the HPA when it is enabled
+    template: frontend/deployment.yaml
+    set:
+      frontend.autoscaling.enabled: true
+    asserts:
+      - notExists:
+          path: spec.replicas
+
+  - it: copies the image's /app/dist and an empty uploads directory into the runtime emptyDir before the backend starts
+    template: backend/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value:
+            - sh
+            - -c
+            - mkdir -p /runtime/dist /runtime/uploads && cp -R /app/dist/. /runtime/dist/
+      - equal:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          value:
+            - name: runtime
+              mountPath: /runtime
+
+  - it: mounts the writable paths of the backend from volumes, and nothing else
+    template: backend/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: data
+              mountPath: /app/prisma
+            - name: tmp
+              mountPath: /tmp
+            - name: runtime
+              mountPath: /app/dist
+              subPath: dist
+            - name: runtime
+              mountPath: /app/uploads
+              subPath: uploads
+      - equal:
+          path: spec.template.spec.volumes
+          value:
+            - name: data
+              persistentVolumeClaim:
+                claimName: excalidash-backend
+            - name: tmp
+              emptyDir:
+                sizeLimit: 1Gi
+            - name: runtime
+              emptyDir:
+                sizeLimit: 1Gi
+
+  - it: gives the frontend nginx a size-limited /tmp
+    template: frontend/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: tmp
+              mountPath: /tmp
+      - equal:
+          path: spec.template.spec.volumes
+          value:
+            - name: tmp
+              emptyDir:
+                sizeLimit: 256Mi
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+  - it: probes /health on the backend, with a startup probe that waits for the migrations
+    template: backend/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 10
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 10
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+
+  - it: probes / on the frontend
+    template: frontend/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /
+              port: http
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /
+              port: http
+
+  - it: leaves a probe out when it is set to null
+    template: backend/deployment.yaml
+    set:
+      backend.startupProbe: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].startupProbe
+      - exists:
+          path: spec.template.spec.containers[0].livenessProbe
+
+  - it: requests small resources and limits memory by default, the init container like the backend
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value: &backend
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              memory: 1Gi
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].resources
+          value: *backend
+        template: backend/deployment.yaml
+
+  - it: annotates the backend pod with a checksum of the secret values, to restart it on change
+    template: backend/deployment.yaml
+    set:
+      backend.podAnnotations:
+        scrape: "false"
+      backend.podLabels:
+        tier: api
+    asserts:
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/secret"]
+          pattern: ^[0-9a-f]{64}$
+      - equal:
+          path: spec.template.metadata.annotations.scrape
+          value: "false"
+      - equal:
+          path: spec.template.metadata.labels.tier
+          value: api
+
+  - it: adds the frontend pod annotations and labels
+    template: frontend/deployment.yaml
+    set:
+      frontend.podAnnotations:
+        scrape: "false"
+      frontend.podLabels:
+        tier: web
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            scrape: "false"
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/name: excalidash
+            app.kubernetes.io/instance: excalidash
+            app.kubernetes.io/component: frontend
+            tier: web
+
+  - it: places both pods with the global scheduling values by default
+    set:
+      global.pod.nodeSelector:
+        kubernetes.io/arch: arm64
+      global.pod.tolerations:
+        - key: dedicated
+          operator: Equal
+          value: tools
+          effect: NoSchedule
+      global.pod.affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: disk
+                    operator: In
+                    values: [ssd]
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: arm64
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.tolerations[0].value
+          value: tools
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: arm64
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: disk
+        template: backend/deployment.yaml
+
+  - it: replaces the global scheduling values with the ones of a component, without merging
+    set:
+      global.pod.nodeSelector:
+        kubernetes.io/arch: arm64
+      global.pod.tolerations:
+        - key: dedicated
+          operator: Equal
+          value: tools
+          effect: NoSchedule
+      backend.nodeSelector:
+        disk: ssd
+      frontend.tolerations:
+        - key: edge
+          operator: Exists
+          effect: NoSchedule
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            disk: ssd
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.tolerations
+          value:
+            - key: dedicated
+              operator: Equal
+              value: tools
+              effect: NoSchedule
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.tolerations
+          value:
+            - key: edge
+              operator: Exists
+              effect: NoSchedule
+        template: frontend/deployment.yaml
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: arm64
+        template: frontend/deployment.yaml
+
+  - it: sets no scheduling constraint by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.nodeSelector
+        template: backend/deployment.yaml
+      - notExists:
+          path: spec.template.spec.tolerations
+        template: backend/deployment.yaml
+      - notExists:
+          path: spec.template.spec.affinity
+        template: frontend/deployment.yaml
+
+  - it: adds extra volumes and mounts to each container (README example for the backend)
+    set:
+      backend.volumes:
+        - name: internal-ca
+          configMap:
+            name: internal-ca
+      backend.volumeMounts:
+        - name: internal-ca
+          mountPath: /etc/excalidash/ca
+          readOnly: true
+      frontend.volumes:
+        - name: nginx-extra
+          configMap:
+            name: nginx-extra
+      frontend.volumeMounts:
+        - name: nginx-extra
+          mountPath: /etc/nginx/extra
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: internal-ca
+            configMap:
+              name: internal-ca
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: internal-ca
+            mountPath: /etc/excalidash/ca
+            readOnly: true
+        template: backend/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: nginx-extra
+            configMap:
+              name: nginx-extra
+        template: frontend/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nginx-extra
+            mountPath: /etc/nginx/extra
+        template: frontend/deployment.yaml
+
+  - it: names the resources after the release when it does not contain the chart name
+    release:
+      name: draw
+    asserts:
+      - equal:
+          path: metadata.name
+          value: draw-excalidash-backend
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].env[0]
+          value:
+            name: BACKEND_URL
+            value: draw-excalidash-backend:8000
+        template: frontend/deployment.yaml

@@ -213,6 +213,31 @@ Usage: include "powerdns.defaultSpread" (include "powerdns.auth.selectorLabels" 
 {{- end }}
 
 {{/*
+preStop hook that keeps a DNS server answering while its pod leaves the Service endpoints (rolling update, drain),
+so that the queries still routed to it are not refused; fails when the grace period is not longer than the sleep.
+Usage: include "powerdns.preStop" (dict "ctx" $ "values" .Values.recursor "prefix" "recursor.")
+*/}}
+{{- define "powerdns.preStop" -}}
+{{- $sleep := int .values.preStopSleepSeconds }}
+{{- $grace := int .values.terminationGracePeriodSeconds }}
+{{- if gt $sleep 0 }}
+{{- if le $grace $sleep }}
+{{- fail (printf "%sterminationGracePeriodSeconds (%d) must be greater than %spreStopSleepSeconds (%d)" .prefix $grace .prefix $sleep) }}
+{{- end }}
+lifecycle:
+  preStop:
+    {{- if semverCompare ">=1.30-0" .ctx.Capabilities.KubeVersion.Version }}
+    sleep:
+      seconds: {{ $sleep }}
+    {{- else }}
+    # The sleep action needs Kubernetes 1.30: run sleep from the image instead.
+    exec:
+      command: ["sleep", "{{ $sleep }}"]
+    {{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
 Zone cache refresh interval: every server only learns about a zone created through another server's API when
 its zone cache is refreshed, so several servers sharing the database refresh it more often.
 */}}

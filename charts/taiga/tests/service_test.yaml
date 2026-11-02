@@ -1,0 +1,315 @@
+suite: Services, Ingress and HTTPRoute
+templates:
+  - gateway/service.yaml
+  - backend/service.yaml
+  - frontend/service.yaml
+  - events/service.yaml
+  - protected/service.yaml
+  - asyncRabbitmq/service.yaml
+  - eventsRabbitmq/service.yaml
+  - db/service.yaml
+  - ingress.yaml
+  - httproute.yaml
+release:
+  name: taiga
+  namespace: taiga
+tests:
+  - it: exposes the gateway on port 80 to its http container port, inside the cluster
+    template: gateway/service.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: taiga-gateway
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports
+          value:
+            - port: 80
+              targetPort: http
+              protocol: TCP
+              name: http
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: taiga
+            app.kubernetes.io/instance: taiga
+            app.kubernetes.io/component: gateway
+
+  - it: publishes the gateway with the Service type and port of the values
+    template: gateway/service.yaml
+    set:
+      gateway:
+        service:
+          type: LoadBalancer
+          port: 8080
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: spec.ports[0].port
+          value: 8080
+
+  - it: gives the backend, front, events and protected an internal Service on their http port
+    asserts:
+      - equal:
+          path: spec.ports
+          value:
+            - port: 8000
+              targetPort: http
+              protocol: TCP
+              name: http
+        template: backend/service.yaml
+      - equal:
+          path: spec.selector["app.kubernetes.io/component"]
+          value: backend
+        template: backend/service.yaml
+      - equal:
+          path: spec.ports[0].port
+          value: 80
+        template: frontend/service.yaml
+      - equal:
+          path: spec.ports[0].port
+          value: 8888
+        template: events/service.yaml
+      - equal:
+          path: spec.ports[0].targetPort
+          value: http
+        template: events/service.yaml
+      - equal:
+          path: spec.ports[0].port
+          value: 8003
+        template: protected/service.yaml
+      - equal:
+          path: spec.type
+          value: ClusterIP
+        template: protected/service.yaml
+
+  - it: exposes the AMQP and management ports of each broker inside the cluster
+    asserts:
+      - equal:
+          path: metadata.name
+          value: taiga-async-rabbitmq
+        template: asyncRabbitmq/service.yaml
+      - equal:
+          path: spec.ports
+          value:
+            - port: 5672
+              targetPort: amqp
+              protocol: TCP
+              name: amqp
+            - port: 15672
+              targetPort: management
+              protocol: TCP
+              name: management
+        template: asyncRabbitmq/service.yaml
+      - equal:
+          path: spec.selector["app.kubernetes.io/component"]
+          value: events-rabbitmq
+        template: eventsRabbitmq/service.yaml
+
+  - it: follows the broker Service ports
+    template: eventsRabbitmq/service.yaml
+    set:
+      eventsRabbitmq:
+        service:
+          port: 5673
+          managementPort: 15673
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 5673
+      - equal:
+          path: spec.ports[0].targetPort
+          value: amqp
+      - equal:
+          path: spec.ports[1].port
+          value: 15673
+
+  - it: creates the database Service only with the bundled database
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: db/service.yaml
+
+  - it: exposes the bundled database on 5432
+    template: db/service.yaml
+    values:
+      - values/bundled-database.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: taiga-db
+      - equal:
+          path: spec.ports
+          value:
+            - port: 5432
+              targetPort: postgres
+              protocol: TCP
+              name: postgres
+
+  - it: creates neither an Ingress nor an HTTPRoute by default
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: ingress.yaml
+      - hasDocuments:
+          count: 0
+        template: httproute.yaml
+
+  - it: sends every path of the README Ingress to the gateway, with TLS
+    template: ingress.yaml
+    set:
+      ingress:
+        enabled: true
+        className: nginx
+        annotations:
+          cert-manager.io/cluster-issuer: letsencrypt
+          nginx.ingress.kubernetes.io/proxy-body-size: 100m
+          nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+          nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+        hosts:
+          - host: taiga.example.com
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - secretName: taiga-tls
+            hosts:
+              - taiga.example.com
+    asserts:
+      - isKind:
+          of: Ingress
+      - equal:
+          path: metadata.name
+          value: taiga
+      - equal:
+          path: spec.ingressClassName
+          value: nginx
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/proxy-read-timeout"]
+          value: "3600"
+      - equal:
+          path: spec.tls
+          value:
+            - hosts:
+                - taiga.example.com
+              secretName: taiga-tls
+      - equal:
+          path: spec.rules
+          value:
+            - host: taiga.example.com
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: taiga-gateway
+                        port:
+                          number: 80
+
+  - it: points the Ingress to the gateway Service port, without class or TLS unless set
+    template: ingress.yaml
+    set:
+      gateway:
+        service:
+          port: 8080
+      ingress:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.port.number
+          value: 8080
+      - notExists:
+          path: spec.tls
+      - notExists:
+          path: spec.ingressClassName
+      - notExists:
+          path: metadata.annotations
+
+  - it: attaches the HTTPRoute of the README to the gateway Service for global.domain
+    template: httproute.yaml
+    set:
+      global:
+        domain: taiga.example.com
+      httpRoute:
+        enabled: true
+        parentRefs:
+          - name: public
+            namespace: gateway-system
+            sectionName: https
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1
+      - equal:
+          path: spec.parentRefs
+          value:
+            - name: public
+              namespace: gateway-system
+              sectionName: https
+      - equal:
+          path: spec.hostnames
+          value:
+            - taiga.example.com
+      - equal:
+          path: spec.rules
+          value:
+            - matches:
+                - path:
+                    type: PathPrefix
+                    value: /
+              backendRefs:
+                - name: taiga-gateway
+                  port: 80
+                  weight: 1
+
+  - it: uses httpRoute.hostnames and global.subPath as the path prefix
+    template: httproute.yaml
+    set:
+      global:
+        subPath: /taiga
+      gateway:
+        service:
+          port: 8080
+      httpRoute:
+        enabled: true
+        annotations:
+          owner: platform
+        hostnames:
+          - pm.example.com
+          - taiga.example.org
+    asserts:
+      - equal:
+          path: spec.hostnames
+          value:
+            - pm.example.com
+            - taiga.example.org
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /taiga
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 8080
+      - equal:
+          path: metadata.annotations.owner
+          value: platform
+
+  - it: adds the leading slash missing from global.subPath in the HTTPRoute
+    template: httproute.yaml
+    set:
+      global:
+        subPath: taiga
+      httpRoute:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /taiga

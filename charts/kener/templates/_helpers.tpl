@@ -141,7 +141,7 @@ Value already stored in the release secret under .key, else a new random one. Us
 */}}
 {{- define "kener.generated" -}}
 {{- $secret := lookup "v1" "Secret" .ctx.Release.Namespace (include "kener.secretName" .ctx) -}}
-{{- if and $secret (index $secret.data .key) -}}
+{{- if and $secret $secret.data (index $secret.data .key) -}}
 {{- index $secret.data .key | b64dec -}}
 {{- else -}}
 {{- randAlphaNum (int .length) -}}

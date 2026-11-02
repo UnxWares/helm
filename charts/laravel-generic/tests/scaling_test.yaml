@@ -63,6 +63,17 @@ tests:
               type: Utilization
               averageUtilization: 75
 
+  - it: leaves metrics out without any target (Kubernetes then scales on 80% CPU)
+    template: hpa.yaml
+    set:
+      autoscaling.enabled: true
+      autoscaling.targetCPUUtilizationPercentage: null
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - notExists:
+          path: spec.metrics
+
   - it: keeps one web pod available by default
     template: pdb.yaml
     set:

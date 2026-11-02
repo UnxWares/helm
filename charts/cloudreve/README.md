@@ -1,6 +1,6 @@
 # Cloudreve Helm Chart
 
-![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.19.1](https://img.shields.io/badge/AppVersion-4.19.1-informational?style=flat-square)
+![Version: 2026.11.3](https://img.shields.io/badge/Version-2026.11.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.19.1](https://img.shields.io/badge/AppVersion-4.19.1-informational?style=flat-square)
 
 [Cloudreve](https://cloudreve.org/) is a self-hosted file management and sharing system: personal and shared files,
 public links, WebDAV, previews and thumbnails, with storage on the local disk or on remote providers (S3, OneDrive,
@@ -376,10 +376,10 @@ Value changes: `confini.fromSecret` + `confini.secretName` → `confini.existing
 helm uninstall my-storage --namespace storage
 ```
 
-The data PVC carries `helm.sh/resource-policy: keep`: it is not deleted, so a new install with the same release name
-finds the data again. The chart Secret is deleted with the release: keep a copy of the session secret if you plan to
-reinstall on the same data (or use `cloudreve.existingSecret`). Delete the volume yourself only when the data is no
-longer needed: `kubectl --namespace storage delete pvc my-storage-cloudreve`.
+The data PVC and the chart Secret carry `helm.sh/resource-policy: keep`: they are not deleted, so a new install with
+the same release name finds the data and the session secret again (sessions and signed URLs stay valid). Delete them
+yourself only when the data is no longer needed: `kubectl --namespace storage delete pvc my-storage-cloudreve` and
+`kubectl --namespace storage delete secret my-storage-cloudreve`.
 
 ## Requirements
 

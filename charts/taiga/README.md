@@ -1,6 +1,6 @@
 # Taiga Helm Chart
 
-![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 6.10.2](https://img.shields.io/badge/AppVersion-6.10.2-informational?style=flat-square)
+![Version: 2026.11.3](https://img.shields.io/badge/Version-2026.11.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 6.10.2](https://img.shields.io/badge/AppVersion-6.10.2-informational?style=flat-square)
 
 [Taiga](https://taiga.io/) is an open-source project management platform for agile teams (Scrum, Kanban, issues,
 wiki). This chart deploys the whole stack of [taiga-docker](https://github.com/taigaio/taiga-docker): backend API,
@@ -906,6 +906,16 @@ beyond the chart-testing install, and upgrades from previous chart versions.
 
 The UnxWares images are built and scanned with Trivy by a separate workflow (see
 [images/](https://github.com/UnxWares/helm/tree/main/images)).
+
+Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
+`.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
+cluster and check the security contexts of every pod with both image providers, the image selection (`imageProvider`,
+repository, tag, OIDC images), the message of every required value, the chart Secret (values generated once and read
+back at upgrade, existing Secrets), credentials through `secretKeyRef` only and the broker URLs, the probes, the
+media, database and broker volumes with the pod affinity of a ReadWriteOnce media volume, the Services, the
+NetworkPolicies, the gateway configuration, the `helm test` pod and the examples of this README. They also check the
+rendering of what the end-to-end test does not run: external PostgreSQL, OIDC, SMTP, Ingress, HTTPRoute,
+`global.subPath` and autoscaling.
 
 ## Operations
 
