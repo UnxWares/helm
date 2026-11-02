@@ -1,0 +1,19 @@
+# The official image each UnxWares image replaces. The CVE watch (.github/scripts/cve-watch.py) scans both, and
+# https://helm.unxwares.studio compares them. Keyed by build context (as in .github/workflows/images.yaml); {tag} is
+# the tag of the UnxWares image.
+images/postgres/17: docker.io/library/postgres:{tag}
+images/postgres/18: docker.io/library/postgres:{tag}
+images/taiga-back: docker.io/taigaio/taiga-back:{tag}
+images/taiga-events: docker.io/taigaio/taiga-events:{tag}
+images/taiga-front: docker.io/taigaio/taiga-front:{tag}
+images/taiga-protected: docker.io/taigaio/taiga-protected:{tag}
+images/pdns-auth: docker.io/powerdns/pdns-auth-51:{tag}
+images/pdns-recursor: docker.io/powerdns/pdns-recursor-54:{tag}
+# The client images replace the database server images the Jobs used for their clients.
+images/postgresql-client: docker.io/library/postgres:{tag}-alpine
+images/mysql-client: docker.io/library/mysql:{tag}
+images/mongosh: docker.io/library/mongo:8.0
+images/cloudreve: docker.io/cloudreve/cloudreve:{tag}
+# Upstream publishes master-<commit> tags only: the commit of the UnxWares build, and the latest master.
+images/fossflow: docker.io/abrar74774/fossflow:master-2b3cee3
+images/bind-exporter: docker.io/prometheuscommunity/bind-exporter:master

@@ -18,9 +18,9 @@ on:
             - completed
         branches:
             - main
-    # After the daily CVE watch (06:17), in case a workflow_run event was missed.
+    # Half an hour after each scheduled CVE watch (every 6 hours, at :17), in case a workflow_run event was missed.
     schedule:
-        - cron: "47 7 * * *"
+        - cron: "47 */6 * * *"
     workflow_dispatch:
 
 # One build at a time; a newer pending run replaces an older pending one (it would publish newer results).

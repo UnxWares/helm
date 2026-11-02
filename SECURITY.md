@@ -24,7 +24,7 @@ from the charts. Two things keep them down:
   rebuild them twice a week (Monday and Thursday) on current bases, with dependencies bumped and
   the upstream security fixes that are merged but not released yet. The charts use them by default
   and keep the upstream images as an option.
-- **CVE watch** (`.github/workflows/cve-watch.yaml`): every day, and after each rebuild of the
+- **CVE watch** (`.github/workflows/cve-watch.yaml`): every 6 hours, and after each rebuild of the
   UnxWares images, Trivy scans every image the charts can deploy and updates the open issue
   labelled [`cve-watch`](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch):
   fixable vulnerabilities of our images, and upstream fix candidates (application dependencies
