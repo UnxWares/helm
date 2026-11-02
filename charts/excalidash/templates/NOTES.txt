@@ -9,8 +9,20 @@ and open http://127.0.0.1:8080 (set frontend.url accordingly).
 {{- end }}
 {{- if eq .Values.backend.auth.mode "local" }}
 
-First admin: the setup code is printed in the backend logs (valid 15 minutes):
+First admin: open the URL now and choose to enable authentication (until then, the first visitor
+decides). The backend then prints a one-time setup code in its logs (valid 15 minutes):
   kubectl --namespace {{ .Release.Namespace }} logs deploy/{{ include "excalidash.backend.fullname" . }} | grep -i setup
+{{- else if has .Values.backend.auth.mode (list "hybrid" "oidc_enforced") }}
+
+First admin: while no account exists, the first user to log in through {{ .Values.backend.auth.oidc.providerName | default "SSO" }} becomes administrator
+(OIDC_FIRST_USER_ADMIN, on by default): limit who can log in at the provider.
+{{- if eq .Values.backend.auth.mode "hybrid" }}
+In hybrid mode ExcaliDash {{ .Chart.AppVersion }} prints no local setup code on a new database: create the
+administrator through OIDC, then local accounts from the administration page.
+{{- end }}
+{{- else if eq .Values.backend.auth.mode "disabled" }}
+
+WARNING: backend.auth.mode is disabled: no login at all, every visitor is the same user. Never expose it.
 {{- end }}
 {{- if not .Values.backend.persistence.enabled }}
 

@@ -11,6 +11,11 @@ metadata:
 spec:
   restartPolicy: Never
   automountServiceAccountToken: false
+  {{- $ips := .Values.frontend.imagePullSecrets | default .Values.global.imagePullSecrets }}
+  {{- if $ips }}
+  imagePullSecrets:
+    {{- toYaml $ips | nindent 4 }}
+  {{- end }}
   securityContext:
     runAsNonRoot: true
     runAsUser: 101
@@ -20,6 +25,7 @@ spec:
   containers:
     - name: health
       image: {{ include "excalidash.image" (dict "image" .Values.frontend.image "default" .Chart.AppVersion) | quote }}
+      imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
       securityContext:
         allowPrivilegeEscalation: false
         readOnlyRootFilesystem: true
@@ -31,3 +37,9 @@ spec:
         - wget
         - -qO-
         - http://{{ include "excalidash.frontend.fullname" . }}:{{ .Values.frontend.service.port }}/api/health
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          memory: 64Mi

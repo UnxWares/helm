@@ -33,7 +33,8 @@ WARNING: persistence is disabled, the SQLite database is lost when the pod resta
 {{- if not (include "kener.secretKey.existingSecret" .) }}
 {{- if not (include "kener.secretKey.value" .) }}
 
-NOTE: KENER_SECRET_KEY was generated and is kept across upgrades. With GitOps tools that render
+NOTE: KENER_SECRET_KEY was generated and is kept across upgrades, and on uninstall (Secret
+{{ include "kener.secretName" . }}, delete it yourself with the data). With GitOps tools that render
 offline (Argo CD, Flux post-renderers...), set kener.secretKey or kener.existingSecret: a new key
 would log everybody out and invalidate every API key on each sync.
 {{- else if lt (len (include "kener.secretKey.value" .)) 32 }}

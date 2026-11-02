@@ -27,7 +27,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secret: {{ list (include "kener.secretKey.value" .) .Values.database.url .Values.redis.auth.password .Values.redis.external.url .Values.email.smtp.password .Values.email.resend.apiKey .Values.proxy.httpProxy .Values.proxy.httpsProxy | toJson | sha256sum }}
+        checksum/secret: {{ list (include "kener.secretKey.value" .) .Values.database.url .Values.redis.auth.password .Values.redis.external.url .Values.email.smtp.password .Values.email.resend.apiKey .Values.proxy.httpProxy .Values.proxy.httpsProxy .Values.proxy.existingSecret | toJson | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

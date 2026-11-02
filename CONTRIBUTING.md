@@ -330,6 +330,8 @@ its chart, its images or its scripts, on every push to main and every Tuesday.
 | `openeverest-database-tools` | Real PostgreSQL, MySQL and MongoDB servers and a stand-in for the operator; the Jobs run, then the application users log in and their rights, missing rights and init scripts are checked, before and after a password rotation |
 | `cloudreve` | `helm test`, then sign-up of the first (admin) account, login, upload, listing, download of the same content, thumbnail generation |
 | `taiga` | `helm test`, then a superuser created with `manage.py` logs in, creates a project and a user story and reads them back, gets the change on the events websocket, uploads and downloads an attachment through its signed URL (refused without it); periodic tasks sent once with two workers; only the gateway reachable from outside the release (NetworkPolicies); uninstall and reinstall on the kept Secret and volumes, then the same checks |
+| `kener` | `helm test`, then sign-up of the first account (a second one refused), login, API key, monitor and status page created through the REST API, the monitor run and shown operational, Valkey password and NetworkPolicies, then a reinstall that keeps the account and the API key |
+| `excalidash` | `helm test`, then onboarding with the setup code of the backend logs, login, drawing created, listed, exported and accepted by the import check, `Secure` cookies behind TLS, NetworkPolicy, then a reinstall that keeps the session and the drawing |
 
 To add one: write `.github/scripts/<chart>-e2e.sh` (it receives the namespace and the release name, fails on the
 first wrong answer and prints one `ok:` line per check), add the chart's paths to the `changes` job, and add a job that

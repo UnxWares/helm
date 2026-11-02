@@ -96,7 +96,7 @@ redis:
   image:
     # -- Valkey image repository.
     repository: docker.io/valkey/valkey
-    # -- Valkey image tag.
+    # -- Valkey image tag (required unless `digest` is set).
     tag: "9.1.3-alpine"
     # -- Image digest (takes precedence over the tag).
     digest: ""
@@ -221,10 +221,16 @@ email:
 
 ## Outbound proxy for monitors, triggers, Resend and OIDC
 proxy:
-  # -- `HTTP_PROXY` (stored in a Secret: it may carry credentials, percent-encoded).
+  # -- `HTTP_PROXY` (stored in a Secret: it may carry credentials, percent-encoded). Ignored when `existingSecret` is set.
   httpProxy: ""
-  # -- `HTTPS_PROXY` (stored in a Secret).
+  # -- `HTTPS_PROXY` (stored in a Secret). Ignored when `existingSecret` is set.
   httpsProxy: ""
+  # -- Existing secret holding the proxy URLs instead of `httpProxy` and `httpsProxy` (either key may be missing).
+  existingSecret: ""
+  # -- Key of the `HTTP_PROXY` URL in `existingSecret`.
+  existingSecretHttpProxyKey: http-proxy
+  # -- Key of the `HTTPS_PROXY` URL in `existingSecret`.
+  existingSecretHttpsProxyKey: https-proxy
   # -- `NO_PROXY`: hosts, `host:port`, `.suffix` (no CIDR). Add the in-cluster services your monitors reach directly.
   noProxy: ""
 
@@ -371,9 +377,9 @@ autoscaling:
   targetMemoryUtilizationPercentage: null  # @schema type:[integer, null]
 
 podDisruptionBudget:
-  # -- Create a PodDisruptionBudget for Kener (useful with 2+ replicas).
+  # -- Create a PodDisruptionBudget for Kener. Refused with SQLite (single replica) and when `minAvailable` is not lower than the replica count: such a budget blocks node drains.
   enabled: false
-  # -- Minimum available pods.
+  # -- Minimum available pods (lower than `replicaCount`, or `autoscaling.minReplicas` with the HPA).
   minAvailable: 1
   # -- Maximum unavailable pods (used instead of minAvailable when set).
   maxUnavailable: null  # @schema type:[integer, string, null]

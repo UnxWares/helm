@@ -14,9 +14,9 @@ its data in SQLite on a persistent volume, or in an external PostgreSQL or MySQL
 - **Bundled Valkey** (Redis compatible, required by Kener 4 for its queues): a single hardened pod with a generated
   password, no persistence by default since Kener rebuilds its schedules from the database. Or bring your own
   Redis 6+ through `redis.external`.
-- **No default credentials**: `KENER_SECRET_KEY` and the Valkey password are generated and kept across upgrades, or
-  read from your own Secrets. The database URL, Redis URL, SMTP password, Resend key and proxy URLs only reach the
-  container through `secretKeyRef`.
+- **No default credentials**: `KENER_SECRET_KEY` and the Valkey password are generated and kept across upgrades and
+  reinstalls, or read from your own Secrets. The database URL, Redis URL, SMTP password, Resend key and proxy URLs
+  only reach the container through `secretKeyRef`.
 - **Hardened by default**: non-root (uid 1000), read-only root filesystem, every capability dropped, seccomp
   `RuntimeDefault`, no service account token. The default pods meet the Pod Security Standard `restricted`.
 - **Image choice**: Alpine variant by default (far fewer known CVEs than the Debian one), Debian on demand, and the
@@ -24,9 +24,10 @@ its data in SQLite on a persistent volume, or in an external PostgreSQL or MySQL
 - **Probes on `/healthcheck`**: readiness uses `?strict=1`, so a pod leaves the Service while its database or Redis
   is unreachable.
 - **Validation**: the chart refuses values that would give a broken or insecure deployment (origin with a path,
-  public secret key, several replicas on SQLite, missing Redis, incomplete SMTP settings...).
+  public secret key, several replicas on SQLite, a PodDisruptionBudget that blocks node drains, missing Redis,
+  incomplete SMTP settings...).
 - Ingress or Gateway API HTTPRoute, optional NetworkPolicies (Valkey only reachable by Kener, without any egress),
-  PodDisruptionBudget and HPA (SQL databases), `helm test`.
+  PodDisruptionBudget and HPA (SQL databases), `helm test`, and an end-to-end test in CI.
 
 ## Architecture
 
@@ -42,12 +43,12 @@ when the release name already contains `kener`, or `fullnameOverride`).
 | Service | `status-kener-valkey` | `redis.enabled` | ClusterIP, port `redis.service.port` (6379). |
 | ConfigMap | `status-kener-valkey` | `redis.enabled` | `valkey.conf` (no password inside). |
 | PersistentVolumeClaim | `status-kener-valkey` | `redis.persistence.enabled` and no `redis.persistence.existingClaim` | Valkey append-only file, mounted on `/data`. Annotated `helm.sh/resource-policy: keep`. |
-| Secret | `status-kener` | at least one value to store (always with the defaults) | Generated or given secrets (see [Secrets](#secrets-and-existing-secrets)). |
+| Secret | `status-kener` | at least one value to store (always with the defaults) | Generated or given secrets (see [Secrets](#secrets-and-existing-secrets)). Annotated `helm.sh/resource-policy: keep`. |
 | ServiceAccount | `status-kener` | `serviceAccount.create` (default) | Used by the Kener and Valkey pods, token not mounted, no RBAC. |
 | Ingress | `status-kener` | `ingress.enabled` | Routes `ingress.hosts` to the Kener Service. |
 | HTTPRoute | `status-kener` | `httpRoute.enabled` | Gateway API route to the Kener Service. |
 | NetworkPolicy | `status-kener`, `status-kener-valkey` | `networkPolicy.enabled` | Ingress rules for Kener; ingress and egress rules for Valkey. |
-| PodDisruptionBudget | `status-kener` | `podDisruptionBudget.enabled` | For the Kener pods. |
+| PodDisruptionBudget | `status-kener` | `podDisruptionBudget.enabled` (PostgreSQL/MySQL, 2+ replicas) | For the Kener pods. |
 | HorizontalPodAutoscaler | `status-kener` | `autoscaling.enabled` | CPU (and optionally memory) based, PostgreSQL/MySQL only. |
 | Pod | `status-kener-test-healthcheck` | `helm test` | See [Testing](#testing). |
 
@@ -87,7 +88,8 @@ for other charts). These images are published for `linux/amd64` and `linux/arm64
 
 To pin an image by digest, set `image.digest` and `redis.image.digest`: the digest takes precedence over the tag and
 the variant logic, so pin the digest of the tag that matches your `kener.basePath` (for example the
-`4.1.11-status-alpine` one for `/status`). `docker buildx imagetools inspect docker.io/rajnandan1/kener:4.1.11-alpine`
+`4.1.11-status-alpine` one for `/status`). `redis.image.tag` has no hidden default: with the bundled Valkey, keep a
+tag or set the digest, or the chart refuses to render. `docker buildx imagetools inspect docker.io/rajnandan1/kener:4.1.11-alpine`
 prints the digest of a tag.
 
 ```yaml
@@ -310,11 +312,13 @@ The chart Secret `status-kener` holds only what is not read from your own Secret
 | `redis-url` | `redis.external.url` | no | `redis.external.existingSecret` + `redis.external.existingSecretKey` |
 | `smtp-password` | `email.smtp.password` | no | `email.smtp.existingSecret` + `email.smtp.existingSecretPasswordKey` |
 | `resend-api-key` | `email.resend.apiKey` | no | `email.resend.existingSecret` + `email.resend.existingSecretKey` |
-| `http-proxy`, `https-proxy` | `proxy.httpProxy`, `proxy.httpsProxy` | no | none |
+| `http-proxy`, `https-proxy` | `proxy.httpProxy`, `proxy.httpsProxy` | no | `proxy.existingSecret` + `proxy.existingSecretHttpProxyKey`, `proxy.existingSecretHttpsProxyKey` |
 
 Generated values are read back from the existing Secret at each `helm upgrade` (Helm `lookup`), so they stay the
-same across upgrades. `KENER_SECRET_KEY` signs sessions and hashes API keys: a new key logs everybody out **and
-invalidates every API key**. The chart refuses the public keys `thesuperprivatekeytonotshare` (previous chart
+same across upgrades. The Secret carries `helm.sh/resource-policy: keep`, like the PVCs: `helm uninstall` leaves it,
+and a new install under the same release name and namespace reads it back too (see [Uninstalling](#uninstalling)).
+`KENER_SECRET_KEY` signs sessions and hashes API keys: a new key logs everybody out **and invalidates every API
+key**. The chart refuses the public keys `thesuperprivatekeytonotshare` (previous chart
 default) and `DUMMY_SECRET`; NOTES warn about a `kener.secretKey` shorter than 32 characters.
 
 **GitOps**: generated secrets cannot be read back by tools that render templates offline (Argo CD...), which would
@@ -385,6 +389,15 @@ container through the chart Secret (they may carry credentials, percent-encoded)
 proxy:
   httpProxy: http://proxy.example.com:3128
   httpsProxy: http://proxy.example.com:3128
+  noProxy: localhost,127.0.0.1,.svc,.cluster.local
+```
+
+Or keep the URLs in your own Secret (`proxy.httpProxy` and `proxy.httpsProxy` are then ignored; either key may be
+missing, the variable is then left unset):
+
+```yaml
+proxy:
+  existingSecret: kener-proxy     # keys http-proxy and https-proxy
   noProxy: localhost,127.0.0.1,.svc,.cluster.local
 ```
 
@@ -475,9 +488,9 @@ podDisruptionBudget:
   maxUnavailable: 1
 ```
 
-The PodDisruptionBudget uses `minAvailable: 1` unless `maxUnavailable` is set; with a single replica and
-`minAvailable: 1` it blocks node drains, so only enable it with 2 replicas or more. The bundled Valkey always runs
-one pod.
+The PodDisruptionBudget uses `minAvailable: 1` unless `maxUnavailable` is set. A budget that never allows an
+eviction blocks node drains, so the chart refuses it with SQLite (always one pod), and refuses a `minAvailable` that
+is not lower than `replicaCount` (`autoscaling.minReplicas` with the HPA). The bundled Valkey always runs one pod.
 
 ### Scheduling
 
@@ -688,8 +701,9 @@ Caveats:
 - Kener egress stays open with `networkPolicy.enabled`, since monitors reach arbitrary hosts. Add your own egress
   policy if your monitors only target known networks.
 - The Kener-Valkey traffic is not encrypted inside the cluster.
-- The generated secrets live in the `status-kener` Secret, which `helm uninstall` deletes (see
-  [Uninstalling](#uninstalling)); with GitOps tools, use your own Secrets.
+- The generated secrets live in the `status-kener` Secret, which `helm uninstall` keeps along with the database
+  (see [Uninstalling](#uninstalling)): delete both deliberately when you remove Kener for good. With GitOps tools,
+  use your own Secrets.
 - The chart runs the upstream images, whose known vulnerabilities are tracked in the
   [CVE watch](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch).
 
@@ -712,12 +726,29 @@ Every pull request of the [repository](https://github.com/UnxWares/helm) runs, f
 
 The `helm test` pod (`templates/tests/test-healthcheck.yaml`) runs `curl` from the Kener image (or `tests.image`)
 against `http://status-kener:<service.port><basePath>/healthcheck?strict=1`, retrying 6 times 5 seconds apart. It
-passes only when Kener answers and reaches both its database and Redis. There is no end-to-end test yet (sign-in,
-monitor runs, notifications). After an install:
+passes only when Kener answers and reaches both its database and Redis. It changes nothing, so it is safe on a real
+instance. After an install:
 
 ```bash
 helm test status -n status --logs
 ```
+
+The end-to-end test (`.github/workflows/e2e.yaml`, script `.github/scripts/kener-e2e.sh`) runs on pull requests
+that change the chart, on every push to main and every week. It installs the chart in kind with
+`ci/default-values.yaml` and the upstream images, runs `helm test`, then, through the Service:
+
+- the first account signs up from the sign-in page, and a second sign-up is refused;
+- the account logs in (not with a wrong password) and creates an API key; the REST API refuses requests without a
+  valid key, including through a percent-encoded path (the authentication bypass fixed in Kener 4.1.9);
+- an HTTP monitor and a status page are created through the REST API; the monitor runs from the queue (bundled
+  Valkey) and records `UP`; the status page lists it as operational, its monitor page and its status badge answer;
+- Valkey refuses commands without its password; Kener reaches Valkey, another pod reaches Kener but not Valkey
+  (NetworkPolicies);
+- after `helm uninstall` and a new install, the account logs in with the same password and the API key created
+  before still works (kept PVC and Secret).
+
+It does not test notifications (email, webhooks), ping monitors, the Debian or `/status` images (installed by
+`ct install` only), PostgreSQL or MySQL, an external Redis, or several replicas.
 
 ## Operations
 
@@ -784,6 +815,18 @@ helm repo update
 helm upgrade status unxwares/kener -n status -f values.yaml
 ```
 
+### To 2026.11.3
+
+- The `status-kener` Secret (generated `KENER_SECRET_KEY` and Valkey password) is now kept on `helm uninstall`, like
+  the SQLite PVC, so that a new install keeps sessions and API keys working. Delete it yourself when you remove
+  Kener for good (see [Uninstalling](#uninstalling)).
+- `podDisruptionBudget.enabled: true` is refused with SQLite, and when `minAvailable` is not lower than the number
+  of replicas: these budgets blocked node drains. If `helm upgrade` stops on this error, set
+  `podDisruptionBudget.enabled: false` (or scale out on PostgreSQL/MySQL, or set `maxUnavailable`).
+- An empty `redis.image.tag` no longer falls back to a Valkey tag hidden in the templates: keep a tag (the default
+  is `9.1.3-alpine`) or set `redis.image.digest`.
+- The proxy URLs can come from your own Secret: `proxy.existingSecret`.
+
 ### To 2026.11.1 (Kener 4.1.11)
 
 Security release, no value to change. Kener 4.1.11 updates dependencies with known vulnerabilities and masks the
@@ -843,7 +886,8 @@ Kener changes ([v4.0.0 notes](https://kener.ing/docs/v4/changelogs/v4.0.0)), to 
 
 **`helm install` fails with an `execution error`**: the chart validates its values and says what to change (origin
 with a path or a trailing slash, base path without a matching image, `postgres://` URL, several replicas on SQLite,
-`redis.enabled: false` without `redis.external`, incomplete SMTP settings, `NODE_OPTIONS` without
+a PodDisruptionBudget with SQLite or with `minAvailable` not lower than the replicas, `redis.enabled: false` without
+`redis.external`, no Valkey tag or digest, incomplete SMTP settings, `NODE_OPTIONS` without
 `--experimental-strip-types`, public secret key).
 
 **Login and every form fail** (SvelteKit answers `Cross-site POST form submissions are forbidden`): `kener.origin`
@@ -891,20 +935,20 @@ controller pods (check their namespace labels; use an `ipBlock` for a `hostNetwo
 helm uninstall status -n status
 ```
 
-This deletes the Deployments, Services, ConfigMap, ServiceAccount, Ingress/HTTPRoute, NetworkPolicies, PDB, HPA and
-the `status-kener` Secret, generated `KENER_SECRET_KEY` and Valkey password included. It keeps:
+This deletes the Deployments, Services, ConfigMap, ServiceAccount, Ingress/HTTPRoute, NetworkPolicies, PDB and HPA.
+It keeps, annotated `helm.sh/resource-policy: keep`:
 
-- the `status-kener` PVC (SQLite database) and the `status-kener-valkey` PVC (with `redis.persistence.enabled`),
-  annotated `helm.sh/resource-policy: keep`;
-- the PVCs and Secrets you created yourself (`existingClaim`, `existingSecret`), which the chart never manages.
+- the `status-kener` PVC (SQLite database) and the `status-kener-valkey` PVC (with `redis.persistence.enabled`);
+- the `status-kener` Secret, generated `KENER_SECRET_KEY` and Valkey password included.
 
-The chart creates no StatefulSet, so no other PVC is left behind. A new install under the same release name and
-namespace takes the kept PVC over again; save the secret key first (see [Backup and restore](#backup-and-restore))
-and set it with `kener.secretKey` or `kener.existingSecret`, otherwise API keys stop working. To delete the data for
+It never touches the PVCs and Secrets you created yourself (`existingClaim`, `existingSecret`). The chart creates no
+StatefulSet, so no other PVC is left behind. A new install under the same release name and namespace takes the kept
+PVC and Secret over again: accounts, sessions and API keys keep working. To delete the data and the secrets for
 good:
 
 ```bash
 kubectl -n status delete pvc status-kener status-kener-valkey
+kubectl -n status delete secret status-kener
 ```
 
 {{ template "chart.valuesSection" . }}

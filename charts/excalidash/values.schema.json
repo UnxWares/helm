@@ -236,7 +236,7 @@
                     }
                 },
                 "securityContext": {
-                    "description": "Container security context. The entrypoint regenerates files under /app at every start, so the root filesystem stays writable.",
+                    "description": "Container security context, also used by the `copy-app` init container. The entrypoint rewrites `/app/dist/generated` and changes the mode of `/app/uploads` at every start: the chart mounts writable copies of both from an emptyDir, so the root filesystem stays read-only.",
                     "type": "object"
                 },
                 "service": {
@@ -266,7 +266,7 @@
                     "type": "array"
                 },
                 "trustProxy": {
-                    "description": "Trust X-Forwarded-* headers. Only enable it when a trusted proxy (your ingress) sanitizes them.",
+                    "description": "`TRUST_PROXY`: how many proxies in front of the backend it trusts for `X-Forwarded-*` headers. `\"1\"` trusts the frontend nginx, always in front of it: cookies get the `Secure` flag when the proxy in front of the frontend says HTTPS (`X-Forwarded-Proto`). `\"2\"` also trusts your Ingress controller or Gateway, so that rate limits see the real client address. `\"false\"` trusts none (cookies never `Secure`, one rate limit bucket for everybody).",
                     "type": "string"
                 },
                 "volumeMounts": {
@@ -304,6 +304,13 @@
                         "targetCPUUtilizationPercentage": {
                             "description": "Target average CPU utilization (%).",
                             "type": "integer"
+                        },
+                        "targetMemoryUtilizationPercentage": {
+                            "description": "Target average memory utilization (%), relative to the memory request. Null leaves memory out.",
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
                         }
                     }
                 },
