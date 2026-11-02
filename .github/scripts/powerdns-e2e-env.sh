@@ -123,11 +123,20 @@ EOF
 kubectl -n "$DB_NS" rollout status deploy/powerdns-pg --timeout=300s
 kubectl -n "$DB_NS" rollout status deploy/powerdns-mysql --timeout=600s
 
-# The password reaches MySQL hex-encoded and is quoted by QUOTE(), whatever characters it holds.
+# The password reaches MySQL hex-encoded and is quoted by QUOTE(), whatever characters it holds. The server can still
+# be restarting after its first initialization when the probe passes: retry for up to two minutes.
 hex=$(printf '%s' "$db_password" | od -An -tx1 | tr -d ' \n')
-kubectl -n "$DB_NS" exec -i deploy/powerdns-mysql -- sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot' <<EOF
+for attempt in $(seq 24); do
+  if kubectl -n "$DB_NS" exec -i deploy/powerdns-mysql -- \
+    sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -h 127.0.0.1 -uroot' <<EOF
 SET @create = CONCAT('CREATE USER IF NOT EXISTS ''pdns''@''%'' IDENTIFIED BY ', QUOTE(CONVERT(UNHEX('$hex') USING utf8mb4)));
 PREPARE create_user FROM @create;
 EXECUTE create_user;
 GRANT ALL PRIVILEGES ON pdns.* TO 'pdns'@'%';
 EOF
+  then
+    break
+  fi
+  [ "$attempt" -lt 24 ] || { echo "FAIL: could not create the pdns user in MySQL" >&2; exit 1; }
+  sleep 5
+done

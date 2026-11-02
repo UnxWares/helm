@@ -45,6 +45,15 @@ spec:
         - sh
         - -ec
         - |
-          dig +time=3 +tries=2 @{{ include "bind9.fullname" . }} -p {{ .Values.service.ports.dnsUdp }} version.bind txt chaos
-          dig +tcp +time=3 +tries=2 @{{ include "bind9.fullname" . }} -p {{ .Values.service.ports.dnsTcp }} version.bind txt chaos
+          # Right after an install the Service may not be programmed on the node yet: retry for up to a minute.
+          query() {
+            n=0
+            until dig "$@" version.bind txt chaos; do
+              n=$((n + 1))
+              [ "$n" -lt 12 ] || return 1
+              sleep 5
+            done
+          }
+          query +time=3 +tries=1 @{{ include "bind9.fullname" . }} -p {{ .Values.service.ports.dnsUdp }}
+          query +tcp +time=3 +tries=1 @{{ include "bind9.fullname" . }} -p {{ .Values.service.ports.dnsTcp }}
 {{- end }}
