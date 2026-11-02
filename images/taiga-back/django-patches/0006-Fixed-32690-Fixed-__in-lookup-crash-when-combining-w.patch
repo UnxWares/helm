@@ -1,0 +1,59 @@
+From: Simon Charette <charette.s@gmail.com>
+Date: Tue, 4 May 2021 23:42:52 -0400
+Subject: Fixed #32690 -- Fixed __in lookup crash when combining with filtered
+ aggregates.
+
+Having lookups group by subquery right-hand-sides is likely unnecessary
+in the first place but relatively large amount of work would be needed
+to achieve that such as making Lookup instances proper resolvable
+expressions.
+
+Regression in 35431298226165986ad07e91f9d3aca721ff38ec.
+
+Thanks James A. Munsch for the report.
+
+(cherry picked from commit 136ff592ad8aa8b7fa1e61435e5501cc98ce8573)
+---
+ django/db/models/lookups.py        | 9 +++++++++
+ tests/aggregation_regress/tests.py | 8 ++++++++
+ 2 files changed, 17 insertions(+)
+
+diff --git a/django/db/models/lookups.py b/django/db/models/lookups.py
+index 43f40c24ec1f..82f149750ea6 100644
+--- a/django/db/models/lookups.py
++++ b/django/db/models/lookups.py
+@@ -402,6 +402,15 @@ class In(FieldGetDbPrepValueIterableMixin, BuiltinLookup):
+                 self.rhs.add_fields(['pk'])
+             return super().process_rhs(compiler, connection)
+ 
++    def get_group_by_cols(self, alias=None):
++        cols = self.lhs.get_group_by_cols()
++        if hasattr(self.rhs, 'get_group_by_cols'):
++            if not getattr(self.rhs, 'has_select_fields', True):
++                self.rhs.clear_select_clause()
++                self.rhs.add_fields(['pk'])
++            cols.extend(self.rhs.get_group_by_cols())
++        return cols
++
+     def get_rhs_op(self, connection, rhs):
+         return 'IN %s' % rhs
+ 
+diff --git a/tests/aggregation_regress/tests.py b/tests/aggregation_regress/tests.py
+index 877e7b49a7c8..5d841b166a35 100644
+--- a/tests/aggregation_regress/tests.py
++++ b/tests/aggregation_regress/tests.py
+@@ -1525,6 +1525,14 @@ class AggregationTests(TestCase):
+             allow_distinct = True
+         DistinctAggregate('foo', distinct=True)
+ 
++    @skipUnlessDBFeature('supports_subqueries_in_group_by')
++    def test_having_subquery_select(self):
++        authors = Author.objects.filter(pk=self.a1.pk)
++        books = Book.objects.annotate(Count('authors')).filter(
++            Q(authors__in=authors) | Q(authors__count__gt=2)
++        )
++        self.assertEqual(set(books), {self.b1, self.b4})
++
+ 
+ class JoinPromotionTests(TestCase):
+     def test_ticket_21150(self):
