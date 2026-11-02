@@ -65,12 +65,15 @@
                             "type": "boolean"
                         },
                         "maxReplicas": {
+                            "description": "Unused, kept for compatibility.",
                             "type": "integer"
                         },
                         "minReplicas": {
+                            "description": "Unused, kept for compatibility.",
                             "type": "integer"
                         },
                         "targetCPUUtilizationPercentage": {
+                            "description": "Unused, kept for compatibility.",
                             "type": "integer"
                         }
                     }
@@ -291,12 +294,15 @@
                             "type": "boolean"
                         },
                         "maxReplicas": {
+                            "description": "Maximum number of frontend replicas.",
                             "type": "integer"
                         },
                         "minReplicas": {
+                            "description": "Minimum number of frontend replicas.",
                             "type": "integer"
                         },
                         "targetCPUUtilizationPercentage": {
+                            "description": "Target average CPU utilization (%).",
                             "type": "integer"
                         }
                     }

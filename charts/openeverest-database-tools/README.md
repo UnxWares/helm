@@ -1,6 +1,6 @@
 # OpenEverest Database Tools Helm Chart
 
-![Version: 2026.11.1](https://img.shields.io/badge/Version-2026.11.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.17.0](https://img.shields.io/badge/AppVersion-1.17.0-informational?style=flat-square)
+![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.17.0](https://img.shields.io/badge/AppVersion-1.17.0-informational?style=flat-square)
 
 Database initialization Jobs for [OpenEverest](https://openeverest.io) by UnxWares. Each Job waits until an
 OpenEverest `DatabaseCluster` is ready, then creates databases, users and grants and runs your init scripts on
@@ -13,7 +13,7 @@ PostgreSQL, MySQL (Percona XtraDB Cluster) or MongoDB (Percona Server for MongoD
   `status.status: ready`, then the client retries until the admin user can log in.
 - **Idempotent**: databases and users are created when missing, grants are re-applied and user passwords are
   re-synced from their Secret. Running a Job twice is harmless.
-- **Small, patched images**: the UnxWares client images (`psql`, `mysql` and `mongosh` alone, rebuilt every week,
+- **Small, patched images**: the UnxWares client images (`psql`, `mysql` and `mongosh` alone, rebuilt twice a week,
   signed, see [images/](https://github.com/UnxWares/helm/tree/main/images)) and the distroless
   `registry.k8s.io/kubectl`; nothing is installed when the Job starts, every image is scanned by Artifact Hub.
 - **Tested end to end**: in CI, the Jobs run against real PostgreSQL, MySQL and MongoDB servers, then the
@@ -27,12 +27,15 @@ PostgreSQL, MySQL (Percona XtraDB Cluster) or MongoDB (Percona Server for MongoD
 
 ## Requirements
 
+Kubernetes: `>=1.27.0-0`
+
 - OpenEverest 1.x (tested with 1.17.0): the Jobs wait on
   `databaseclusters.everest.percona.com` (API `v1alpha1`).
 - The Jobs, their ConfigMaps and RBAC are created in `global.namespace` (default `everest-databases`), which must
   be a [namespace managed by OpenEverest](https://openeverest.io/documentation/current/administer/manage_namespaces.html)
   holding the DatabaseClusters and their credential Secrets. Leave it empty to use the release namespace.
-- The nodes must be able to pull from `ghcr.io` and `registry.k8s.io` (or your mirror, see `image.*`).
+- The nodes must be able to pull from `ghcr.io` and `registry.k8s.io` (or your mirror, see `image.*`), on amd64 or
+  arm64.
 
 ## Installation
 
@@ -45,10 +48,34 @@ helm install db-tools unxwares/openeverest-database-tools \
   -f my-databases.yaml
 ```
 
-Charts are signed: see [verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures)
-and add `--verify --keyring <keyring>` to `helm install`.
+Packages are signed with the UnxWares Helm Charts key (`7902 E52E A435 EF27 C643  2E53 78D6 B532 C599 DA9B`):
 
-## How it works
+```bash
+curl -fsSL https://helm.unxwares.studio/pgp-public-key.asc | gpg --import
+gpg --export 7902E52EA435EF27C6432E5378D6B532C599DA9B > ~/.gnupg/unxwares-helm.gpg
+helm install db-tools unxwares/openeverest-database-tools --namespace everest-databases \
+  --verify --keyring ~/.gnupg/unxwares-helm.gpg -f my-databases.yaml
+```
+
+The chart deploys nothing long-running: once the Jobs succeed, check their logs (see [Troubleshooting](#troubleshooting)).
+
+## Architecture
+
+| Resource | Name | Purpose |
+|---|---|---|
+| Job, one per entry | `<name>-<hash>` | Waits for the DatabaseCluster, then runs the client. The hash covers the entry's settings. |
+| ConfigMap, one per entry | `<name>-<hash>` | The generated SQL or JavaScript and your init scripts. No credentials. |
+| ServiceAccount | `<release>-openeverest-database-tools` | Identity of the Jobs (`rbac.create`), or `rbac.serviceAccountName`. |
+| Role and RoleBinding | `<release>-openeverest-database-tools` | `get`, `list` and `watch` on `databaseclusters.everest.percona.com`, nothing else. |
+
+All of them are created in `global.namespace`. Each Job pod has:
+
+- two init containers, `wait-cluster-created` and `wait-cluster-ready` (kubectl), the only ones with the API token,
+  through a projected volume;
+- the client container (`init-postgresql`, `init-mariadb` or `init-mongodb`) with the ConfigMap on `/scripts` and an
+  in-memory `emptyDir` on `/tmp` (its `HOME`).
+
+### How a Job runs
 
 For every entry of `databases.postgresql`, `databases.mysql` and `databases.mongodb` the chart renders a
 ConfigMap (the generated SQL/JavaScript and your init scripts) and a Job named `<name>-<hash>`:
@@ -61,6 +88,99 @@ ConfigMap (the generated SQL/JavaScript and your init scripts) and a Job named `
 
 The admin credentials come from `adminCredentialsSecret`; each user comes from its own `credentialsSecret`
 (keys `username` and `password` by default).
+
+## Images
+
+| Engine | Default image | Alternative |
+|---|---|---|
+| PostgreSQL | `ghcr.io/unxwares/postgresql-client:18` (psql of the latest PostgreSQL 18 release) | `docker.io/library/postgres:<version>-alpine` |
+| MySQL | `ghcr.io/unxwares/mysql-client:8.4` (Oracle MySQL client of the latest 8.4 release) | `docker.io/library/mysql:8.4.x` |
+| MongoDB | `ghcr.io/unxwares/mongosh:<version>` (official mongosh release) | `docker.io/library/mongo:<version>` |
+| Wait containers | `registry.k8s.io/kubectl:<version>` (distroless) | |
+
+The UnxWares images hold the client alone instead of a whole database server image, run as uid 65532 and are rebuilt
+twice a week on current bases, signed with cosign (sources and verification command in
+[images/](https://github.com/UnxWares/helm/tree/main/images)). The mongosh image keeps the SBOM of the release, so
+scanners also see the dependencies mongosh bundles. Known vulnerabilities are tracked daily in the
+[CVE watch](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch) issue.
+
+Each image is a `{repository, tag, digest}` object; the digest takes precedence over the tag. An entry can override
+its engine image with `image`:
+
+```yaml
+image:
+  postgresql:
+    repository: docker.io/library/postgres
+    tag: 18.6-alpine
+  mysql:
+    digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+```
+
+## Configuration
+
+### Entries
+
+Keys of each entry of `databases.postgresql`, `databases.mysql` and `databases.mongodb`:
+
+| Key | Engines | Default | Description |
+|-----|---------|---------|-------------|
+| `name` | all | required | Job name (DNS label). The Job and its ConfigMap are named `<name>-<hash>`. |
+| `clusterName` | all | required | Name of the OpenEverest `DatabaseCluster` to wait for. |
+| `adminCredentialsSecret` | all | required | Secret with the admin credentials (`credentialsSecret` is accepted as an alias). |
+| `hostKey` | all | `pgbouncer-host` / `host` / `host` | Key of the host in the admin Secret. |
+| `host` | all | | Literal host, takes precedence over `hostKey` (e.g. `my-mysql-haproxy`). |
+| `port` | all | `5432` / `3306` / `27017` | Port. |
+| `userKey` | all | `user` | Key of the admin username in the admin Secret. |
+| `adminUser` | all | | Literal admin username, takes precedence over `userKey` (e.g. `root`). |
+| `passwordKey` | all | `password` | Key of the admin password in the admin Secret. |
+| `databases` | all | `[]` | Databases to create (letters, digits, `_`, `-`). |
+| `users[].credentialsSecret` | all | required | Secret holding the user credentials. |
+| `users[].usernameKey` / `users[].passwordKey` | all | `username` / `password` | Keys in that Secret. |
+| `users[].databases` | all | `[]` | Databases the user gets access to (PostgreSQL: owner; MySQL: grants; MongoDB: roles). |
+| `users[].privileges` | MySQL | `[ALL PRIVILEGES]` | Privileges granted on each database. |
+| `users[].roles` | MongoDB | `[readWrite]` | Roles granted on each database. |
+| `initScripts` | all | `[]` | SQL (PostgreSQL, MySQL) or mongosh JavaScript run in order, after users and grants. |
+| `initScriptsDatabase` | all | admin database / none / first database | Database the init scripts run in. |
+| `sslMode` | PostgreSQL, MySQL | `require` / `PREFERRED` | libpq `sslmode` or MySQL `--ssl-mode`. |
+| `adminDatabase` | PostgreSQL | `postgres` | Database the admin connects to. |
+| `authDatabase` | MongoDB | `admin` | Authentication database of the admin user. |
+| `uriOptions` | MongoDB | | Extra connection string options, e.g. `replicaSet=rs0&tls=true`. |
+| `collections[]` | MongoDB | `[]` | `name` + `database` of collections to create. |
+| `image` | all | `image.<engine>` | Client image: full reference string or `{repository, tag, digest}`. |
+| `env`, `extraEnv` | all | `[]` | Extra environment variables of the client container. |
+| `resources` | all | `resources` | Resources of every container of the Job. |
+| `labels`, `annotations`, `podAnnotations` | all | `{}` | Extra Job labels (also on the pod), Job annotations and pod annotations. |
+| `ttlSecondsAfterFinished`, `backoffLimit`, `restartPolicy`, `activeDeadlineSeconds` | all | `global.*` | Job settings. |
+| `waitForCluster`, `waitTimeoutSeconds`, `connectTimeoutSeconds`, `updateUserPasswords` | all | `global.*` | Wait, connection and password settings. |
+
+### Global settings
+
+`global.*` sets the defaults of every entry: `namespace` (where the Jobs, ConfigMaps and RBAC go), `ttlSecondsAfterFinished`
+(180 s; `null` keeps finished Jobs), `backoffLimit` (5), `restartPolicy` (`OnFailure`), `activeDeadlineSeconds`,
+`waitForCluster`, `waitTimeoutSeconds` (300 s per wait step), `connectTimeoutSeconds` (120 s of login retries) and
+`updateUserPasswords` (reset existing users to the password of their Secret).
+
+### RBAC
+
+With `rbac.create: true` (default) the chart creates the ServiceAccount, Role and RoleBinding above. With
+`rbac.create: false`, set `rbac.serviceAccountName` to an account that can `get`, `list` and `watch`
+`databaseclusters.everest.percona.com` in `global.namespace`, or set `global.waitForCluster: false`.
+
+### Resources and scheduling
+
+`resources` applies to every container (10m CPU and 64 Mi requested, 512 Mi memory limit), and an entry can override
+it. `nodeSelector`, `tolerations`, `affinity`, `priorityClassName` and `imagePullSecrets` apply to every Job pod;
+`labels`, `annotations`, `podAnnotations` and `extraEnv` add to all of them.
+
+### Argo CD
+
+With `global.argocd.enabled` (default), the Jobs carry `argocd.argoproj.io/hook: Sync`,
+`hook-delete-policy: HookSucceeded` and `sync-options: Replace=true`: Argo CD runs them on every sync and deletes
+them once they succeed. Set `global.argocd.enabled: false` to manage them as plain resources.
+
+Without Argo CD, Helm keeps the Jobs as release resources: an unchanged Job keeps its name (`helm upgrade`
+recreates it, and it runs again, once `ttlSecondsAfterFinished` has deleted it), a changed one gets a new name and
+runs again. Either way the Job spec is never patched, so upgrades cannot fail on its immutability.
 
 ## Examples
 
@@ -165,52 +285,7 @@ database on its first write, so a database without collection only appears once 
 
 Quote init scripts that contain `: ` (YAML would read them as a mapping).
 
-## Entry reference
-
-Keys of each entry of `databases.postgresql`, `databases.mysql` and `databases.mongodb`:
-
-| Key | Engines | Default | Description |
-|-----|---------|---------|-------------|
-| `name` | all | required | Job name (DNS label). The Job and its ConfigMap are named `<name>-<hash>`. |
-| `clusterName` | all | required | Name of the OpenEverest `DatabaseCluster` to wait for. |
-| `adminCredentialsSecret` | all | required | Secret with the admin credentials (`credentialsSecret` is accepted as an alias). |
-| `hostKey` | all | `pgbouncer-host` / `host` / `host` | Key of the host in the admin Secret. |
-| `host` | all | | Literal host, takes precedence over `hostKey` (e.g. `my-mysql-haproxy`). |
-| `port` | all | `5432` / `3306` / `27017` | Port. |
-| `userKey` | all | `user` | Key of the admin username in the admin Secret. |
-| `adminUser` | all | | Literal admin username, takes precedence over `userKey` (e.g. `root`). |
-| `passwordKey` | all | `password` | Key of the admin password in the admin Secret. |
-| `databases` | all | `[]` | Databases to create (letters, digits, `_`, `-`). |
-| `users[].credentialsSecret` | all | required | Secret holding the user credentials. |
-| `users[].usernameKey` / `users[].passwordKey` | all | `username` / `password` | Keys in that Secret. |
-| `users[].databases` | all | `[]` | Databases the user gets access to (PostgreSQL: owner; MySQL: grants; MongoDB: roles). |
-| `users[].privileges` | MySQL | `[ALL PRIVILEGES]` | Privileges granted on each database. |
-| `users[].roles` | MongoDB | `[readWrite]` | Roles granted on each database. |
-| `initScripts` | all | `[]` | SQL (PostgreSQL, MySQL) or mongosh JavaScript run in order, after users and grants. |
-| `initScriptsDatabase` | all | admin database / none / first database | Database the init scripts run in. |
-| `sslMode` | PostgreSQL, MySQL | `require` / `PREFERRED` | libpq `sslmode` or MySQL `--ssl-mode`. |
-| `adminDatabase` | PostgreSQL | `postgres` | Database the admin connects to. |
-| `authDatabase` | MongoDB | `admin` | Authentication database of the admin user. |
-| `uriOptions` | MongoDB | | Extra connection string options, e.g. `replicaSet=rs0&tls=true`. |
-| `collections[]` | MongoDB | `[]` | `name` + `database` of collections to create. |
-| `image` | all | `image.<engine>` | Client image: full reference string or `{repository, tag, digest}`. |
-| `env`, `extraEnv` | all | `[]` | Extra environment variables of the client container. |
-| `resources` | all | `resources` | Resources of every container of the Job. |
-| `labels`, `annotations`, `podAnnotations` | all | `{}` | Extra Job labels (also on the pod), Job annotations and pod annotations. |
-| `ttlSecondsAfterFinished`, `backoffLimit`, `restartPolicy`, `activeDeadlineSeconds` | all | `global.*` | Job settings. |
-| `waitForCluster`, `waitTimeoutSeconds`, `connectTimeoutSeconds`, `updateUserPasswords` | all | `global.*` | Wait, connection and password settings. |
-
-## Argo CD
-
-With `global.argocd.enabled` (default), the Jobs carry `argocd.argoproj.io/hook: Sync`,
-`hook-delete-policy: HookSucceeded` and `sync-options: Replace=true`: Argo CD runs them on every sync and deletes
-them once they succeed. Set `global.argocd.enabled: false` to manage them as plain resources.
-
-Without Argo CD, Helm keeps the Jobs as release resources: an unchanged Job keeps its name (`helm upgrade`
-recreates it, and it runs again, once `ttlSecondsAfterFinished` has deleted it), a changed one gets a new name and
-runs again. Either way the Job spec is never patched, so upgrades cannot fail on its immutability.
-
-## Security notes
+## Security
 
 - Credentials only reach the containers through `secretKeyRef`. PostgreSQL reads them with `\getenv` and quotes
   them with `%L`/`%I`; MySQL receives them hex-encoded and quotes them with `QUOTE()` in prepared statements;
@@ -222,6 +297,41 @@ runs again. Either way the Job spec is never patched, so upgrades cannot fail on
   `databaseclusters.everest.percona.com`, or set `waitForCluster: false`.
 - Init scripts are stored in a ConfigMap, readable by whoever can read ConfigMaps in the namespace: keep secrets
   out of them.
+- Every container runs as uid and gid 65532 with a read-only root filesystem, no capability, no privilege escalation
+  and the `RuntimeDefault` seccomp profile.
+- PostgreSQL connects with `sslMode: require` by default; set `verify-full` with a CA when your cluster certificate
+  allows it. MySQL uses `PREFERRED`.
+
+## Testing
+
+On every pull request, the repository CI runs `helm lint --strict` with Helm 3 and Helm 4 on the default values and
+on each `ci/*-values.yaml` (`default`, `compat`, `e2e`), validates the rendered manifests with kubeconform, runs
+`ct lint` and checks the Artifact Hub metadata and the generated README and schema. chart-testing does not install
+this chart: it needs the OpenEverest operator.
+
+The end-to-end test (`.github/workflows/e2e.yaml`) installs it instead, in kind, with the client images built from the
+same commit, against real PostgreSQL 18 (with TLS), MySQL 8.4 and MongoDB 7.0 (replica set) servers and a stand-in for
+the operator (a minimal `DatabaseCluster` CRD whose clusters are reported ready once their server is). The Jobs must
+complete, then the test logs in as the application users, never the admin, and checks:
+
+- PostgreSQL: TLS login, owner of its database, the extension and table of the init scripts, can create tables there,
+  cannot in another database;
+- MySQL: encrypted login, exactly the configured privileges on its database and none global, the table of the init
+  script, no access to the system tables;
+- MongoDB: login and writes on its database, the unique index of the init script is enforced, no access to another
+  database.
+
+It then gives the users new passwords, runs the Jobs again and repeats the checks, which covers idempotency and
+`updateUserPasswords`. It runs on pull requests that touch the chart or its images, on every push to main and every
+Tuesday.
+
+## Operations
+
+- **Run the Jobs again**: with Argo CD, sync again. With Helm, a changed entry gets a new Job; to re-run an unchanged
+  one, delete it (`kubectl delete job -n everest-databases <name>-<hash>`) and `helm upgrade` the release.
+- **Rotate an application password**: update the user's Secret, then run the Job again: the user gets the new
+  password (`updateUserPasswords: true`), then restart the application.
+- **Add a database or a user**: add it to the entry and upgrade; the Job of that entry gets a new name and runs.
 
 ## Upgrading
 
@@ -277,9 +387,15 @@ kubectl describe job -n everest-databases <name>-<hash>
 - **Timed out connecting**: check `host`/`hostKey`, `port`, `sslMode` and the NetworkPolicies of the namespace
   (the pods carry `app.kubernetes.io/component: postgresql-init|mariadb-init|mongodb-init`).
 
-## Requirements
+## Uninstalling
 
-Kubernetes: `>=1.27.0-0`
+```bash
+helm uninstall db-tools --namespace everest-databases
+```
+
+This removes the Jobs, ConfigMaps and RBAC of the release. It never touches the clusters: the databases, users,
+grants and collections the Jobs created stay, and so do the credential Secrets (they are yours). Drop them in the
+cluster yourself if they are no longer needed.
 
 ## Values
 

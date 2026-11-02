@@ -57,12 +57,15 @@
                     "type": "boolean"
                 },
                 "maxReplicas": {
+                    "description": "Maximum number of replicas.",
                     "type": "integer"
                 },
                 "minReplicas": {
+                    "description": "Minimum number of replicas.",
                     "type": "integer"
                 },
                 "targetCPUUtilizationPercentage": {
+                    "description": "Target average CPU utilization (%).",
                     "type": "integer"
                 }
             }
@@ -429,12 +432,15 @@
                             "type": "boolean"
                         },
                         "maxReplicas": {
+                            "description": "Maximum number of recursor replicas.",
                             "type": "integer"
                         },
                         "minReplicas": {
+                            "description": "Minimum number of recursor replicas.",
                             "type": "integer"
                         },
                         "targetCPUUtilizationPercentage": {
+                            "description": "Target average CPU utilization (%).",
                             "type": "integer"
                         }
                     }
@@ -530,12 +536,15 @@
                                     "type": "boolean"
                                 },
                                 "interval": {
+                                    "description": "Scrape interval.",
                                     "type": "string"
                                 },
                                 "labels": {
+                                    "description": "Extra labels of the ServiceMonitor (to match your Prometheus selector).",
                                     "type": "object"
                                 },
                                 "scrapeTimeout": {
+                                    "description": "Scrape timeout.",
                                     "type": "string"
                                 }
                             }
@@ -558,6 +567,7 @@
                             "type": "boolean"
                         },
                         "maxUnavailable": {
+                            "description": "Maximum unavailable recursor pods (takes precedence over `minAvailable`).",
                             "type": [
                                 "integer",
                                 "string",
@@ -565,6 +575,7 @@
                             ]
                         },
                         "minAvailable": {
+                            "description": "Minimum available recursor pods (used when `maxUnavailable` is null).",
                             "type": "integer"
                         }
                     }

@@ -33,6 +33,9 @@ whose entrypoint is the binary itself (the upstream one starts aria2 under super
 - `<version>-amd64`, `<version>-arm64`: the per-architecture images behind the multi-arch tag.
 
 `.github/workflows/images.yaml` builds every image natively on amd64 and arm64 and scans it with Trivy.
+The images of `cloudreve` and `openeverest-database-tools` are also built by the end-to-end tests
+(`.github/workflows/e2e.yaml`), which run the chart on them in kind and check what the application does, so a change
+to one of these images is tested before it is published.
 Pull requests fail on a fixable CRITICAL or HIGH vulnerability, unless the image's `.trivyignore` says why it
 is accepted (for `taiga-back`: Django 3.2, which Taiga is pinned to; for `mongosh`: an FTP client it only uses
 for proxy auto-configuration files).

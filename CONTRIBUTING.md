@@ -196,7 +196,7 @@ Chart READMEs and `values.schema.json` are generated, never edited by hand:
 - run `./generate-schemas.sh <chart-name>` and commit the result: CI fails when the generated files are out of date
 - list the release's changes in the `artifacthub.io/changes` annotation of `Chart.yaml` (replace the previous list:
   Artifact Hub shows it per version), set `artifacthub.io/containsSecurityUpdates: "true"` when the release fixes CVEs,
-  and keep `artifacthub.io/images` in sync with the images the chart deploys (the weekly Trivy scan reads it)
+  and keep `artifacthub.io/images` in sync with the images the chart deploys (the daily CVE watch reads it)
 
 ## Chart Guidelines
 
@@ -277,11 +277,32 @@ metadata:
 
 #### Documentation
 
-- Keep README.md comprehensive and up-to-date
-- Include installation instructions
-- Document all configuration parameters
-- Provide usage examples
-- Add troubleshooting section
+The README is the page people read on Artifact Hub before installing: it must let them install, configure, secure,
+operate, upgrade and troubleshoot the chart without reading the templates. Every chart README follows the same
+sections, in this order (skip one only when it does not apply):
+
+1. Introduction: what the application is, what the chart deploys, who maintains it
+2. Features
+3. Architecture: workloads, Services and ports, volumes and what they hold, Secrets and ConfigMaps, optional parts
+   and the value that enables each
+4. Images: default images, `imageProvider` when the chart has one, digest pinning, link to the CVE watch issue (no
+   vulnerability counts in READMEs: they change every day)
+5. Requirements
+6. Installation, with the signature check
+7. Configuration, one subsection per topic (persistence, database, exposure, TLS, secrets, SSO, resources,
+   scheduling, NetworkPolicy, monitoring...)
+8. Examples: complete values files for the common setups
+9. Security: defaults, what is exposed, caveats
+10. Testing: exactly what CI checks for this chart, and what it does not
+11. Operations: backup and restore, scaling limits, logs
+12. Upgrading: one note per release with something to do
+13. Troubleshooting
+14. Uninstalling: what is kept (PVCs, Secrets) and how to remove it deliberately
+15. The values table, then License and Credits
+
+Rules: write in English, plainly, without marketing or comparisons with other charts; never use the em dash
+character; only describe what the templates actually do; every values example must render with `helm template` and
+pass kubeconform.
 
 ## Testing
 
@@ -293,8 +314,27 @@ Every pull request runs `.github/workflows/lint-test.yaml`:
 - `ah lint` for the Artifact Hub metadata
 - a check that `values.schema.json` and `README.md` match `./generate-schemas.sh`
 
-Charts that cannot start without user input (`laravel-generic` needs your application image) or external
-prerequisites (`openeverest-database-tools` needs the OpenEverest operator) are linted and validated but not installed.
+`laravel-generic` cannot start without your application image: it is linted and validated but not installed.
+`openeverest-database-tools` needs the OpenEverest operator: chart-testing does not install it, the end-to-end test
+below does.
+
+### End-to-end tests
+
+`.github/workflows/e2e.yaml` checks what an application actually does, not only that its pods start. Each chart job
+builds the UnxWares images of the commit, loads them into kind, installs the chart next to real dependencies, then a
+script under `.github/scripts/` drives the application and checks its answers. A job runs on pull requests that touch
+its chart, its images or its scripts, on every push to main and every Tuesday.
+
+| Chart | What the test does |
+|-------|--------------------|
+| `openeverest-database-tools` | Real PostgreSQL, MySQL and MongoDB servers and a stand-in for the operator; the Jobs run, then the application users log in and their rights, missing rights and init scripts are checked, before and after a password rotation |
+| `cloudreve` | `helm test`, then sign-up of the first (admin) account, login, upload, listing, download of the same content, thumbnail generation |
+
+To add one: write `.github/scripts/<chart>-e2e.sh` (it receives the namespace and the release name, fails on the
+first wrong answer and prints one `ok:` line per check), add the chart's paths to the `changes` job, and add a job that
+builds the images, loads them into kind, installs the chart and runs the script. Never drive a destructive action of
+the application from `helm test`: people run it on their real instance. Run a test locally with kind
+(`KIND_EXPERIMENTAL_PROVIDER=podman` works rootless), loading the images with `kind load image-archive`.
 
 ### Integration Testing
 

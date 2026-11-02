@@ -21,12 +21,12 @@ Most CVEs reported by Artifact Hub's security report come from the application i
 from the charts. Two things keep them down:
 
 - **UnxWares images** ([images/](images/README.md)): where the upstream images lag behind, we
-  rebuild them every week on current bases, with dependencies bumped and the upstream security
-  fixes that are merged but not released yet. The charts use them by default and keep the
-  upstream images as an option.
-- **CVE watch** (`.github/workflows/cve-watch.yaml`): every Monday, Trivy scans every image the
-  charts can deploy and updates the open issue labelled
-  [`cve-watch`](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch):
+  rebuild them twice a week (Monday and Thursday) on current bases, with dependencies bumped and
+  the upstream security fixes that are merged but not released yet. The charts use them by default
+  and keep the upstream images as an option.
+- **CVE watch** (`.github/workflows/cve-watch.yaml`): every day, and after each rebuild of the
+  UnxWares images, Trivy scans every image the charts can deploy and updates the open issue
+  labelled [`cve-watch`](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch):
   fixable vulnerabilities of our images, and upstream fix candidates (application dependencies
   to bump upstream, images that only need a rebuild). New fixable critical/high vulnerabilities
   are posted as a comment. When upstream has not fixed one yet, we send them the pull request.

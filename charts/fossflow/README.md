@@ -1,16 +1,80 @@
 # FossFLOW Helm Chart
 
-![Version: 2026.10.1](https://img.shields.io/badge/Version-2026.10.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.5](https://img.shields.io/badge/AppVersion-1.0.5-informational?style=flat-square)
+![Version: 2026.11.1](https://img.shields.io/badge/Version-2026.11.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.5](https://img.shields.io/badge/AppVersion-1.0.5-informational?style=flat-square)
 
-[FossFLOW](https://github.com/Abrar74774/FossFLOW) is an open-source Progressive Web App for drawing beautiful
-isometric infrastructure diagrams.
+[FossFLOW](https://github.com/Abrar74774/FossFLOW) is an open-source Progressive Web App for drawing isometric
+infrastructure diagrams. This chart deploys the upstream FossFLOW image: one container running nginx (the web app)
+and, optionally, a small Node.js backend that saves the diagrams as JSON files on a persistent volume. The chart is
+maintained by UnxWares; FossFLOW itself is maintained by the
+[Abrar74774/FossFLOW](https://github.com/Abrar74774/FossFLOW) project, the continuation of the original
+`stan-smith/FossFLOW`.
 
 ## Features
 
-- Pinned, verifiable image built from the public [Abrar74774/FossFLOW](https://github.com/Abrar74774/FossFLOW) repository
-- Optional **server storage** (Node.js backend) persisted in a PVC; or browser-only mode that scales horizontally
-- Backend dropped to uid 1000, every capability dropped except the five the image entrypoint needs, seccomp `RuntimeDefault`
-- Ingress or Gateway API HTTPRoute, probes on the storage backend, `helm test`
+- Upstream image pinned to an immutable commit tag (`master-2b3cee3`, FossFLOW v1.0.5), with optional digest pinning
+- Two modes: **server storage** (diagrams saved by the backend on a PVC, the default) or **browser-only** (diagrams
+  stay in each user's browser, stateless pods that can be scaled or autoscaled)
+- Probes on the storage backend (`/api/storage/status`) when it is enabled, so a dead backend makes the pod unready
+- Reduced privileges: every capability dropped except the five the image entrypoint needs, no privilege escalation,
+  seccomp `RuntimeDefault`, backend dropped to uid 1000, no service account token
+- Ingress or Gateway API HTTPRoute, optional HorizontalPodAutoscaler, `helm test`, values schema
+
+## Architecture
+
+`<fullname>` is `<release>-fossflow`, or just `<release>` when the release name contains `fossflow`.
+
+| Resource | Name | Created when | Purpose |
+|----------|------|--------------|---------|
+| Deployment | `<fullname>` | always | Container `fossflow`: nginx on port 80 serves the web app and proxies `/api/` to the backend (`localhost:3001`), which runs only with `storage.enabled`. Strategy `Recreate` with a ReadWriteOnce PVC. |
+| Service | `<fullname>` | always | `service.type` (ClusterIP), port `service.port` (80) to container port 80 (`http`). |
+| PersistentVolumeClaim | `<fullname>` | `storage.enabled`, `persistence.enabled`, no `persistence.existingClaim` | `/data/diagrams`, one `<id>.json` file per diagram; `helm.sh/resource-policy: keep`. |
+| ServiceAccount | `<fullname>` | `serviceAccount.create` (default) | No RBAC, token not mounted. |
+| Ingress | `<fullname>` | `ingress.enabled` | |
+| HTTPRoute | `<fullname>` | `httpRoute.enabled` | Every rule is sent to the Service. |
+| HorizontalPodAutoscaler | `<fullname>` | `autoscaling.enabled` | CPU target on the Deployment. |
+| Pod (test hook) | `<fullname>-test-connection` | `helm test` | See [Testing](#testing). |
+
+The only volume is `data`, mounted at `/data/diagrams` with `storage.enabled`: the PVC (or `persistence.existingClaim`),
+or an `emptyDir` when `persistence.enabled=false`. The chart creates no Secret, no ConfigMap, no init container and no
+NetworkPolicy.
+
+## Images
+
+| Image | Default tag | Used by |
+|-------|-------------|---------|
+| `docker.io/abrar74774/fossflow` | `master-2b3cee3` (FossFLOW v1.0.5) | the FossFLOW container and the `helm test` pod |
+
+- The image is published by the maintainers of [Abrar74774/FossFLOW](https://github.com/Abrar74774/FossFLOW) from
+  its public sources (Node.js 24 on Alpine, with nginx), for `linux/amd64` and `linux/arm64`. Upstream only publishes
+  `master-<commit>` tags.
+- UnxWares rebuilds some upstream images ([images/](https://github.com/UnxWares/helm/tree/main/images): rebuilt twice
+  a week, signed with cosign, verify command in that README). FossFLOW is not one of them: this chart has no
+  `imageProvider` value and always runs the upstream image.
+- Another tag or registry: set `image.repository` and `image.tag`.
+- Pin a digest: `image.digest` takes precedence over the tag. Read it with
+  `docker buildx imagetools inspect docker.io/abrar74774/fossflow:master-2b3cee3` (or `crane digest`):
+
+  ```yaml
+  image:
+    digest: sha256:3488a4fcf964a581d0e66cd7780a6f5ac2eaac3919183b633b5d4b3f21fe64b9
+  ```
+
+- Known vulnerabilities of the image are tracked in the
+  [CVE watch issue](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch).
+
+## Requirements
+
+Kubernetes: `>=1.27.0-0`
+
+- Storage, with the default values (server storage): a default StorageClass, or `persistence.storageClass`, that
+  provisions a 1 Gi ReadWriteOnce volume. More than one replica with server storage needs a ReadWriteMany volume.
+- Exposure: an Ingress controller, or a Gateway API implementation serving `gateway.networking.k8s.io/v1` HTTPRoutes.
+  Otherwise use `kubectl port-forward`.
+- Pod Security: the container starts as root and adds back five capabilities, so the namespace must allow the
+  `baseline` Pod Security Standard; `restricted` rejects the pod (see [Security](#security)).
+- Nodes: `amd64` or `arm64`.
+- FossFLOW has no user accounts: anything reachable from outside a trusted network needs an authentication layer in
+  front (see [Authentication](#authentication)).
 
 ## Installation
 
@@ -20,9 +84,143 @@ helm repo update
 helm install fossflow unxwares/fossflow --namespace fossflow --create-namespace
 ```
 
-Charts are signed: see [verifying signatures](https://github.com/UnxWares/helm/blob/main/SECURITY.md#verifying-chart-signatures).
+Charts are signed with the UnxWares Helm Charts OpenPGP key (fingerprint
+`7902 E52E A435 EF27 C643  2E53 78D6 B532 C599 DA9B`, public key https://helm.unxwares.studio/pgp-public-key.asc).
+To verify the package before installing:
 
-## Authentication
+```bash
+curl -fsSL https://helm.unxwares.studio/pgp-public-key.asc | gpg --import
+gpg --export 7902E52EA435EF27C6432E5378D6B532C599DA9B > ~/.gnupg/unxwares-helm.gpg
+helm install fossflow unxwares/fossflow --namespace fossflow --create-namespace \
+  --verify --keyring ~/.gnupg/unxwares-helm.gpg
+```
+
+No value is required: the defaults run FossFLOW with server storage on a 1 Gi PVC, reachable inside the cluster only.
+A real install usually adds an Ingress or HTTPRoute with authentication in front (see [Examples](#examples)).
+
+To reach it without exposing it:
+
+```bash
+kubectl -n fossflow port-forward svc/fossflow 8080:80
+```
+
+then open http://127.0.0.1:8080. There is no login: every user who reaches FossFLOW sees and can change every diagram
+saved on the server.
+
+## Configuration
+
+### Storage mode
+
+`storage.enabled=true` (default) starts the Node.js backend with `ENABLE_SERVER_STORAGE=true`,
+`STORAGE_PATH=/data/diagrams` and `PUID`/`PGID` set to `storage.uid`/`storage.gid` (1000/1000). The backend lists,
+opens, saves and deletes diagrams through `/api/diagrams`, as one `<id>.json` file per diagram, shared by every user
+of the instance. A save rewrites the whole file: when two users save the same diagram, the last save wins.
+
+`storage.enabled=false` does not start the backend: diagrams only live in the storage of each user's browser, nothing
+is kept on the server, and clearing the browser data loses them. The pods are then stateless.
+
+### Persistence
+
+Used only with `storage.enabled`. The diagrams go to a PVC created by the chart (`persistence.size`,
+`persistence.storageClass`, `persistence.accessModes`, `persistence.annotations`), or to `persistence.existingClaim`:
+
+```yaml
+persistence:
+  storageClass: longhorn
+  size: 2Gi
+```
+
+```yaml
+persistence:
+  existingClaim: fossflow-diagrams
+```
+
+`persistence.enabled=false` keeps the diagrams in an `emptyDir`: they are lost whenever the pod is replaced (upgrade,
+node drain, eviction), and each replica has its own.
+
+The pod sets `fsGroup: 1000` (`fsGroupChangePolicy: OnRootMismatch`), so the volume is group-writable by gid 1000. The
+backend is started through `su-exec`, which keeps only the group `storage.gid`: if you change `storage.gid`, set
+`podSecurityContext.fsGroup` to the same value. Storage that ignores `fsGroup` (some NFS provisioners) must give
+write access to `storage.uid`/`storage.gid` itself.
+
+### Scaling
+
+- Server storage on a ReadWriteOnce volume supports one replica: rendering fails with `replicaCount > 1` or
+  `autoscaling.enabled`, and the Deployment uses the `Recreate` strategy (a short downtime on each upgrade).
+- With a ReadWriteMany volume, several replicas share the same directory:
+
+  ```yaml
+  replicaCount: 2
+  persistence:
+    storageClass: nfs-client
+    accessModes:
+      - ReadWriteMany
+  ```
+
+- Browser-only pods are stateless and can be autoscaled on CPU (`autoscaling.*`, needs metrics-server):
+
+  ```yaml
+  storage:
+    enabled: false
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+  ```
+
+### Exposure
+
+The Service listens on `service.port` (80) and always targets container port 80; `service.type` can be `ClusterIP`
+(default), `NodePort` or `LoadBalancer`:
+
+```yaml
+service:
+  type: LoadBalancer
+  port: 8080
+```
+
+Ingress (`ingress.*`). FossFLOW accepts request bodies up to 10 MB; ingress-nginx limits them to 1 MB by default, so
+raise it or saving a large diagram fails with `413`:
+
+```yaml
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+  hosts:
+    - host: diagrams.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: fossflow-tls
+      hosts:
+        - diagrams.example.com
+```
+
+Gateway API (`httpRoute.*`). The default rule matches every path; the `matches` and `filters` of each rule are copied
+and the backend is always the FossFLOW Service:
+
+```yaml
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: public-gateway
+      namespace: gateway-system
+      sectionName: https
+  hostnames:
+    - diagrams.example.com
+```
+
+### TLS
+
+The pod serves plain HTTP on port 80. Terminate TLS at the Ingress (`ingress.tls`, with a certificate Secret or
+cert-manager as above) or at the Gateway listener referenced by `httpRoute.parentRefs`.
+
+### Authentication
 
 FossFLOW has no user management. The image's `HTTP_AUTH_USER`/`HTTP_AUTH_PASSWORD` basic auth does not work in
 v1.0.5 (its entrypoint calls `openssl passwd -bcrypt`, which OpenSSL 3 removed), so protect FossFLOW at the ingress:
@@ -42,7 +240,244 @@ ingress:
           pathType: Prefix
 ```
 
-or put it behind an SSO proxy (oauth2-proxy, Authentik outpost...).
+```bash
+htpasswd -c auth alice
+kubectl -n fossflow create secret generic fossflow-basic-auth --from-file=auth
+```
+
+or put it behind an SSO proxy (oauth2-proxy, Authentik outpost...). With an HTTPRoute, use the authentication
+features of your Gateway implementation. Authentication at the edge does not cover traffic from inside the cluster:
+see [NetworkPolicy](#networkpolicy).
+
+### Resources
+
+Defaults: requests `cpu: 20m` and `memory: 96Mi`, limit `memory: 512Mi`, for nginx and the backend together.
+
+```yaml
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+```
+
+### Scheduling
+
+`nodeSelector`, `tolerations` and `affinity` are copied to the pod (the chart has no topology spread setting):
+
+```yaml
+nodeSelector:
+  kubernetes.io/arch: arm64
+tolerations:
+  - key: dedicated
+    operator: Equal
+    value: tools
+    effect: NoSchedule
+```
+
+### NetworkPolicy
+
+The chart creates none. Besides nginx on port 80, the backend listens on `0.0.0.0:3001` inside the pod: that port is
+not in the Service, but any pod of the cluster can reach it on the pod IP and read or change the diagrams without
+going through your ingress authentication. Apply a policy that only lets the ingress controller in, on port 80
+(adapt the namespace and labels):
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: fossflow
+  namespace: fossflow
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: fossflow
+      app.kubernetes.io/instance: fossflow
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        # the helm test pod carries the same labels
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: fossflow
+              app.kubernetes.io/instance: fossflow
+      ports:
+        - port: 80
+          protocol: TCP
+```
+
+### Extra environment, volumes and labels
+
+`extraEnv` and `extraEnvFrom` are added to the container (the chart already sets `ENABLE_SERVER_STORAGE`,
+`STORAGE_PATH`, `PUID` and `PGID`), `volumes`/`volumeMounts` add volumes, `podAnnotations`/`podLabels` go on the
+pod and `imagePullSecrets` on the pod spec:
+
+```yaml
+podAnnotations:
+  backup.velero.io/backup-volumes: data   # Velero file system backup of the diagrams volume
+podLabels:
+  team: platform
+```
+
+## Examples
+
+### Server storage behind ingress-nginx, HTTPS and basic auth
+
+```yaml
+# Server storage on a 2 Gi volume, HTTPS through ingress-nginx and cert-manager, basic auth at the ingress.
+persistence:
+  storageClass: longhorn
+  size: 2Gi
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: fossflow-basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: FossFLOW
+  hosts:
+    - host: diagrams.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: fossflow-tls
+      hosts:
+        - diagrams.example.com
+```
+
+### Browser-only, autoscaled, behind a Gateway
+
+```yaml
+# No server storage: diagrams stay in each user's browser, the pods are stateless and autoscaled.
+storage:
+  enabled: false
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: public-gateway
+      namespace: gateway-system
+      sectionName: https
+  hostnames:
+    - diagrams.example.com
+resources:
+  requests:
+    cpu: 20m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+```
+
+## Security
+
+What the chart does by default:
+
+- **User**: the upstream entrypoint has to start as root (uid 0). It rewrites the nginx configuration at startup,
+  starts the nginx master as root to bind port 80 (the nginx workers run as the `nginx` user of the image), and starts
+  the backend through `su-exec` as `storage.uid`:`storage.gid` (1000:1000). `runAsNonRoot` is therefore not set.
+- **Capabilities**: `drop: [ALL]`, then only `CHOWN`, `DAC_OVERRIDE`, `SETUID`, `SETGID` and `NET_BIND_SERVICE` are
+  added back; `allowPrivilegeEscalation: false`; seccomp profile `RuntimeDefault`. This fits the `baseline` Pod
+  Security Standard, not `restricted`.
+- **Root filesystem**: writable (the entrypoint edits `/etc/nginx` at startup), so `readOnlyRootFilesystem` is not
+  set.
+- **Service account**: a dedicated one without RBAC; its token is not mounted (`serviceAccount.automount=false`).
+- **Secrets**: the chart handles no credentials and creates no Secret.
+- **Exposure**: the Service publishes port 80 only (the web app and the `/api/` proxy). The chart creates no
+  NetworkPolicy.
+
+Caveats:
+
+- FossFLOW has no authentication: whoever reaches port 80 can list, read, overwrite and delete every diagram saved on
+  the server. Put authentication in front of any exposure (see [Authentication](#authentication)).
+- The backend listens on port 3001 on all pod addresses and is reachable from other pods without passing through
+  nginx or your ingress: restrict it with a [NetworkPolicy](#networkpolicy).
+- The backend answers requests from any origin (CORS `*`): on a network without authentication, a web page opened by
+  someone who can reach FossFLOW can read and change the diagrams through that person's browser.
+- The root user, the five capabilities and the writable root filesystem come from the design of the upstream image
+  and cannot be removed with chart values: running FossFLOW unprivileged needs a different image.
+- The image is the upstream one, not rebuilt by UnxWares: follow the
+  [CVE watch issue](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch).
+
+## Testing
+
+On every pull request, the repository CI runs for this chart:
+
+- `helm lint --strict` with Helm 3 (v3.22.1) and Helm 4 (v4.3.1), on the default values and on each `ci/*-values.yaml`
+  (`ci/default-values.yaml`: server storage on a PVC; `ci/browser-only-values.yaml`: no storage, 2 replicas);
+- kubeconform (strict) on the same renders, for Kubernetes 1.31.0 and 1.34.0;
+- the Artifact Hub metadata lint (`ah lint`), and a check that `README.md` and `values.schema.json` match what
+  `generate-schemas.sh` produces.
+
+When the pull request changes the chart, `ct lint` (chart-testing: lint, YAML lint, version increment check) and
+`ct install` run as well: the chart is installed on a kind cluster once per `ci/*-values.yaml` file, and `helm test`
+runs after each install.
+
+The test pod, `<fullname>-test-connection`, runs the FossFLOW image as uid 65534 with a read-only root filesystem and
+no capabilities, and runs `wget -qO- http://<fullname>:<service.port>/api/storage/status` (with `storage.enabled`) or
+`/` (without). It checks that the Service reaches a ready pod, that nginx answers and, with storage, that nginx
+reaches the running backend. It does not save or read a diagram: there is no end-to-end test of the application yet.
+
+After an install:
+
+```bash
+helm test fossflow --namespace fossflow --logs
+```
+
+## Operations
+
+### Backup and restore
+
+With server storage, the data is the `/data/diagrams` directory (one JSON file per diagram). Snapshot the PVC with
+your storage tools (VolumeSnapshot, Velero...), or copy the files:
+
+```bash
+POD=$(kubectl -n fossflow get pod -l app.kubernetes.io/name=fossflow,app.kubernetes.io/instance=fossflow \
+  -o jsonpath='{.items[0].metadata.name}')
+kubectl -n fossflow exec "$POD" -- tar czf - -C /data/diagrams . > fossflow-diagrams.tgz
+```
+
+Restore into a running pod, then give the files back to the backend user:
+
+```bash
+kubectl -n fossflow exec -i "$POD" -- tar xzf - -C /data/diagrams < fossflow-diagrams.tgz
+kubectl -n fossflow exec "$POD" -- chown -R 1000:1000 /data/diagrams
+```
+
+In browser-only mode nothing is stored on the server: each user keeps their own diagrams.
+
+### Scaling limits
+
+One replica with server storage on a ReadWriteOnce volume (see [Scaling](#scaling)). The backend has no locking: with
+a ReadWriteMany volume as with a single pod, a diagram saved by two users at once keeps the last save. The upstream
+backend rate-limits the API to 200 reads and 50 writes per minute per client address; every request reaches it
+through the nginx of the pod, so this limit is shared by all the users of a pod.
+
+### Logs and useful commands
+
+The container log (`kubectl logs`) shows the entrypoint and backend messages. nginx keeps the upstream Alpine
+configuration and writes its access and error logs to files inside the container. FossFLOW exposes no metrics
+endpoint and the chart has no ServiceMonitor.
+
+```bash
+kubectl -n fossflow logs deploy/fossflow
+kubectl -n fossflow exec deploy/fossflow -- tail -n 50 /var/log/nginx/error.log
+kubectl -n fossflow exec deploy/fossflow -- ls -ln /data/diagrams
+kubectl -n fossflow exec deploy/fossflow -- wget -qO- http://127.0.0.1/api/storage/status
+```
+
+The entrypoint does not forward `SIGTERM`, so a stopping pod waits for `terminationGracePeriodSeconds` (10 s) before
+it is killed.
 
 ## Upgrading
 
@@ -55,9 +490,47 @@ or put it behind an SSO proxy (oauth2-proxy, Authentik outpost...).
   inside the container were lost at each restart.
 - The container port is always 80; `service.port` only changes the Service port.
 
-## Requirements
+## Troubleshooting
 
-Kubernetes: `>=1.27.0-0`
+- **`server storage on a ReadWriteOnce volume supports a single replica`** at install or upgrade: `replicaCount > 1`
+  or `autoscaling.enabled` with server storage on a ReadWriteOnce volume. Keep one replica, use
+  `persistence.accessModes: [ReadWriteMany]`, or set `storage.enabled=false`.
+- **No pod, `violates PodSecurity "restricted:latest"`** in `kubectl -n fossflow describe replicaset`: the namespace
+  enforces `restricted`, this image needs `baseline` (see [Security](#security)).
+- **Pod `Pending`**: the PVC is not bound (`kubectl -n fossflow describe pvc`). Set `persistence.storageClass` or
+  create a default StorageClass.
+- **Pod running but not ready**: with storage, the probes call `/api/storage/status` through nginx, so the backend is
+  not running. Read `kubectl -n fossflow logs deploy/fossflow`.
+- **Saving fails**: the backend cannot write `/data/diagrams`. Check the owner and group with
+  `kubectl -n fossflow exec deploy/fossflow -- ls -ln /data/diagrams` (see [Persistence](#persistence)). A `413` in
+  the browser comes from the body size limit of the ingress (see [Exposure](#exposure)), a `429` from the backend rate
+  limit (see [Scaling limits](#scaling-limits)).
+- **Diagrams gone after a restart**: `persistence.enabled=false` (emptyDir) or `storage.enabled=false` (browser
+  storage only).
+- **`HTTP_AUTH_USER`/`HTTP_AUTH_PASSWORD` do not work**: broken in the upstream image, use
+  [ingress authentication](#authentication).
+- **`helm test` fails**: `helm test fossflow -n fossflow --logs`, then check that the Service has endpoints:
+  `kubectl -n fossflow get endpointslices -l kubernetes.io/service-name=fossflow`.
+
+## Uninstalling
+
+```bash
+helm uninstall fossflow --namespace fossflow
+```
+
+What stays in the namespace:
+
+- the PVC `<fullname>` created by the chart (`helm.sh/resource-policy: keep`), with every saved diagram. A new install
+  with the same release name in the same namespace takes it over again. A PVC given with `persistence.existingClaim`
+  is never touched by the chart;
+- a `helm test` pod that failed (hook resources are not removed by `helm uninstall`).
+
+To delete the diagrams for good (irreversible; the volume is then released according to its reclaim policy):
+
+```bash
+kubectl -n fossflow delete pvc fossflow
+kubectl -n fossflow delete pod fossflow-test-connection --ignore-not-found
+```
 
 ## Values
 

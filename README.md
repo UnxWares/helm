@@ -8,49 +8,97 @@
 
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/unxwares)](https://artifacthub.io/packages/search?repo=unxwares)
 [![Release Charts](https://github.com/UnxWares/helm/actions/workflows/release.yaml/badge.svg)](https://github.com/UnxWares/helm/actions/workflows/release.yaml)
+[![End-to-end tests](https://github.com/UnxWares/helm/actions/workflows/e2e.yaml/badge.svg)](https://github.com/UnxWares/helm/actions/workflows/e2e.yaml)
 [![CVE watch](https://github.com/UnxWares/helm/actions/workflows/cve-watch.yaml/badge.svg)](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
-[Charts](#available-charts) • [Installation](#installation) • [Signatures](#verifying-signatures) • [Contributing](#contributing) • [Support](#support)
+[Charts](#available-charts) • [Images](#images) • [Testing](#how-the-charts-are-tested) • [Installation](#installation) • [Signatures](#verifying-signatures) • [Contributing](#contributing) • [Support](#support)
 
 </div>
 
 ---
 
-Helm charts we run ourselves, maintained by UnxWares. Every chart follows the same rules:
+Helm charts we run ourselves, maintained by UnxWares, a small independent team in Caen, France. Every chart follows
+the same rules:
 
-- **Pinned, current images**, scanned daily with Trivy (the [CVE watch](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch)
-  issue); releases that only bump images for CVEs are flagged `containsSecurityUpdates` on Artifact Hub.
+- **Current, scanned images**: pinned versions, scanned every day with Trivy (the
+  [CVE watch](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch) issue). Where the
+  upstream images lag behind, the charts default to our own rebuilds (see [Images](#images)); releases that bring
+  security fixes are flagged `containsSecurityUpdates` on Artifact Hub.
 - **No default passwords**: secrets are generated once and kept across upgrades, or read from your own Secret, and
   reach containers through `secretKeyRef` only.
 - **Hardened by default**: non-root wherever the image allows it, read-only root filesystem, capabilities dropped,
-  seccomp `RuntimeDefault`, no service account token unless the workload talks to the Kubernetes API.
-- **Values schema** (`values.schema.json`) and a README generated from the annotated `values.yaml`.
-- **Signed packages** (Helm provenance files) and CI on every pull request: `helm lint --strict` on Helm 3 and 4,
-  kubeconform, chart-testing installs on kind, Artifact Hub lint.
+  seccomp `RuntimeDefault`, no service account token unless the workload talks to the Kubernetes API. Each README
+  says where a chart cannot meet this and why.
+- **Tested**: every pull request lints, validates and installs the charts, and the charts with an end-to-end test
+  drive the application and check its answers (see [How the charts are tested](#how-the-charts-are-tested)).
+- **Documented**: a values schema (`values.schema.json`) and a README with the architecture, configuration by topic,
+  security notes, troubleshooting and upgrade notes, generated from the annotated `values.yaml`.
+- **Signed packages** (Helm provenance files).
 
 ## Available charts
 
-| Chart | Application | Description |
-|-------|-------------|-------------|
-| [bind9](charts/bind9) | ISC BIND 9.20 | Authoritative DNS server, with an optional Prometheus exporter |
-| [cloudreve](charts/cloudreve) | Cloudreve 4.19 | Self-hosted file management and sharing (SQLite, PostgreSQL, MySQL, Redis) |
-| [excalidash](charts/excalidash) | ExcaliDash 0.6 | Dashboard and organizer for Excalidraw drawings, with live collaboration and OIDC |
-| [fossflow](charts/fossflow) | FossFLOW 1.0 | Isometric infrastructure diagrams, with server-side storage |
-| [kener](charts/kener) | Kener 4.1 | Status page with a bundled Valkey, SQLite or external PostgreSQL/MySQL |
-| [laravel-generic](charts/laravel-generic) | Laravel 12 | Deploy your own Laravel image: FrankenPHP or PHP-FPM + nginx, queue workers, scheduler, migrations |
-| [openeverest-database-tools](charts/openeverest-database-tools) | OpenEverest 1.17 | Create databases, users and run init scripts on OpenEverest PostgreSQL, MySQL and MongoDB clusters |
-| [powerdns](charts/powerdns) | PowerDNS Auth 5.1 / Recursor 5.4 | Authoritative DNS with its REST API (SQLite, PostgreSQL, MySQL) and an optional recursor |
-| [taiga](charts/taiga) | Taiga 6.10 | Agile project management: backend, workers, events, front, bundled PostgreSQL and RabbitMQ |
+| Chart | Application | Default images | Tested in CI |
+|-------|-------------|----------------|--------------|
+| [bind9](charts/bind9) | ISC BIND 9.20 | Upstream (ISC, bind_exporter) | Install, `helm test` (DNS query) |
+| [cloudreve](charts/cloudreve) | Cloudreve 4.19 | UnxWares | Install (UnxWares and upstream images), `helm test`, end to end |
+| [excalidash](charts/excalidash) | ExcaliDash 0.6 | Upstream | Install, `helm test` (health endpoint) |
+| [fossflow](charts/fossflow) | FossFLOW 1.0 | Upstream | Install, `helm test` (storage status) |
+| [kener](charts/kener) | Kener 4.1 | Upstream (Kener, Valkey) | Install, `helm test` (strict health check) |
+| [laravel-generic](charts/laravel-generic) | Laravel 12 | Your image, nginx-unprivileged | Lint and schema validation only (needs your image) |
+| [openeverest-database-tools](charts/openeverest-database-tools) | OpenEverest 1.17 | UnxWares (database clients), kubectl | End to end |
+| [powerdns](charts/powerdns) | PowerDNS Auth 5.1 / Recursor 5.4 | UnxWares | Install (UnxWares and upstream images), `helm test` (API) |
+| [taiga](charts/taiga) | Taiga 6.10 | UnxWares | Install (UnxWares and upstream images) |
 
-Each chart README lists every value, examples and the upgrade notes between releases.
+What each chart deploys:
 
-### Images
+- **bind9**: authoritative DNS server, with an optional Prometheus exporter.
+- **cloudreve**: self-hosted file management and sharing (SQLite, PostgreSQL, MySQL, Redis).
+- **excalidash**: dashboard and organizer for Excalidraw drawings, with live collaboration and OIDC.
+- **fossflow**: isometric infrastructure diagrams, with server-side storage.
+- **kener**: status page with a bundled Valkey, SQLite or external PostgreSQL/MySQL.
+- **laravel-generic**: your own Laravel image, with FrankenPHP or PHP-FPM + nginx, queue workers, scheduler and
+  migrations.
+- **openeverest-database-tools**: Jobs that create databases, users and grants and run init scripts on OpenEverest
+  PostgreSQL, MySQL and MongoDB clusters.
+- **powerdns**: authoritative DNS with its REST API (SQLite, PostgreSQL, MySQL) and an optional recursor.
+- **taiga**: agile project management: backend, workers, events, front, bundled PostgreSQL and RabbitMQ.
 
-Some charts use UnxWares images by default (`ghcr.io/unxwares`): the upstream applications rebuilt twice a week
-on current Alpine bases, run as non-root, scanned with Trivy and signed with cosign. Their sources and the
-differences from the upstream images are in [images/](images/README.md); each chart can still use the upstream
-images.
+Each chart README covers the architecture, every value, examples, security, troubleshooting and the upgrade notes
+between releases.
+
+## Images
+
+Where the upstream images lag behind (old base layers, outdated dependencies, tools the chart never runs), the charts
+default to our own builds, published on `ghcr.io/unxwares`:
+
+| Image | Used by | What differs from upstream |
+|-------|---------|----------------------------|
+| `cloudreve` | cloudreve | Built from the release sources with current Go modules, current Alpine, no aria2/supervisord |
+| `pdns-auth`, `pdns-recursor` | powerdns | Alpine, built from the release tarballs with the backends the chart uses |
+| `postgres` 17, 18 | taiga | Alpine packages upgraded, `su-exec` instead of `gosu` |
+| `taiga-back`, `taiga-front`, `taiga-events`, `taiga-protected` | taiga | Current dependencies, upstream security fixes not released yet, non-root |
+| `postgresql-client`, `mysql-client`, `mongosh` | openeverest-database-tools | The database clients alone instead of whole server images |
+
+They are rebuilt every Monday and Thursday on current bases, scanned with Trivy and signed with cosign; each chart can
+still use the upstream images. Sources, differences and the signature check are in [images/](images/README.md).
+
+## How the charts are tested
+
+| When | What |
+|------|------|
+| Every pull request | `helm lint --strict` with Helm 3 and 4 on each chart's default and `ci/*-values.yaml` values, kubeconform on several Kubernetes versions, chart-testing (`ct lint`, then `ct install` on kind, which runs each chart's `helm test`), Artifact Hub lint, a check that the READMEs and schemas are generated |
+| Pull requests touching a chart with an end-to-end test, every push to main, every Tuesday | [`e2e.yaml`](.github/workflows/e2e.yaml): the images of the commit are built and loaded into kind, the chart is installed next to real dependencies, and a script drives the application and checks its answers |
+| Pull requests touching `images/` | Each image is built for amd64 and arm64 and fails on a fixable critical or high vulnerability that is not documented |
+| Every day, and after each image rebuild | The CVE watch scans every image the charts can deploy |
+
+The end-to-end tests:
+
+- **openeverest-database-tools**: real PostgreSQL, MySQL and MongoDB servers and a stand-in for the operator; the
+  Jobs run, then the application users log in, and their rights, missing rights and init scripts are checked, before
+  and after a password rotation.
+- **cloudreve**: the first account signs up and is administrator, logs in, uploads a file, finds it in the listing,
+  downloads the same content and gets a thumbnail generated for an uploaded image.
 
 ## Installation
 
@@ -94,6 +142,14 @@ helm template t charts/powerdns -f charts/powerdns/ci/default-values.yaml
 
 # Regenerate values.schema.json and README.md after editing values.yaml or README.md.gotmpl
 ./generate-schemas.sh powerdns
+
+# Run an end-to-end test locally in kind (rootless podman works with KIND_EXPERIMENTAL_PROVIDER=podman)
+kind create cluster
+docker build --tag local/cloudreve:e2e images/cloudreve
+kind load docker-image local/cloudreve:e2e
+helm install cloudreve charts/cloudreve --namespace cloudreve --create-namespace \
+  --set image.repository=local/cloudreve --set image.tag=e2e --wait
+.github/scripts/cloudreve-e2e.sh cloudreve cloudreve
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the conventions and the release process.
@@ -106,6 +162,7 @@ chart) stay in `index.yaml` for existing users but are hidden on Artifact Hub.
 
 ## Support
 
+- Known vulnerabilities of the images: the [CVE watch](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch) issue
 - Questions: **opensource@unxwares.com**
 - Bugs and feature requests: [GitHub issues](https://github.com/UnxWares/helm/issues)
 - Security vulnerabilities: **security@unxwares.com** or

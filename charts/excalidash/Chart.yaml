@@ -2,7 +2,7 @@ apiVersion: v2
 name: excalidash
 description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer for Excalidraw with live collaboration features
 type: application
-version: 2026.10.3
+version: 2026.11.1
 appVersion: "0.6.7"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/excalidash
@@ -44,15 +44,12 @@ annotations:
       image: docker.io/zimengxiong/excalidash-frontend:0.6.7
     - name: excalidash-backend
       image: docker.io/zimengxiong/excalidash-backend:0.6.7
-  artifacthub.io/containsSecurityUpdates: "true"
+  artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
-    - kind: security
-      description: "ExcaliDash 0.6.7: body-parser, multer, undici, zod, nodemailer and qs updated in the backend, curl updated in the frontend image (no known vulnerability left in either image)."
-      links:
-        - name: ExcaliDash 0.6.7
-          url: https://github.com/ZimengXiong/ExcaliDash/releases/tag/v0.6.7
-        - name: Upstream pull request
-          url: https://github.com/ZimengXiong/ExcaliDash/pull/324
+    - kind: changed
+      description: "README completed: architecture, images, requirements, signed installation, configuration by topic, examples checked with helm template and kubeconform, security, testing, operations, troubleshooting and uninstalling."
+    - kind: fixed
+      description: "The autoscaling values are described in the values table."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

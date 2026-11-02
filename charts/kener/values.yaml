@@ -229,7 +229,7 @@ proxy:
   noProxy: ""
 
 pingMonitors:
-  # -- Make ICMP ping monitors work with all capabilities dropped: sets the safe sysctl `net.ipv4.ping_group_range` so `ping` can use unprivileged ICMP sockets, and keeps `NET_RAW` in the capability bounding set only, so the image's `ping` (which carries a `cap_net_raw` file capability) can still be executed. The process never holds `NET_RAW` (non-root, no privilege escalation), but the pod then matches the Pod Security Standard `baseline` instead of `restricted`.
+  # -- Make ICMP ping monitors work with all capabilities dropped: sets the safe sysctl `net.ipv4.ping_group_range` so `ping` can use unprivileged ICMP sockets, and keeps `NET_RAW` in the capability bounding set only, so the image's `ping` (which carries a `cap_net_raw` file capability) can still be executed. The process never holds `NET_RAW` (non-root, no privilege escalation), but adding `NET_RAW` back to the bounding set is only allowed by the Pod Security Standard `privileged` (neither `baseline` nor `restricted`).
   enabled: false
 
 # -- Extra environment variables of the Kener container. Kener substitutes `$NAME` variables in monitors and triggers: pass their secrets here with `valueFrom.secretKeyRef`. Never drop `--experimental-strip-types` if you set `NODE_OPTIONS`.
