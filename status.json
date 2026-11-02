@@ -22,8 +22,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 0,
       "open_fixable": 0,
       "total": 2
      },
@@ -38,8 +38,8 @@
       "eosl": false,
       "fixable": 2,
       "high": 2,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 4,
       "open_fixable": 2,
       "total": 9
      },
@@ -185,8 +185,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 2,
       "open_fixable": 0,
       "total": 3
      },
@@ -453,8 +453,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 0,
       "open_fixable": 0,
       "total": 0
      },
@@ -469,8 +469,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 2,
       "open_fixable": 0,
       "total": 2
      },
@@ -634,7 +634,17 @@
    "description": "FossFLOW, an open source web app to draw isometric infrastructure diagrams, with optional server-side storage of the diagrams.",
    "images": [
     {
-     "cve": null,
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": 0,
+      "medium": 1,
+      "open_fixable": 0,
+      "total": 1
+     },
      "image": "ghcr.io/unxwares/fossflow:1.0.5",
      "name": "fossflow",
      "ours": true
@@ -813,8 +823,8 @@
       "eosl": false,
       "fixable": 13,
       "high": 13,
-      "low": null,
-      "medium": null,
+      "low": 5,
+      "medium": 27,
       "open_fixable": 13,
       "total": 45
      },
@@ -829,8 +839,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 0,
       "open_fixable": 0,
       "total": 0
      },
@@ -987,8 +997,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 1,
       "open_fixable": 0,
       "total": 3
      },
@@ -1121,8 +1131,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 0,
       "open_fixable": 0,
       "total": 0
      },
@@ -1137,8 +1147,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 0,
       "open_fixable": 0,
       "total": 0
      },
@@ -1153,8 +1163,8 @@
       "eosl": false,
       "fixable": 1,
       "high": 1,
-      "low": null,
-      "medium": null,
+      "low": 8,
+      "medium": 38,
       "open_fixable": 0,
       "total": 47
      },
@@ -1169,8 +1179,8 @@
       "eosl": false,
       "fixable": 2,
       "high": 2,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 4,
       "open_fixable": 2,
       "total": 12
      },
@@ -1430,8 +1440,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 0,
       "open_fixable": 0,
       "total": 0
      },
@@ -1620,8 +1630,8 @@
       "eosl": false,
       "fixable": 4,
       "high": 3,
-      "low": null,
-      "medium": null,
+      "low": 5,
+      "medium": 6,
       "open_fixable": 0,
       "total": 15
      },
@@ -1636,8 +1646,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 0,
       "open_fixable": 0,
       "total": 0
      },
@@ -1652,8 +1662,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 0,
       "open_fixable": 0,
       "total": 0
      },
@@ -1668,8 +1678,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 0,
       "open_fixable": 0,
       "total": 0
      },
@@ -1684,8 +1694,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 0,
       "open_fixable": 0,
       "total": 0
      },
@@ -1700,8 +1710,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 0,
       "open_fixable": 0,
       "total": 0
      },
@@ -1716,8 +1726,8 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": null,
-      "medium": null,
+      "low": 0,
+      "medium": 1,
       "open_fixable": 0,
       "total": 3
      },
@@ -1983,8 +1993,8 @@
   }
  ],
  "cve_watch": {
-  "commit": "227331f880e38f6143454eec789039771a0e694b",
-  "date": "2026-11-02T15:21:56Z",
+  "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
+  "date": "2026-11-02T15:33:58Z",
   "event": "workflow_run",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
@@ -1992,11 +2002,22 @@
      "fossflow"
     ],
     "eosl": false,
-    "fixable_critical_high": 14,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 14,
+     "LOW": 1,
+     "MEDIUM": 23,
+     "UNKNOWN": 2
+    },
     "image": "docker.io/abrar74774/fossflow:master-2b3cee3",
+    "os": "alpine 3.24.2",
+    "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 14
+     "HIGH": 14,
+     "LOW": 1,
+     "MEDIUM": 23,
+     "UNKNOWN": 2
     },
     "total": 40
    },
@@ -2005,11 +2026,22 @@
      "cloudreve"
     ],
     "eosl": false,
-    "fixable_critical_high": 231,
+    "fixable": {
+     "CRITICAL": 15,
+     "HIGH": 216,
+     "LOW": 88,
+     "MEDIUM": 204,
+     "UNKNOWN": 23
+    },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
+    "os": "alpine 3.23.3",
+    "ours": false,
     "severity": {
      "CRITICAL": 15,
-     "HIGH": 216
+     "HIGH": 216,
+     "LOW": 88,
+     "MEDIUM": 204,
+     "UNKNOWN": 24
     },
     "total": 547
    },
@@ -2018,11 +2050,22 @@
      "bind9"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 2
+    },
     "image": "docker.io/internetsystemsconsortium/bind9:9.20",
+    "os": "alpine 3.24.2",
+    "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 2
     },
     "total": 2
    },
@@ -2031,11 +2074,22 @@
      "taiga"
     ],
     "eosl": false,
-    "fixable_critical_high": 26,
+    "fixable": {
+     "CRITICAL": 1,
+     "HIGH": 25,
+     "LOW": 3,
+     "MEDIUM": 31,
+     "UNKNOWN": 1
+    },
     "image": "docker.io/library/postgres:17.11-alpine",
+    "os": "alpine 3.24.3",
+    "ours": false,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 25
+     "HIGH": 25,
+     "LOW": 3,
+     "MEDIUM": 31,
+     "UNKNOWN": 1
     },
     "total": 61
    },
@@ -2044,11 +2098,22 @@
      "taiga"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
     "image": "docker.io/library/rabbitmq:4.4.0-management-alpine",
+    "os": "alpine 3.24.3",
+    "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
     "total": 0
    },
@@ -2058,11 +2123,22 @@
      "taiga"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 1,
+     "UNKNOWN": 2
+    },
     "image": "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim",
+    "os": "alpine 3.24.2",
+    "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 1,
+     "UNKNOWN": 2
     },
     "total": 3
    },
@@ -2071,11 +2147,22 @@
      "powerdns"
     ],
     "eosl": false,
-    "fixable_critical_high": 73,
+    "fixable": {
+     "CRITICAL": 1,
+     "HIGH": 72,
+     "LOW": 3,
+     "MEDIUM": 45,
+     "UNKNOWN": 0
+    },
     "image": "docker.io/powerdns/pdns-auth-51:5.1.5",
+    "os": "debian 13.7",
+    "ours": false,
     "severity": {
      "CRITICAL": 8,
-     "HIGH": 165
+     "HIGH": 165,
+     "LOW": 159,
+     "MEDIUM": 220,
+     "UNKNOWN": 22
     },
     "total": 574
    },
@@ -2084,11 +2171,22 @@
      "powerdns"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
     "image": "docker.io/powerdns/pdns-recursor-54:5.4.9",
+    "os": "debian 13.7",
+    "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 70
+     "HIGH": 70,
+     "LOW": 146,
+     "MEDIUM": 141,
+     "UNKNOWN": 20
     },
     "total": 377
    },
@@ -2097,11 +2195,22 @@
      "bind9"
     ],
     "eosl": false,
-    "fixable_critical_high": 2,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 2,
+     "LOW": 0,
+     "MEDIUM": 4,
+     "UNKNOWN": 2
+    },
     "image": "docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf",
+    "os": "",
+    "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 2
+     "HIGH": 2,
+     "LOW": 0,
+     "MEDIUM": 4,
+     "UNKNOWN": 3
     },
     "total": 9
    },
@@ -2110,11 +2219,22 @@
      "kener"
     ],
     "eosl": false,
-    "fixable_critical_high": 13,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 13,
+     "LOW": 4,
+     "MEDIUM": 27,
+     "UNKNOWN": 0
+    },
     "image": "docker.io/rajnandan1/kener:4.1.11-alpine",
+    "os": "alpine 3.24.3",
+    "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 13
+     "HIGH": 13,
+     "LOW": 5,
+     "MEDIUM": 27,
+     "UNKNOWN": 0
     },
     "total": 45
    },
@@ -2123,11 +2243,22 @@
      "kener"
     ],
     "eosl": false,
-    "fixable_critical_high": 13,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 13,
+     "LOW": 4,
+     "MEDIUM": 27,
+     "UNKNOWN": 0
+    },
     "image": "docker.io/rajnandan1/kener:4.1.11-status",
+    "os": "debian 12.15",
+    "ours": false,
     "severity": {
      "CRITICAL": 3,
-     "HIGH": 62
+     "HIGH": 62,
+     "LOW": 161,
+     "MEDIUM": 166,
+     "UNKNOWN": 15
     },
     "total": 407
    },
@@ -2136,11 +2267,22 @@
      "taiga"
     ],
     "eosl": false,
-    "fixable_critical_high": 147,
+    "fixable": {
+     "CRITICAL": 11,
+     "HIGH": 136,
+     "LOW": 47,
+     "MEDIUM": 133,
+     "UNKNOWN": 3
+    },
     "image": "docker.io/taigaio/taiga-back:6.10.2",
+    "os": "debian 13.5",
+    "ours": false,
     "severity": {
      "CRITICAL": 11,
-     "HIGH": 181
+     "HIGH": 181,
+     "LOW": 129,
+     "MEDIUM": 214,
+     "UNKNOWN": 11
     },
     "total": 546
    },
@@ -2149,11 +2291,22 @@
      "taiga"
     ],
     "eosl": true,
-    "fixable_critical_high": 37,
+    "fixable": {
+     "CRITICAL": 3,
+     "HIGH": 34,
+     "LOW": 18,
+     "MEDIUM": 34,
+     "UNKNOWN": 0
+    },
     "image": "docker.io/taigaio/taiga-events:6.10.0",
+    "os": "alpine 3.18.3",
+    "ours": false,
     "severity": {
      "CRITICAL": 3,
-     "HIGH": 35
+     "HIGH": 35,
+     "LOW": 18,
+     "MEDIUM": 34,
+     "UNKNOWN": 0
     },
     "total": 90
    },
@@ -2162,11 +2315,22 @@
      "taiga"
     ],
     "eosl": true,
-    "fixable_critical_high": 31,
+    "fixable": {
+     "CRITICAL": 4,
+     "HIGH": 27,
+     "LOW": 34,
+     "MEDIUM": 55,
+     "UNKNOWN": 0
+    },
     "image": "docker.io/taigaio/taiga-front:6.10.3",
+    "os": "alpine 3.17.3",
+    "ours": false,
     "severity": {
      "CRITICAL": 4,
-     "HIGH": 27
+     "HIGH": 27,
+     "LOW": 34,
+     "MEDIUM": 55,
+     "UNKNOWN": 0
     },
     "total": 120
    },
@@ -2175,11 +2339,22 @@
      "taiga"
     ],
     "eosl": false,
-    "fixable_critical_high": 66,
+    "fixable": {
+     "CRITICAL": 3,
+     "HIGH": 63,
+     "LOW": 67,
+     "MEDIUM": 106,
+     "UNKNOWN": 3
+    },
     "image": "docker.io/taigaio/taiga-protected:6.10.1",
+    "os": "debian 13.4",
+    "ours": false,
     "severity": {
      "CRITICAL": 3,
-     "HIGH": 108
+     "HIGH": 108,
+     "LOW": 128,
+     "MEDIUM": 177,
+     "UNKNOWN": 11
     },
     "total": 427
    },
@@ -2188,11 +2363,22 @@
      "kener"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
     "image": "docker.io/valkey/valkey:9.1.3-alpine",
+    "os": "alpine 3.24.3",
+    "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
     "total": 0
    },
@@ -2201,11 +2387,22 @@
      "excalidash"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 2,
+     "UNKNOWN": 0
+    },
     "image": "docker.io/zimengxiong/excalidash-backend:0.6.7",
+    "os": "alpine 3.24.3",
+    "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 2,
+     "UNKNOWN": 0
     },
     "total": 2
    },
@@ -2214,11 +2411,22 @@
      "excalidash"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
     "image": "docker.io/zimengxiong/excalidash-frontend:0.6.7",
+    "os": "alpine 3.24.2",
+    "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
     "total": 0
    },
@@ -2227,196 +2435,861 @@
      "cloudreve"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
-    "fixable_critical_high_list": [],
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 2,
+     "UNKNOWN": 0
+    },
     "image": "ghcr.io/unxwares/cloudreve:4.19.1",
+    "os": "alpine 3.24.3",
+    "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 2,
+     "UNKNOWN": 1
     },
-    "total": 3
+    "total": 3,
+    "vulnerabilities": [
+     {
+      "fixed": "1.3.6",
+      "id": "CVE-2023-45292",
+      "installed": "v0.0.0-20190801020520-752b1cd608b2",
+      "package": "github.com/mojocn/base64Captcha",
+      "severity": "MEDIUM",
+      "type": "gobinary"
+     },
+     {
+      "fixed": "2.2.0",
+      "id": "CVE-2025-11579",
+      "installed": "v2.1.0",
+      "package": "github.com/nwaples/rardecode/v2",
+      "severity": "MEDIUM",
+      "type": "gobinary"
+     },
+     {
+      "fixed": "",
+      "id": "GO-2026-5932",
+      "installed": "v0.58.0",
+      "package": "golang.org/x/crypto",
+      "severity": "UNKNOWN",
+      "type": "gobinary"
+     }
+    ]
+   },
+   "ghcr.io/unxwares/fossflow:1.0.5": {
+    "charts": [
+     "fossflow"
+    ],
+    "eosl": false,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 1,
+     "UNKNOWN": 0
+    },
+    "image": "ghcr.io/unxwares/fossflow:1.0.5",
+    "os": "alpine 3.24.3",
+    "ours": true,
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 1,
+     "UNKNOWN": 0
+    },
+    "total": 1,
+    "vulnerabilities": [
+     {
+      "fixed": "11.1.1, 12.0.1, 13.0.1",
+      "id": "CVE-2026-41907",
+      "installed": "9.0.1",
+      "package": "uuid",
+      "severity": "MEDIUM",
+      "type": "node-pkg"
+     }
+    ]
    },
    "ghcr.io/unxwares/mongosh:2.14.1": {
     "charts": [
      "openeverest-database-tools"
     ],
     "eosl": false,
-    "fixable_critical_high": 1,
-    "fixable_critical_high_list": [
-     {
-      "id": "CVE-2026-102990",
-      "package": "basic-ftp"
-     }
-    ],
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 1,
+     "LOW": 0,
+     "MEDIUM": 2,
+     "UNKNOWN": 0
+    },
     "image": "ghcr.io/unxwares/mongosh:2.14.1",
+    "os": "debian 13.7",
+    "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 1
+     "HIGH": 1,
+     "LOW": 8,
+     "MEDIUM": 38,
+     "UNKNOWN": 0
     },
-    "total": 47
+    "total": 47,
+    "vulnerabilities": [
+     {
+      "fixed": "6.2.1",
+      "id": "CVE-2026-102990",
+      "installed": "5.3.1",
+      "package": "basic-ftp",
+      "severity": "HIGH",
+      "type": "node-pkg"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-102010",
+      "installed": "14.2.0-19",
+      "package": "gcc-14-base",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-114690",
+      "installed": "14.2.0-19",
+      "package": "gcc-14-base",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-114691",
+      "installed": "14.2.0-19",
+      "package": "gcc-14-base",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-115455",
+      "installed": "14.2.0-19",
+      "package": "gcc-14-base",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-95619",
+      "installed": "14.2.0-19",
+      "package": "gcc-14-base",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "14.0.2",
+      "id": "CVE-2026-118773",
+      "installed": "10.5.0",
+      "package": "glob",
+      "severity": "MEDIUM",
+      "type": "node-pkg"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-18374",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-19499",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-19542",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-5435",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-6238",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-6368",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-6791",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-77117",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-80489",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-84243",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-8674",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-86805",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-89092",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-95818",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-102010",
+      "installed": "14.2.0-19",
+      "package": "libgcc-s1",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-114690",
+      "installed": "14.2.0-19",
+      "package": "libgcc-s1",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-114691",
+      "installed": "14.2.0-19",
+      "package": "libgcc-s1",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-115455",
+      "installed": "14.2.0-19",
+      "package": "libgcc-s1",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-95619",
+      "installed": "14.2.0-19",
+      "package": "libgcc-s1",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-102010",
+      "installed": "14.2.0-19",
+      "package": "libgomp1",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-114690",
+      "installed": "14.2.0-19",
+      "package": "libgomp1",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-114691",
+      "installed": "14.2.0-19",
+      "package": "libgomp1",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-115455",
+      "installed": "14.2.0-19",
+      "package": "libgomp1",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-95619",
+      "installed": "14.2.0-19",
+      "package": "libgomp1",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-102010",
+      "installed": "14.2.0-19",
+      "package": "libstdc++6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-114690",
+      "installed": "14.2.0-19",
+      "package": "libstdc++6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-114691",
+      "installed": "14.2.0-19",
+      "package": "libstdc++6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-115455",
+      "installed": "14.2.0-19",
+      "package": "libstdc++6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-95619",
+      "installed": "14.2.0-19",
+      "package": "libstdc++6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "11.0.1",
+      "id": "CVE-2026-118764",
+      "installed": "9.0.9",
+      "package": "minimatch",
+      "severity": "MEDIUM",
+      "type": "node-pkg"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-27171",
+      "installed": "1:1.3.dfsg+really1.3.1-1+b1",
+      "package": "zlib1g",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-85091",
+      "installed": "1:1.3.dfsg+really1.3.1-1+b1",
+      "package": "zlib1g",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2010-4756",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "LOW",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2018-20796",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "LOW",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2019-1010022",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "LOW",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2019-1010023",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "LOW",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2019-1010024",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "LOW",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2019-1010025",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "LOW",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2019-9192",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "LOW",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-97399",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "LOW",
+      "type": "debian"
+     }
+    ]
    },
    "ghcr.io/unxwares/mysql-client:8.4": {
     "charts": [
      "openeverest-database-tools"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
-    "fixable_critical_high_list": [],
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
     "image": "ghcr.io/unxwares/mysql-client:8.4",
+    "os": "oracle 9.8",
+    "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
-    "total": 0
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/pdns-auth:5.1.5": {
     "charts": [
      "powerdns"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
-    "fixable_critical_high_list": [],
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
     "image": "ghcr.io/unxwares/pdns-auth:5.1.5",
+    "os": "alpine 3.24.3",
+    "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
-    "total": 0
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/pdns-recursor:5.4.9": {
     "charts": [
      "powerdns"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
-    "fixable_critical_high_list": [],
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
     "image": "ghcr.io/unxwares/pdns-recursor:5.4.9",
+    "os": "alpine 3.24.3",
+    "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
-    "total": 0
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/postgres:17.11-alpine": {
     "charts": [
      "taiga"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
-    "fixable_critical_high_list": [],
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
     "image": "ghcr.io/unxwares/postgres:17.11-alpine",
+    "os": "alpine 3.24.3",
+    "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
-    "total": 0
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/postgresql-client:18": {
     "charts": [
      "openeverest-database-tools"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
-    "fixable_critical_high_list": [],
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
     "image": "ghcr.io/unxwares/postgresql-client:18",
+    "os": "alpine 3.24.3",
+    "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
-    "total": 0
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/taiga-back:6.10.2": {
     "charts": [
      "taiga"
     ],
     "eosl": false,
-    "fixable_critical_high": 4,
-    "fixable_critical_high_list": [
-     {
-      "id": "CVE-2025-57833",
-      "package": "Django"
-     },
-     {
-      "id": "CVE-2025-64458",
-      "package": "Django"
-     },
-     {
-      "id": "CVE-2025-64459",
-      "package": "Django"
-     },
-     {
-      "id": "CVE-2026-15307",
-      "package": "Django"
-     }
-    ],
+    "fixable": {
+     "CRITICAL": 1,
+     "HIGH": 3,
+     "LOW": 5,
+     "MEDIUM": 6,
+     "UNKNOWN": 0
+    },
     "image": "ghcr.io/unxwares/taiga-back:6.10.2",
+    "os": "alpine 3.24.3",
+    "ours": true,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 3
+     "HIGH": 3,
+     "LOW": 5,
+     "MEDIUM": 6,
+     "UNKNOWN": 0
     },
-    "total": 15
+    "total": 15,
+    "vulnerabilities": [
+     {
+      "fixed": "5.2.8, 5.1.14, 4.2.26",
+      "id": "CVE-2025-64459",
+      "installed": "3.2.25",
+      "package": "Django",
+      "severity": "CRITICAL",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "4.2.24, 5.1.12, 5.2.6",
+      "id": "CVE-2025-57833",
+      "installed": "3.2.25",
+      "package": "Django",
+      "severity": "HIGH",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "5.2.8, 5.1.14, 4.2.26",
+      "id": "CVE-2025-64458",
+      "installed": "3.2.25",
+      "package": "Django",
+      "severity": "HIGH",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "5.2.17, 6.0.8",
+      "id": "CVE-2026-15307",
+      "installed": "3.2.25",
+      "package": "Django",
+      "severity": "HIGH",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "5.1.1, 5.0.9, 4.2.16",
+      "id": "CVE-2024-45231",
+      "installed": "3.2.25",
+      "package": "Django",
+      "severity": "MEDIUM",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "5.2.2, 5.1.10, 4.2.22",
+      "id": "CVE-2025-48432",
+      "installed": "3.2.25",
+      "package": "Django",
+      "severity": "MEDIUM",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "5.2.17, 6.0.8, 6.1.1",
+      "id": "CVE-2026-15830",
+      "installed": "3.2.25",
+      "package": "Django",
+      "severity": "MEDIUM",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "5.2.16, 6.0.7",
+      "id": "CVE-2026-53877",
+      "installed": "3.2.25",
+      "package": "Django",
+      "severity": "MEDIUM",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "5.2.16, 6.0.7",
+      "id": "CVE-2026-53878",
+      "installed": "3.2.25",
+      "package": "Django",
+      "severity": "MEDIUM",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "6.4.0",
+      "id": "GHSA-gj48-438w-jh9v",
+      "installed": "4.1.0",
+      "package": "bleach",
+      "severity": "MEDIUM",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "5.2.15, 6.0.6",
+      "id": "CVE-2026-48587",
+      "installed": "3.2.25",
+      "package": "Django",
+      "severity": "LOW",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "5.2.16, 6.0.7",
+      "id": "CVE-2026-48588",
+      "installed": "3.2.25",
+      "package": "Django",
+      "severity": "LOW",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "5.2.15, 6.0.6",
+      "id": "CVE-2026-6873",
+      "installed": "3.2.25",
+      "package": "Django",
+      "severity": "LOW",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "5.2.15, 6.0.6",
+      "id": "CVE-2026-8404",
+      "installed": "3.2.25",
+      "package": "Django",
+      "severity": "LOW",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "6.4.0",
+      "id": "GHSA-8rfp-98v4-mmr6",
+      "installed": "4.1.0",
+      "package": "bleach",
+      "severity": "LOW",
+      "type": "python-pkg"
+     }
+    ]
    },
    "ghcr.io/unxwares/taiga-events:6.10.0": {
     "charts": [
      "taiga"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
-    "fixable_critical_high_list": [],
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
     "image": "ghcr.io/unxwares/taiga-events:6.10.0",
+    "os": "alpine 3.24.3",
+    "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
-    "total": 0
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/taiga-front:6.10.3": {
     "charts": [
      "taiga"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
-    "fixable_critical_high_list": [],
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
     "image": "ghcr.io/unxwares/taiga-front:6.10.3",
+    "os": "alpine 3.24.2",
+    "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
-    "total": 0
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/taiga-protected:6.10.1": {
     "charts": [
      "taiga"
     ],
     "eosl": false,
-    "fixable_critical_high": 0,
-    "fixable_critical_high_list": [],
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
     "image": "ghcr.io/unxwares/taiga-protected:6.10.1",
+    "os": "alpine 3.24.3",
+    "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
-    "total": 0
+    "total": 0,
+    "vulnerabilities": []
    },
    "registry.k8s.io/kubectl:v1.37.2": {
     "charts": [
      "openeverest-database-tools"
     ],
     "eosl": false,
-    "fixable_critical_high": 2,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 2,
+     "LOW": 0,
+     "MEDIUM": 4,
+     "UNKNOWN": 6
+    },
     "image": "registry.k8s.io/kubectl:v1.37.2",
+    "os": "debian 12.15",
+    "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 2
+     "HIGH": 2,
+     "LOW": 0,
+     "MEDIUM": 4,
+     "UNKNOWN": 6
     },
     "total": 12
    }
   },
-  "issue_updated": "2026-11-02T15:10:40Z",
-  "issue_url": "https://github.com/UnxWares/helm/issues/16",
-  "run_id": 41470515388,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/41470515388",
-  "source": "issue"
+  "run_id": 41472402072,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/41472402072",
+  "source": "report"
  },
  "files": [
   "assets/fonts/OFL.txt",
@@ -2492,8 +3365,8 @@
     "eosl": false,
     "fixable": 0,
     "high": 0,
-    "low": null,
-    "medium": null,
+    "low": 0,
+    "medium": 0,
     "open_fixable": 0,
     "total": 0
    },
@@ -2592,8 +3465,8 @@
     "eosl": false,
     "fixable": 4,
     "high": 3,
-    "low": null,
-    "medium": null,
+    "low": 5,
+    "medium": 6,
     "open_fixable": 0,
     "total": 15
    },
@@ -2639,8 +3512,8 @@
     "eosl": false,
     "fixable": 0,
     "high": 0,
-    "low": null,
-    "medium": null,
+    "low": 0,
+    "medium": 0,
     "open_fixable": 0,
     "total": 0
    },
@@ -2686,8 +3559,8 @@
     "eosl": false,
     "fixable": 0,
     "high": 0,
-    "low": null,
-    "medium": null,
+    "low": 0,
+    "medium": 0,
     "open_fixable": 0,
     "total": 0
    },
@@ -2733,8 +3606,8 @@
     "eosl": false,
     "fixable": 0,
     "high": 0,
-    "low": null,
-    "medium": null,
+    "low": 0,
+    "medium": 0,
     "open_fixable": 0,
     "total": 0
    },
@@ -2780,8 +3653,8 @@
     "eosl": false,
     "fixable": 0,
     "high": 0,
-    "low": null,
-    "medium": null,
+    "low": 0,
+    "medium": 0,
     "open_fixable": 0,
     "total": 0
    },
@@ -2827,8 +3700,8 @@
     "eosl": false,
     "fixable": 0,
     "high": 0,
-    "low": null,
-    "medium": null,
+    "low": 0,
+    "medium": 0,
     "open_fixable": 0,
     "total": 0
    },
@@ -2874,8 +3747,8 @@
     "eosl": false,
     "fixable": 0,
     "high": 0,
-    "low": null,
-    "medium": null,
+    "low": 0,
+    "medium": 0,
     "open_fixable": 0,
     "total": 0
    },
@@ -2921,8 +3794,8 @@
     "eosl": false,
     "fixable": 0,
     "high": 0,
-    "low": null,
-    "medium": null,
+    "low": 0,
+    "medium": 0,
     "open_fixable": 0,
     "total": 0
    },
@@ -2970,8 +3843,8 @@
     "eosl": false,
     "fixable": 1,
     "high": 1,
-    "low": null,
-    "medium": null,
+    "low": 8,
+    "medium": 38,
     "open_fixable": 0,
     "total": 47
    },
@@ -3017,8 +3890,8 @@
     "eosl": false,
     "fixable": 0,
     "high": 0,
-    "low": null,
-    "medium": null,
+    "low": 0,
+    "medium": 2,
     "open_fixable": 0,
     "total": 3
    },
@@ -3058,7 +3931,17 @@
    },
    "changes": "Built from the upstream sources (commit `2b3cee3`, release v1.0.5) with the lockfile update of `patches/` (`npm audit fix`), current Alpine, no npm, su-exec or openssl; nginx on port 8080 and the backend run as uid 1000 with a read-only root filesystem, the backend listens on 127.0.0.1 only and its CORS headers (any origin) are dropped",
    "context": "images/fossflow",
-   "cve": null,
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": 0,
+    "medium": 1,
+    "open_fixable": 0,
+    "total": 1
+   },
    "name": "fossflow",
    "page": "images/fossflow.html",
    "ref": "ghcr.io/unxwares/fossflow:1.0.5",
@@ -3103,7 +3986,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-02T15:31:17Z",
+ "latest_result": "2026-11-02T15:33:58Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
