@@ -68,7 +68,7 @@ networkPolicy:
 ### Under `/status` with the Gateway API
 
 The base path is compiled into the Kener image: the chart picks the upstream `-status` image
-(`4.1.10-status-alpine`) when `kener.basePath` is `/status`. Any other path needs your own build
+(`4.1.11-status-alpine`) when `kener.basePath` is `/status`. Any other path needs your own build
 (`KENER_BASE_PATH` build argument) in `image.tag`.
 
 ```yaml
@@ -176,6 +176,13 @@ added under `restricted`). HTTP, TCP, DNS, SSL, SQL, gRPC and heartbeat monitors
 
 ## Upgrading
 
+### To 2026.11.1 (Kener 4.1.11)
+
+Security release, no value to change. Kener 4.1.11 updates dependencies with known vulnerabilities and masks the
+secrets stored in monitors and triggers when they are read through the API or the dashboard. It also checks the bodies
+of `/api/v4` writes against the API specification: a client that sent fields the specification does not allow now gets
+a `400` and has to be fixed.
+
 ### To 2026.10.2 (Kener 4.1.10)
 
 Security release, no value to change. Kener 4.1.9 fixes an authentication bypass: from 4.0.0 to 4.1.8, a
@@ -191,23 +198,23 @@ PostgreSQL/MySQL database): the migrations run automatically at the first start 
 
 Chart changes:
 
-1. **Secret key** — the previous chart shipped a default `KENER_SECRET_KEY` (`thesuperprivatekeytonotshare`). It was
+1. **Secret key**: the previous chart shipped a default `KENER_SECRET_KEY` (`thesuperprivatekeytonotshare`). It was
    public: anyone could forge a session for any account. The chart now refuses it and generates a random key unless
    you set one. After the upgrade everybody logs in again and API keys created before must be re-created. If you
    had set your own key, it is kept (`kener.key` and `kener.keyFrom` still work, prefer `kener.secretKey` and
    `kener.existingSecret` + `kener.existingSecretKey`).
-2. **SQLite data** — the previous chart had no persistence. If you mounted your own PVC on `/app/database` through
+2. **SQLite data**: the previous chart had no persistence. If you mounted your own PVC on `/app/database` through
    `volumes`/`volumeMounts`, remove these entries and set `persistence.existingClaim: <your PVC>` (the chart refuses a
    second mount on `/app/database`). Without such a volume the data lived in the container and cannot be recovered.
    `/app/uploads` is gone: Kener 4 stores images in the database.
-3. **External database** — `database.url` and `database.existingSecret` keep their meaning, but the URL now goes
+3. **External database**: `database.url` and `database.existingSecret` keep their meaning, but the URL now goes
    through a Secret and must start with `postgresql://` or `mysql://`. `database.secretKeys.url` becomes
    `database.existingSecretKey`, and `database.enabled: false` is simply an empty `database.url` (both old names still
    work). The old default URL (`postgresql://user:password@host:port/db`) is gone: SQLite is now the default.
 4. **Redis** is mandatory: the bundled Valkey is deployed unless you set `redis.enabled: false` and `redis.external`.
-5. **Image** — `docker.io/rajnandan1/kener:4.1.7-alpine` by default (`image.variant: debian` for the upstream
+5. **Image**: `docker.io/rajnandan1/kener:4.1.7-alpine` by default (`image.variant: debian` for the upstream
    default). The container always listens on 3000; `service.port` only changes the Service.
-6. **Security context** — pods run as uid/gid 1000 (the image `node` user, as before) with a read-only root
+6. **Security context**: pods run as uid/gid 1000 (the image `node` user, as before) with a read-only root
    filesystem. Files of an existing volume are made group-accessible through `fsGroup: 1000`.
 7. `kener.origin` now defaults to `http://localhost:3000` and is validated (no path, no trailing slash): set it to
    your public URL. The HTTPRoute default rule now routes `PathPrefix /` (it only matched `/headers`).

@@ -14,7 +14,7 @@ imagePullSecrets: []
 image:
   # -- Kener image repository.
   repository: docker.io/rajnandan1/kener
-  # -- Image tag. Empty builds it from the chart appVersion, `kener.basePath` and `image.variant` (`4.1.10-alpine`, `4.1.10`, `4.1.10-status-alpine`...).
+  # -- Image tag. Empty builds it from the chart appVersion, `kener.basePath` and `image.variant` (`4.1.11-alpine`, `4.1.11`, `4.1.11-status-alpine`...).
   tag: ""
   # -- Base of the published image when `image.tag` is empty: `alpine` (node:24-alpine, far fewer known CVEs) or `debian` (node:24-slim, the upstream default).
   variant: alpine  # @schema enum:[alpine, debian]
