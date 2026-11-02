@@ -23,9 +23,14 @@ jobs:
             contents: write # create GitHub releases and push index.yaml to gh-pages
         runs-on: ubuntu-latest
         steps:
+            # Release from the tip of main, not from the commit that triggered the run. The workflow token may only
+            # create a tag whose .github/workflows match main: when another pull request changing a workflow is
+            # merged right after, a tag on the older commit is refused (403 Resource not accessible by integration).
+            # Runs are serialized (concurrency above), and the next one finds nothing left to release.
             - name: Checkout
               uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
+                  ref: ${{ github.event.repository.default_branch }}
                   fetch-depth: 0
                   persist-credentials: true
 
@@ -79,9 +84,10 @@ jobs:
 
             - name: Deploy Artifact Hub metadata and public key to GitHub Pages
               run: |
+                  release_sha=$(git rev-parse HEAD)
                   git checkout gh-pages
                   git pull origin gh-pages
-                  git checkout "$GITHUB_SHA" -- artifacthub-repo.yml pgp-public-key.asc
+                  git checkout "$release_sha" -- artifacthub-repo.yml pgp-public-key.asc
                   git add artifacthub-repo.yml pgp-public-key.asc
                   git commit -m "Update Artifact Hub repository metadata and signing key" || echo "No changes to commit"
                   git push origin gh-pages
