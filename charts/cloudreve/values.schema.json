@@ -210,7 +210,7 @@
                     ]
                 },
                 "repository": {
-                    "description": "Cloudreve image repository.",
+                    "description": "Cloudreve image repository. Empty: `ghcr.io/unxwares/cloudreve` or `docker.io/cloudreve/cloudreve`, from `imageProvider`.",
                     "type": "string"
                 },
                 "tag": {
@@ -218,6 +218,14 @@
                     "type": "string"
                 }
             }
+        },
+        "imageProvider": {
+            "description": "Image provider. `unxwares`: `ghcr.io/unxwares/cloudreve`, Cloudreve built from its release sources with current Go modules on a current Alpine, rebuilt twice a week, signed (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the official `docker.io/cloudreve/cloudreve` image.",
+            "type": "string",
+            "enum": [
+                "unxwares",
+                "upstream"
+            ]
         },
         "imagePullSecrets": {
             "description": "Secrets for pulling images from a private registry.",
@@ -451,7 +459,7 @@
             "type": "object"
         },
         "timezone": {
-            "description": "Timezone of the container (the image defaults to Asia/Shanghai).",
+            "description": "Timezone of the container (`TZ`). The upstream image would otherwise default to Asia/Shanghai.",
             "type": "string"
         },
         "tolerations": {

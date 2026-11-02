@@ -30,6 +30,7 @@ jobs:
         runs-on: ubuntu-latest
         outputs:
             openeverest: ${{ steps.diff.outputs.openeverest }}
+            cloudreve: ${{ steps.diff.outputs.cloudreve }}
         steps:
             - name: Checkout
               uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -51,6 +52,9 @@ jobs:
                   common='^\.github/workflows/e2e\.yaml$'
                   if matches "$common|^charts/openeverest-database-tools/|^images/(postgresql-client|mysql-client|mongosh)/|^\.github/scripts/openeverest-test-"; then
                       echo "openeverest=true" >> "$GITHUB_OUTPUT"
+                  fi
+                  if matches "$common|^charts/cloudreve/|^images/cloudreve/|^\.github/scripts/cloudreve-e2e\.sh$"; then
+                      echo "cloudreve=true" >> "$GITHUB_OUTPUT"
                   fi
 
     openeverest-database-tools:
@@ -125,3 +129,53 @@ jobs:
                       kubectl --namespace everest-databases logs "$pod" --all-containers --prefix || true
                       echo "::endgroup::"
                   done
+
+    cloudreve:
+        name: cloudreve
+        needs: changes
+        if: needs.changes.outputs.cloudreve == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 40
+        env:
+            CHART: charts/cloudreve
+            RELEASE: cloudreve
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            # The image of this commit, so that a change to it is tested before it is published.
+            - name: Build the Cloudreve image
+              run: docker build --tag local/cloudreve:e2e images/cloudreve
+
+            - name: Create kind cluster
+              uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+
+            - name: Load the Cloudreve image
+              run: kind load docker-image local/cloudreve:e2e --name chart-testing
+
+            - name: Install Helm
+              uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+              with:
+                  version: ${{ env.HELM_VERSION }}
+
+            - name: Install the chart
+              run: |
+                  helm install "$RELEASE" "$CHART" --namespace "$RELEASE" --create-namespace \
+                      --values "$CHART/ci/default-values.yaml" \
+                      --set image.repository=local/cloudreve --set image.tag=e2e \
+                      --wait --timeout 10m
+
+            - name: helm test
+              run: helm test "$RELEASE" --namespace "$RELEASE"
+
+            - name: Sign up, log in, upload, download and thumbnail
+              run: .github/scripts/cloudreve-e2e.sh "$RELEASE" "$RELEASE"
+
+            - name: Diagnostics
+              if: failure()
+              run: |
+                  kubectl get pods --all-namespaces -o wide
+                  kubectl --namespace "$RELEASE" describe pods
+                  kubectl --namespace "$RELEASE" logs deploy/"$RELEASE" --all-containers --prefix || true

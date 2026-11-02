@@ -1,0 +1,4 @@
+# The official image (imageProvider: upstream), SQLite in the data volume.
+imageProvider: upstream
+persistence:
+  size: 1Gi
