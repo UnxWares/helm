@@ -1,0 +1,173 @@
+suite: required values and their error messages
+templates:
+  - deployment.yaml
+release:
+  name: shop
+  namespace: shop
+tests:
+  - it: requires the application image repository
+    asserts:
+      - failedTemplate:
+          errorMessage: "image.repository is required: set it to your Laravel application image (e.g. registry.example.com/acme/shop)"
+
+  - it: requires an image tag or digest, and says the appVersion is not one
+    set:
+      image.repository: registry.example.com/acme/shop
+    asserts:
+      - failedTemplate:
+          errorMessage: "image.tag (or image.digest) is required: the chart appVersion (12.x) is the targeted Laravel version, not a tag of your application image"
+
+  - it: accepts a digest without a tag
+    set:
+      image.repository: registry.example.com/acme/shop
+      image.digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: rejects an unknown runtime through the values schema
+    values:
+      - values/image.yaml
+    set:
+      workload.runtime.type: swoole
+    asserts:
+      - failedTemplate:
+          errorPattern: "workload.runtime.type"
+
+  - it: rejects an unknown scheduler mode through the values schema
+    values:
+      - values/image.yaml
+    set:
+      workload.scheduler.mode: daemonset
+    asserts:
+      - failedTemplate:
+          errorPattern: "workload.scheduler.mode"
+
+  - it: refuses SQLite without the persistent volume
+    values:
+      - values/image.yaml
+    set:
+      persistence.enabled: false
+    asserts:
+      - failedTemplate:
+          errorMessage: "laravel.database.connection=sqlite keeps the database on the persistent volume: set persistence.enabled=true (or persistence.existingClaim), or use an external database (pgsql, mysql...)"
+
+  - it: refuses SQLite with several web replicas
+    values:
+      - values/image.yaml
+    set:
+      replicaCount: 2
+    asserts:
+      - failedTemplate:
+          errorMessage: "SQLite supports a single web replica: set replicaCount=1 and autoscaling.enabled=false, or use an external database (pgsql, mysql...) to scale out"
+
+  - it: refuses SQLite with autoscaling
+    values:
+      - values/image.yaml
+    set:
+      autoscaling.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "SQLite supports a single web replica: set replicaCount=1 and autoscaling.enabled=false, or use an external database (pgsql, mysql...) to scale out"
+
+  - it: refuses a SQLite file whose directory would hide the application
+    values:
+      - values/image.yaml
+    set:
+      laravel.database.database: database/database.sqlite
+    asserts:
+      - failedTemplate:
+          errorMessage: "laravel.database.database: the SQLite file needs a dedicated directory (it is mounted from the persistent volume and would hide /app/database): use e.g. /app/storage/database/database.sqlite"
+
+  - it: refuses a SQLite file at the root of the application
+    values:
+      - values/image.yaml
+    set:
+      laravel.database.database: database.sqlite
+    asserts:
+      - failedTemplate:
+          errorPattern: "would hide /app\\)"
+
+  - it: requires the database host of an external database
+    values:
+      - values/image.yaml
+    set:
+      laravel.database.connection: pgsql
+      laravel.database.password: secret
+    asserts:
+      - failedTemplate:
+          errorMessage: "laravel.database.host is required with the pgsql connection (or laravel.database.existingSecret + secretKeys.host)"
+
+  - it: requires the database password of an external database
+    values:
+      - values/image.yaml
+    set:
+      laravel.database.connection: mysql
+      laravel.database.host: db
+    asserts:
+      - failedTemplate:
+          errorMessage: "laravel.database.password or laravel.database.existingSecret (+ secretKeys.password) is required"
+
+  - it: takes the host and the password from an existing Secret
+    values:
+      - values/image.yaml
+    set:
+      laravel.database.connection: pgsql
+      laravel.database.existingSecret: shop-db-app
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: does not check the database when DB_* variables are off
+    values:
+      - values/image.yaml
+    set:
+      laravel.database.enabled: false
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: refuses several replicas on a ReadWriteOnce volume
+    values:
+      - values/image.yaml
+      - values/pgsql.yaml
+    set:
+      replicaCount: 3
+    asserts:
+      - failedTemplate:
+          errorMessage: "persistence uses a ReadWriteOnce volume, which pods on several nodes cannot share: keep replicaCount=1 without autoscaling, use a ReadWriteMany storage class (persistence.accessModes=[ReadWriteMany]), or disable persistence and store files on S3"
+
+  - it: accepts several replicas on a ReadWriteMany volume
+    values:
+      - values/image.yaml
+      - values/pgsql.yaml
+    set:
+      replicaCount: 3
+      persistence.accessModes: [ReadWriteMany]
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: accepts several replicas without persistence
+    values:
+      - values/image.yaml
+      - values/pgsql.yaml
+    set:
+      replicaCount: 3
+      persistence.enabled: false
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: refuses persistence without any stored path
+    values:
+      - values/image.yaml
+      - values/pgsql.yaml
+    set:
+      persistence.paths: []
+    asserts:
+      - failedTemplate:
+          errorMessage: "persistence.paths is empty: list the directories to store on the persistent volume (e.g. storage/app)"
+
+  - it: lets SQLite use the volume without any stored path
+    values:
+      - values/image.yaml
+    set:
+      persistence.paths: []
+    asserts:
+      - notFailedTemplate: {}

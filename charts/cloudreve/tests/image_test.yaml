@@ -1,0 +1,159 @@
+suite: image provider and image reference
+templates:
+  # deployment.yaml includes configmap.yaml for its checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+  - tests/test-ping.yaml
+release:
+  name: files
+  namespace: storage
+chart:
+  appVersion: 4.19.1
+tests:
+  - it: defaults to the UnxWares image tagged with the chart appVersion
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/cloudreve:4.19.1
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: ghcr.io/unxwares/cloudreve:4.19.1
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: follows the chart appVersion when the tag is empty
+    template: deployment.yaml
+    chart:
+      appVersion: 9.8.7
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/cloudreve:9.8.7
+
+  - it: switches to the official image with imageProvider upstream
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/cloudreve/cloudreve:4.19.1
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: docker.io/cloudreve/cloudreve:4.19.1
+
+  - it: uses the helm test image from the same provider
+    template: tests/test-ping.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.containers[0].image
+          value: docker.io/cloudreve/cloudreve:4.19.1
+
+  - it: keeps the same port, command and mounts with both providers
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports
+          value:
+            - name: http
+              containerPort: 5212
+              protocol: TCP
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - /cloudreve/cloudreve
+            - -c
+            - /etc/cloudreve/conf.ini
+
+  - it: runs the Cloudreve binary directly, not the image entrypoint
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - /cloudreve/cloudreve
+            - -c
+            - /etc/cloudreve/conf.ini
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 5212
+
+  - it: lets an explicit repository and tag override the provider
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+      image:
+        repository: registry.example.com/mirror/cloudreve
+        tag: 4.19.0
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/mirror/cloudreve:4.19.0
+
+  - it: prefers the digest over the tag
+    template: deployment.yaml
+    set:
+      image:
+        tag: 4.19.0
+        digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/cloudreve@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: ghcr.io/unxwares/cloudreve@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+  - it: applies the pull policy and pull secrets
+    template: deployment.yaml
+    set:
+      image:
+        pullPolicy: Always
+      imagePullSecrets:
+        - name: registry-credentials
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+      - equal:
+          path: spec.template.spec.initContainers[0].imagePullPolicy
+          value: Always
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+
+  - it: renames the container port and keeps the probes on it
+    template: deployment.yaml
+    set:
+      podPortName: web
+      livenessProbe:
+        httpGet:
+          port: web
+      readinessProbe:
+        httpGet:
+          port: web
+      startupProbe:
+        httpGet:
+          port: web
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].name
+          value: web
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: web
+
+  - it: rejects an unknown image provider
+    template: deployment.yaml
+    set:
+      imageProvider: dockerhub
+    asserts:
+      - failedTemplate:
+          errorPattern: "imageProvider"

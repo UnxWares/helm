@@ -1,0 +1,167 @@
+suite: security contexts and service account
+templates:
+  # deployment.yaml includes configmap.yaml for its checksum annotation
+  - configmap.yaml
+  - deployment.yaml
+  - serviceaccount.yaml
+  - tests/test-ping.yaml
+release:
+  name: files
+  namespace: storage
+tests:
+  - it: runs the pod as uid and gid 1000, non-root, with fsGroup 1000 and the RuntimeDefault seccomp profile
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: hardens the Cloudreve container (read-only root, no privilege escalation, no capability)
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: hardens the render-config init container the same way
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: render-config
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: keeps the same security contexts with the official image
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1000
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop
+          value:
+            - ALL
+
+  - it: does not mount the service account token
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: files-cloudreve
+
+  - it: creates a dedicated service account without token automount
+    template: serviceaccount.yaml
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: metadata.name
+          value: files-cloudreve
+      - equal:
+          path: metadata.namespace
+          value: storage
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: uses an existing service account when creation is disabled
+    set:
+      serviceAccount:
+        create: false
+        name: shared
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: serviceaccount.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: shared
+        template: deployment.yaml
+
+  - it: falls back to the default service account when creation is disabled without a name
+    template: deployment.yaml
+    set:
+      serviceAccount:
+        create: false
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: default
+
+  - it: replaces the security contexts with the given ones
+    template: deployment.yaml
+    set:
+      podSecurityContext:
+        runAsUser: 2000
+      securityContext:
+        runAsUser: 2000
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 2000
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsUser
+          value: 2000
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.runAsUser
+          value: 2000
+
+  - it: hardens the helm test pod and does not mount its token
+    template: tests/test-ping.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: test
+      - equal:
+          path: spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+      - equal:
+          path: spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      - equal:
+          path: spec.containers[0].command
+          value:
+            - wget
+            - -qO-
+            - http://files-cloudreve:80/api/v4/site/ping

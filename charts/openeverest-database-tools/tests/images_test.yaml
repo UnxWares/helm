@@ -1,0 +1,220 @@
+suite: client and kubectl images
+templates:
+  - templates/postgresql-jobs.yaml
+  - templates/mysql-jobs.yaml
+  - templates/mongodb-jobs.yaml
+release:
+  name: oedt
+  namespace: apps
+values:
+  - values/all-engines.yaml
+tests:
+  - it: uses the UnxWares PostgreSQL client image by default
+    template: templates/postgresql-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/postgresql-client:18
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: uses the UnxWares MySQL client image by default
+    template: templates/mysql-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/mysql-client:8.4
+
+  - it: uses the UnxWares mongosh image by default
+    template: templates/mongodb-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/mongosh:2.14.1
+
+  - it: uses the pinned kubectl image for both wait containers
+    templates:
+      - templates/postgresql-jobs.yaml
+      - templates/mysql-jobs.yaml
+      - templates/mongodb-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: registry.k8s.io/kubectl:v1.37.2
+      - equal:
+          path: spec.template.spec.initContainers[1].image
+          value: registry.k8s.io/kubectl:v1.37.2
+
+  - it: prefers the digest over the tag
+    template: templates/postgresql-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      image.postgresql.digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/postgresql-client@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+  - it: keeps the default repository when only the tag is overridden
+    template: templates/mysql-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      image.mysql.tag: "9.4"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/mysql-client:9.4
+
+  - it: accepts the upstream server images, which ship the clients
+    templates:
+      - templates/postgresql-jobs.yaml
+      - templates/mysql-jobs.yaml
+      - templates/mongodb-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    set:
+      image.postgresql:
+        repository: docker.io/library/postgres
+        tag: 18-alpine
+      image.mysql:
+        repository: docker.io/library/mysql
+        tag: "8.4"
+      image.mongodb:
+        repository: docker.io/library/mongo
+        tag: "8.0"
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: ^docker\.io/library/(postgres:18-alpine|mysql:8\.4|mongo:8\.0)$
+
+  - it: accepts a full image reference string, globally and per entry
+    template: templates/postgresql-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    set:
+      image.kubectl: registry.example.com/kubectl:v1.37.2
+      databases.postgresql:
+        - name: pg-default
+          clusterName: pg
+          adminCredentialsSecret: s
+        - name: pg-custom
+          clusterName: pg
+          adminCredentialsSecret: s
+          image: registry.example.com/psql:17
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: ^(ghcr\.io/unxwares/postgresql-client:18|registry\.example\.com/psql:17)$
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: registry.example.com/kubectl:v1.37.2
+
+  - it: merges a partial per-entry image with the global one, for that entry only
+    template: templates/postgresql-jobs.yaml
+    set:
+      databases.postgresql:
+        - name: pg-default
+          clusterName: pg
+          adminCredentialsSecret: s
+        - name: pg-custom
+          clusterName: pg
+          adminCredentialsSecret: s
+          image:
+            tag: "17"
+    asserts:
+      - hasDocuments:
+          count: 4
+      - matchRegex:
+          path: metadata.name
+          pattern: ^pg-default-[0-9a-f]{8}$
+        documentIndex: 1
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/postgresql-client:18
+        documentIndex: 1
+      - matchRegex:
+          path: metadata.name
+          pattern: ^pg-custom-[0-9a-f]{8}$
+        documentIndex: 3
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/postgresql-client:17
+        documentIndex: 3
+
+  - it: applies the pull policy and the pull secrets to every container
+    template: templates/mongodb-jobs.yaml
+    documentSelector:
+      path: kind
+      value: Job
+    set:
+      image.pullPolicy: Always
+      imagePullSecrets:
+        - name: registry-credentials
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+      - equal:
+          path: spec.template.spec.initContainers[0].imagePullPolicy
+          value: Always
+      - equal:
+          path: spec.template.spec.initContainers[1].imagePullPolicy
+          value: Always
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+
+  - it: refuses the bare alpine image of former releases, which installed the clients at runtime
+    template: templates/postgresql-jobs.yaml
+    set:
+      image.postgresql: alpine:3.20
+    asserts:
+      - failedTemplate:
+          errorMessage: 'image "alpine:3.20": the Jobs no longer install database clients at runtime (apk add). Remove the override or use an image that ships the client (see image.* in values.yaml).'
+
+  - it: refuses docker.io/library/alpine as a per-entry image too
+    template: templates/mysql-jobs.yaml
+    set:
+      databases.mysql:
+        - name: mysql-init
+          clusterName: mysql
+          adminCredentialsSecret: s
+          image:
+            repository: docker.io/library/alpine
+            tag: latest
+    asserts:
+      - failedTemplate:
+          errorPattern: 'image "docker\.io/library/alpine:latest": the Jobs no longer install database clients at runtime'
+
+  - it: refuses an image object without a tag or digest
+    template: templates/mongodb-jobs.yaml
+    set:
+      image.mongodb:
+        repository: ghcr.io/unxwares/mongosh
+        tag: ""
+    asserts:
+      - failedTemplate:
+          errorPattern: 'invalid image \{.*"repository":"ghcr\.io/unxwares/mongosh".*\}: expected a reference string or \{repository, tag, digest\}'

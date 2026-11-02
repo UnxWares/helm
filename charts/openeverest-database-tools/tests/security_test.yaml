@@ -1,0 +1,358 @@
+suite: security defaults of every Job
+templates:
+  - templates/postgresql-jobs.yaml
+  - templates/mysql-jobs.yaml
+  - templates/mongodb-jobs.yaml
+  - templates/serviceaccount.yaml
+release:
+  name: oedt
+  namespace: apps
+values:
+  - values/all-engines.yaml
+tests:
+  - it: runs every Job pod as non-root uid and gid 65532 with the RuntimeDefault seccomp profile
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    template: templates/postgresql-jobs.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            fsGroup: 65532
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: gives the MySQL and MongoDB Job pods the same pod security context
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    templates:
+      - templates/mysql-jobs.yaml
+      - templates/mongodb-jobs.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 65532
+      - equal:
+          path: spec.template.spec.securityContext.runAsGroup
+          value: 65532
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+
+  - it: locks down the client container and both wait containers of every engine
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    templates:
+      - templates/postgresql-jobs.yaml
+      - templates/mysql-jobs.yaml
+      - templates/mongodb-jobs.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 2
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value: &locked
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext
+          value: *locked
+      - equal:
+          path: spec.template.spec.initContainers[1].securityContext
+          value: *locked
+
+  - it: does not mount the ServiceAccount token into the pod and disables service links
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    templates:
+      - templates/postgresql-jobs.yaml
+      - templates/mysql-jobs.yaml
+      - templates/mongodb-jobs.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.template.spec.enableServiceLinks
+          value: false
+
+  - it: projects a short-lived token into the wait containers only, read-only
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    templates:
+      - templates/postgresql-jobs.yaml
+      - templates/mysql-jobs.yaml
+      - templates/mongodb-jobs.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: kube-api-access
+            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            readOnly: true
+      - contains:
+          path: spec.template.spec.initContainers[1].volumeMounts
+          content:
+            name: kube-api-access
+            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            readOnly: true
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: kube-api-access
+            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes[?(@.name == "kube-api-access")].projected.sources
+          content:
+            serviceAccountToken:
+              path: token
+              expirationSeconds: 3607
+
+  - it: keeps the writable paths on a memory-backed, size-limited emptyDir and the scripts read-only
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    templates:
+      - templates/postgresql-jobs.yaml
+      - templates/mysql-jobs.yaml
+      - templates/mongodb-jobs.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir:
+              medium: Memory
+              sizeLimit: 64Mi
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: scripts
+            mountPath: /scripts
+            readOnly: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HOME
+            value: /tmp
+
+  - it: creates its ServiceAccount without an automatically mounted token
+    template: templates/serviceaccount.yaml
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: reads every admin and user credential from a Secret, never from a literal value
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    template: templates/postgresql-jobs.yaml
+    set:
+      databases.postgresql:
+        - name: pg-init
+          clusterName: pg
+          adminCredentialsSecret: everest-secrets-pg
+          users:
+            - credentialsSecret: app-db
+              databases: [app]
+            - credentialsSecret: other-db
+              usernameKey: user
+              passwordKey: pass
+              databases: [other]
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: everest-secrets-pg
+                key: password
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_USERNAME_0
+            valueFrom:
+              secretKeyRef:
+                name: app-db
+                key: username
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_PASSWORD_0
+            valueFrom:
+              secretKeyRef:
+                name: app-db
+                key: password
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_PASSWORD_1
+            valueFrom:
+              secretKeyRef:
+                name: other-db
+                key: pass
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_USERNAME_1
+            valueFrom:
+              secretKeyRef:
+                name: other-db
+                key: user
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name == "PGPASSWORD")].value
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name == "APP_PASSWORD_0")].value
+
+  - it: keeps the MySQL and MongoDB admin passwords in their Secret even with a literal admin user
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    templates:
+      - templates/mysql-jobs.yaml
+      - templates/mongodb-jobs.yaml
+    set:
+      databases.mysql:
+        - name: mysql-init
+          clusterName: mysql
+          adminCredentialsSecret: everest-secrets-mysql
+          adminUser: root
+          passwordKey: root
+      databases.mongodb:
+        - name: mongo-init
+          clusterName: mongo
+          adminCredentialsSecret: everest-secrets-mongo
+          adminUser: admin
+          passwordKey: root
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name =~ /.*_PASSWORD$/)].value
+      - exists:
+          path: spec.template.spec.containers[0].env[?(@.name =~ /.*_PASSWORD$/)].valueFrom.secretKeyRef
+
+  - it: never writes a user name or password into the PostgreSQL script
+    documentSelector:
+      path: kind
+      value: ConfigMap
+      matchMany: true
+    template: templates/postgresql-jobs.yaml
+    values:
+      - values/readme-postgresql.yaml
+    asserts:
+      - matchRegex:
+          path: data["init.sql"]
+          pattern: '\\getenv username APP_USERNAME_0\n\\getenv password APP_PASSWORD_0\n'
+      - matchRegex:
+          path: data["init.sql"]
+          pattern: "format\\('CREATE ROLE %I LOGIN PASSWORD %L', :'username', :'password'\\)"
+      - matchRegex:
+          path: data["init.sql"]
+          pattern: '\\unset password'
+
+  - it: keeps the MySQL admin password off the command line, in an option file on the memory volume
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    template: templates/mysql-jobs.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].command[2]
+          pattern: 'cnf password "\$MYSQL_PASSWORD"'
+      - matchRegex:
+          path: spec.template.spec.containers[0].command[2]
+          pattern: '\} > /tmp/client\.cnf'
+      - matchRegex:
+          path: spec.template.spec.containers[0].command[2]
+          pattern: 'umask 077'
+      - notMatchRegex:
+          path: spec.template.spec.containers[0].command[2]
+          pattern: '(-p\s*"?\$|--password)'
+
+  - it: merges the deprecated securityContext into the pod security context
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    template: templates/postgresql-jobs.yaml
+    set:
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1000
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 1000
+      - equal:
+          path: spec.template.spec.securityContext.runAsGroup
+          value: 65532
+      - equal:
+          path: spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+
+  - it: merges podSecurityContext and containerSecurityContext overrides into the defaults of every container
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    template: templates/mongodb-jobs.yaml
+    set:
+      podSecurityContext:
+        runAsUser: 2000
+        runAsGroup: 2000
+      containerSecurityContext:
+        readOnlyRootFilesystem: false
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 2000
+            runAsGroup: 2000
+            fsGroup: 65532
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: false
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.readOnlyRootFilesystem
+          value: false
+      - equal:
+          path: spec.template.spec.initContainers[1].securityContext.capabilities.drop
+          value:
+            - ALL

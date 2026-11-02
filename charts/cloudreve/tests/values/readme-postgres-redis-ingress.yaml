@@ -1,0 +1,32 @@
+# README example "PostgreSQL and Redis behind an Ingress", as written in the README.
+database:
+  type: postgres
+  host: cloudreve-db-rw.databases.svc
+  port: 5432
+  name: cloudreve
+  user: cloudreve
+  existingSecret: cloudreve-db
+redis:
+  enabled: true
+  server: valkey.cache.svc:6379
+  existingSecret: cloudreve-redis
+cloudreve:
+  existingSecret: cloudreve-session
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    cert-manager.io/cluster-issuer: letsencrypt
+  hosts:
+    - host: cloud.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: cloud-example-com-tls
+      hosts:
+        - cloud.example.com
+extraEnv:
+  - name: CR_SETTING_DEFAULT_siteURL
+    value: https://cloud.example.com

@@ -1,0 +1,143 @@
+suite: ServiceAccount and RBAC
+templates:
+  - templates/rbac.yaml
+  - templates/serviceaccount.yaml
+  - templates/postgresql-jobs.yaml
+release:
+  name: oedt
+  namespace: apps
+set:
+  databases.postgresql:
+    - name: pg-init
+      clusterName: pg
+      adminCredentialsSecret: everest-secrets-pg
+tests:
+  - it: allows only get, list and watch on DatabaseClusters, in the clusters namespace
+    template: templates/rbac.yaml
+    documentSelector:
+      path: kind
+      value: Role
+    asserts:
+      - equal:
+          path: metadata.name
+          value: oedt-openeverest-database-tools-dbcluster-read
+      - equal:
+          path: metadata.namespace
+          value: everest-databases
+      - equal:
+          path: rules
+          value:
+            - apiGroups: ["everest.percona.com"]
+              resources: ["databaseclusters"]
+              verbs: ["get", "list", "watch"]
+
+  - it: binds the Role to the dedicated ServiceAccount
+    template: templates/rbac.yaml
+    documentSelector:
+      path: kind
+      value: RoleBinding
+    asserts:
+      - equal:
+          path: subjects
+          value:
+            - kind: ServiceAccount
+              name: oedt-openeverest-database-tools
+              namespace: everest-databases
+      - equal:
+          path: roleRef
+          value:
+            kind: Role
+            name: oedt-openeverest-database-tools-dbcluster-read
+            apiGroup: rbac.authorization.k8s.io
+
+  - it: creates the dedicated ServiceAccount and runs the Jobs as it
+    asserts:
+      - equal:
+          path: metadata.name
+          value: oedt-openeverest-database-tools
+        template: templates/serviceaccount.yaml
+      - equal:
+          path: metadata.namespace
+          value: everest-databases
+        template: templates/serviceaccount.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: oedt-openeverest-database-tools
+        template: templates/postgresql-jobs.yaml
+        documentIndex: 1
+
+  - it: ignores the former default serviceAccountName "default" while rbac.create is true
+    set:
+      rbac.serviceAccountName: default
+    asserts:
+      - hasDocuments:
+          count: 1
+        template: templates/serviceaccount.yaml
+      - equal:
+          path: subjects[0].name
+          value: oedt-openeverest-database-tools
+        template: templates/rbac.yaml
+        documentIndex: 1
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: oedt-openeverest-database-tools
+        template: templates/postgresql-jobs.yaml
+        documentIndex: 1
+
+  - it: binds an existing ServiceAccount without creating one
+    set:
+      rbac.serviceAccountName: db-jobs
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/serviceaccount.yaml
+      - equal:
+          path: subjects[0].name
+          value: db-jobs
+        template: templates/rbac.yaml
+        documentIndex: 1
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: db-jobs
+        template: templates/postgresql-jobs.yaml
+        documentIndex: 1
+
+  - it: creates no ServiceAccount, Role or RoleBinding with rbac.create false, and runs the Jobs as default
+    set:
+      rbac.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/rbac.yaml
+      - hasDocuments:
+          count: 0
+        template: templates/serviceaccount.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: default
+        template: templates/postgresql-jobs.yaml
+        documentIndex: 1
+
+  - it: runs the Jobs as the named account with rbac.create false
+    set:
+      rbac.create: false
+      rbac.serviceAccountName: everest-reader
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: everest-reader
+        template: templates/postgresql-jobs.yaml
+        documentIndex: 1
+
+  - it: honours fullnameOverride for the ServiceAccount and the Role
+    set:
+      fullnameOverride: db-tools
+    asserts:
+      - equal:
+          path: metadata.name
+          value: db-tools
+        template: templates/serviceaccount.yaml
+      - equal:
+          path: metadata.name
+          value: db-tools-dbcluster-read
+        template: templates/rbac.yaml

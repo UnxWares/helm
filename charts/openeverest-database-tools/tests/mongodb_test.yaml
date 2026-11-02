@@ -1,0 +1,229 @@
+suite: MongoDB Jobs
+templates:
+  - templates/mongodb-jobs.yaml
+release:
+  name: oedt
+  namespace: apps
+values:
+  - values/readme-mongodb.yaml
+tests:
+  - it: renders a ConfigMap and a Job for each of the two README entries
+    asserts:
+      - hasDocuments:
+          count: 4
+      - matchRegex:
+          path: metadata.name
+          pattern: ^app-mongo-users-[0-9a-f]{8}$
+        documentIndex: 1
+      - matchRegex:
+          path: metadata.name
+          pattern: ^app-mongo-schema-[0-9a-f]{8}$
+        documentIndex: 3
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: mongodb-init
+
+  - it: runs mongosh without a connection, a startup file or a script on the command line
+    documentSelector:
+      path: kind
+      value: Job
+      matchMany: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - mongosh
+            - --nodb
+            - --quiet
+            - --norc
+            - --file
+            - /scripts/init.js
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: init-mongodb
+
+  - it: logs in as the user administrator for users and as the database administrator for the schema (README example)
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MONGO_USER
+            valueFrom:
+              secretKeyRef:
+                name: everest-secrets-my-mongo
+                key: MONGODB_USER_ADMIN_USER
+        documentIndex: 1
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MONGO_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: everest-secrets-my-mongo
+                key: MONGODB_USER_ADMIN_PASSWORD
+        documentIndex: 1
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MONGO_USER
+            valueFrom:
+              secretKeyRef:
+                name: everest-secrets-my-mongo
+                key: MONGODB_DATABASE_ADMIN_USER
+        documentIndex: 3
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MONGO_HOST
+            value: my-mongo-rs0
+        documentIndex: 3
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MONGO_PORT
+            value: "27017"
+        documentIndex: 3
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_PASSWORD_0
+            valueFrom:
+              secretKeyRef:
+                name: appdb-user
+                key: password
+        documentIndex: 1
+
+  - it: gives the script its settings as JSON, users referenced by index only (README users entry)
+    asserts:
+      - equal:
+          path: data["config.json"]
+          value: |
+            {
+              "authDatabase": "admin",
+              "collections": [],
+              "connectTimeoutSeconds": 120,
+              "databases": [],
+              "initScripts": 0,
+              "initScriptsDatabase": "admin",
+              "updateUserPasswords": true,
+              "uriOptions": "replicaSet=rs0",
+              "users": [
+                {
+                  "databases": [
+                    "appdb"
+                  ],
+                  "index": 0,
+                  "roles": [
+                    "readWrite"
+                  ]
+                }
+              ]
+            }
+        documentIndex: 0
+
+  - it: runs the init scripts on the first database and creates the collections (README schema entry)
+    asserts:
+      - equal:
+          path: data["config.json"]
+          value: |
+            {
+              "authDatabase": "admin",
+              "collections": [
+                {
+                  "database": "appdb",
+                  "name": "users"
+                }
+              ],
+              "connectTimeoutSeconds": 120,
+              "databases": [
+                "appdb"
+              ],
+              "initScripts": 2,
+              "initScriptsDatabase": "appdb",
+              "updateUserPasswords": true,
+              "uriOptions": "replicaSet=rs0",
+              "users": []
+            }
+        documentIndex: 2
+      - equal:
+          path: data["script-0.js"]
+          value: |
+            db.users.createIndex({ email: 1 }, { unique: true });
+        documentIndex: 2
+      - equal:
+          path: data["script-1.js"]
+          value: |
+            db.sessions.createIndex({ createdAt: 1 }, { expireAfterSeconds: 3600 });
+        documentIndex: 2
+
+  - it: ships the static init.js, which reads the credentials from the environment only
+    asserts:
+      - matchRegex:
+          path: data["init.js"]
+          pattern: "encodeURIComponent\\(oedtEnv\\.MONGO_USER\\) \\+ ':' \\+ encodeURIComponent\\(oedtEnv\\.MONGO_PASSWORD\\)"
+        documentIndex: 0
+      - matchRegex:
+          path: data["init.js"]
+          pattern: "const password = oedtEnv\\['APP_PASSWORD_' \\+ user\\.index\\];"
+        documentIndex: 0
+
+  - it: honours custom roles, authDatabase, initScriptsDatabase and updateUserPasswords
+    set:
+      databases.mongodb:
+        - name: mongo-init
+          clusterName: mongo
+          adminCredentialsSecret: mongo-admin
+          authDatabase: users
+          initScriptsDatabase: reports
+          updateUserPasswords: false
+          connectTimeoutSeconds: 15
+          users:
+            - credentialsSecret: app-user
+              usernameKey: user
+              databases: [app]
+              roles: [read, dbAdmin]
+    asserts:
+      - equal:
+          path: data["config.json"]
+          value: |
+            {
+              "authDatabase": "users",
+              "collections": [],
+              "connectTimeoutSeconds": 15,
+              "databases": [],
+              "initScripts": 0,
+              "initScriptsDatabase": "reports",
+              "updateUserPasswords": false,
+              "uriOptions": "",
+              "users": [
+                {
+                  "databases": [
+                    "app"
+                  ],
+                  "index": 0,
+                  "roles": [
+                    "read",
+                    "dbAdmin"
+                  ]
+                }
+              ]
+            }
+        documentIndex: 0
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_USERNAME_0
+            valueFrom:
+              secretKeyRef:
+                name: app-user
+                key: user
+        documentIndex: 1
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MONGO_HOST
+            valueFrom:
+              secretKeyRef:
+                name: mongo-admin
+                key: host
+        documentIndex: 1

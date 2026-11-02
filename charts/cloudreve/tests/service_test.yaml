@@ -1,0 +1,201 @@
+suite: Service, Ingress and HTTPRoute
+templates:
+  - service.yaml
+  - ingress.yaml
+  - httproute.yaml
+release:
+  name: files
+  namespace: storage
+tests:
+  - it: exposes port 80 to the http container port inside the cluster
+    template: service.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: files-cloudreve
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports
+          value:
+            - port: 80
+              targetPort: http
+              protocol: TCP
+              name: http
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: cloudreve
+            app.kubernetes.io/instance: files
+
+  - it: applies the Service type, port and annotations
+    template: service.yaml
+    set:
+      service:
+        type: LoadBalancer
+        port: 8080
+        annotations:
+          lb.example.com/internal: "true"
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: spec.ports[0].port
+          value: 8080
+      - equal:
+          path: metadata.annotations
+          value:
+            lb.example.com/internal: "true"
+
+  - it: creates neither an Ingress nor an HTTPRoute by default
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: ingress.yaml
+      - hasDocuments:
+          count: 0
+        template: httproute.yaml
+
+  - it: renders the Ingress of the README with TLS and the upload size annotation
+    template: ingress.yaml
+    set:
+      ingress:
+        enabled: true
+        className: nginx
+        annotations:
+          nginx.ingress.kubernetes.io/proxy-body-size: "0"
+          cert-manager.io/cluster-issuer: letsencrypt
+        hosts:
+          - host: cloud.example.com
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - secretName: cloud-example-com-tls
+            hosts:
+              - cloud.example.com
+    asserts:
+      - isKind:
+          of: Ingress
+      - equal:
+          path: spec.ingressClassName
+          value: nginx
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/proxy-body-size"]
+          value: "0"
+      - equal:
+          path: spec.tls
+          value:
+            - hosts:
+                - cloud.example.com
+              secretName: cloud-example-com-tls
+      - equal:
+          path: spec.rules
+          value:
+            - host: cloud.example.com
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: files-cloudreve
+                        port:
+                          number: 80
+
+  - it: defaults the Ingress path type to Prefix and follows the Service port
+    template: ingress.yaml
+    set:
+      service:
+        port: 8080
+      ingress:
+        enabled: true
+        hosts:
+          - host: cloud.example.com
+            paths:
+              - path: /
+    asserts:
+      - equal:
+          path: spec.rules[0].http.paths[0].pathType
+          value: Prefix
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.port.number
+          value: 8080
+      - notExists:
+          path: spec.tls
+      - notExists:
+          path: spec.ingressClassName
+
+  - it: renders the HTTPRoute of the README
+    template: httproute.yaml
+    set:
+      httpRoute:
+        enabled: true
+        parentRefs:
+          - name: public-gateway
+            namespace: gateways
+            sectionName: https
+        hostnames:
+          - cloud.example.com
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1
+      - equal:
+          path: spec.parentRefs
+          value:
+            - name: public-gateway
+              namespace: gateways
+              sectionName: https
+      - equal:
+          path: spec.hostnames
+          value:
+            - cloud.example.com
+      - equal:
+          path: spec.rules
+          value:
+            - matches:
+                - path:
+                    type: PathPrefix
+                    value: /
+              backendRefs:
+                - name: files-cloudreve
+                  port: 80
+                  weight: 1
+
+  - it: sends every HTTPRoute rule to the Cloudreve Service and keeps its filters
+    template: httproute.yaml
+    set:
+      httpRoute:
+        enabled: true
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /dav
+            filters:
+              - type: RequestHeaderModifier
+                requestHeaderModifier:
+                  set:
+                    - name: X-Forwarded-Proto
+                      value: https
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /
+    asserts:
+      - lengthEqual:
+          path: spec.rules
+          count: 2
+      - equal:
+          path: spec.rules[0].filters[0].type
+          value: RequestHeaderModifier
+      - equal:
+          path: spec.rules[1].backendRefs[0].name
+          value: files-cloudreve

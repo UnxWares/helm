@@ -112,6 +112,13 @@ The end-to-end tests:
   check; cookies are `Secure` behind TLS, the backend refuses other pods, and a reinstall keeps the session and the
   drawing.
 
+Unit tests ([helm-unittest](https://github.com/helm-unittest/helm-unittest) suites in `charts/<chart>/tests`, run by
+[`unit.yaml`](.github/workflows/unit.yaml)) render the templates without a cluster and check the security contexts,
+the image selection, the required values, the Secrets and the probes; cloudreve, laravel-generic and
+openeverest-database-tools have them so far. The latest result of each kind, per chart and per image, with the CVE
+counts of the images, is published at <https://helm.unxwares.studio> (raw data:
+[status.json](https://helm.unxwares.studio/status.json)), rebuilt by [`site.yaml`](.github/workflows/site.yaml).
+
 ## Installation
 
 ```bash

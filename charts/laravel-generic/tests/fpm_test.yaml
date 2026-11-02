@@ -1,0 +1,261 @@
+suite: PHP-FPM runtime with the nginx sidecar
+templates:
+  - deployment.yaml
+  - configmap-nginx.yaml
+release:
+  name: shop
+  namespace: shop
+values:
+  - values/image.yaml
+set:
+  workload.runtime.type: fpm
+  appPath: /var/www/html
+tests:
+  - it: runs PHP-FPM on 9000 and nginx on 8080, with the http port on nginx
+    template: deployment.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 2
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "app")].ports
+          value:
+            - name: fastcgi
+              containerPort: 9000
+              protocol: TCP
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "nginx")].ports
+          value:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "nginx")].image
+          value: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim
+
+  - it: gives PHP-FPM TCP probes and nginx the HTTP probes
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "app")].livenessProbe
+          value:
+            tcpSocket:
+              port: fastcgi
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "app")].readinessProbe.tcpSocket.port
+          value: fastcgi
+      - notExists:
+          path: spec.template.spec.containers[?(@.name == "app")].startupProbe
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "nginx")].readinessProbe.httpGet
+          value:
+            path: /up
+            port: http
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "nginx")].startupProbe.httpGet.path
+          value: /up
+
+  - it: does not set SERVER_NAME nor mount the Caddy volume
+    template: deployment.yaml
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[?(@.name == "app")].env
+          content:
+            name: SERVER_NAME
+          any: true
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: caddy
+          any: true
+
+  - it: copies the public directory for nginx and serves it read-only at the same path
+    template: deployment.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[?(@.name == "prepare")].command[2]
+          pattern: 'copy "/var/www/html/public" /chart/public'
+      - contains:
+          path: spec.template.spec.initContainers[?(@.name == "prepare")].volumeMounts
+          content:
+            name: public
+            mountPath: /chart/public
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "nginx")].volumeMounts
+          content:
+            name: public
+            mountPath: /var/www/html/public
+            readOnly: true
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "nginx")].volumeMounts
+          content:
+            name: nginx-config
+            mountPath: /etc/nginx/nginx.conf
+            subPath: nginx.conf
+            readOnly: true
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "nginx")].volumeMounts
+          content:
+            name: nginx-tmp
+            mountPath: /tmp
+
+  - it: serves the files of the public disk from the persistent volume
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "nginx")].volumeMounts
+          content:
+            name: data
+            mountPath: /var/www/html/storage/app/public
+            subPath: var-www-html-storage-app/public
+            readOnly: true
+
+  - it: mounts no data volume in nginx without persistence
+    template: deployment.yaml
+    values:
+      - values/pgsql.yaml
+    set:
+      persistence.enabled: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[?(@.name == "nginx")].volumeMounts
+          content:
+            name: data
+          any: true
+
+  - it: adds the public, nginx-tmp and nginx-config volumes
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: public
+            emptyDir:
+              sizeLimit: 1Gi
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: nginx-tmp
+            emptyDir:
+              sizeLimit: 256Mi
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: nginx-config
+            configMap:
+              name: shop-laravel-generic-nginx
+
+  - it: restarts the pods when the nginx configuration changes
+    template: deployment.yaml
+    asserts:
+      - exists:
+          path: spec.template.metadata.annotations["checksum/config"]
+
+  - it: renders no nginx ConfigMap with FrankenPHP
+    template: configmap-nginx.yaml
+    set:
+      workload.runtime.type: frankenphp
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders an nginx.conf for an unprivileged, read-only nginx
+    template: configmap-nginx.yaml
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: shop-laravel-generic-nginx
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'pid /tmp/nginx\.pid;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'client_body_temp_path /tmp/client_temp;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'worker_processes 2;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'client_max_body_size 16m;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'server_tokens off;'
+
+  - it: listens on the nginx port, serves the public path and passes PHP to 127.0.0.1
+    template: configmap-nginx.yaml
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'listen 8080 default_server;'
+      - notMatchRegex:
+          path: data["nginx.conf"]
+          pattern: 'listen \[::\]'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'root /var/www/html/public;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'fastcgi_pass 127\.0\.0\.1:9000;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'location ~ \^/index\\\.php\(/\|\$\)'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'location ~ /\\\.\(\?!well-known\)\.\* \{\s+deny all;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'add_header X-Frame-Options "SAMEORIGIN";'
+
+  - it: follows the port, worker, upload size, IPv6 and public path values (README example)
+    template: configmap-nginx.yaml
+    set:
+      workload.nginx.port: 8081
+      workload.nginx.workerProcesses: auto
+      workload.nginx.clientMaxBodySize: 64m
+      workload.nginx.ipv6: true
+      workload.runtime.fpm.port: 9001
+      publicPath: web
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'listen 8081 default_server;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'listen \[::\]:8081 default_server;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'worker_processes auto;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'client_max_body_size 64m;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'root /var/www/html/web;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'fastcgi_pass 127\.0\.0\.1:9001;'
+
+  - it: replaces the whole server block with workload.nginx.config
+    template: configmap-nginx.yaml
+    set:
+      workload.nginx.config: |
+        server {
+            listen 8080;
+            root /var/www/html/public;
+            location / { return 204; }
+        }
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'location / \{ return 204; \}'
+      - notMatchRegex:
+          path: data["nginx.conf"]
+          pattern: 'default_server'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'client_max_body_size 16m;'

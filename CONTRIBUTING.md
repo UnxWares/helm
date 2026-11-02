@@ -358,6 +358,29 @@ helm uninstall test-release -n test-namespace
 kubectl delete namespace test-namespace
 ```
 
+### Unit tests
+
+`.github/workflows/unit.yaml` runs the [helm-unittest](https://github.com/helm-unittest/helm-unittest) suites
+(`charts/<chart>/tests/*_test.yaml`) of every chart that has them, on pull requests touching `charts/`, every push to
+main and every Tuesday; charts without a `tests/` directory are skipped. A suite renders the templates with given
+values, without a cluster, and checks the result: security contexts and their defaults, image selection
+(`imageProvider`), required values and their error messages, Secrets and their keep policy, probes, NetworkPolicy,
+container env, and the README examples. Keep `/tests/` in the chart's `.helmignore`, with the leading slash: a plain
+`tests/` would also leave `templates/tests/` (the `helm test` pods) out of the package.
+
+```bash
+# CI uses helm-unittest 1.2.1, from its release tarball checked against a pinned SHA-256
+helm unittest --strict charts/<chart-name>
+```
+
+### Results page
+
+<https://helm.unxwares.studio> shows, for each chart and image, the latest result of each kind with the run it comes
+from. `.github/workflows/site.yaml` rebuilds it after the test, image, CVE and release workflows and once a day:
+`.github/scripts/site-collect.py` reads the runs, job logs and artifacts through the GitHub API (read only), and
+`.github/scripts/site.py` writes the pages and `status.json`, which are committed to gh-pages only when they changed.
+It reads the `ok:` lines of the end-to-end jobs: keep one job per chart, named after the chart.
+
 ## Submitting Changes
 
 ### Commit Guidelines

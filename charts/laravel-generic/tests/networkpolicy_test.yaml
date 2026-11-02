@@ -1,0 +1,144 @@
+suite: NetworkPolicies
+templates:
+  - networkpolicy.yaml
+release:
+  name: shop
+  namespace: shop
+values:
+  - values/image.yaml
+tests:
+  - it: renders no NetworkPolicy by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: lets the web pods accept their http port only, from any source by default
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: spec
+          value:
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/name: laravel-generic
+                app.kubernetes.io/instance: shop
+                app.kubernetes.io/component: web
+            policyTypes:
+              - Ingress
+            ingress:
+              - ports:
+                  - port: http
+                    protocol: TCP
+        documentSelector:
+          path: metadata.name
+          value: shop-laravel-generic
+
+  - it: lets nothing reach the queue workers, the scheduler and the migrations
+    set:
+      networkPolicy.enabled: true
+    documentSelector:
+      path: metadata.name
+      value: shop-laravel-generic-workers
+    asserts:
+      - equal:
+          path: spec.podSelector.matchExpressions
+          value:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+                - queue-worker
+                - scheduler
+                - migrations
+      - equal:
+          path: spec.policyTypes
+          value:
+            - Ingress
+      - notExists:
+          path: spec.ingress
+
+  - it: allows the release pods and the listed peers (README example)
+    set:
+      networkPolicy.enabled: true
+      networkPolicy.allowedFrom:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+    documentSelector:
+      path: metadata.name
+      value: shop-laravel-generic
+    asserts:
+      - equal:
+          path: spec.ingress[0].from
+          value:
+            - podSelector:
+                matchLabels:
+                  app.kubernetes.io/name: laravel-generic
+                  app.kubernetes.io/instance: shop
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: ingress-nginx
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: http
+              protocol: TCP
+
+  - it: restricts egress to DNS, the release pods and the listed rules (README example)
+    set:
+      networkPolicy.enabled: true
+      networkPolicy.egress.enabled: true
+      networkPolicy.egress.rules:
+        - to:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: databases
+          ports:
+            - port: 5432
+              protocol: TCP
+    asserts:
+      - hasDocuments:
+          count: 3
+      - equal:
+          path: spec
+          value:
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/name: laravel-generic
+                app.kubernetes.io/instance: shop
+            policyTypes:
+              - Egress
+            egress:
+              - ports:
+                  - port: 53
+                    protocol: UDP
+                  - port: 53
+                    protocol: TCP
+              - to:
+                  - podSelector:
+                      matchLabels:
+                        app.kubernetes.io/name: laravel-generic
+                        app.kubernetes.io/instance: shop
+              - to:
+                  - namespaceSelector:
+                      matchLabels:
+                        kubernetes.io/metadata.name: databases
+                ports:
+                  - port: 5432
+                    protocol: TCP
+        documentSelector:
+          path: metadata.name
+          value: shop-laravel-generic-egress
+
+  - it: keeps egress open unless egress.enabled is set
+    set:
+      networkPolicy.enabled: true
+      networkPolicy.egress.rules:
+        - to:
+            - ipBlock:
+                cidr: 10.0.0.0/8
+    asserts:
+      - hasDocuments:
+          count: 2

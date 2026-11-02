@@ -1,0 +1,45 @@
+suite: release notes
+templates:
+  - templates/NOTES.txt
+release:
+  name: oedt
+  namespace: apps
+tests:
+  - it: says how to add entries when there is none
+    asserts:
+      - matchRegexRaw:
+          pattern: "No database configured: add entries under databases.postgresql, databases.mysql or databases.mongodb."
+
+  - it: lists every Job with its engine and DatabaseCluster, and how to follow it
+    values:
+      - values/all-engines.yaml
+    asserts:
+      - matchRegexRaw:
+          pattern: 'Jobs in namespace everest-databases \(run as ServiceAccount oedt-openeverest-database-tools\):'
+      - matchRegexRaw:
+          pattern: '  - pg-init-[0-9a-f]{8}  \(postgresql, DatabaseCluster pg\)\n  - mysql-init-[0-9a-f]{8}  \(mysql, DatabaseCluster mysql\)\n  - mongo-init-[0-9a-f]{8}  \(mongodb, DatabaseCluster mongo\)'
+      - matchRegexRaw:
+          pattern: 'kubectl logs -n everest-databases job/<name> -c wait-cluster-ready'
+
+  - it: warns that serviceAccountName default is ignored while rbac.create is true
+    set:
+      rbac.serviceAccountName: default
+    asserts:
+      - matchRegexRaw:
+          pattern: 'NOTE: rbac.serviceAccountName=default is ignored: the Jobs run as the dedicated ServiceAccount\noedt-openeverest-database-tools\.'
+
+  - it: flags the deprecated securityContext value
+    set:
+      securityContext:
+        runAsUser: 1000
+    asserts:
+      - matchRegexRaw:
+          pattern: 'DEPRECATED: securityContext is merged into the pod security context; move it to podSecurityContext\.'
+
+  - it: says which rights the ServiceAccount needs when rbac.create is false
+    set:
+      rbac.create: false
+      rbac.serviceAccountName: everest-reader
+    asserts:
+      - matchRegexRaw:
+          pattern: 'rbac.create is false: ServiceAccount everest-reader must be allowed to get, list and\nwatch databaseclusters.everest.percona.com in everest-databases'

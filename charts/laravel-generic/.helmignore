@@ -23,4 +23,6 @@
 .vscode/
 # CI values used by chart-testing
 ci/
+# helm-unittest suites; the leading slash keeps templates/tests/ (the helm test pods) in the package
+/tests/
 README.md.gotmpl
