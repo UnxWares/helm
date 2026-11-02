@@ -1016,6 +1016,74 @@ entries:
   - annotations:
       artifacthub.io/category: skip-prediction
       artifacthub.io/changes: |
+        - kind: security
+          description: "backend.trustProxy defaults to \"1\", the chart's own frontend nginx: behind an Ingress or a Gateway that terminates TLS, session and CSRF cookies now get the Secure flag. See Upgrading in the README."
+        - kind: changed
+          description: "The backend runs with a read-only root filesystem: an init container copies /app/dist into an emptyDir, which also holds /app/uploads."
+        - kind: fixed
+          description: "The chart Secret is kept on uninstall (helm.sh/resource-policy: keep), like the PVC: a new install keeps sessions and API keys valid."
+        - kind: fixed
+          description: "The OIDC modes require backend.auth.oidc.clientId as well as issuerUrl, and an https:// redirect URI in production, without which the backend does not start."
+        - kind: fixed
+          description: "helm test uses the image pull secrets and pull policy of the frontend, and sets resources."
+        - kind: added
+          description: "frontend.autoscaling.targetMemoryUtilizationPercentage, already read by the HPA template."
+        - kind: fixed
+          description: "NOTES explain how the first administrator is created in each authentication mode."
+        - kind: added
+          description: "End-to-end test in CI: onboarding with the setup code, login, drawing created, listed, exported and accepted by the import check, Secure cookies behind TLS, NetworkPolicy, then what a new install keeps."
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: ExcaliDash
+      artifacthub.io/images: |
+        - name: excalidash-frontend
+          image: docker.io/zimengxiong/excalidash-frontend:0.6.7
+        - name: excalidash-backend
+          image: docker.io/zimengxiong/excalidash-backend:0.6.7
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/excalidash
+        - name: ExcaliDash documentation
+          url: https://github.com/ZimengXiong/ExcaliDash/tree/main/docs
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 0.6.7
+    created: "2026-11-02T15:27:20.264971095Z"
+    description: A helm chart for ExcaliDash, A self-hosted dashboard and organizer
+      for Excalidraw with live collaboration features
+    digest: dd463118d95a4b018c7334317df5f2e35f8d31f38ae38417d9c9f75c1731d354
+    home: https://github.com/UnxWares/helm/tree/main/charts/excalidash
+    icon: https://raw.githubusercontent.com/ZimengXiong/ExcaliDash/v0.6.5/docs/public/images/logo.png
+    keywords:
+    - excalidraw
+    - excali
+    - dashboard
+    - collaboration
+    - board
+    - live
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: excalidash
+    sources:
+    - https://github.com/ZimengXiong/ExcaliDash
+    - https://github.com/UnxWares/helm/tree/main/charts/excalidash
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/excalidash-2026.11.2/excalidash-2026.11.2.tgz
+    version: 2026.11.2
+  - annotations:
+      artifacthub.io/category: skip-prediction
+      artifacthub.io/changes: |
         - kind: changed
           description: "README completed: architecture, images, requirements, signed installation, configuration by topic, examples checked with helm template and kubeconform, security, testing, operations, troubleshooting and uninstalling."
         - kind: fixed
@@ -1538,6 +1606,70 @@ entries:
     - https://github.com/UnxWares/helm/releases/download/fossflow-2026.2.1/fossflow-2026.2.1.tgz
     version: 2026.2.1
   kener:
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/changes: |
+        - kind: fixed
+          description: "The chart Secret is kept on uninstall (helm.sh/resource-policy: keep), like the SQLite PVC: a new install reads the generated KENER_SECRET_KEY back, so sessions and API keys keep working."
+        - kind: fixed
+          description: "podDisruptionBudget.enabled is refused with SQLite, and when minAvailable is not lower than the number of replicas: such a budget blocked node drains."
+        - kind: fixed
+          description: "An empty redis.image.tag no longer falls back to a Valkey tag hidden in the templates: the chart asks for a tag or a digest."
+        - kind: added
+          description: "proxy.existingSecret (keys existingSecretHttpProxyKey and existingSecretHttpsProxyKey) reads HTTP_PROXY and HTTPS_PROXY from your own Secret."
+        - kind: added
+          description: "End-to-end test in CI: first account and login, API key, monitor created through the REST API and run from the queue, status page and badge, Valkey password and NetworkPolicies, then what a new install keeps."
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/displayName: Kener
+      artifacthub.io/images: |
+        - name: kener
+          image: docker.io/rajnandan1/kener:4.1.11-alpine
+        - name: valkey
+          image: docker.io/valkey/valkey:9.1.3-alpine
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/kener
+        - name: Kener documentation
+          url: https://kener.ing/docs/v4/setup/environment-variables
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 4.1.11
+    created: "2026-11-02T15:27:20.474804567Z"
+    description: Kener 4 status page with SQLite/PostgreSQL/MySQL, a bundled hardened
+      Valkey for its queues, and secure defaults for Kubernetes.
+    digest: c54523a2c3d601ccebad6ceee78b4fbe2bfe92865192e478b21864e05e35398e
+    home: https://github.com/UnxWares/helm/tree/main/charts/kener
+    icon: https://kener.ing/logo.png
+    keywords:
+    - kener
+    - status
+    - status-page
+    - uptime
+    - monitoring
+    - incident
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: kener
+    sources:
+    - https://github.com/rajnandan1/kener
+    - https://hub.docker.com/r/rajnandan1/kener
+    - https://github.com/valkey-io/valkey
+    - https://github.com/UnxWares/helm/tree/main/charts/kener
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/kener-2026.11.3/kener-2026.11.3.tgz
+    version: 2026.11.3
   - annotations:
       artifacthub.io/category: monitoring-logging
       artifacthub.io/changes: |
@@ -3995,4 +4127,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-11-02T15:14:22.057670104Z"
+generated: "2026-11-02T15:27:20.474926571Z"
