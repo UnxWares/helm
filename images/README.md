@@ -37,7 +37,8 @@ The images of `cloudreve`, `fossflow` and `openeverest-database-tools` are also 
 (`.github/workflows/e2e.yaml`), which run the chart on them in kind and check what the application does, so a change
 to one of these images is tested before it is published.
 The `taiga-back`, `taiga-front`, `taiga-events`, `taiga-protected` and `postgres` (17) images are built by the `taiga`
-end-to-end test in the same way.
+end-to-end test in the same way, `bind-exporter` by the `bind9` one, and `pdns-auth`, `pdns-recursor`,
+`postgresql-client` and `mysql-client` by the `powerdns` one.
 Pull requests fail on a fixable CRITICAL or HIGH vulnerability, unless the image's `.trivyignore` says why it
 is accepted (for `taiga-back`: Django 3.2, which Taiga is pinned to; for `mongosh`: an FTP client it only uses
 for proxy auto-configuration files).

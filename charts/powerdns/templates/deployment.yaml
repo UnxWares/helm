@@ -105,7 +105,7 @@ spec:
           {{- if eq .Values.backend.type "gpgsql" }}
           image: {{ include "powerdns.postgresImage" . | quote }}
           {{- else }}
-          image: {{ .Values.backend.schemaInit.mysqlImage | quote }}
+          image: {{ include "powerdns.mysqlImage" . | quote }}
           {{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.securityContext }}
@@ -139,8 +139,11 @@ spec:
                 fi
               fi
               {{- else }}
-              printf '[client]\nhost=%s\nport=%s\nuser=%s\npassword="%s"\n' \
-                "$DB_HOST" "$DB_PORT" "$DB_USER" "$PDNS_DB_PASSWORD" > /tmp/client.cnf
+              # Quoted option file values: escape backslashes and double quotes. /tmp is memory-backed and only
+              # mounted in this container, so the password never reaches the node disk or the server container.
+              esc() { printf '%s' "$1" | sed 's/[\\"]/\\&/g'; }
+              printf '[client]\nhost="%s"\nport=%s\nuser="%s"\npassword="%s"\n' \
+                "$(esc "$DB_HOST")" "$DB_PORT" "$(esc "$DB_USER")" "$(esc "$PDNS_DB_PASSWORD")" > /tmp/client.cnf
               until mysqladmin --defaults-extra-file=/tmp/client.cnf ping --silent; do
                 [ "$(date +%s)" -lt "$deadline" ] || { echo "Timed out waiting for MySQL"; exit 1; }
                 echo "Waiting for MySQL at $DB_HOST:$DB_PORT..."; sleep 3
@@ -179,7 +182,7 @@ spec:
             - name: DB_EXTRA
               value: {{ $db.extraConnectionParameters | default "" | quote }}
             {{- end }}
-            {{- include "powerdns.secretEnv" . | nindent 12 }}
+            {{- include "powerdns.dbPasswordEnv" . | nindent 12 }}
           {{- with .Values.backend.schemaInit.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -188,8 +191,12 @@ spec:
             - name: schema
               mountPath: /schema
               readOnly: true
-            - name: tmp
+            - name: schema-init-tmp
               mountPath: /tmp
+            {{- /* The server's extra volumes, e.g. the CA of sslrootcert in extraConnectionParameters. */}}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
         {{- end }}
       containers:
         - name: pdns
@@ -205,6 +212,12 @@ spec:
             - name: TEMPLATE_FILES
               value: secrets
             {{- include "powerdns.secretEnv" . | nindent 12 }}
+            {{- end }}
+            {{- if and (eq .Values.backend.type "gmysql") (not .Values.backend.gmysql.verifyServerCertificate) }}
+            # MariaDB Connector/C 3.4 (UnxWares image) checks the server certificate by default, and the
+            # self-signed one of a stock MySQL server fails: encrypt without checking, like the MySQL client.
+            - name: MARIADB_TLS_DISABLE_PEER_VERIFICATION
+              value: "1"
             {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
@@ -285,6 +298,11 @@ spec:
         {{- else if .Values.backend.schemaInit.enabled }}
         - name: schema
           emptyDir:
+            sizeLimit: 1Mi
+        # /tmp of the schema init container, which writes the MySQL client options (password) there.
+        - name: schema-init-tmp
+          emptyDir:
+            medium: Memory
             sizeLimit: 1Mi
         {{- end }}
         {{- with .Values.extraVolumes }}

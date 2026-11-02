@@ -71,3 +71,23 @@ Render an image reference from {repository, tag, digest}.
 {{- printf "%s:%s" .image.repository (.image.tag | default .default | toString) -}}
 {{- end -}}
 {{- end }}
+
+{{/*
+Exporter image: an empty repository follows imageProvider, and so does an empty tag (the two images have
+different tags).
+*/}}
+{{- define "bind9.exporterImage" -}}
+{{- $unxwares := eq .Values.imageProvider "unxwares" -}}
+{{- $image := dict
+  "repository" (.Values.metrics.image.repository | default (ternary "ghcr.io/unxwares/bind-exporter" "docker.io/prometheuscommunity/bind-exporter" $unxwares))
+  "tag" .Values.metrics.image.tag
+  "digest" .Values.metrics.image.digest -}}
+{{- include "bind9.image" (dict "image" $image "default" (ternary "0.8.0-62-gbafd56f" "master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf" $unxwares)) -}}
+{{- end }}
+
+{{/*
+Name of the Service carrying the rndc and metrics ports.
+*/}}
+{{- define "bind9.adminServiceName" -}}
+{{- printf "%s-admin" (include "bind9.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}

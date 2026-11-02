@@ -40,27 +40,7 @@ spec:
       {{- if and .Values.service.ports.dnsUdpNodePort $nodePorts }}
       nodePort: {{ .Values.service.ports.dnsUdpNodePort }}
       {{- end }}
-
-    {{- if .Values.service.exposeRndc }}
-    - name: rndc
-      port: {{ .Values.service.ports.rndc }}
-      targetPort: rndc
-      protocol: TCP
-      {{- if and .Values.service.ports.rndcNodePort $nodePorts }}
-      nodePort: {{ .Values.service.ports.rndcNodePort }}
-      {{- end }}
-    {{- end }}
-
-    {{- if .Values.metrics.enabled }}
-    - name: metrics
-      port: {{ .Values.service.ports.metrics }}
-      targetPort: metrics
-      protocol: TCP
-      {{- if and .Values.service.ports.metricsNodePort $nodePorts }}
-      nodePort: {{ .Values.service.ports.metricsNodePort }}
-      {{- end }}
-    {{- end }}
-
+    {{- /* rndc and metrics are on the admin Service (service-admin.yaml): a public DNS Service never publishes them. */}}
   selector:
     {{- include "bind9.selectorLabels" . | nindent 4 }}
 {{- end }}

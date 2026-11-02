@@ -1,24 +1,26 @@
 # Bind9 Helm Chart
 
-![Version: 2026.11.1](https://img.shields.io/badge/Version-2026.11.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 9.20](https://img.shields.io/badge/AppVersion-9.20-informational?style=flat-square)
+![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 9.20](https://img.shields.io/badge/AppVersion-9.20-informational?style=flat-square)
 
 [ISC BIND 9](https://www.isc.org/bind/) is the reference implementation of the DNS protocol: it serves as an
 authoritative server, a recursive resolver or both. This chart runs `named` from the official
 `internetsystemsconsortium/bind9` image as a Deployment, configured with your own `named.conf` and zone files, with
-an optional Prometheus exporter. The chart is maintained by UnxWares.
+an optional Prometheus exporter (`bind_exporter`, built by UnxWares by default). The chart is maintained by UnxWares.
 
 ## Features
 
 - Authoritative or recursive DNS, configured with your own `named.conf` (`bind.namedConf`) and zone files
   (`bind.zones`). The default configuration is authoritative only: no recursion, no zone transfers, version hidden.
-- Hardened: named binds port 53 as root with only `NET_BIND_SERVICE`, `SETUID` and `SETGID`, then runs as the `bind`
-  user (uid 53). Read-only root filesystem, seccomp `RuntimeDefault`, no service account token.
+- Hardened: named runs as the `bind` user (uid 53) from the start, without any capability; the pods meet the
+  `restricted` Pod Security Standard. Read-only root filesystem, seccomp `RuntimeDefault`, no service account token.
 - Pods restart on their own when `named.conf` or a zone file changes (checksum annotation).
 - Optional persistence for `/var/lib/bind` (dynamic zones, journals, secondary zones, DNSSEC keys).
 - Prometheus metrics through a `bind_exporter` sidecar and an optional ServiceMonitor.
-- ClusterIP, NodePort or LoadBalancer Service; the rndc control port stays off the Service unless you ask for it.
+- ClusterIP, NodePort or LoadBalancer DNS Service; the metrics and rndc ports are on a separate admin Service, so
+  publishing DNS never publishes them.
 - PodDisruptionBudget, NetworkPolicy, topology spread constraints and HorizontalPodAutoscaler.
-- `helm test` checks that the server answers over UDP and TCP.
+- `helm test` checks that the server answers over UDP and TCP; an end-to-end test in CI checks the answers of the
+  zones, the metrics and the NetworkPolicy (see [Testing](#testing)).
 
 ## Architecture
 
@@ -29,13 +31,14 @@ contains `bind9`). This is `<fullname>` below.
 |----------|------|--------------|---------|
 | Deployment | `<fullname>` | always | container `bind9` (named), plus container `bind9-exporter` with `metrics.enabled`; no init container |
 | ConfigMap | `<fullname>-config` | always | `named.conf` (`bind.namedConf`, preceded by a `statistics-channels` block with `metrics.enabled`) and one `<key>.zone` per entry of `bind.zones` |
-| Service | `<fullname>` | `service.enabled` (default) | `dns-tcp` and `dns-udp` on 53, `rndc` on 953 with `service.exposeRndc`, `metrics` on 9119 with `metrics.enabled` |
+| Service | `<fullname>` | `service.enabled` (default) | `dns-tcp` and `dns-udp` on 53, nothing else |
+| Service | `<fullname>-admin` | `metrics.enabled` or `service.exposeRndc` | `metrics` on 9119 with `metrics.enabled`, `rndc` on 953 with `service.exposeRndc`; type `adminService.type` (ClusterIP) |
 | PersistentVolumeClaim | `<fullname>-pvc` | `persistence.enabled` without `persistence.existingClaim` | `/var/lib/bind`, annotated `helm.sh/resource-policy: keep` |
 | ServiceAccount | `<fullname>` | `serviceAccount.create` (default) | token not mounted |
-| HorizontalPodAutoscaler | `<fullname>` | `autoscaling.enabled` | CPU target `autoscaling.targetCPUUtilizationPercentage` |
+| HorizontalPodAutoscaler | `<fullname>` | `autoscaling.enabled` | CPU target `autoscaling.targetCPUUtilizationPercentage`, memory target `autoscaling.targetMemoryUtilizationPercentage` when set |
 | PodDisruptionBudget | `<fullname>` | `podDisruptionBudget.enabled` | `minAvailable`, or `maxUnavailable` when set |
 | NetworkPolicy | `<fullname>` | `networkPolicy.enabled` | ingress: DNS open, rndc and metrics from `networkPolicy.adminAllowedFrom` only |
-| ServiceMonitor | `<fullname>` | `metrics.enabled`, `metrics.serviceMonitor.enabled`, the Service, and the `monitoring.coreos.com/v1` CRD | scrapes the `metrics` port |
+| ServiceMonitor | `<fullname>` | `metrics.enabled`, `metrics.serviceMonitor.enabled` and the `monitoring.coreos.com/v1` CRD | scrapes the `metrics` port of the admin Service |
 | Pod (`helm test`) | `<fullname>-test-dns` | `service.enabled` | see [Testing](#testing) |
 
 The chart creates no Secret. Volumes of the `bind9` container:
@@ -49,24 +52,30 @@ The chart creates no Secret. Volumes of the `bind9` container:
 | `/tmp` | emptyDir, 16Mi | temporary files |
 
 The exporter reads named's statistics channel on `127.0.0.1:8053` inside the pod and serves Prometheus metrics on
-`service.ports.metrics` (9119).
+`service.ports.metrics` (9119), reached through the admin Service.
 
 ## Images
 
 | Container | Default image | Values |
 |-----------|---------------|--------|
 | `bind9` (and the `helm test` pod) | `docker.io/internetsystemsconsortium/bind9:9.20` (the tag defaults to the chart `appVersion`) | `image.repository`, `image.tag`, `image.digest` |
-| `bind9-exporter` (`metrics.enabled`) | `docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf` | `metrics.image.repository`, `metrics.image.tag`, `metrics.image.digest` |
+| `bind9-exporter` (`metrics.enabled`) | `ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f` (`imageProvider: unxwares`) or `docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf` (`imageProvider: upstream`) | `imageProvider`, `metrics.image.repository`, `metrics.image.tag`, `metrics.image.digest` |
 
-This chart has no `imageProvider` setting and there is no UnxWares build of these images: it uses the official ISC
-image and the Prometheus community exporter.
+`imageProvider` only selects the exporter image: there is no UnxWares build of BIND, named always runs the official
+ISC image.
 
 - ISC publishes one tag per maintained branch (`9.18`, `9.20`, `9.21`) and moves it to each new patch release.
   `9.20` is the current stable branch, `9.21` the development branch.
-- The exporter default is the `master` build of 2026-10-14, pinned by digest: `v0.8.0`, its latest release, was built
-  with an old Go toolchain. Set `metrics.image.tag: v0.8.0` to use the release.
-- The ISC image is published for `linux/amd64` only (see [Requirements](#requirements)); the exporter image is
-  multi-architecture.
+- `imageProvider: unxwares` (default): bind_exporter built by UnxWares from its sources, the `master` branch at commit
+  `bafd56f` (62 commits after `v0.8.0`), with Go 1.27 and current `golang.org/x` modules (proposed upstream in
+  [prometheus-community/bind_exporter#301](https://github.com/prometheus-community/bind_exporter/pull/301)), as a
+  static binary on a distroless base, running as `nobody`. It is rebuilt twice a week, scanned and signed; see
+  [images/](https://github.com/UnxWares/helm/tree/main/images).
+- `imageProvider: upstream`: the Prometheus community image, its `master` build of 2026-10-14 pinned by digest.
+  `v0.8.0`, its latest release (November 2024), was built with an old Go toolchain: set `imageProvider: upstream` and
+  `metrics.image.tag: v0.8.0` to use it.
+- The ISC image is published for `linux/amd64` only, so `nodeSelector` defaults to `kubernetes.io/arch: amd64` (see
+  [Requirements](#requirements)); the exporter images are multi-architecture.
 
 To pin an image, set its `digest`: it takes precedence over the tag. Read the current digest of a tag with:
 
@@ -86,8 +95,12 @@ Known vulnerabilities of the images the charts of this repository can deploy are
 
 Kubernetes: `>=1.27.0-0`
 
-- **Node architecture**: `linux/amd64`. The ISC image has no arm64 build: on a mixed cluster, set
-  `nodeSelector: {kubernetes.io/arch: amd64}` (see [Scheduling](#scheduling)).
+- **Node architecture**: `linux/amd64`. The ISC image has no arm64 build: the default `nodeSelector`
+  (`kubernetes.io/arch: amd64`) keeps the pods on amd64 nodes, so a cluster needs at least one (see
+  [Scheduling](#scheduling)).
+- **Pod sysctl**: the pods set `net.ipv4.ip_unprivileged_port_start=53`, one of the sysctls Kubernetes considers safe
+  (allowed by default, and by the `restricted` Pod Security Standard). A policy engine that forbids every sysctl
+  rejects the pods: see [Security](#security) for the alternatives.
 - **Storage**: only with `persistence.enabled`: a default StorageClass, `persistence.storageClass`, or an existing
   PVC (`persistence.existingClaim`). `ReadWriteOnce` is enough for a single replica.
 - **Exposure outside the cluster**: DNS is UDP and TCP, not HTTP, so there is no Ingress or Gateway API route. Use a
@@ -223,8 +236,9 @@ service:
   `externalTrafficPolicy: Local` whenever an ACL depends on the client address.
 - `service.ports.dnsTcp` and `service.ports.dnsUdp` change the Service ports only; named always listens on 53 in the
   pod.
-- The `metrics` port (with `metrics.enabled`) and the `rndc` port (with `service.exposeRndc`) are on the same Service:
-  with a `LoadBalancer` or `NodePort` Service they are published too. See [Security](#security).
+- The `metrics` port (with `metrics.enabled`) and the `rndc` port (with `service.exposeRndc`) are not on the DNS
+  Service: they are on the admin Service `<fullname>-admin`, a `ClusterIP` Service unless you change
+  `adminService.type`. Publishing DNS does not publish them.
 
 ### rndc and keys from Secrets
 
@@ -271,8 +285,10 @@ bind:
 
 With this `controls` statement rndc only works from inside the pod:
 `kubectl exec -n dns-system deploy/my-dns-bind9 -c bind9 -- rndc -k /etc/bind/keys/rndc.key status`. To reach it
-from elsewhere, listen on `inet *` with an `allow` list, set `service.exposeRndc: true` and restrict the port with
-`networkPolicy.adminAllowedFrom`.
+from elsewhere, listen on `inet *` with an `allow` list, set `service.exposeRndc: true` (the port is added to the
+admin Service `<fullname>-admin`) and restrict it with `networkPolicy.adminAllowedFrom`. To reach it from outside the
+cluster, set `adminService.type` (and `service.ports.rndcNodePort`); the admin Service then also publishes the metrics
+port when `metrics.enabled` is set.
 
 ### Replicas, autoscaling and disruption budget
 
@@ -287,8 +303,9 @@ podDisruptionBudget:
 - Zones that named writes (dynamic updates, inline signing) need a single writer: keep one replica with persistence,
   and run secondaries in other releases if you need more servers.
 - `autoscaling.enabled` creates a HorizontalPodAutoscaler between `autoscaling.minReplicas` and
-  `autoscaling.maxReplicas` on `autoscaling.targetCPUUtilizationPercentage`; `replicaCount` is then ignored. Use it
-  with static zones only, and with metrics-server.
+  `autoscaling.maxReplicas` on `autoscaling.targetCPUUtilizationPercentage` (and
+  `autoscaling.targetMemoryUtilizationPercentage` when set); `replicaCount` is then ignored. Use it with static zones
+  only, and with metrics-server.
 - A PodDisruptionBudget with `minAvailable: 1` and a single replica blocks node drains: enable it with 2 replicas or
   more.
 
@@ -308,6 +325,17 @@ topologySpreadConstraints:
 priorityClassName: ""
 tolerations: []
 affinity: {}
+```
+
+`nodeSelector` defaults to `kubernetes.io/arch: amd64` because the ISC image is amd64 only; it also applies to the
+`helm test` pod. Your own keys are added to it (Helm merges the maps). If you run named from a multi-architecture
+image, remove the constraint with `kubernetes.io/arch: null`:
+
+```yaml
+image:
+  repository: registry.example.com/bind9   # a multi-architecture build
+nodeSelector:
+  kubernetes.io/arch: null
 ```
 
 The chart sets no topology spread constraint by default.
@@ -355,12 +383,13 @@ metrics:
 ```
 
 - `metrics.enabled` adds the `statistics-channels` block (`127.0.0.1` port 8053, local access only) at the top of
-  `named.conf`, the `bind9-exporter` sidecar and the `metrics` port of the Service. Do not declare another statistics
-  channel on the same address and port in `bind.namedConf`.
+  `named.conf`, the `bind9-exporter` sidecar and the admin Service `<fullname>-admin` with its `metrics` port. Do not
+  declare another statistics channel on the same address and port in `bind.namedConf`.
 - `metrics.statsGroups` selects the statistics groups the exporter collects (`server`, `view`; `tasks` is
   deprecated).
-- The ServiceMonitor is only rendered when `metrics.enabled` is true and the `monitoring.coreos.com/v1` CRD exists.
-  `metrics.serviceMonitor.endpoints` is used as is (add `interval`, `scrapeTimeout`, relabelings...).
+- The ServiceMonitor selects the admin Service. It is only rendered when `metrics.enabled` is true and the
+  `monitoring.coreos.com/v1` CRD exists. `metrics.serviceMonitor.endpoints` is used as is (add `interval`,
+  `scrapeTimeout`, relabelings...).
 - With `networkPolicy.enabled`, allow your Prometheus in `networkPolicy.adminAllowedFrom`.
 
 ### Extra arguments, volumes and mounts
@@ -380,7 +409,7 @@ volumeMounts:
     readOnly: true
 ```
 
-`bind.args` are appended to `named -u bind -g`. `volumes` are added to the pod and `volumeMounts` to the `bind9`
+`bind.args` are appended to `named -g`. `volumes` are added to the pod and `volumeMounts` to the `bind9`
 container: include the mounted files from `bind.namedConf`. The ConfigMap or Secret must exist before the pod starts.
 
 ## Examples
@@ -462,8 +491,8 @@ topologySpreadConstraints:
         app.kubernetes.io/name: bind9
 ```
 
-Combine it with the zones of the first example. Keep `metrics.enabled` off on a public Service, or restrict the load
-balancer with `service.loadBalancerSourceRanges`: the metrics port would be published with DNS.
+Combine it with the zones of the first example. `metrics.enabled` is safe here: the metrics port is on the admin
+Service, which stays `ClusterIP`.
 
 ### Secondary server with persistence
 
@@ -496,11 +525,12 @@ masqueraded) or, better, to a TSIG key (see [rndc and keys from Secrets](#rndc-a
 
 What the chart does by default:
 
-- **Users**: named starts as root only to bind port 53, then switches to `bind` (uid 53, `-u bind`). The exporter
-  runs as `nobody` (uid 65534, `runAsNonRoot`). The `helm test` pod runs as uid 53.
-- **Capabilities**: every capability is dropped except `NET_BIND_SERVICE`, `SETUID` and `SETGID` on the `bind9`
-  container (none on the exporter); `allowPrivilegeEscalation: false`, read-only root filesystem, seccomp
-  `RuntimeDefault` for the pod.
+- **Users**: named runs as `bind` (uid 53, `runAsNonRoot`) from the start; it never runs as root. The exporter runs as
+  `nobody` (uid 65534). The `helm test` pod runs as uid 53.
+- **Capabilities**: none. Every capability is dropped on every container, `allowPrivilegeEscalation: false`, read-only
+  root filesystem, seccomp `RuntimeDefault`. named binds port 53 thanks to the pod sysctl
+  `net.ipv4.ip_unprivileged_port_start=53`, which only applies to the pod's network namespace. The pods meet the
+  `restricted` Pod Security Standard (the end-to-end test installs the chart in a namespace that enforces it).
 - **Service account**: a dedicated one, with `automountServiceAccountToken: false` (named never calls the Kubernetes
   API).
 - **named defaults**: no recursion, no zone transfers, `version none`. The statistics channel listens on `127.0.0.1`
@@ -511,20 +541,40 @@ What the chart does by default:
 - **NetworkPolicy** (`networkPolicy.enabled`, off by default): DNS open, rndc and metrics restricted to
   `networkPolicy.adminAllowedFrom`.
 
-What is exposed: DNS on 53 (UDP and TCP) to anyone who reaches the Service; the exporter on 9119 with
-`metrics.enabled`; rndc on 953 with `service.exposeRndc`. A `ClusterIP` Service keeps them inside the cluster; a
-`NodePort` or `LoadBalancer` Service publishes all of them.
+What is exposed: DNS on 53 (UDP and TCP) to anyone who reaches the DNS Service; the exporter on 9119 with
+`metrics.enabled` and rndc on 953 with `service.exposeRndc`, on the admin Service, which is `ClusterIP` by default. A
+`NodePort` or `LoadBalancer` DNS Service publishes DNS only.
 
 Caveats:
 
-- The `bind9` container does not meet the `restricted` Pod Security Standard (it starts as root and adds `SETUID` and
-  `SETGID`); it fits `baseline`. named listens on port 53 inside the pod and the chart has no setting for another
-  port, so this cannot be hardened further without changing the templates.
+- Adding `NET_BIND_SERVICE` to a non-root container does not let it bind port 53 on Kubernetes: the capability is
+  not given to processes of a non-root user (no ambient capabilities), hence the sysctl. Container runtimes that
+  already make every port unprivileged (containerd 2 by default) do not need it, but setting it does no harm.
+- If a policy engine forbids the sysctl and your runtime keeps ports below 1024 privileged, the previous mode still
+  works: named starts as root and switches to `bind` itself. It does not meet the `restricted` Pod Security Standard:
+
+  ```yaml
+  podSecurityContext:
+    runAsNonRoot: false
+    runAsUser: 0
+    runAsGroup: 0
+    fsGroup: 53
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: [ALL]
+      add: [NET_BIND_SERVICE, SETUID, SETGID]
+  bind:
+    args: ["-u", "bind"]
+  ```
 - With a `LoadBalancer` or `NodePort` Service and the default `Cluster` traffic policy, named sees node addresses
   instead of client addresses, so address-based ACLs no longer protect anything. Set `externalTrafficPolicy: Local`,
   and never open recursion to the Internet.
-- The exporter's metrics and the rndc port share the DNS Service: on a public Service, restrict them with
-  `service.loadBalancerSourceRanges` or keep them disabled.
+- `adminService.type: LoadBalancer` or `NodePort` publishes the metrics and rndc ports: restrict them with the
+  NetworkPolicy and named's `controls` statement.
 - The ISC image tag moves with each patch release: pin `image.digest` if you need reproducible deployments.
 
 ## Testing
@@ -538,12 +588,29 @@ On every pull request, the repository CI checks this chart with:
 - `ah lint` (Artifact Hub metadata).
 
 When the pull request changes the chart, `ct lint` (chart-testing, including the version bump check) and `ct install`
-also run: the chart is installed on a kind cluster with `ci/default-values.yaml` (one zone, the metrics sidecar and
-the NetworkPolicy enabled), its pods must become ready, then `helm test` runs.
+also run: the chart is installed on a kind cluster with `ci/default-values.yaml` (two zones, the metrics sidecar and
+the NetworkPolicy enabled) and with `ci/upstream-values.yaml` (the Prometheus community exporter), its pods must
+become ready, then `helm test` runs.
 
 The test pod `<fullname>-test-dns` (bind9 image, uid 53, read-only root filesystem) queries the Service for
 `version.bind TXT CH`, once over UDP and once over TCP. It passes when named answers both, whatever the response
-code; it does not check the content of your zones. There is no end-to-end test yet.
+code; it does not check the content of your zones.
+
+The end-to-end test (`.github/workflows/e2e.yaml`, script `.github/scripts/bind9-e2e.sh`) runs on pull requests that
+touch the chart or the exporter image, on every push to main and every week. It builds the exporter image of the
+commit, installs the chart with `ci/default-values.yaml` in a namespace that enforces the `restricted` Pod Security
+Standard, runs `helm test`, then checks from other pods:
+
+- the A and AAAA records over UDP and TCP, the MX, TXT, CNAME and SOA records, the PTR record of the second zone,
+  with the authoritative flag, and NXDOMAIN for an unknown name;
+- REFUSED for a zone the server does not serve (no recursion), a refused zone transfer, and no version in
+  `version.bind`;
+- named runs as uid 53 with no capability (from `/proc/1/status` in the container);
+- the DNS Service only carries the DNS ports, the admin Service the metrics;
+- the exporter reports `bind_up 1` and counts the queries made by the test, for a pod allowed by
+  `networkPolicy.adminAllowedFrom`; a pod that is not allowed cannot reach the metrics but still gets DNS answers.
+
+It does not test secondary zones, dynamic updates, DNSSEC or persistence.
 
 Run the test after an install:
 
@@ -555,8 +622,8 @@ helm test my-dns -n dns-system --logs
 
 - **Backup**: zones from `bind.zones` live in your values: keep them in version control. With persistence, the PVC
   holds what named wrote (dynamic zones, journals, keys, secondary copies): back it up with your volume backup tool
-  (CSI VolumeSnapshot, Velero...). `kubectl exec` runs as root without `CAP_DAC_OVERRIDE`, so it may not read the
-  files that named keeps private to uid 53, such as DNSSEC private keys. Secondary zones need no backup: they are
+  (CSI VolumeSnapshot, Velero...). `kubectl exec` runs as uid 53, like named, so it can read and copy these files
+  (`kubectl exec ... -- tar -cf - -C /var/lib/bind . > bind-data.tar`). Secondary zones need no backup: they are
   transferred again.
 - **Restore**: restore the volume, point `persistence.existingClaim` to it, and install or upgrade the release.
 - **Scaling**: static zones scale with `replicaCount` or the HorizontalPodAutoscaler. Zones written by named need a
@@ -571,6 +638,23 @@ kubectl exec -n dns-system deploy/my-dns-bind9 -c bind9 -- cat /etc/bind/named.c
 ```
 
 ## Upgrading
+
+### To 2026.11.2
+
+- **named runs as uid 53 from the start**: no more `-u bind`, no capability, and the pod sets the sysctl
+  `net.ipv4.ip_unprivileged_port_start=53`. If you override `podSecurityContext` or `securityContext`, start from the
+  new defaults and keep `runAsUser: 53` and the sysctl. Files that named wrote in a persistent volume already belong to
+  uid 53. If your cluster rejects the sysctl, see [Security](#security).
+- **Admin Service**: the `metrics` and `rndc` ports moved from `<fullname>` to `<fullname>-admin`. The ServiceMonitor
+  follows; update any other scrape configuration or client that used `<fullname>:9119` or `<fullname>:953`.
+  `service.ports.rndcNodePort` and `service.ports.metricsNodePort` now apply to the admin Service, when
+  `adminService.type` is `NodePort` or `LoadBalancer`.
+- **Exporter image**: `metrics.image.repository` and `metrics.image.tag` are now empty by default and follow
+  `imageProvider` (`unxwares`: `ghcr.io/unxwares/bind-exporter`). If you set `metrics.image.tag` (for example
+  `v0.8.0`), also set `imageProvider: upstream` or `metrics.image.repository`: the UnxWares image has its own tags.
+- **Node architecture**: `nodeSelector` now defaults to `kubernetes.io/arch: amd64`. Pods that ran on other nodes
+  could not start anyway (the ISC image is amd64 only); with your own multi-architecture image, set
+  `nodeSelector.kubernetes.io/arch: null`.
 
 ### To 2026.10.2
 
@@ -610,8 +694,14 @@ kubectl logs -n dns-system deploy/my-dns-bind9 -c bind9 --previous
 - **`permission denied` on files under /var/lib/bind**: the files must be readable/writable by uid or gid 53.
 - **`permission denied` or `read-only file system` when named writes a zone or a journal**: the zone file is under
   `/etc/bind`, which is read-only. Move the zones that named writes to `/var/lib/bind`.
-- **`exec format error`**: the pod runs on an arm64 node and the ISC image is amd64 only. Set
-  `nodeSelector: {kubernetes.io/arch: amd64}`.
+- **`exec format error`**: the pod runs on an arm64 node and the ISC image is amd64 only. Keep the default
+  `nodeSelector` (`kubernetes.io/arch: amd64`).
+- **Pod `Pending` with no amd64 node**: the default `nodeSelector` needs an amd64 node, see
+  [Requirements](#requirements).
+- **`forbidden sysctl` or the pod is rejected by a policy engine**: allow `net.ipv4.ip_unprivileged_port_start`, or
+  use the root mode of [Security](#security).
+- **named runs but does not answer, `creating IPv4 interface eth0 failed` in the logs**: named could not bind port
+  53. The sysctl `net.ipv4.ip_unprivileged_port_start=53` is missing from `podSecurityContext` (overridden values?).
 - **Probes fail while named runs**: `listen-on` does not include `127.0.0.1`. Use `any` or add `127.0.0.1`.
 - **Pod `Pending`**: the PVC is not bound (no default StorageClass: set `persistence.storageClass`), or several
   replicas share a `ReadWriteOnce` volume.
@@ -620,8 +710,9 @@ kubectl logs -n dns-system deploy/my-dns-bind9 -c bind9 --previous
 - **External clients get REFUSED, or everybody gets recursion**: named sees node addresses. Set
   `service.externalTrafficPolicy: Local`.
 - **No metrics**: check `kubectl logs -n dns-system deploy/my-dns-bind9 -c bind9-exporter`, that `named.conf` starts
-  with the `statistics-channels` block, and that Prometheus is allowed in `networkPolicy.adminAllowedFrom` when the
-  NetworkPolicy is enabled. No ServiceMonitor is created without `metrics.enabled` or without the Prometheus Operator
+  with the `statistics-channels` block, that your scrape configuration targets the admin Service
+  (`my-dns-bind9-admin`), and that Prometheus is allowed in `networkPolicy.adminAllowedFrom` when the NetworkPolicy is
+  enabled. No ServiceMonitor is created without `metrics.enabled` or without the Prometheus Operator
   CRD.
 
 ## Uninstalling
@@ -642,38 +733,42 @@ kubectl delete pvc -n dns-system my-dns-bind9-pvc
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| adminService.annotations | object | `{}` | Admin Service annotations. |
+| adminService.type | string | `"ClusterIP"` | Admin Service type. Keep it internal: rndc and the metrics are administrative ports. |
 | affinity | object | `{}` | Affinity rules. |
 | autoscaling.enabled | bool | `false` | Enable the HorizontalPodAutoscaler (static zones only: no persistence). |
 | autoscaling.maxReplicas | int | `10` | Maximum number of replicas. |
 | autoscaling.minReplicas | int | `1` | Minimum number of replicas. |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` | Target average CPU utilization (%). |
-| bind.args | list | `[]` | Extra arguments passed to named (after `-u bind -g`). |
+| autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Target average memory utilization (%). Empty: no memory target. |
+| bind.args | list | `[]` | Extra arguments passed to named (after `-g`). |
 | bind.namedConf | string | `"options {\n  directory \"/var/cache/bind\";\n  listen-on { any; };\n  listen-on-v6 { any; };\n  // Authoritative only: no recursion, no zone transfers unless allowed per zone.\n  recursion no;\n  allow-transfer { none; };\n  // Do not reveal the version in CH TXT version.bind queries.\n  version none;\n};\n# zone \"example.com\" {\n#   type primary;\n#   file \"/etc/bind/example-com.zone\";\n# };\n"` | named.conf content. The default is a minimal authoritative-only server: add your zones (see `bind.zones`). Keep `directory "/var/cache/bind";`: it is the only writable working directory. https://bind9.readthedocs.io/en/stable/reference.html |
 | bind.zones | object | `{}` | Zone files, mounted as `/etc/bind/<key>.zone`. |
 | fullnameOverride | string | `""` | Override the full resource names. |
 | image.digest | string | `""` | Image digest (`sha256:...`). When set, it takes precedence over the tag. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | image.repository | string | `"docker.io/internetsystemsconsortium/bind9"` | Bind9 image repository (ISC official image). |
-| image.tag | string | `""` | Image tag (defaults to the chart appVersion, the current ISC stable branch). `9.21` is ISC's development branch. |
+| image.tag | string | `""` | Image tag (defaults to the chart appVersion, the current ISC stable branch). `9.21` is ISC's development branch. The ISC image is published for linux/amd64 only: see `nodeSelector`. |
+| imageProvider | string | `"unxwares"` | Exporter image used when `metrics.image.repository` is empty. `unxwares`: `ghcr.io/unxwares/bind-exporter`, bind_exporter built by UnxWares from its sources (master branch, current Go toolchain and golang.org/x modules) on a distroless base, rebuilt twice a week (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the Prometheus community image `docker.io/prometheuscommunity/bind-exporter`. named always runs the ISC image. |
 | imagePullSecrets | list | `[]` | Secrets for pulling images from a private registry. |
 | livenessProbe | object | `{"exec":{"command":["dig","+time=2","+tries=1","@127.0.0.1","version.bind","txt","chaos"]},"initialDelaySeconds":10,"periodSeconds":15,"timeoutSeconds":5}` | Liveness probe (dig exits 0 as soon as the server answers, whatever the answer). |
 | metrics.enabled | bool | `false` | Run the Prometheus bind_exporter sidecar (reads the statistics channel on 127.0.0.1:8053). |
 | metrics.image.digest | string | `""` | Exporter image digest (takes precedence over the tag). |
 | metrics.image.pullPolicy | string | `"IfNotPresent"` | Exporter image pull policy. |
-| metrics.image.repository | string | `"docker.io/prometheuscommunity/bind-exporter"` | Exporter image repository. |
-| metrics.image.tag | string | `"master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf"` | Exporter image tag. v0.8.0 (November 2024) is the latest release, built with an old Go toolchain (114 known CVEs): the default is the master build of 2026-10-14, the same exporter code rebuilt with a current Go toolchain and dependencies, pinned by digest. |
+| metrics.image.repository | string | `""` | Exporter image repository. Empty: `ghcr.io/unxwares/bind-exporter` or `docker.io/prometheuscommunity/bind-exporter`, from `imageProvider`. |
+| metrics.image.tag | string | `""` | Exporter image tag. Empty: `0.8.0-62-gbafd56f` (unxwares: the master commit bafd56f, 62 commits after v0.8.0) or `master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf` (upstream: the master build of 2026-10-14, pinned by digest). v0.8.0, the latest release (November 2024), was built with an old Go toolchain. |
 | metrics.livenessProbe | object | `{"failureThreshold":3,"httpGet":{"path":"/","port":"metrics","scheme":"HTTP"},"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1}` | Exporter liveness probe. |
 | metrics.readinessProbe | object | `{"failureThreshold":3,"httpGet":{"path":"/","port":"metrics","scheme":"HTTP"},"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1}` | Exporter readiness probe. |
 | metrics.resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"32Mi"}}` | Exporter resources. |
-| metrics.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsGroup":65534,"runAsNonRoot":true,"runAsUser":65534}` | Exporter security context (the image runs as `nobody`). |
-| metrics.serviceMonitor.enabled | bool | `false` | Create a Prometheus Operator ServiceMonitor (requires `metrics.enabled`; rendered only when the CRD exists). |
+| metrics.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsGroup":65534,"runAsNonRoot":true,"runAsUser":65534}` | Exporter security context (both images run as `nobody`). |
+| metrics.serviceMonitor.enabled | bool | `false` | Create a Prometheus Operator ServiceMonitor on the admin Service (requires `metrics.enabled`; rendered only when the CRD exists). |
 | metrics.serviceMonitor.endpoints | list | `[{"port":"metrics","scheme":"http"}]` | ServiceMonitor endpoints. |
 | metrics.serviceMonitor.labels | object | `{}` | Extra ServiceMonitor labels (e.g. `release: kube-prometheus-stack`). |
 | metrics.statsGroups | list | `["server","view"]` | Statistics groups to collect (`tasks` is deprecated since bind_exporter 0.8.0). |
 | nameOverride | string | `""` | Override the chart name. |
 | networkPolicy.adminAllowedFrom | list | `[]` | Peers allowed to reach rndc and metrics (e.g. your Prometheus namespace). |
 | networkPolicy.enabled | bool | `false` | Create a NetworkPolicy: DNS stays open, rndc and metrics only accept the peers below. |
-| nodeSelector | object | `{}` | Node selector. |
+| nodeSelector | object | `{"kubernetes.io/arch":"amd64"}` | Node selector. The ISC image is published for linux/amd64 only, so the pods (and the `helm test` pod) only run on amd64 nodes. With a multi-architecture image, set `kubernetes.io/arch: null` to remove the constraint. |
 | persistence.accessMode | string | `"ReadWriteOnce"` | Access mode. |
 | persistence.emptyDirSizeLimit | string | `""` | Size limit of the emptyDir used when persistence is disabled. |
 | persistence.enabled | bool | `false` | Persist /var/lib/bind in a PVC. Without it an emptyDir is used. |
@@ -685,15 +780,15 @@ kubectl delete pvc -n dns-system my-dns-bind9-pvc
 | podDisruptionBudget.maxUnavailable | string | `nil` | Maximum unavailable pods (used instead of minAvailable when set). |
 | podDisruptionBudget.minAvailable | int | `1` | Minimum available pods. |
 | podLabels | object | `{}` | Pod labels. |
-| podSecurityContext | object | `{"fsGroup":53,"fsGroupChangePolicy":"OnRootMismatch","seccompProfile":{"type":"RuntimeDefault"}}` | Pod security context. named starts as root only to bind port 53, then switches to the `bind` user (uid 53) with `-u bind`. |
+| podSecurityContext | object | `{"fsGroup":53,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":53,"runAsNonRoot":true,"runAsUser":53,"seccompProfile":{"type":"RuntimeDefault"},"sysctls":[{"name":"net.ipv4.ip_unprivileged_port_start","value":"53"}]}` | Pod security context. named runs as the `bind` user of the image (uid 53) from the start, without any capability: the `net.ipv4.ip_unprivileged_port_start` sysctl (a safe sysctl, allowed by the `restricted` Pod Security Standard) lets it bind port 53 in the pod's network namespace. Keep the sysctl if you override this value. |
 | priorityClassName | string | `""` | Priority class of the pods. |
 | readinessProbe | object | `{"exec":{"command":["dig","+time=2","+tries=1","@127.0.0.1","version.bind","txt","chaos"]},"initialDelaySeconds":5,"periodSeconds":10,"timeoutSeconds":5}` | Readiness probe. |
 | replicaCount | int | `1` | Number of Bind9 replicas. With `persistence.enabled` and a ReadWriteOnce volume, keep 1. |
 | resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"50m","memory":"64Mi"}}` | Bind9 container resources. |
-| securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"add":["NET_BIND_SERVICE","SETUID","SETGID"],"drop":["ALL"]},"readOnlyRootFilesystem":true}` | Bind9 container security context: every capability is dropped except the three named needs to bind port 53 and switch user. |
+| securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | Bind9 container security context: every capability dropped, read-only root filesystem. |
 | service.annotations | object | `{}` | Service annotations (e.g. MetalLB or cloud load balancer settings). |
 | service.enabled | bool | `true` | Create the DNS service. |
-| service.exposeRndc | bool | `false` | Expose the rndc control port through the service. Off by default: rndc is an administrative channel. |
+| service.exposeRndc | bool | `false` | Expose the rndc control port through the admin Service (`adminService`), never the DNS Service. Off by default: rndc is an administrative channel. |
 | service.externalTrafficPolicy | string | `""` | `Local` preserves client source IPs (needed by ACLs such as allow-transfer). |
 | service.loadBalancerIP | string | `""` | Load balancer IP, when supported by the provider. |
 | service.loadBalancerSourceRanges | list | `[]` | Source ranges allowed by the load balancer. |
@@ -701,10 +796,10 @@ kubectl delete pvc -n dns-system my-dns-bind9-pvc
 | service.ports.dnsTcpNodePort | string | `nil` | NodePort for DNS over TCP. |
 | service.ports.dnsUdp | int | `53` | DNS UDP port. |
 | service.ports.dnsUdpNodePort | string | `nil` | NodePort for DNS over UDP. |
-| service.ports.metrics | int | `9119` | Prometheus exporter port. |
-| service.ports.metricsNodePort | string | `nil` | NodePort for the metrics port. |
-| service.ports.rndc | int | `953` | rndc port (only exposed with `service.exposeRndc`). |
-| service.ports.rndcNodePort | string | `nil` | NodePort for rndc. |
+| service.ports.metrics | int | `9119` | Prometheus exporter port, in the pod and on the admin Service. |
+| service.ports.metricsNodePort | string | `nil` | NodePort for the metrics port, when `adminService.type` is NodePort or LoadBalancer. |
+| service.ports.rndc | int | `953` | rndc port of the admin Service (only with `service.exposeRndc`). |
+| service.ports.rndcNodePort | string | `nil` | NodePort for rndc, when `adminService.type` is NodePort or LoadBalancer. |
 | service.type | string | `"ClusterIP"` | Service type. |
 | serviceAccount.annotations | object | `{}` | Service account annotations. |
 | serviceAccount.automount | bool | `false` | Bind9 never talks to the Kubernetes API: the token is not mounted. |
