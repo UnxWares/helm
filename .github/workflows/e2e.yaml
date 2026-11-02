@@ -92,14 +92,15 @@ jobs:
             - name: Start PostgreSQL, MySQL, MongoDB and the DatabaseClusters
               run: .github/scripts/openeverest-test-env.sh
 
+            # The client images were loaded into kind; the kubectl image of the wait containers is pulled (the pull
+            # policy applies to every container, so it stays IfNotPresent).
             - name: Install the chart and run its Jobs
               run: &install |
                   helm upgrade --install "$RELEASE" "$CHART" --namespace "$RELEASE" --create-namespace \
                       --values "$CHART/ci/e2e-values.yaml" \
                       --set image.postgresql.repository=local/postgresql-client --set image.postgresql.tag=e2e \
                       --set image.mysql.repository=local/mysql-client --set image.mysql.tag=e2e \
-                      --set image.mongodb.repository=local/mongosh --set image.mongodb.tag=e2e \
-                      --set image.pullPolicy=Never
+                      --set image.mongodb.repository=local/mongosh --set image.mongodb.tag=e2e
                   kubectl --namespace everest-databases wait --for=condition=complete job --all --timeout=600s
 
             - name: Check the databases, users and grants
