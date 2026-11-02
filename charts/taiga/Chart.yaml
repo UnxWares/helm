@@ -2,7 +2,7 @@ apiVersion: v2
 name: taiga
 description: Taiga, the open-source agile project management platform (backend, async workers, events, front, protected media, bundled PostgreSQL and RabbitMQ), hardened for Kubernetes.
 type: application
-version: 2026.11.3
+version: 2026.11.4
 appVersion: "6.10.2"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/taiga
@@ -59,10 +59,10 @@ annotations:
       image: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
-    - kind: added
-      description: "Unit tests (helm-unittest, 195 tests) of the security contexts with both image providers, image selection, required values and their messages, the chart Secret (generated values kept at upgrade, existing Secrets), container env and secret references, probes, volumes and pod affinity, Services, NetworkPolicies, the gateway configuration, the helm test pod and the README examples, run in CI on every pull request and push to main. The values are unchanged."
     - kind: fixed
-      description: "Project exports are served from the media volume under /media/exports/, as the upstream gateway does: they were sent to taiga-protected with the wrong path, so the download links of the export e-mails failed."
+      description: "An empty image tag rendered an image reference without tag (ghcr.io/unxwares/taiga-back:, docker.io/library/rabbitmq:...), which Kubernetes refuses: the chart now stops with the value to set, for every image of the release (the bundled PostgreSQL when db.enabled), and requires the tag or the digest of the OIDC images when they are set."
+    - kind: fixed
+      description: "global.defaultProbes set to null made the rendering fail with a nil pointer: the probes of the components are now rendered without defaults."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

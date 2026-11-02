@@ -1,6 +1,6 @@
 # Taiga Helm Chart
 
-![Version: 2026.11.3](https://img.shields.io/badge/Version-2026.11.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 6.10.2](https://img.shields.io/badge/AppVersion-6.10.2-informational?style=flat-square)
+![Version: 2026.11.4](https://img.shields.io/badge/Version-2026.11.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 6.10.2](https://img.shields.io/badge/AppVersion-6.10.2-informational?style=flat-square)
 
 [Taiga](https://taiga.io/) is an open-source project management platform for agile teams (Scrum, Kanban, issues,
 wiki). This chart deploys the whole stack of [taiga-docker](https://github.com/taigaio/taiga-docker): backend API,
@@ -108,8 +108,9 @@ changes the front container port (80) and the default security contexts: the off
 `chown` their files, then switch user, so the chart gives them the capabilities they need (see [Security](#security)).
 
 - **Mirror or own build**: a component's `image.repository` replaces the provider's repository (the tag stays
-  `image.tag`). The security contexts still follow `global.imageProvider` unless you set them per component or in
-  `global.podSecurityContext` / `global.securityContext`.
+  `image.tag`, which every image needs: the chart refuses an empty one). The security contexts still follow
+  `global.imageProvider` unless you set them per component or in `global.podSecurityContext` /
+  `global.securityContext`.
 - **Pin a digest**: the component images have no digest field; append the digest to the tag, for example
   `backend.image.tag: "6.10.2@sha256:<digest>"`, which renders `ghcr.io/unxwares/taiga-back:6.10.2@sha256:<digest>`
   (the container runtime then pulls by digest). Set the same value on `async.image.tag`, which runs the same image.

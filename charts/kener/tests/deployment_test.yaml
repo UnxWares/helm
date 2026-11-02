@@ -126,6 +126,33 @@ tests:
       - exists:
           path: spec.template.spec.containers[0].readinessProbe
 
+  - it: renders no probe for a probe set to null, like enabled false
+    set:
+      livenessProbe: null
+      readinessProbe: null
+      startupProbe: null
+    asserts:
+      - notFailedTemplate: {}
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe
+      - notExists:
+          path: spec.template.spec.containers[0].startupProbe
+
+  - it: keeps the other probes when one is set to null
+    set:
+      startupProbe: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].startupProbe
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /healthcheck
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /healthcheck?strict=1
+
   - it: keeps a probe handler given in the values instead of adding the httpGet
     set:
       readinessProbe:

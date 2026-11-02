@@ -68,11 +68,11 @@ spec:
               protocol: TCP
           {{- with .Values.gateway.livenessProbe }}
           livenessProbe:
-            {{- include "taiga.probe" (dict "probe" . "defaults" $.Values.global.defaultProbes.liveness) | nindent 12 }}
+            {{- include "taiga.probe" (dict "probe" . "ctx" $ "kind" "liveness") | nindent 12 }}
           {{- end }}
           {{- with .Values.gateway.readinessProbe }}
           readinessProbe:
-            {{- include "taiga.probe" (dict "probe" . "defaults" $.Values.global.defaultProbes.readiness) | nindent 12 }}
+            {{- include "taiga.probe" (dict "probe" . "ctx" $ "kind" "readiness") | nindent 12 }}
           {{- end }}
           {{- with (default .Values.global.resources .Values.gateway.resources) }}
           resources:

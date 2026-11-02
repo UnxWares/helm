@@ -272,4 +272,7 @@ Validate values that would otherwise produce a broken deployment.
 {{- if and .Values.api.enabled (not .Values.webserver.enabled) }}
 {{- fail "api.enabled requires webserver.enabled" }}
 {{- end }}
+{{- if and .Values.recursor.enabled (not (or .Values.recursor.image.tag .Values.recursor.image.digest)) }}
+{{- fail "recursor.image.tag or recursor.image.digest is required with the recursor (recursor.enabled)" }}
+{{- end }}
 {{- end }}

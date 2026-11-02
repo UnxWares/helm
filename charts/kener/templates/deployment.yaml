@@ -73,17 +73,24 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
-          {{- if .Values.livenessProbe.enabled }}
+          {{- /* A probe set to null renders no probe, like enabled: false. */}}
+          {{- with .Values.livenessProbe }}
+          {{- if .enabled }}
           livenessProbe:
-            {{- include "kener.probe" (dict "probe" .Values.livenessProbe "path" (printf "%s/healthcheck" $base)) | nindent 12 }}
+            {{- include "kener.probe" (dict "probe" . "path" (printf "%s/healthcheck" $base)) | nindent 12 }}
           {{- end }}
-          {{- if .Values.readinessProbe.enabled }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          {{- if .enabled }}
           readinessProbe:
-            {{- include "kener.probe" (dict "probe" .Values.readinessProbe "path" (printf "%s/healthcheck?strict=1" $base)) | nindent 12 }}
+            {{- include "kener.probe" (dict "probe" . "path" (printf "%s/healthcheck?strict=1" $base)) | nindent 12 }}
           {{- end }}
-          {{- if .Values.startupProbe.enabled }}
+          {{- end }}
+          {{- with .Values.startupProbe }}
+          {{- if .enabled }}
           startupProbe:
-            {{- include "kener.probe" (dict "probe" .Values.startupProbe "path" (printf "%s/healthcheck" $base)) | nindent 12 }}
+            {{- include "kener.probe" (dict "probe" . "path" (printf "%s/healthcheck" $base)) | nindent 12 }}
+          {{- end }}
           {{- end }}
           {{- with .Values.resources }}
           resources:

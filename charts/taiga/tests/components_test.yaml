@@ -298,6 +298,27 @@ tests:
           path: spec.template.spec.containers[0].readinessProbe
         template: frontend/deployment.yaml
 
+  - it: keeps the probes of the components without defaults when global.defaultProbes is set to null
+    set:
+      global:
+        defaultProbes: null
+    asserts:
+      - notFailedTemplate: {}
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /api/v1/
+              port: http
+        template: backend/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            tcpSocket:
+              port: http
+        template: protected/deployment.yaml
+
   - it: gives the Celery pods no probe
     asserts:
       - notExists:

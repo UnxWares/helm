@@ -62,11 +62,11 @@ spec:
           {{- end }}
           {{- with .Values.backend.livenessProbe }}
           livenessProbe:
-            {{- include "taiga.probe" (dict "probe" . "defaults" $.Values.global.defaultProbes.liveness) | nindent 12 }}
+            {{- include "taiga.probe" (dict "probe" . "ctx" $ "kind" "liveness") | nindent 12 }}
           {{- end }}
           {{- with .Values.backend.readinessProbe }}
           readinessProbe:
-            {{- include "taiga.probe" (dict "probe" . "defaults" $.Values.global.defaultProbes.readiness) | nindent 12 }}
+            {{- include "taiga.probe" (dict "probe" . "ctx" $ "kind" "readiness") | nindent 12 }}
           {{- end }}
           {{- with .Values.backend.startupProbe }}
           startupProbe:

@@ -1,6 +1,6 @@
 # PowerDNS Helm Chart
 
-![Version: 2026.11.3](https://img.shields.io/badge/Version-2026.11.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 5.1.5](https://img.shields.io/badge/AppVersion-5.1.5-informational?style=flat-square)
+![Version: 2026.11.4](https://img.shields.io/badge/Version-2026.11.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 5.1.5](https://img.shields.io/badge/AppVersion-5.1.5-informational?style=flat-square)
 
 [PowerDNS Authoritative Server](https://doc.powerdns.com/authoritative/) serves DNS zones stored in a database and
 manages them through a REST API. This chart deploys it on Kubernetes with a SQLite, PostgreSQL or MySQL/MariaDB
@@ -82,10 +82,10 @@ stored in a ConfigMap, and how the recursor learns the address of the authoritat
 | MySQL client of the gmysql schema init | `ghcr.io/unxwares/mysql-client:8.4` | `docker.io/library/mysql:8.4.13` |
 
 Tags: the authoritative server follows the chart `appVersion` (`image.tag`), the recursor `recursor.image.tag`
-(`5.4.9`); the client images are whole references (`backend.schemaInit.postgresImage`,
-`backend.schemaInit.mysqlImage`). The UnxWares client images hold the client alone, not a database server: `18` and
-`8.4` take the latest client of the series at each rebuild. The `helm test` pod uses the authoritative server image,
-or `tests.image`.
+(`5.4.9`, required unless `recursor.image.digest` is set); the client images are whole references
+(`backend.schemaInit.postgresImage`, `backend.schemaInit.mysqlImage`). The UnxWares client images hold the client
+alone, not a database server: `18` and `8.4` take the latest client of the series at each rebuild. The `helm test` pod
+uses the authoritative server image, or `tests.image`.
 
 The UnxWares images are the same PowerDNS versions, built from the release tarballs on current Alpine bases and
 rebuilt twice a week (Monday and Thursday), with the backends the chart supports (bind, gsqlite3, gpgsql, gmysql) and
@@ -1071,7 +1071,7 @@ kubectl delete secret -n dns dns-powerdns
 | recursor.image.digest | string | `""` | Image digest (takes precedence over the tag). |
 | recursor.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | recursor.image.repository | string | `""` | Recursor image repository. Empty: `ghcr.io/unxwares/pdns-recursor` or `docker.io/powerdns/pdns-recursor-54`, from `imageProvider`. |
-| recursor.image.tag | string | `"5.4.9"` | Recursor image tag. |
+| recursor.image.tag | string | `"5.4.9"` | Recursor image tag (required unless `digest` is set). |
 | recursor.listenAddresses | list | `["0.0.0.0","::"]` | Addresses to bind (the port is `recursor.containerPort`). |
 | recursor.livenessProbe | object | `{"failureThreshold":4,"periodSeconds":15,"tcpSocket":{"port":"dns-tcp"},"timeoutSeconds":3}` | Liveness probe. |
 | recursor.metrics.serviceMonitor.enabled | bool | `false` | Create a ServiceMonitor for the recursor. |

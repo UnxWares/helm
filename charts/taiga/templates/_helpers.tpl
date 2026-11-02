@@ -102,11 +102,13 @@ Usage: include "taiga.generatedSecret" (dict "ctx" $ "key" "secret-key" "value" 
 {{- end }}
 
 {{/*
-Probe merged with the global defaults (values set on the probe win).
-Usage: include "taiga.probe" (dict "probe" .Values.backend.livenessProbe "defaults" .Values.global.defaultProbes.liveness)
+Probe merged with the global defaults of its kind (values set on the probe win); global.defaultProbes set to null
+means no defaults.
+Usage: include "taiga.probe" (dict "probe" .Values.backend.livenessProbe "ctx" $ "kind" "liveness")
 */}}
 {{- define "taiga.probe" -}}
-{{- toYaml (merge (deepCopy .probe) (deepCopy (.defaults | default dict))) }}
+{{- $defaults := index (.ctx.Values.global.defaultProbes | default dict) .kind | default dict }}
+{{- toYaml (merge (deepCopy .probe) (deepCopy $defaults)) }}
 {{- end }}
 
 {{/*
@@ -637,5 +639,32 @@ Validate values that would otherwise produce a broken deployment.
 {{- end }}
 {{- if and .Values.global.persistence.media.enabled (eq (include "taiga.mediaAccessMode" .) "ReadWriteOncePod") }}
 {{- fail "global.persistence.media.accessMode cannot be ReadWriteOncePod: backend, async and gateway mount the same volume" }}
+{{- end }}
+{{- /* An empty tag would render an image reference without tag ("repository:"), which Kubernetes refuses. With OIDC,
+the override images replace the backend (backend, async) and front images. */}}
+{{- $oidc := .Values.global.oidc }}
+{{- $images := dict "events.image" .Values.events.image "protected.image" .Values.protected.image "gateway.image" .Values.gateway.image "asyncRabbitmq.image" .Values.asyncRabbitmq.image "eventsRabbitmq.image" .Values.eventsRabbitmq.image }}
+{{- if .Values.db.enabled }}
+{{- $_ := set $images "db.image" .Values.db.image }}
+{{- end }}
+{{- range $component := list "backend" "frontend" }}
+{{- $override := (index $oidc $component).overrideImage }}
+{{- if and $oidc.enabled $override.name }}
+{{- if not (or $override.tag $override.digest) }}
+{{- fail (printf "global.oidc.%s.overrideImage.tag or global.oidc.%s.overrideImage.digest is required with global.oidc.%s.overrideImage.name" $component $component $component) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if not (and $oidc.enabled $oidc.backend.overrideImage.name) }}
+{{- $_ := set $images "backend.image" .Values.backend.image }}
+{{- $_ := set $images "async.image" .Values.async.image }}
+{{- end }}
+{{- if not (and $oidc.enabled $oidc.frontend.overrideImage.name) }}
+{{- $_ := set $images "frontend.image" .Values.frontend.image }}
+{{- end }}
+{{- range $path, $image := $images }}
+{{- if not (and $image $image.tag) }}
+{{- fail (printf "%s.tag is required" $path) }}
+{{- end }}
 {{- end }}
 {{- end }}

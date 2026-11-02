@@ -172,6 +172,89 @@ tests:
     asserts:
       - notFailedTemplate: {}
 
+  - it: refuses an empty image tag instead of rendering an image reference without tag
+    values:
+      - values/external-database.yaml
+    set:
+      backend:
+        image:
+          tag: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: backend.image.tag is required
+
+  - it: refuses an empty tag on each image of the release
+    values:
+      - values/external-database.yaml
+    set:
+      gateway:
+        image:
+          tag: ""
+      asyncRabbitmq:
+        image:
+          tag: ""
+    asserts:
+      # the images are checked in alphabetical order of their value path
+      - failedTemplate:
+          errorMessage: asyncRabbitmq.image.tag is required
+
+  - it: refuses an empty tag on the bundled PostgreSQL image
+    values:
+      - values/bundled-database.yaml
+    set:
+      db:
+        image:
+          tag: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: db.image.tag is required
+
+  - it: ignores the bundled PostgreSQL image tag with the external database
+    values:
+      - values/external-database.yaml
+    set:
+      db:
+        image:
+          tag: ""
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: requires the tag or digest of an OIDC image
+    values:
+      - values/external-database.yaml
+    set:
+      global:
+        oidc:
+          enabled: true
+          existingSecret: taiga-oidc
+          frontend:
+            overrideImage:
+              name: registry.example.com/taiga-front-oidc
+    asserts:
+      - failedTemplate:
+          errorMessage: global.oidc.frontend.overrideImage.tag or global.oidc.frontend.overrideImage.digest is required with global.oidc.frontend.overrideImage.name
+
+  - it: accepts an OIDC image pinned by digest, and no backend tag while that image replaces the backend one
+    values:
+      - values/external-database.yaml
+    set:
+      global:
+        oidc:
+          enabled: true
+          existingSecret: taiga-oidc
+          backend:
+            overrideImage:
+              name: registry.example.com/taiga-back-oidc
+              digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      backend:
+        image:
+          tag: ""
+      async:
+        image:
+          tag: ""
+    asserts:
+      - notFailedTemplate: {}
+
   - it: refuses a media claim created as ReadWriteOncePod by a previous release
     values:
       - values/external-database.yaml
