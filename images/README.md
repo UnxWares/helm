@@ -14,19 +14,26 @@ the upstream images instead (see its README).
 | `taiga-protected:6.10.1` | `docker.io/taigaio/taiga-protected` | Python 3.12 Alpine, current gunicorn and Werkzeug, non-root, read-only root filesystem |
 | `pdns-auth:5.1.5` | `docker.io/powerdns/pdns-auth-51` | Alpine, built from the release tarball with the backends the chart uses (bind, gsqlite3, gpgsql, gmysql), no vim or curl |
 | `pdns-recursor:5.4.9` | `docker.io/powerdns/pdns-recursor-54` | Alpine, built from the release tarball |
+| `postgresql-client:18` | `docker.io/library/postgres` (its `psql`) | The PostgreSQL client only, from Alpine packages, instead of a whole server image; latest 18.x at each rebuild |
+| `mysql-client:8.4` | `docker.io/library/mysql` (its `mysql`) | The MySQL client only, from the signed packages of the official MySQL repository on Oracle Linux 9 slim; latest 8.4.x at each rebuild |
+| `mongosh:2.14.1` | `docker.io/library/mongo` (its `mongosh`) | The official mongosh release, checked against its SHA-256, on a distroless base; its SBOM stays in the image so that scanners see the bundled dependencies |
 
 The images keep the upstream ports, paths, users and environment variables (PowerDNS: the same `pdns` user,
-startup script and Jinja2 templates), except `taiga-front`, which listens on 8080 instead of 80.
+startup script and Jinja2 templates), except `taiga-front`, which listens on 8080 instead of 80. The client images
+(`postgresql-client`, `mysql-client`, `mongosh`) run as uid 65532 with `HOME=/tmp`, for the Jobs of
+`openeverest-database-tools`.
 
 ## Tags and rebuilds
 
-- `<version>`: the upstream version, rebuilt every Monday on the current base image and Alpine packages.
+- `<version>`: the upstream version, rebuilt every Monday on the current base image and Alpine packages. For
+  `postgresql-client` and `mysql-client` it is a release series (`18`, `8.4`): each rebuild takes its latest client.
 - `<version>-<YYYYMMDD>`: one immutable tag per build, to pin a build.
 - `<version>-amd64`, `<version>-arm64`: the per-architecture images behind the multi-arch tag.
 
 `.github/workflows/images.yaml` builds every image natively on amd64 and arm64 and scans it with Trivy.
 Pull requests fail on a fixable CRITICAL or HIGH vulnerability, unless the image's `.trivyignore` says why it
-is accepted (for `taiga-back`: Django 3.2, which Taiga is pinned to).
+is accepted (for `taiga-back`: Django 3.2, which Taiga is pinned to; for `mongosh`: an FTP client it only uses
+for proxy auto-configuration files).
 
 ## Signatures
 
