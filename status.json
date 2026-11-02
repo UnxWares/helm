@@ -73,11 +73,144 @@
    "page": "charts/bind9.html",
    "results": {
     "e2e": {
-     "detail": "",
-     "note": "",
-     "result": null,
-     "status": "no result",
-     "summary": "No result yet"
+     "detail": "21 checks, all passed",
+     "note": "21 checks",
+     "result": {
+      "checks": [
+       {
+        "name": "A record (+notcp)",
+        "runs": 1
+       },
+       {
+        "name": "AAAA record (+notcp)",
+        "runs": 1
+       },
+       {
+        "name": "A record (+tcp)",
+        "runs": 1
+       },
+       {
+        "name": "AAAA record (+tcp)",
+        "runs": 1
+       },
+       {
+        "name": "MX record",
+        "runs": 1
+       },
+       {
+        "name": "TXT record",
+        "runs": 1
+       },
+       {
+        "name": "CNAME followed in the zone",
+        "runs": 1
+       },
+       {
+        "name": "SOA serial",
+        "runs": 1
+       },
+       {
+        "name": "PTR record of the second zone",
+        "runs": 1
+       },
+       {
+        "name": "answers are authoritative",
+        "runs": 1
+       },
+       {
+        "name": "unknown name: authoritative NXDOMAIN",
+        "runs": 1
+       },
+       {
+        "name": "zone not served: REFUSED",
+        "runs": 1
+       },
+       {
+        "name": "zone transfers are refused",
+        "runs": 1
+       },
+       {
+        "name": "the version is not revealed",
+        "runs": 1
+       },
+       {
+        "name": "named runs as uid 53",
+        "runs": 1
+       },
+       {
+        "name": "named has no capability",
+        "runs": 1
+       },
+       {
+        "name": "the DNS Service only carries DNS",
+        "runs": 1
+       },
+       {
+        "name": "the admin Service carries the metrics",
+        "runs": 1
+       },
+       {
+        "name": "the exporter reads named's statistics (bind_up 1)",
+        "runs": 1
+       },
+       {
+        "name": "the exporter counts the queries (2 AAAA)",
+        "runs": 1
+       },
+       {
+        "name": "a pod outside networkPolicy.adminAllowedFrom cannot reach the metrics, and still gets DNS answers",
+        "runs": 1
+       }
+      ],
+      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
+      "date": "2026-11-02T17:42:04Z",
+      "event": "push",
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162628",
+      "run_id": 41489635804,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
+      "status": "passed",
+      "steps": [
+       {
+        "conclusion": "success",
+        "name": "Checkout"
+       },
+       {
+        "conclusion": "success",
+        "name": "Build the exporter image"
+       },
+       {
+        "conclusion": "success",
+        "name": "Create kind cluster"
+       },
+       {
+        "conclusion": "success",
+        "name": "Load the exporter image"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install Helm"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install the chart"
+       },
+       {
+        "conclusion": "success",
+        "name": "helm test"
+       },
+       {
+        "conclusion": "success",
+        "name": "Query the zones, read the metrics, check the NetworkPolicy"
+       },
+       {
+        "conclusion": "skipped",
+        "name": "Diagnostics"
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
     },
     "install": {
      "detail": "`ct lint` passed (version increment, YAML lint). Installed on kind with `default-values.yaml` and `upstream-values.yaml`; `helm test`: 2 of 2 test pods succeeded",
@@ -256,13 +389,13 @@
         "runs": 1
        }
       ],
-      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
-      "date": "2026-11-02T15:39:12Z",
+      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
+      "date": "2026-11-02T17:42:04Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41471829166/job/125367850252",
-      "run_id": 41471829166,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41471829166",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162828",
+      "run_id": 41489635804,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
       "status": "passed",
       "steps": [
        {
@@ -568,13 +701,13 @@
         "runs": 1
        }
       ],
-      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
-      "date": "2026-11-02T15:39:12Z",
+      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
+      "date": "2026-11-02T17:42:04Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41471829166/job/125367850268",
-      "run_id": 41471829166,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41471829166",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162989",
+      "run_id": 41489635804,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
       "status": "passed",
       "steps": [
        {
@@ -844,13 +977,13 @@
         "runs": 1
        }
       ],
-      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
-      "date": "2026-11-02T15:39:12Z",
+      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
+      "date": "2026-11-02T17:42:04Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41471829166/job/125367850335",
-      "run_id": 41471829166,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41471829166",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162652",
+      "run_id": 41489635804,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
       "status": "passed",
       "steps": [
        {
@@ -1138,13 +1271,13 @@
         "runs": 1
        }
       ],
-      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
-      "date": "2026-11-02T15:39:12Z",
+      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
+      "date": "2026-11-02T17:42:04Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41471829166/job/125367850354",
-      "run_id": 41471829166,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41471829166",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162742",
+      "run_id": 41489635804,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
       "status": "passed",
       "steps": [
        {
@@ -1591,13 +1724,13 @@
         "runs": 2
        }
       ],
-      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
-      "date": "2026-11-02T15:39:12Z",
+      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
+      "date": "2026-11-02T17:42:04Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41471829166/job/125367850454",
-      "run_id": 41471829166,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41471829166",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162939",
+      "run_id": 41489635804,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
       "status": "passed",
       "steps": [
        {
@@ -1863,11 +1996,192 @@
    "page": "charts/powerdns.html",
    "results": {
     "e2e": {
-     "detail": "",
-     "note": "",
-     "result": null,
-     "status": "no result",
-     "summary": "No result yet"
+     "detail": "32 checks, all passed",
+     "note": "32 checks",
+     "result": {
+      "checks": [
+       {
+        "name": "the API answers with the key",
+        "runs": 3
+       },
+       {
+        "name": "the API refuses a request without a key",
+        "runs": 3
+       },
+       {
+        "name": "the API refuses a wrong key",
+        "runs": 3
+       },
+       {
+        "name": "a zone sent with a wrong key is refused and not created",
+        "runs": 3
+       },
+       {
+        "name": "a zone is created through the API",
+        "runs": 3
+       },
+       {
+        "name": "the zone is read back through the API",
+        "runs": 3
+       },
+       {
+        "name": "a record is added to the zone through the API",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: A record (+notcp)",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: A record (+tcp)",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: AAAA record",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: MX record",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: TXT record",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: record added through the API",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: the answers are authoritative",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: unknown name, NXDOMAIN",
+        "runs": 3
+       },
+       {
+        "name": "recursor: A record resolved through the authoritative server",
+        "runs": 1
+       },
+       {
+        "name": "recursor: record added through the API",
+        "runs": 1
+       },
+       {
+        "name": "recursor: recursive answer",
+        "runs": 1
+       },
+       {
+        "name": "the server runs as uid 953",
+        "runs": 3
+       },
+       {
+        "name": "the server has no capability",
+        "runs": 3
+       },
+       {
+        "name": "the DNS Service only carries DNS",
+        "runs": 3
+       },
+       {
+        "name": "the recursor DNS Service only carries DNS",
+        "runs": 1
+       },
+       {
+        "name": "a pod of networkPolicy.apiAllowedFrom reaches the API (and needs the key)",
+        "runs": 1
+       },
+       {
+        "name": "a pod outside networkPolicy.apiAllowedFrom cannot reach the API, and still gets DNS answers",
+        "runs": 1
+       },
+       {
+        "name": "authoritative: A record (+notcp) after a restart",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: A record (+tcp) after a restart",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: AAAA record after a restart",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: MX record after a restart",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: TXT record after a restart",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: record added through the API after a restart",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: the answers are authoritative after a restart",
+        "runs": 3
+       },
+       {
+        "name": "authoritative: unknown name, NXDOMAIN after a restart",
+        "runs": 3
+       }
+      ],
+      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
+      "date": "2026-11-02T17:42:04Z",
+      "event": "push",
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162893",
+      "run_id": 41489635804,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
+      "status": "passed",
+      "steps": [
+       {
+        "conclusion": "success",
+        "name": "Checkout"
+       },
+       {
+        "conclusion": "success",
+        "name": "Build the PowerDNS and database client images"
+       },
+       {
+        "conclusion": "success",
+        "name": "Create kind cluster"
+       },
+       {
+        "conclusion": "success",
+        "name": "Load the images"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install Helm"
+       },
+       {
+        "conclusion": "success",
+        "name": "Start PostgreSQL (TLS) and MySQL"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install the chart"
+       },
+       {
+        "conclusion": "success",
+        "name": "helm test"
+       },
+       {
+        "conclusion": "success",
+        "name": "API, zones, DNS answers, recursor and NetworkPolicy"
+       },
+       {
+        "conclusion": "skipped",
+        "name": "Diagnostics"
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
     },
     "install": {
      "detail": "`ct lint` passed (version increment, YAML lint). Installed on kind with `default-values.yaml` and `upstream-values.yaml`; `helm test`: 2 of 2 test pods succeeded",
@@ -2210,13 +2524,13 @@
         "runs": 1
        }
       ],
-      "commit": "545d8b4114ddb7b9e7d785105cbd736b1965b30b",
-      "date": "2026-11-02T15:39:12Z",
+      "commit": "e9cff060694c1f54c17c24bb7715568227d3c909",
+      "date": "2026-11-02T17:42:04Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41471829166/job/125367850676",
-      "run_id": 41471829166,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41471829166",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41489635804/job/125429162778",
+      "run_id": 41489635804,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41489635804",
       "status": "passed",
       "steps": [
        {
@@ -4436,7 +4750,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-02T17:32:11Z",
+ "latest_result": "2026-11-02T17:42:04Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
