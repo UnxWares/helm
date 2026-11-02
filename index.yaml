@@ -1939,6 +1939,71 @@ entries:
       artifacthub.io/category: database
       artifacthub.io/changes: |
         - kind: security
+          description: "The Jobs use the UnxWares client images (psql, mysql, mongosh only) instead of whole PostgreSQL, MySQL and MongoDB server images: 297 known vulnerabilities down to 47, 92 critical or high down to 1. The 47 belong to the dependencies mongosh bundles, now visible to scanners through its SBOM."
+        - kind: fixed
+          description: "PostgreSQL: the application user also gets the default privileges on sequences, so it can insert into tables with a serial or identity column that an init script created."
+        - kind: added
+          description: "End-to-end test in CI: the Jobs run against real PostgreSQL, MySQL and MongoDB servers, then the application users' logins, rights and the init scripts are checked, before and after a password rotation."
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: OpenEverest Database Tools
+      artifacthub.io/images: |
+        - name: postgresql-client
+          image: ghcr.io/unxwares/postgresql-client:18
+        - name: mysql-client
+          image: ghcr.io/unxwares/mysql-client:8.4
+        - name: mongosh
+          image: ghcr.io/unxwares/mongosh:2.14.1
+        - name: kubectl
+          image: registry.k8s.io/kubectl:v1.37.2
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/openeverest-database-tools
+        - name: OpenEverest documentation
+          url: https://openeverest.io/documentation/current/
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.17.0
+    created: "2026-11-02T12:32:46.706912709Z"
+    description: Jobs that wait for an OpenEverest DatabaseCluster to be ready, then
+      create PostgreSQL, MySQL and MongoDB databases, users, grants and run init scripts.
+    digest: 07d3af9536031ad7a407e93624ed9dda0ede6ee2610c274cd5bb61cb5186b396
+    home: https://github.com/UnxWares/helm/tree/main/charts/openeverest-database-tools
+    icon: https://openeverest.io/images/brandkit/icon-full-color-white-min.png
+    keywords:
+    - database
+    - initialization
+    - openeverest
+    - everest
+    - percona
+    - postgresql
+    - mysql
+    - mongodb
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: openeverest-database-tools
+    sources:
+    - https://github.com/openeverest/openeverest
+    - https://github.com/openeverest/openeverest-operator
+    - https://github.com/UnxWares/helm/tree/main/charts/openeverest-database-tools
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.11.1/openeverest-database-tools-2026.11.1.tgz
+    version: 2026.11.1
+  - annotations:
+      artifacthub.io/category: database
+      artifacthub.io/changes: |
+        - kind: security
           description: kubectl v1.37.2 for the wait init containers (23 known vulnerabilities down to 9).
         - kind: changed
           description: MySQL client 8.4.13.
@@ -3316,4 +3381,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-11-02T12:20:38.721383701Z"
+generated: "2026-11-02T12:32:46.70717473Z"
