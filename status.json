@@ -145,13 +145,13 @@
         "runs": 1
        }
       ],
-      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
-      "date": "2026-11-02T19:31:39Z",
+      "commit": "fae7d60e4222548af49aa6607ba79fb97908857e",
+      "date": "2026-11-02T20:00:51Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489664035",
-      "run_id": 41507247509,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41511588235/job/125505384544",
+      "run_id": 41511588235,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41511588235",
       "status": "passed",
       "steps": [
        {
@@ -388,13 +388,13 @@
         "runs": 1
        }
       ],
-      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
-      "date": "2026-11-02T19:31:39Z",
+      "commit": "fae7d60e4222548af49aa6607ba79fb97908857e",
+      "date": "2026-11-02T20:00:51Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489663877",
-      "run_id": 41507247509,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41511588235/job/125505384580",
+      "run_id": 41511588235,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41511588235",
       "status": "passed",
       "steps": [
        {
@@ -675,13 +675,13 @@
         "runs": 1
        }
       ],
-      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
-      "date": "2026-11-02T19:31:39Z",
+      "commit": "fae7d60e4222548af49aa6607ba79fb97908857e",
+      "date": "2026-11-02T20:00:51Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489664075",
-      "run_id": 41507247509,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41511588235/job/125505384751",
+      "run_id": 41511588235,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41511588235",
       "status": "passed",
       "steps": [
        {
@@ -943,13 +943,13 @@
         "runs": 1
        }
       ],
-      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
-      "date": "2026-11-02T19:31:39Z",
+      "commit": "fae7d60e4222548af49aa6607ba79fb97908857e",
+      "date": "2026-11-02T20:00:51Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489663717",
-      "run_id": 41507247509,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41511588235/job/125505384448",
+      "run_id": 41511588235,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41511588235",
       "status": "passed",
       "steps": [
        {
@@ -1233,13 +1233,13 @@
         "runs": 1
        }
       ],
-      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
-      "date": "2026-11-02T19:31:39Z",
+      "commit": "fae7d60e4222548af49aa6607ba79fb97908857e",
+      "date": "2026-11-02T20:00:51Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489663634",
-      "run_id": 41507247509,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41511588235/job/125505384467",
+      "run_id": 41511588235,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41511588235",
       "status": "passed",
       "steps": [
        {
@@ -1455,11 +1455,184 @@
    "name": "laravel-generic",
    "results": {
     "e2e": {
-     "detail": "",
-     "note": "",
-     "result": null,
-     "status": "no result",
-     "summary": "No result yet"
+     "detail": "26 checks, all passed",
+     "note": "26 checks",
+     "result": {
+      "checks": [
+       {
+        "name": "Laravel 13.39.0 answers /up and its routes through the Service, PHP 8.5.12 (frankenphp)",
+        "runs": 2
+       },
+       {
+        "name": "the frankenphp web server serves the static files of public/ (text/plain)",
+        "runs": 2
+       },
+       {
+        "name": "the app container runs as uid 33 on a read-only root filesystem",
+        "runs": 4
+       },
+       {
+        "name": "the web pod uses the APP_KEY of the Secret laravel-generic (base64:, 32 random bytes)",
+        "runs": 2
+       },
+       {
+        "name": "the migrations ran in the init container of the web pod, with the same APP_KEY",
+        "runs": 1
+       },
+       {
+        "name": "a note is written to the SQLite (/app/storage/database/database.sqlite, on its own volume) database and read back, with its encrypted copy",
+        "runs": 1
+       },
+       {
+        "name": "a session counter goes up across requests (database session store, encrypted cookie, Blade view)",
+        "runs": 2
+       },
+       {
+        "name": "a value is written to the database cache and read back",
+        "runs": 2
+       },
+       {
+        "name": "a queued job (database queue) runs in a queue worker pod, with the same APP_KEY and cache",
+        "runs": 2
+       },
+       {
+        "name": "the web pod reads the files the job wrote to storage/app, and serves the one of the public disk under /storage/",
+        "runs": 2
+       },
+       {
+        "name": "the scheduler runs its every-minute task (CronJob running schedule:run, same APP_KEY)",
+        "runs": 1
+       },
+       {
+        "name": "Laravel 13.39.0 answers /up and its routes through the Service, PHP 8.5.12 (fpm-fcgi)",
+        "runs": 2
+       },
+       {
+        "name": "nginx passes PHP requests to PHP-FPM with the headers of the chart (X-Frame-Options, no version, no X-Powered-By)",
+        "runs": 2
+       },
+       {
+        "name": "the fpm web server serves the static files of public/ (text/plain)",
+        "runs": 2
+       },
+       {
+        "name": "the web pod uses the APP_KEY of the Secret laravel-generic-fpm (base64:, 32 random bytes)",
+        "runs": 2
+       },
+       {
+        "name": "the migrations ran in the hook Job with the same APP_KEY; the Job and its copy of the Secret are gone",
+        "runs": 1
+       },
+       {
+        "name": "a note is written to the PostgreSQL database and read back, with its encrypted copy",
+        "runs": 1
+       },
+       {
+        "name": "the scheduler runs its every-minute task (schedule:work Deployment, same APP_KEY)",
+        "runs": 1
+       },
+       {
+        "name": "another pod reaches nginx on port 8080 but not PHP-FPM on port 9000 (NetworkPolicy)",
+        "runs": 1
+       },
+       {
+        "name": "the reinstall kept the APP_KEY of the first install (Secret laravel-generic)",
+        "runs": 1
+       },
+       {
+        "name": "the SQLite (/app/storage/database/database.sqlite, on its own volume) database of the first install is still there (migrations not run again)",
+        "runs": 1
+       },
+       {
+        "name": "the note written before the reinstall reads back and decrypts",
+        "runs": 2
+       },
+       {
+        "name": "the session opened before the reinstall goes on (counter 4)",
+        "runs": 2
+       },
+       {
+        "name": "the files written to storage/app before the reinstall are still there (persistent volume)",
+        "runs": 2
+       },
+       {
+        "name": "the reinstall kept the APP_KEY of the first install (Secret laravel-generic-fpm)",
+        "runs": 1
+       },
+       {
+        "name": "the PostgreSQL database of the first install is still there (migrations not run again)",
+        "runs": 1
+       }
+      ],
+      "commit": "fae7d60e4222548af49aa6607ba79fb97908857e",
+      "date": "2026-11-02T20:00:51Z",
+      "event": "push",
+      "failed_step": null,
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41511588235/job/125505384659",
+      "run_id": 41511588235,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41511588235",
+      "status": "passed",
+      "steps": [
+       {
+        "conclusion": "success",
+        "name": "Checkout"
+       },
+       {
+        "conclusion": "success",
+        "name": "Build the test application images"
+       },
+       {
+        "conclusion": "success",
+        "name": "Create kind cluster"
+       },
+       {
+        "conclusion": "success",
+        "name": "Load the test application images"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install Helm"
+       },
+       {
+        "conclusion": "success",
+        "name": "Restricted namespace and PostgreSQL"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install the chart"
+       },
+       {
+        "conclusion": "success",
+        "name": "helm test"
+       },
+       {
+        "conclusion": "success",
+        "name": "Runtime, APP_KEY, migrations, database, session, cache, queue, files, scheduler, NetworkPolicy"
+       },
+       {
+        "conclusion": "success",
+        "name": "Uninstall, keeping the Secrets and the volumes"
+       },
+       {
+        "conclusion": "success",
+        "name": "Install the chart again"
+       },
+       {
+        "conclusion": "success",
+        "name": "helm test after the reinstall"
+       },
+       {
+        "conclusion": "success",
+        "name": "Check what the reinstall kept"
+       },
+       {
+        "conclusion": "skipped",
+        "name": "Diagnostics"
+       }
+      ]
+     },
+     "status": "passed",
+     "summary": "Passed"
     },
     "install": {
      "detail": "Excluded from `ct install` in `lint-test.yaml`: the chart needs prerequisites that a bare kind cluster does not have (its README says which)",
@@ -1701,13 +1874,13 @@
         "runs": 2
        }
       ],
-      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
-      "date": "2026-11-02T19:31:39Z",
+      "commit": "fae7d60e4222548af49aa6607ba79fb97908857e",
+      "date": "2026-11-02T20:00:51Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489663884",
-      "run_id": 41507247509,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41511588235/job/125505384505",
+      "run_id": 41511588235,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41511588235",
       "status": "passed",
       "steps": [
        {
@@ -2073,13 +2246,13 @@
         "runs": 3
        }
       ],
-      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
-      "date": "2026-11-02T19:31:39Z",
+      "commit": "fae7d60e4222548af49aa6607ba79fb97908857e",
+      "date": "2026-11-02T20:00:51Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489664043",
-      "run_id": 41507247509,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41511588235/job/125505384765",
+      "run_id": 41511588235,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41511588235",
       "status": "passed",
       "steps": [
        {
@@ -2456,13 +2629,13 @@
         "runs": 1
        }
       ],
-      "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
-      "date": "2026-11-02T19:31:39Z",
+      "commit": "fae7d60e4222548af49aa6607ba79fb97908857e",
+      "date": "2026-11-02T20:00:51Z",
       "event": "push",
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41507247509/job/125489663835",
-      "run_id": 41507247509,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41507247509",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/41511588235/job/125505384456",
+      "run_id": 41511588235,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/41511588235",
       "status": "passed",
       "steps": [
        {
@@ -4835,7 +5008,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-02T19:37:33Z",
+ "latest_result": "2026-11-02T20:00:51Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
