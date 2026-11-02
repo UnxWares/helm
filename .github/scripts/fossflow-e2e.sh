@@ -20,8 +20,9 @@ BASE="http://127.0.0.1:$PORT"
 WORK=$(mktemp -d)
 stop_forward() {
   if [ -n "${FORWARD_PID:-}" ]; then
-    kill "$FORWARD_PID" 2>/dev/null
-    wait "$FORWARD_PID" 2>/dev/null
+    # The forward exits on TERM (status 143): neither this nor kill may fail the script under set -e.
+    kill "$FORWARD_PID" 2>/dev/null || true
+    wait "$FORWARD_PID" 2>/dev/null || true
   fi
   true
 }
