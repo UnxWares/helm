@@ -19,6 +19,7 @@ the upstream images instead (see its README).
 | `mongosh:2.14.1` | `docker.io/library/mongo` (its `mongosh`) | The official mongosh release, checked against its SHA-256, on a distroless base; its SBOM stays in the image so that scanners see the bundled dependencies |
 | `cloudreve:4.19.1` | `docker.io/cloudreve/cloudreve` | Built from the release sources with the Go module updates of `patches/` (cloudreve/cloudreve#3618), current Alpine, same thumbnail tools (libvips, FFmpeg, LibreOffice, libheif, libraw); no aria2 or supervisord, no default time zone, non-root (uid 1000) |
 | `fossflow:1.0.5` | `docker.io/abrar74774/fossflow` | Built from the upstream sources (commit `2b3cee3`, release v1.0.5) with the lockfile update of `patches/` (`npm audit fix`), current Alpine, no npm, su-exec or openssl; nginx on port 8080 and the backend run as uid 1000 with a read-only root filesystem, the backend listens on 127.0.0.1 only and its CORS headers (any origin) are dropped |
+| `bind-exporter:0.8.0-62-gbafd56f` | `docker.io/prometheuscommunity/bind-exporter` | Built from the sources of the master branch (commit `bafd56f`, 62 commits after v0.8.0) with Go 1.27 and the `golang.org/x` module updates of `patches/` (prometheus-community/bind_exporter#301), static binary on distroless, same path, flags, port and user (`nobody`) |
 
 The images keep the upstream ports, paths, users and environment variables (PowerDNS: the same `pdns` user,
 startup script and Jinja2 templates), except `taiga-front`, which listens on 8080 instead of 80, and `cloudreve`,
