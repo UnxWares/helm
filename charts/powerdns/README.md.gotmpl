@@ -82,10 +82,10 @@ stored in a ConfigMap, and how the recursor learns the address of the authoritat
 | MySQL client of the gmysql schema init | `ghcr.io/unxwares/mysql-client:8.4` | `docker.io/library/mysql:8.4.13` |
 
 Tags: the authoritative server follows the chart `appVersion` (`image.tag`), the recursor `recursor.image.tag`
-(`5.4.9`); the client images are whole references (`backend.schemaInit.postgresImage`,
-`backend.schemaInit.mysqlImage`). The UnxWares client images hold the client alone, not a database server: `18` and
-`8.4` take the latest client of the series at each rebuild. The `helm test` pod uses the authoritative server image,
-or `tests.image`.
+(`5.4.9`, required unless `recursor.image.digest` is set); the client images are whole references
+(`backend.schemaInit.postgresImage`, `backend.schemaInit.mysqlImage`). The UnxWares client images hold the client
+alone, not a database server: `18` and `8.4` take the latest client of the series at each rebuild. The `helm test` pod
+uses the authoritative server image, or `tests.image`.
 
 The UnxWares images are the same PowerDNS versions, built from the release tarballs on current Alpine bases and
 rebuilt twice a week (Monday and Thursday), with the backends the chart supports (bind, gsqlite3, gpgsql, gmysql) and

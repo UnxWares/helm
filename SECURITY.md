@@ -30,6 +30,13 @@ from the charts. Two things keep them down:
   fixable vulnerabilities of our images, and upstream fix candidates (application dependencies
   to bump upstream, images that only need a rebuild). New fixable critical/high vulnerabilities
   are posted as a comment. When upstream has not fixed one yet, we send them the pull request.
+- **Rebuild as soon as a fix is out**: when the CVE watch finds a critical or high vulnerability
+  in one of our images that a rebuild fixes (an OS package, or the Go standard library of the
+  build image), it starts the image workflow at once instead of waiting for the Monday or Thursday
+  rebuild, and says in the issue which images and vulnerabilities. It skips the vulnerabilities
+  that the image's `.trivyignore` accepts (each one documented), never starts a rebuild from the
+  watch that follows a rebuild, and waits 20 hours after the previous image build. Vulnerable
+  application dependencies pinned in `images/` need a pull request: they stay listed in the issue.
 
 We bump image tags as soon as a fixed build exists. Releases that only exist for that reason
 carry the `artifacthub.io/containsSecurityUpdates: "true"` annotation.

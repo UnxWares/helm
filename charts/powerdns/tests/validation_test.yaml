@@ -79,6 +79,30 @@ tests:
     asserts:
       - notFailedTemplate: {}
 
+  - it: requires the recursor image tag or digest instead of rendering an image reference without tag
+    values:
+      - values/recursor.yaml
+    set:
+      recursor.image.tag: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: recursor.image.tag or recursor.image.digest is required with the recursor (recursor.enabled)
+
+  - it: accepts an empty recursor image tag with a digest
+    values:
+      - values/recursor.yaml
+    set:
+      recursor.image.tag: ""
+      recursor.image.digest: sha256:1111111111111111111111111111111111111111111111111111111111111111
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: ignores the recursor image tag while the recursor is disabled
+    set:
+      recursor.image.tag: ""
+    asserts:
+      - notFailedTemplate: {}
+
   - it: rejects an unknown backend (schema)
     set:
       backend.type: gldap

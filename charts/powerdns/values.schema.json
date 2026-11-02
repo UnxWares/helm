@@ -525,7 +525,7 @@
                             "type": "string"
                         },
                         "tag": {
-                            "description": "Recursor image tag.",
+                            "description": "Recursor image tag (required unless `digest` is set).",
                             "type": "string"
                         }
                     }

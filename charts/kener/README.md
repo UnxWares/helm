@@ -1,6 +1,6 @@
 # Kener Helm Chart
 
-![Version: 2026.11.4](https://img.shields.io/badge/Version-2026.11.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.1.11](https://img.shields.io/badge/AppVersion-4.1.11-informational?style=flat-square)
+![Version: 2026.11.5](https://img.shields.io/badge/Version-2026.11.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.1.11](https://img.shields.io/badge/AppVersion-4.1.11-informational?style=flat-square)
 
 [Kener](https://kener.ing) is an open source status page: monitors (HTTP, TCP, DNS, ping, SSL, SQL, gRPC,
 heartbeat...), incidents, maintenances and subscriptions. This chart, maintained by UnxWares, runs Kener 4 on
@@ -463,9 +463,9 @@ resources:
 
 When a probe has no handler, the chart adds an `httpGet` on the base path: liveness and startup on
 `<basePath>/healthcheck` (200 while the server answers), readiness on `<basePath>/healthcheck?strict=1` (503 while
-the database or Redis is unreachable). `enabled: false` removes a probe. The liveness probe tolerates 2 minutes
-(6 × 20 s) and the startup probe 5 minutes (60 × 5 s); large SQLite migrations block the process at the first start
-of a new version, so raise them for very large databases:
+the database or Redis is unreachable). `enabled: false`, or the probe set to `null`, removes a probe. The liveness
+probe tolerates 2 minutes (6 × 20 s) and the startup probe 5 minutes (60 × 5 s); large SQLite migrations block the
+process at the first start of a new version, so raise them for very large databases:
 
 ```yaml
 livenessProbe:
@@ -1023,7 +1023,7 @@ kubectl -n status delete secret status-kener
 | kener.nodeEnv | string | `"production"` | `NODE_ENV` of the Kener process. |
 | kener.origin | string | `"http://localhost:3000"` | Public URL of Kener (`ORIGIN`): scheme + host + optional port, no path, no trailing slash (e.g. `https://status.example.com`). It must match the URL in the browser or every form (login included) is rejected; `https://` also turns on secure cookies. The default only suits `kubectl port-forward`. |
 | kener.secretKey | string | `""` | Secret key (`KENER_SECRET_KEY`, 32+ characters) signing sessions and hashing API keys. Leave empty to generate one (kept across upgrades). Set it, or use `existingSecret`, with GitOps tools that render templates offline: changing it logs everybody out and invalidates every API key. |
-| livenessProbe | object | `{"enabled":true,"failureThreshold":6,"periodSeconds":20,"timeoutSeconds":5}` | Liveness probe (`enabled: false` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck` (always 200 while the server answers). Generous on purpose: large SQLite migrations block the process at the first start of a new version. |
+| livenessProbe | object | `{"enabled":true,"failureThreshold":6,"periodSeconds":20,"timeoutSeconds":5}` | Liveness probe (`enabled: false` or `null` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck` (always 200 while the server answers). Generous on purpose: large SQLite migrations block the process at the first start of a new version. |
 | nameOverride | string | `""` | Override the chart name. |
 | networkPolicy.enabled | bool | `false` | Create NetworkPolicies: Kener only accepts traffic on its HTTP port, and the bundled Valkey only accepts Kener pods (no egress at all). |
 | networkPolicy.ingressFrom | list | `[]` | Peers allowed to reach Kener (e.g. your ingress controller). Empty allows any source on the HTTP port; pods of this release are always allowed. |
@@ -1048,7 +1048,7 @@ kubectl -n status delete secret status-kener
 | proxy.httpProxy | string | `""` | `HTTP_PROXY` (stored in a Secret: it may carry credentials, percent-encoded). Ignored when `existingSecret` is set. |
 | proxy.httpsProxy | string | `""` | `HTTPS_PROXY` (stored in a Secret). Ignored when `existingSecret` is set. |
 | proxy.noProxy | string | `""` | `NO_PROXY`: hosts, `host:port`, `.suffix` (no CIDR). Add the in-cluster services your monitors reach directly. |
-| readinessProbe | object | `{"enabled":true,"failureThreshold":3,"periodSeconds":10,"timeoutSeconds":5}` | Readiness probe (`enabled: false` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck?strict=1` (503 while the database or Redis is unreachable). |
+| readinessProbe | object | `{"enabled":true,"failureThreshold":3,"periodSeconds":10,"timeoutSeconds":5}` | Readiness probe (`enabled: false` or `null` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck?strict=1` (503 while the database or Redis is unreachable). |
 | redis.affinity | object | `{}` | Affinity rules. |
 | redis.auth.existingSecret | string | `""` | Existing secret holding the Valkey password (same character rules). |
 | redis.auth.existingSecretPasswordKey | string | `"redis-password"` | Key of the password in `existingSecret`. |
@@ -1089,7 +1089,7 @@ kubectl -n status delete secret status-kener
 | serviceAccount.automount | bool | `false` | Kener never talks to the Kubernetes API: the token is not mounted. |
 | serviceAccount.create | bool | `true` | Create a dedicated service account. |
 | serviceAccount.name | string | `""` | Service account name (generated when empty). |
-| startupProbe | object | `{"enabled":true,"failureThreshold":60,"periodSeconds":5,"timeoutSeconds":5}` | Startup probe (`enabled: false` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck`. |
+| startupProbe | object | `{"enabled":true,"failureThreshold":60,"periodSeconds":5,"timeoutSeconds":5}` | Startup probe (`enabled: false` or `null` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck`. |
 | tests.image | string | `""` | Image used by `helm test` (defaults to the Kener image, which ships curl). |
 | tolerations | list | `[]` | Tolerations. |
 | topologySpreadConstraints | list | `[]` | Topology spread constraints. |

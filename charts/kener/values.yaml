@@ -345,19 +345,19 @@ resources:  # @schema skipProperties:true
   limits:
     memory: 1Gi
 
-# -- Liveness probe (`enabled: false` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck` (always 200 while the server answers). Generous on purpose: large SQLite migrations block the process at the first start of a new version.
+# -- Liveness probe (`enabled: false` or `null` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck` (always 200 while the server answers). Generous on purpose: large SQLite migrations block the process at the first start of a new version.
 livenessProbe:  # @schema skipProperties:true
   enabled: true
   periodSeconds: 20
   timeoutSeconds: 5
   failureThreshold: 6
-# -- Readiness probe (`enabled: false` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck?strict=1` (503 while the database or Redis is unreachable).
+# -- Readiness probe (`enabled: false` or `null` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck?strict=1` (503 while the database or Redis is unreachable).
 readinessProbe:  # @schema skipProperties:true
   enabled: true
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3
-# -- Startup probe (`enabled: false` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck`.
+# -- Startup probe (`enabled: false` or `null` removes it). Without a handler, the chart adds `httpGet <basePath>/healthcheck`.
 startupProbe:  # @schema skipProperties:true
   enabled: true
   periodSeconds: 5

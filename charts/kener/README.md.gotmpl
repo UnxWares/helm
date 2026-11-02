@@ -461,9 +461,9 @@ resources:
 
 When a probe has no handler, the chart adds an `httpGet` on the base path: liveness and startup on
 `<basePath>/healthcheck` (200 while the server answers), readiness on `<basePath>/healthcheck?strict=1` (503 while
-the database or Redis is unreachable). `enabled: false` removes a probe. The liveness probe tolerates 2 minutes
-(6 × 20 s) and the startup probe 5 minutes (60 × 5 s); large SQLite migrations block the process at the first start
-of a new version, so raise them for very large databases:
+the database or Redis is unreachable). `enabled: false`, or the probe set to `null`, removes a probe. The liveness
+probe tolerates 2 minutes (6 × 20 s) and the startup probe 5 minutes (60 × 5 s); large SQLite migrations block the
+process at the first start of a new version, so raise them for very large databases:
 
 ```yaml
 livenessProbe:

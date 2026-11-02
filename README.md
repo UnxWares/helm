@@ -82,8 +82,9 @@ default to our own builds, published on `ghcr.io/unxwares`:
 | `postgresql-client`, `mysql-client`, `mongosh` | openeverest-database-tools, powerdns (schema init) | The database clients alone instead of whole server images |
 | `bind-exporter` | bind9 | Built from the master sources with Go 1.27 and current `golang.org/x` modules, distroless, non-root |
 
-They are rebuilt every Monday and Thursday on current bases, scanned with Trivy and signed with cosign; each chart can
-still use the upstream images. Sources, differences and the signature check are in [images/](images/README.md).
+They are rebuilt every Monday and Thursday on current bases, and sooner when the CVE watch finds a critical or high
+vulnerability that a rebuild fixes; they are scanned with Trivy and signed with cosign, and each chart can still use
+the upstream images. Sources, differences and the signature check are in [images/](images/README.md).
 
 ## How the charts are tested
 
@@ -93,6 +94,7 @@ still use the upstream images. Sources, differences and the signature check are 
 | Pull requests touching a chart with an end-to-end test, every push to main, every Tuesday | [`e2e.yaml`](.github/workflows/e2e.yaml): the images of the commit are built and loaded into kind, the chart is installed next to real dependencies, and a script drives the application and checks its answers |
 | Pull requests touching `images/` | Each image is built for amd64 and arm64 and fails on a fixable critical or high vulnerability that is not documented |
 | Every 6 hours, and after each image rebuild | The CVE watch scans every image the charts can deploy, and the official image each UnxWares image replaces |
+| When the CVE watch finds a critical or high vulnerability that a rebuild fixes in one of our images | The watch starts the image workflow instead of waiting for the next scheduled rebuild: for OS packages and the Go standard library of the build images, not for the dependencies pinned in `images/` (they need a pull request) nor for what an image's `.trivyignore` accepts. Never from the watch that follows a rebuild, and not within 20 hours of the previous image workflow run on main; the CVE watch issue says which images and vulnerabilities |
 
 The end-to-end tests:
 
@@ -125,9 +127,8 @@ The end-to-end tests:
 
 Unit tests ([helm-unittest](https://github.com/helm-unittest/helm-unittest) suites in `charts/<chart>/tests`, run by
 [`unit.yaml`](.github/workflows/unit.yaml)) render the templates without a cluster and check the security contexts,
-the image selection, the required values, the Secrets and the probes; cloudreve, laravel-generic and
-openeverest-database-tools have them so far. The latest result of each kind, per chart and per image, with the CVE
-counts of the images, is published at <https://helm.unxwares.studio> (raw data:
+the image selection, the required values, the Secrets and the probes; every chart has them. The latest result of
+each kind, per chart, with the CVE counts of the images, is published at <https://helm.unxwares.studio> (raw data:
 [status.json](https://helm.unxwares.studio/status.json)), rebuilt by [`site.yaml`](.github/workflows/site.yaml).
 
 ## Installation

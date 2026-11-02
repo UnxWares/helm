@@ -344,7 +344,7 @@ recursor:
     # -- Recursor image repository. Empty: `ghcr.io/unxwares/pdns-recursor` or `docker.io/powerdns/pdns-recursor-54`,
     # from `imageProvider`.
     repository: ""
-    # -- Recursor image tag.
+    # -- Recursor image tag (required unless `digest` is set).
     tag: "5.4.9"
     # -- Image digest (takes precedence over the tag).
     digest: ""
