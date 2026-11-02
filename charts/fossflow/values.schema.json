@@ -14,18 +14,28 @@
                     "type": "boolean"
                 },
                 "maxReplicas": {
+                    "description": "Maximum replicas.",
                     "type": "integer"
                 },
                 "minReplicas": {
+                    "description": "Minimum replicas.",
                     "type": "integer"
                 },
                 "targetCPUUtilizationPercentage": {
+                    "description": "Target CPU utilization.",
                     "type": "integer"
+                },
+                "targetMemoryUtilizationPercentage": {
+                    "description": "Target memory utilization.",
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
                 }
             }
         },
         "extraEnv": {
-            "description": "Extra environment variables. HTTP_AUTH_USER/HTTP_AUTH_PASSWORD are broken in the upstream image (OpenSSL 3 has no bcrypt): protect FossFLOW at the ingress level instead.",
+            "description": "Extra environment variables. HTTP_AUTH_USER/HTTP_AUTH_PASSWORD do not work: the upstream image fails to build its password file (OpenSSL 3 has no bcrypt) and the UnxWares image refuses to start with them. Protect FossFLOW at the ingress level instead.",
             "type": "array"
         },
         "extraEnvFrom": {
@@ -116,14 +126,22 @@
                     ]
                 },
                 "repository": {
-                    "description": "FossFLOW image. `abrar74774/fossflow` is built by the maintained continuation of FossFLOW (github.com/Abrar74774/FossFLOW).",
+                    "description": "Image repository. Empty: `ghcr.io/unxwares/fossflow` or `docker.io/abrar74774/fossflow`, from `imageProvider`.",
                     "type": "string"
                 },
                 "tag": {
-                    "description": "Image tag. Upstream only publishes `master-\u003ccommit\u003e` tags: `master-2b3cee3` is release v1.0.5.",
+                    "description": "Image tag. Empty: the chart appVersion for the UnxWares image, `master-2b3cee3` for the upstream one (upstream only publishes `master-\u003ccommit\u003e` tags: `master-2b3cee3` is release v1.0.5).",
                     "type": "string"
                 }
             }
+        },
+        "imageProvider": {
+            "description": "Image provider. `unxwares`: `ghcr.io/unxwares/fossflow`, FossFLOW built from the upstream sources with updated dependencies on a current Alpine, rebuilt twice a week, signed (https://github.com/UnxWares/helm/tree/main/images): nginx on port 8080 and the backend run as a non-root user, with a read-only root filesystem. `upstream`: `docker.io/abrar74774/fossflow`, built by the maintained continuation of FossFLOW (github.com/Abrar74774/FossFLOW), which starts as root (nginx on port 80, backend through su-exec) with a writable root filesystem.",
+            "type": "string",
+            "enum": [
+                "unxwares",
+                "upstream"
+            ]
         },
         "imagePullSecrets": {
             "description": "Secrets for pulling images from a private registry.",
@@ -184,6 +202,19 @@
             "description": "Override the chart name.",
             "type": "string"
         },
+        "networkPolicy": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Create a NetworkPolicy: FossFLOW only accepts traffic on its HTTP port and opens no connection (no egress at all).",
+                    "type": "boolean"
+                },
+                "ingressFrom": {
+                    "description": "Peers allowed to reach FossFLOW (e.g. your ingress controller). Empty allows any source on the HTTP port; pods of this release are always allowed.",
+                    "type": "array"
+                }
+            }
+        },
         "nodeSelector": {
             "description": "Node selector.",
             "type": "object"
@@ -229,7 +260,7 @@
             "type": "object"
         },
         "podSecurityContext": {
-            "description": "Pod security context.",
+            "description": "Pod security context. Empty: the defaults of `imageProvider`, `fsGroup` `storage.gid` and seccomp `RuntimeDefault`, plus `runAsNonRoot` as `storage.uid`:`storage.gid` with the UnxWares image (see Security in the README).",
             "type": "object"
         },
         "readinessProbe": {
@@ -245,14 +276,14 @@
             "type": "object"
         },
         "securityContext": {
-            "description": "Container security context. The image entrypoint must start as root (nginx binds port 80 and rewrites its config, the backend is started through su-exec): every capability is dropped except the five it needs.",
+            "description": "Container security context. Empty: the defaults of `imageProvider`. UnxWares image: read-only root filesystem, every capability dropped. Upstream image: its entrypoint must start as root (nginx binds port 80 and rewrites its configuration, the backend is started through su-exec), so every capability is dropped except the five it needs.",
             "type": "object"
         },
         "service": {
             "type": "object",
             "properties": {
                 "port": {
-                    "description": "Service port (the container listens on 80).",
+                    "description": "Service port (the container listens on 8080 with the UnxWares image, 80 with the upstream one).",
                     "type": "integer"
                 },
                 "type": {
@@ -295,16 +326,17 @@
                     "type": "boolean"
                 },
                 "gid": {
+                    "description": "Group of the diagrams (`fsGroup` of the pod; `PGID` with the upstream image).",
                     "type": "integer"
                 },
                 "uid": {
-                    "description": "User and group the Node.js backend drops to (`PUID`/`PGID`). nginx keeps its own `nginx` user.",
+                    "description": "User that owns the diagrams. The UnxWares image runs nginx and the backend as this user; the upstream image starts as root and drops the backend to it (`PUID`), nginx keeping its own `nginx` user.",
                     "type": "integer"
                 }
             }
         },
         "terminationGracePeriodSeconds": {
-            "description": "The image entrypoint does not forward SIGTERM: keep the grace period short.",
+            "description": "Grace period of the pod. The UnxWares image stops nginx and the backend on SIGTERM; the upstream entrypoint does not forward it, so the pod waits for the whole period.",
             "type": "integer"
         },
         "tolerations": {

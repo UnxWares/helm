@@ -1,0 +1,4 @@
+# The upstream image (imageProvider: upstream), server storage on a PVC.
+imageProvider: upstream
+persistence:
+  size: 1Gi

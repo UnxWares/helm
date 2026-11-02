@@ -34,6 +34,7 @@ jobs:
             taiga: ${{ steps.diff.outputs.taiga }}
             kener: ${{ steps.diff.outputs.kener }}
             excalidash: ${{ steps.diff.outputs.excalidash }}
+            fossflow: ${{ steps.diff.outputs.fossflow }}
         steps:
             - name: Checkout
               uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -67,6 +68,9 @@ jobs:
                   fi
                   if matches "$common|^charts/excalidash/|^\.github/scripts/excalidash-e2e\.sh$"; then
                       echo "excalidash=true" >> "$GITHUB_OUTPUT"
+                  fi
+                  if matches "$common|^charts/fossflow/|^images/fossflow/|^\.github/scripts/fossflow-e2e\.sh$"; then
+                      echo "fossflow=true" >> "$GITHUB_OUTPUT"
                   fi
 
     openeverest-database-tools:
@@ -400,3 +404,68 @@ jobs:
                   kubectl --namespace "$RELEASE" describe pods
                   kubectl --namespace "$RELEASE" logs deploy/"$RELEASE"-backend --all-containers --prefix || true
                   kubectl --namespace "$RELEASE" logs deploy/"$RELEASE"-frontend --all-containers --prefix || true
+
+    fossflow:
+        name: fossflow
+        needs: changes
+        if: needs.changes.outputs.fossflow == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        env:
+            CHART: charts/fossflow
+            RELEASE: fossflow
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            # The image of this commit, so that a change to it is tested before it is published.
+            - name: Build the FossFLOW image
+              run: docker build --tag local/fossflow:e2e images/fossflow
+
+            - name: Create kind cluster
+              uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+
+            - name: Load the FossFLOW image
+              run: kind load docker-image local/fossflow:e2e --name chart-testing
+
+            - name: Install Helm
+              uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+              with:
+                  version: ${{ env.HELM_VERSION }}
+
+            # Server storage (ci/default-values.yaml), and browser-only with the NetworkPolicy (2 replicas), in a
+            # namespace that enforces the restricted Pod Security Standard.
+            - name: Install the chart in both modes
+              run: |
+                  kubectl create namespace "$RELEASE"
+                  kubectl label namespace "$RELEASE" pod-security.kubernetes.io/enforce=restricted
+                  helm install "$RELEASE" "$CHART" --namespace "$RELEASE" \
+                      --values "$CHART/ci/default-values.yaml" \
+                      --set image.repository=local/fossflow --set image.tag=e2e \
+                      --wait --timeout 5m
+                  helm install "$RELEASE-browser" "$CHART" --namespace "$RELEASE" \
+                      --values "$CHART/ci/browser-only-values.yaml" \
+                      --set image.repository=local/fossflow --set image.tag=e2e \
+                      --wait --timeout 5m
+
+            - name: helm test
+              run: |
+                  helm test "$RELEASE" --namespace "$RELEASE"
+                  helm test "$RELEASE-browser" --namespace "$RELEASE"
+
+            - name: Diagrams through the Service, browser-only mode, backend and NetworkPolicy isolation
+              run: |
+                  .github/scripts/fossflow-e2e.sh "$RELEASE" "$RELEASE"
+                  .github/scripts/fossflow-e2e.sh "$RELEASE" "$RELEASE-browser"
+
+            - name: Diagnostics
+              if: failure()
+              run: |
+                  kubectl get pods --all-namespaces -o wide
+                  kubectl --namespace "$RELEASE" describe pods
+                  kubectl --namespace "$RELEASE" get events --sort-by=.lastTimestamp
+                  for deployment in "$RELEASE" "$RELEASE-browser"; do
+                      kubectl --namespace "$RELEASE" logs deploy/"$deployment" --all-containers --prefix || true
+                  done

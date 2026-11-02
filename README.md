@@ -43,7 +43,7 @@ the same rules:
 | [bind9](charts/bind9) | ISC BIND 9.20 | Upstream (ISC, bind_exporter) | Install, `helm test` (DNS query) |
 | [cloudreve](charts/cloudreve) | Cloudreve 4.19 | UnxWares | Install (UnxWares and upstream images), `helm test`, end to end |
 | [excalidash](charts/excalidash) | ExcaliDash 0.6 | Upstream | Install, `helm test` (health endpoint), end to end |
-| [fossflow](charts/fossflow) | FossFLOW 1.0 | Upstream | Install, `helm test` (storage status) |
+| [fossflow](charts/fossflow) | FossFLOW 1.0 | UnxWares | Install (UnxWares and upstream images), `helm test`, end to end |
 | [kener](charts/kener) | Kener 4.1 | Upstream (Kener, Valkey) | Install, `helm test` (strict health check), end to end |
 | [laravel-generic](charts/laravel-generic) | Laravel 12 | Your image, nginx-unprivileged | Lint and schema validation only (needs your image) |
 | [openeverest-database-tools](charts/openeverest-database-tools) | OpenEverest 1.17 | UnxWares (database clients), kubectl | End to end |
@@ -75,6 +75,7 @@ default to our own builds, published on `ghcr.io/unxwares`:
 | Image | Used by | What differs from upstream |
 |-------|---------|----------------------------|
 | `cloudreve` | cloudreve | Built from the release sources with current Go modules, current Alpine, no aria2/supervisord |
+| `fossflow` | fossflow | Built from the upstream sources with updated npm dependencies, current Alpine, non-root, read-only root filesystem, backend on 127.0.0.1 only |
 | `pdns-auth`, `pdns-recursor` | powerdns | Alpine, built from the release tarballs with the backends the chart uses |
 | `postgres` 17, 18 | taiga | Alpine packages upgraded, `su-exec` instead of `gosu` |
 | `taiga-back`, `taiga-front`, `taiga-events`, `taiga-protected` | taiga | Current dependencies, upstream security fixes not released yet, non-root |
@@ -111,6 +112,9 @@ The end-to-end tests:
   and logs in, creates a drawing, finds it in the listing, exports it and gets the export accepted by the import
   check; cookies are `Secure` behind TLS, the backend refuses other pods, and a reinstall keeps the session and the
   drawing.
+- **fossflow**: in a namespace that enforces the `restricted` Pod Security Standard, a diagram is created, listed,
+  read back, updated and still there after the pod is replaced; the browser-only mode serves the app; from other
+  pods, the backend port cannot be reached and the NetworkPolicy keeps out the pods it does not allow.
 
 Unit tests ([helm-unittest](https://github.com/helm-unittest/helm-unittest) suites in `charts/<chart>/tests`, run by
 [`unit.yaml`](.github/workflows/unit.yaml)) render the templates without a cluster and check the security contexts,

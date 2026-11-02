@@ -37,7 +37,7 @@ whose entrypoint is the binary itself (the upstream one starts aria2 under super
 - `<version>-amd64`, `<version>-arm64`: the per-architecture images behind the multi-arch tag.
 
 `.github/workflows/images.yaml` builds every image natively on amd64 and arm64 and scans it with Trivy.
-The images of `cloudreve` and `openeverest-database-tools` are also built by the end-to-end tests
+The images of `cloudreve`, `fossflow` and `openeverest-database-tools` are also built by the end-to-end tests
 (`.github/workflows/e2e.yaml`), which run the chart on them in kind and check what the application does, so a change
 to one of these images is tested before it is published.
 The `taiga-back`, `taiga-front`, `taiga-events`, `taiga-protected` and `postgres` (17) images are built by the `taiga`

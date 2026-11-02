@@ -1,0 +1,30 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "fossflow.fullname" . }}
+  labels:
+    {{- include "fossflow.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "fossflow.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  # Only the HTTP port (nginx) is open; the backend listens on 127.0.0.1 inside the pod.
+  ingress:
+    - ports:
+        - port: http
+          protocol: TCP
+      {{- with .Values.networkPolicy.ingressFrom }}
+      from:
+        # Pods of this release (helm test).
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ $.Release.Name }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  # FossFLOW opens no connection: the diagrams are files on the volume.
+  egress: []
+{{- end }}
