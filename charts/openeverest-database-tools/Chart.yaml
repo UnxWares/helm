@@ -2,7 +2,7 @@ apiVersion: v2
 name: openeverest-database-tools
 description: Jobs that wait for an OpenEverest DatabaseCluster to be ready, then create PostgreSQL, MySQL and MongoDB databases, users, grants and run init scripts.
 type: application
-version: 2026.11.1
+version: 2026.11.2
 # OpenEverest release the chart is tested against (DatabaseCluster everest.percona.com/v1alpha1, 1.x series).
 appVersion: "1.17.0"
 kubeVersion: ">=1.27.0-0"
@@ -52,14 +52,10 @@ annotations:
       image: ghcr.io/unxwares/mongosh:2.14.1
     - name: kubectl
       image: registry.k8s.io/kubectl:v1.37.2
-  artifacthub.io/containsSecurityUpdates: "true"
+  artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
-    - kind: security
-      description: "The Jobs use the UnxWares client images (psql, mysql, mongosh only) instead of whole PostgreSQL, MySQL and MongoDB server images: 297 known vulnerabilities down to 47, 92 critical or high down to 1. The 47 belong to the dependencies mongosh bundles, now visible to scanners through its SBOM."
-    - kind: fixed
-      description: "PostgreSQL: the application user also gets the default privileges on sequences, so it can insert into tables with a serial or identity column that an init script created."
-    - kind: added
-      description: "End-to-end test in CI: the Jobs run against real PostgreSQL, MySQL and MongoDB servers, then the application users' logins, rights and the init scripts are checked, before and after a password rotation."
+    - kind: changed
+      description: "README completed: architecture, images, requirements, signed installation, configuration by topic, examples checked with helm template and kubeconform, security, testing, operations, troubleshooting and uninstalling."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

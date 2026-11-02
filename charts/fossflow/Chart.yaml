@@ -1,8 +1,8 @@
 apiVersion: v2
 name: fossflow
-description: A helm chart for FossFlow, powerful, open-source Progressive Web App (PWA) for creating beautiful isometric diagrams.
+description: FossFLOW, an open source web app to draw isometric infrastructure diagrams, with optional server-side storage of the diagrams.
 type: application
-version: 2026.10.1
+version: 2026.11.1
 appVersion: "1.0.5"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/fossflow
@@ -42,20 +42,12 @@ annotations:
   artifacthub.io/images: |
     - name: fossflow
       image: docker.io/abrar74774/fossflow:master-2b3cee3
-  artifacthub.io/containsSecurityUpdates: "true"
+  artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
-    - kind: security
-      description: "BREAKING: the image moves from stnsmith/fossflow:latest to abrar74774/fossflow:master-2b3cee3 (release v1.0.5). The original GitHub repository is gone and recent stnsmith/fossflow builds come from a private repository whose source cannot be verified; abrar74774/fossflow is built from the public, maintained continuation."
     - kind: changed
-      description: The image is pinned to an immutable commit tag instead of latest (appVersion 1.0.5).
-    - kind: added
-      description: Server storage of the diagrams (ENABLE_SERVER_STORAGE) persisted in a PVC at /data/diagrams, backend running as uid 1000.
-    - kind: security
-      description: Every capability dropped except the five the entrypoint needs, seccomp RuntimeDefault, no service account token.
+      description: "README completed: architecture, images, requirements, signed installation, configuration by topic, examples checked with helm template and kubeconform, security, testing, operations, troubleshooting and uninstalling."
     - kind: fixed
-      description: The httpRoute default rule only matched /headers; the container port no longer follows service.port.
-    - kind: added
-      description: Probes on the storage backend, image digests, Chart icon, helm test hardening, values schema, README.
+      description: "The chart description is factual."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

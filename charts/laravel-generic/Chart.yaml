@@ -2,7 +2,7 @@ apiVersion: v2
 name: laravel-generic
 description: Run your own Laravel application image on Kubernetes (FrankenPHP, or PHP-FPM with an nginx sidecar) with queue workers, scheduler, migrations and hardened defaults.
 type: application
-version: 2026.10.2
+version: 2026.11.1
 # Laravel version the chart targets (informational: the image tag is always yours, see image.tag).
 appVersion: "12.x"
 kubeVersion: ">=1.27.0-0"
@@ -50,9 +50,9 @@ annotations:
     - name: nginx-unprivileged
       image: docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim
   artifacthub.io/changes: |
-    - kind: security
-      description: "The nginx sidecar uses nginx-unprivileged 1.30.6-alpine-slim: the same nginx without the optional njs, xslt, image-filter and geoip modules and their libraries (52 known vulnerabilities down to 3). Set workload.nginx.image.tag: 1.30.6-alpine if your configuration loads one of these modules."
-  artifacthub.io/containsSecurityUpdates: "true"
+    - kind: changed
+      description: "README completed: architecture, images, requirements, signed installation, configuration by topic, examples checked with helm template and kubeconform, security, testing, operations, troubleshooting and uninstalling."
+  artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

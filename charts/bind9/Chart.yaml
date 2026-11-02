@@ -3,7 +3,7 @@ name: bind9
 description: A flexible and production-ready Helm chart for running ISC Bind9 DNS server on Kubernetes.
 type: application
 
-version: 2026.10.2
+version: 2026.11.1
 appVersion: "9.20"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/bind9
@@ -50,10 +50,12 @@ annotations:
       image: docker.io/internetsystemsconsortium/bind9:9.20
     - name: bind-exporter
       image: docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf
-  artifacthub.io/containsSecurityUpdates: "true"
+  artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
-    - kind: security
-      description: "bind_exporter: v0.8.0 (November 2024, its latest release) was built with a Go toolchain carrying 114 known vulnerabilities. The default is now the master build of 2026-10-14, pinned by digest: the same exporter code rebuilt with a current Go toolchain and dependencies (7 known vulnerabilities). Set metrics.image.tag: v0.8.0 to keep the release."
+    - kind: changed
+      description: "README completed: architecture, images, requirements, signed installation, configuration by topic, examples checked with helm template and kubeconform, security, testing, operations, troubleshooting and uninstalling."
+    - kind: fixed
+      description: "The autoscaling values are described in the values table."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

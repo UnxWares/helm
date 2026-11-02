@@ -264,8 +264,11 @@ extraVolumeMounts: []
 autoscaling:
   # -- Enable the HorizontalPodAutoscaler (gpgsql/gmysql backends only).
   enabled: false
+  # -- Minimum number of replicas.
   minReplicas: 2
+  # -- Maximum number of replicas.
   maxReplicas: 6
+  # -- Target average CPU utilization (%).
   targetCPUUtilizationPercentage: 75
   # targetMemoryUtilizationPercentage: 80
 
@@ -432,14 +435,19 @@ recursor:
   autoscaling:
     # -- Enable the recursor HorizontalPodAutoscaler.
     enabled: false
+    # -- Minimum number of recursor replicas.
     minReplicas: 2
+    # -- Maximum number of recursor replicas.
     maxReplicas: 6
+    # -- Target average CPU utilization (%).
     targetCPUUtilizationPercentage: 75
 
   podDisruptionBudget:
     # -- Create a PodDisruptionBudget for the recursor.
     enabled: false
+    # -- Minimum available recursor pods (used when `maxUnavailable` is null).
     minAvailable: 1
+    # -- Maximum unavailable recursor pods (takes precedence over `minAvailable`).
     maxUnavailable: null  # @schema type:[integer, string, null]
 
   # -- Node selector.
@@ -457,8 +465,11 @@ recursor:
     serviceMonitor:
       # -- Create a ServiceMonitor for the recursor.
       enabled: false
+      # -- Scrape interval.
       interval: 30s
+      # -- Scrape timeout.
       scrapeTimeout: 10s
+      # -- Extra labels of the ServiceMonitor (to match your Prometheus selector).
       labels: {}
 
 tests:

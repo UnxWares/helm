@@ -125,8 +125,11 @@ readinessProbe:  # @schema skipProperties:true
 autoscaling:
   # -- Enable the HorizontalPodAutoscaler (static zones only: no persistence).
   enabled: false
+  # -- Minimum number of replicas.
   minReplicas: 1
+  # -- Maximum number of replicas.
   maxReplicas: 10
+  # -- Target average CPU utilization (%).
   targetCPUUtilizationPercentage: 80
 
 podDisruptionBudget:

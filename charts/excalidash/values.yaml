@@ -87,8 +87,11 @@ frontend:
   autoscaling:
     # -- Enable the frontend HorizontalPodAutoscaler.
     enabled: false
+    # -- Minimum number of frontend replicas.
     minReplicas: 1
+    # -- Maximum number of frontend replicas.
     maxReplicas: 5
+    # -- Target average CPU utilization (%).
     targetCPUUtilizationPercentage: 80
 
   # -- Additional volumes.
@@ -250,8 +253,11 @@ backend:
   autoscaling:
     # -- Not supported (single backend replica); kept for compatibility, must stay false.
     enabled: false
+    # -- Unused, kept for compatibility.
     minReplicas: 1
+    # -- Unused, kept for compatibility.
     maxReplicas: 1
+    # -- Unused, kept for compatibility.
     targetCPUUtilizationPercentage: 80
 
   # -- Additional volumes.

@@ -14,12 +14,15 @@
                     "type": "boolean"
                 },
                 "maxReplicas": {
+                    "description": "Maximum number of replicas.",
                     "type": "integer"
                 },
                 "minReplicas": {
+                    "description": "Minimum number of replicas.",
                     "type": "integer"
                 },
                 "targetCPUUtilizationPercentage": {
+                    "description": "Target average CPU utilization (%).",
                     "type": "integer"
                 }
             }
