@@ -546,7 +546,8 @@ Frontend environment variables
 {{- end }}
 
 {{/*
-Events environment variables (taiga-events builds amqp://RABBITMQ_USER:RABBITMQ_PASS@host:5672/taiga itself)
+Events environment variables. taiga-events would build amqp://RABBITMQ_USER:RABBITMQ_PASS@host:5672/taiga itself:
+the chart gives it the whole URL, with the broker's Service port and vhost.
 */}}
 {{- define "taiga.eventsEnv" -}}
 - name: TAIGA_SECRET_KEY
@@ -575,11 +576,25 @@ Events environment variables (taiga-events builds amqp://RABBITMQ_USER:RABBITMQ_
 # dotenv does not override variables that are already set, so this URL wins; the trailing "#" turns the
 # "?heartbeat=60" the code appends into a URL fragment.
 - name: RABBITMQ_URL
-  value: "amqp://$(RABBITMQ_USER):$(RABBITMQ_PASS)@{{ include "taiga.fullname" . }}-events-rabbitmq:5672/$(RABBITMQ_VHOST)?frameMax=131072&heartbeat=60#"
+  value: "amqp://$(RABBITMQ_USER):$(RABBITMQ_PASS)@{{ include "taiga.fullname" . }}-events-rabbitmq:{{ .Values.eventsRabbitmq.service.port }}/$(RABBITMQ_VHOST)?frameMax=131072&heartbeat=60#"
 
 {{- with .Values.global.extraEnv }}
 {{ toYaml . }}
 {{- end }}
+{{- end }}
+
+{{/*
+Command of a Celery container of the async pods, as a YAML list: the UnxWares images run as uid 999, the upstream
+ones start as root and switch to the taiga user (uid 999) with gosu, as their entrypoints do. The image entrypoint
+is not used: it always starts a beat scheduler next to the worker.
+Usage: include "taiga.celeryCommand" (dict "ctx" . "args" (list "worker" "--concurrency" "4" "-l" "INFO"))
+*/}}
+{{- define "taiga.celeryCommand" -}}
+{{- $command := list "celery" "-A" "taiga.celery" }}
+{{- if not (include "taiga.unxwaresImages" .ctx) }}
+{{- $command = concat (list "gosu" "taiga") $command }}
+{{- end }}
+{{- toYaml (concat $command .args) }}
 {{- end }}
 
 {{/*
@@ -616,6 +631,9 @@ Validate values that would otherwise produce a broken deployment.
 {{- end }}
 {{- if and .Values.global.oidc.enabled (not (include "taiga.unxwaresImages" .)) (not (and .Values.global.oidc.backend.overrideImage.name .Values.global.oidc.frontend.overrideImage.name)) }}
 {{- fail "OIDC needs the UnxWares images (global.imageProvider: unxwares, the plugin is built in) or OIDC-enabled images in global.oidc.backend.overrideImage and global.oidc.frontend.overrideImage" }}
+{{- end }}
+{{- if regexMatch "async_entrypoint|(^| )-B( |$)|--beat" (join " " (concat (.Values.async.command | default list) (.Values.async.extraArgs | default list))) }}
+{{- fail "async.command and async.extraArgs must not start a beat scheduler (docker/async_entrypoint.sh, -B or --beat): the chart runs it once, in the async-beat pod. Remove async.command to use the default worker command" }}
 {{- end }}
 {{- if and .Values.global.persistence.media.enabled (eq (include "taiga.mediaAccessMode" .) "ReadWriteOncePod") }}
 {{- fail "global.persistence.media.accessMode cannot be ReadWriteOncePod: backend, async and gateway mount the same volume" }}

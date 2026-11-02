@@ -22,7 +22,9 @@ global:
   scheme: "https"  # @schema enum:[http, https]
   # -- Public domain of Taiga.
   domain: "taiga.example.com"
-  # -- Sub-path when Taiga is not served at the root of the domain.
+  # -- Sub-path when Taiga is not served at the root of the domain (for example `/taiga`). It is passed to the
+  # backend, front and protected containers and used as the HTTPRoute path prefix, but the built-in gateway
+  # configuration serves Taiga at the root: a sub-path also needs your own `gateway.configMapName`.
   subPath: ""
 
   # -- Websocket scheme (`ws` or `wss`).
@@ -70,12 +72,16 @@ global:
   # - secretRef:
   #     name: my-extra-secret
 
-  # -- Default resources (used when a component does not set its own).
+  # -- Resources of the components whose `resources` is null or empty. Every component has its own defaults, so
+  # set `<component>.resources: null` to use this one.
   resources: {}
 
-  # -- Default pod security context (used when a component does not set its own).
+  # -- Pod security context of the components whose `podSecurityContext` is empty: by default the Taiga components
+  # (backend, async, async beat, events, front, protected). The gateway, brokers and bundled database have their own
+  # defaults and use this one only when theirs is set to null or `{}`.
   podSecurityContext: {}
-  # -- Default container security context (used when a component does not set its own).
+  # -- Container security context of the components whose `securityContext` is empty (same rule as
+  # `podSecurityContext`).
   securityContext: {}
 
   defaultProbes:
@@ -122,11 +128,16 @@ global:
       clientId: "oidc-client-id"
       clientSecret: "oidc-client-secret"
 
-    ## Optional, only set if provider doesn't support auto-discovery
+    ## The plugin does not use OIDC discovery: empty endpoints are derived from the issuer with the Keycloak layout
+    ## (<issuer>/protocol/openid-connect/auth, /token, /userinfo, /certs). Set all four for any other provider.
     endpoints:
+      # -- Authorization endpoint. Empty: `<issuer>/protocol/openid-connect/auth`.
       authorization: ""
+      # -- Token endpoint. Empty: `<issuer>/protocol/openid-connect/token`.
       token: ""
+      # -- Userinfo endpoint. Empty: `<issuer>/protocol/openid-connect/userinfo`.
       userinfo: ""
+      # -- JWKS endpoint. Empty: `<issuer>/protocol/openid-connect/certs`.
       jwks: ""
 
     frontend:
@@ -170,9 +181,9 @@ externalDatabase:
   # -- libpq sslmode (`disable`, `require`, `verify-full`...).
   sslmode: prefer
 
-  ## If existingSecret is set, all inline values above are ignored.
-  ## The secret must expose the keys listed in secretKeys.
-  # -- Existing secret holding the connection settings.
+  ## With existingSecret, host, port, database, username and password come from that secret (keys listed in
+  ## secretKeys) and the inline values above are ignored; sslmode still applies.
+  # -- Existing secret holding the connection settings (host, port, database, user, password).
   existingSecret: ""
   secretKeys:
     host: database-host
@@ -281,7 +292,8 @@ backend:
     # -- Image pull policy.
     pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
 
-  # -- Image pull secrets (defaults to global.imagePullSecrets).
+  # -- Image pull secrets of the backend pod (replace `global.imagePullSecrets`). The async, async beat and gateway
+  # pods, which also run the backend image, get both lists.
   imagePullSecrets: []
 
   service:
@@ -370,7 +382,8 @@ backend:
 
 
 async:
-  # -- Celery worker replicas.
+  # -- Celery worker replicas. The beat scheduler runs in its own pod (`async.beat`), so the workers can be scaled
+  # without running the periodic tasks more than once.
   replicaCount: 1
 
   image:
@@ -381,7 +394,24 @@ async:
     # -- Image pull policy.
     pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
 
-  command: ["/taiga-back/docker/async_entrypoint.sh"]
+  # -- Command of the worker container. Empty: the Celery worker without the beat scheduler, 4 processes, log level
+  # INFO (`celery -A taiga.celery worker`, through `gosu taiga` with the `upstream` images). The image's
+  # `docker/async_entrypoint.sh` is refused: it starts a beat scheduler in every worker.
+  command: []
+  # -- Arguments added to the worker command, for example `["--concurrency", "2"]` (the last value of an option
+  # wins).
+  extraArgs: []
+
+  beat:
+    # -- Resources of the Celery beat scheduler (Deployment `<release>-async-beat`, one replica, `Recreate`
+    # strategy). It sends the periodic tasks (notification emails, token cleanup, telemetry when enabled) to the
+    # workers; it shares the other `async` values (image, environment, security contexts, scheduling).
+    resources:  # @schema skipProperties:true
+      requests:
+        cpu: 10m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
 
   extraVolumes: []
   extraVolumeMounts: []
@@ -511,7 +541,7 @@ eventsRabbitmq:
     user: taiga
     # -- Broker password. Leave empty to generate one (kept across upgrades).
     password: ""
-    # -- Virtual host. taiga-events hard-codes `taiga`: do not change it.
+    # -- Virtual host (used by backend, async and events).
     vhost: taiga
     # -- Deprecated: RabbitMQ 4 ignores the RABBITMQ_ERLANG_COOKIE variable; a cookie is generated in the data volume.
     erlangCookie: ""
@@ -840,3 +870,16 @@ httpRoute:
       sectionName: http
   # -- Hostnames (defaults to global.domain when empty).
   hostnames: []
+
+networkPolicy:
+  # -- Create NetworkPolicies (ingress only, egress stays open): the gateway accepts `networkPolicy.ingressFrom`
+  # on its port; front, backend, protected and events accept the gateway only; the brokers accept the Taiga
+  # components that use them, the bundled database the backend and the workers; the workers and the beat accept
+  # nothing. Needs a network plugin that enforces NetworkPolicies.
+  enabled: false
+  # -- Peers allowed to reach the gateway (for example your Ingress controller or Gateway). Empty allows any source
+  # on the gateway port; pods of this release (`helm test`) are always allowed.
+  ingressFrom: []
+  # - namespaceSelector:
+  #     matchLabels:
+  #       kubernetes.io/metadata.name: ingress-nginx

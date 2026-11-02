@@ -48,7 +48,7 @@ the same rules:
 | [laravel-generic](charts/laravel-generic) | Laravel 12 | Your image, nginx-unprivileged | Lint and schema validation only (needs your image) |
 | [openeverest-database-tools](charts/openeverest-database-tools) | OpenEverest 1.17 | UnxWares (database clients), kubectl | End to end |
 | [powerdns](charts/powerdns) | PowerDNS Auth 5.1 / Recursor 5.4 | UnxWares | Install (UnxWares and upstream images), `helm test` (API) |
-| [taiga](charts/taiga) | Taiga 6.10 | UnxWares | Install (UnxWares and upstream images) |
+| [taiga](charts/taiga) | Taiga 6.10 | UnxWares | Install (UnxWares and upstream images), `helm test`, end to end |
 
 What each chart deploys:
 
@@ -99,6 +99,10 @@ The end-to-end tests:
   and after a password rotation.
 - **cloudreve**: the first account signs up and is administrator, logs in, uploads a file, finds it in the listing,
   downloads the same content and gets a thumbnail generated for an uploaded image.
+- **taiga**: a superuser created with `manage.py` logs in through the gateway, creates a project and a user story
+  and reads them back, receives the change on the events websocket, uploads an attachment and downloads it through
+  its signed URL (refused without it); the periodic tasks are sent once with two workers; a pod outside the release
+  only reaches the gateway (NetworkPolicies); a reinstall starts on the kept Secret and volumes.
 
 ## Installation
 

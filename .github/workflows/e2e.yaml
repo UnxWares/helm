@@ -31,6 +31,7 @@ jobs:
         outputs:
             openeverest: ${{ steps.diff.outputs.openeverest }}
             cloudreve: ${{ steps.diff.outputs.cloudreve }}
+            taiga: ${{ steps.diff.outputs.taiga }}
         steps:
             - name: Checkout
               uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -55,6 +56,9 @@ jobs:
                   fi
                   if matches "$common|^charts/cloudreve/|^images/cloudreve/|^\.github/scripts/cloudreve-e2e\.sh$"; then
                       echo "cloudreve=true" >> "$GITHUB_OUTPUT"
+                  fi
+                  if matches "$common|^charts/taiga/|^images/(taiga-back|taiga-front|taiga-events|taiga-protected|postgres/17)/|^\.github/scripts/taiga-e2e\.sh$"; then
+                      echo "taiga=true" >> "$GITHUB_OUTPUT"
                   fi
 
     openeverest-database-tools:
@@ -179,3 +183,104 @@ jobs:
                   kubectl get pods --all-namespaces -o wide
                   kubectl --namespace "$RELEASE" describe pods
                   kubectl --namespace "$RELEASE" logs deploy/"$RELEASE" --all-containers --prefix || true
+
+    taiga:
+        name: taiga
+        needs: changes
+        if: needs.changes.outputs.taiga == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 60
+        env:
+            CHART: charts/taiga
+            RELEASE: taiga
+        steps:
+            - name: Checkout
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            # The images of this commit, so that a change to one of them is tested before it is published.
+            - name: Build the Taiga and PostgreSQL images
+              run: |
+                  for image in taiga-back taiga-front taiga-events taiga-protected; do
+                      docker build --tag "local/$image:e2e" "images/$image"
+                  done
+                  docker build --tag local/postgres:e2e images/postgres/17
+
+            - name: Create kind cluster
+              uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+
+            - name: Load the images
+              run: |
+                  for image in taiga-back taiga-front taiga-events taiga-protected postgres; do
+                      kind load docker-image "local/$image:e2e" --name chart-testing
+                  done
+
+            - name: Install Helm
+              uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+              with:
+                  version: ${{ env.HELM_VERSION }}
+
+            # ci/default-values.yaml (bundled PostgreSQL, NetworkPolicies, enforced by kind), with two async workers,
+            # to check that the periodic tasks are sent once, and the events broker on another port and vhost than
+            # the defaults.
+            - name: Install the chart
+              run: &taiga-install |
+                  helm install "$RELEASE" "$CHART" --namespace "$RELEASE" --create-namespace \
+                      --values "$CHART/ci/default-values.yaml" \
+                      --set backend.image.repository=local/taiga-back --set backend.image.tag=e2e \
+                      --set async.image.repository=local/taiga-back --set async.image.tag=e2e \
+                      --set frontend.image.repository=local/taiga-front --set frontend.image.tag=e2e \
+                      --set events.image.repository=local/taiga-events --set events.image.tag=e2e \
+                      --set protected.image.repository=local/taiga-protected --set protected.image.tag=e2e \
+                      --set db.image.repository=local/postgres --set db.image.tag=e2e \
+                      --set async.replicaCount=2 --set-json 'async.extraArgs=["--concurrency", "1"]' \
+                      --set eventsRabbitmq.service.port=5673 --set eventsRabbitmq.auth.vhost=taiga-events \
+                      --wait --timeout 15m
+
+            - name: helm test
+              run: helm test "$RELEASE" --namespace "$RELEASE"
+
+            - name: Log in, create, read back, websocket, attachment, beat and NetworkPolicies
+              run: .github/scripts/taiga-e2e.sh "$RELEASE" "$RELEASE"
+
+            # The chart Secret is kept with the database, media and broker volumes: a new install must start on them
+            # with the same generated passwords.
+            - name: Uninstall, keeping the Secret and the volumes
+              run: |
+                  helm uninstall "$RELEASE" --namespace "$RELEASE" --wait
+                  kubectl --namespace "$RELEASE" get secret "$RELEASE"
+                  kubectl --namespace "$RELEASE" get pvc "$RELEASE-db" "$RELEASE-media"
+                  kubectl --namespace "$RELEASE" wait --for=delete pod -l "app.kubernetes.io/instance=$RELEASE" --timeout=300s
+
+            - name: Install the chart again
+              run: *taiga-install
+
+            - name: Check the data of the first install
+              run: |
+                  projects=$(kubectl --namespace "$RELEASE" exec deploy/"$RELEASE-backend" -c backend -- \
+                      python manage.py shell -c 'from taiga.projects.models import Project; print(Project.objects.count())' | tail -n 1)
+                  [ "$projects" -ge 1 ] || { echo "FAIL: the projects of the first install are gone ($projects)"; exit 1; }
+                  echo "ok: $projects project(s) of the first install are still there"
+
+            - name: helm test after the reinstall
+              run: helm test "$RELEASE" --namespace "$RELEASE"
+
+            - name: Check again after the reinstall
+              run: .github/scripts/taiga-e2e.sh "$RELEASE" "$RELEASE"
+
+            - name: Diagnostics
+              if: failure()
+              run: |
+                  kubectl get pods --all-namespaces -o wide
+                  kubectl --namespace "$RELEASE" describe pods
+                  for component in backend async async-beat events protected frontend gateway db; do
+                      echo "::group::$component"
+                      kubectl --namespace "$RELEASE" logs deploy/"$RELEASE-$component" --all-containers --prefix || true
+                      echo "::endgroup::"
+                  done
+                  for broker in async-rabbitmq events-rabbitmq; do
+                      echo "::group::$broker"
+                      kubectl --namespace "$RELEASE" logs "$RELEASE-$broker-0" --prefix || true
+                      echo "::endgroup::"
+                  done

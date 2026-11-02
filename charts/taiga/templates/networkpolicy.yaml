@@ -1,0 +1,80 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- /*
+Ingress rules of each component: the components of this release allowed to reach it, on the named port of its
+container. Egress is not restricted (external database, SMTP, OIDC provider, telemetry).
+*/}}
+{{- $rules := list
+  (dict "component" "frontend" "port" "http" "from" (list "gateway"))
+  (dict "component" "backend" "port" "http" "from" (list "gateway"))
+  (dict "component" "protected" "port" "http" "from" (list "gateway"))
+  (dict "component" "events" "port" "http" "from" (list "gateway"))
+  (dict "component" "async" "from" list)
+  (dict "component" "async-beat" "from" list)
+  (dict "component" "async-rabbitmq" "port" "amqp" "from" (list "backend" "async" "async-beat"))
+  (dict "component" "events-rabbitmq" "port" "amqp" "from" (list "backend" "async" "async-beat" "events"))
+}}
+{{- if .Values.db.enabled }}
+{{- $rules = append $rules (dict "component" "db" "port" "postgres" "from" (list "backend" "async")) }}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "taiga.fullname" . }}-gateway
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "taiga.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    # The only entry point: from networkPolicy.ingressFrom (any source when empty) and the pods of this release.
+    - ports:
+        - port: http
+          protocol: TCP
+      {{- with .Values.networkPolicy.ingressFrom }}
+      from:
+        - podSelector:
+            matchLabels:
+              {{- include "taiga.selectorLabels" $ | nindent 14 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- range $rules }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "taiga.fullname" $ }}-{{ .component }}
+  labels:
+    {{- include "taiga.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ .component }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "taiga.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ .component }}
+  policyTypes:
+    - Ingress
+  {{- if .from }}
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "taiga.selectorLabels" $ | nindent 14 }}
+            matchExpressions:
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                  {{- toYaml .from | nindent 18 }}
+      ports:
+        - port: {{ .port }}
+          protocol: TCP
+  {{- else }}
+  # Celery processes listen on no port: nothing may connect to them.
+  ingress: []
+  {{- end }}
+{{- end }}
+{{- end }}

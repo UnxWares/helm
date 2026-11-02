@@ -36,6 +36,8 @@ whose entrypoint is the binary itself (the upstream one starts aria2 under super
 The images of `cloudreve` and `openeverest-database-tools` are also built by the end-to-end tests
 (`.github/workflows/e2e.yaml`), which run the chart on them in kind and check what the application does, so a change
 to one of these images is tested before it is published.
+The `taiga-back`, `taiga-front`, `taiga-events`, `taiga-protected` and `postgres` (17) images are built by the `taiga`
+end-to-end test in the same way.
 Pull requests fail on a fixable CRITICAL or HIGH vulnerability, unless the image's `.trivyignore` says why it
 is accepted (for `taiga-back`: Django 3.2, which Taiga is pinned to; for `mongosh`: an FTP client it only uses
 for proxy auto-configuration files).

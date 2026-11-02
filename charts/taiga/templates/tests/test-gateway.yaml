@@ -1,0 +1,79 @@
+{{- $g := .Values.global }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "taiga.fullname" . }}-test
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  {{- with .Values.global.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with (default .Values.global.podSecurityContext .Values.gateway.podSecurityContext) }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  containers:
+    # Read-only checks through the gateway, as a browser sees Taiga: nothing is created or changed.
+    - name: gateway
+      image: "{{ .Values.gateway.image.repository }}:{{ .Values.gateway.image.tag }}"
+      imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
+      {{- with (default .Values.global.securityContext .Values.gateway.securityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      env:
+        - name: GATEWAY
+          value: {{ printf "%s-gateway:%v" (include "taiga.fullname" .) .Values.gateway.service.port | quote }}
+        - name: EXPECTED_API
+          value: {{ printf "%s://%s%s/api/v1/" $g.scheme $g.domain $g.subPath | quote }}
+        - name: EXPECTED_EVENTS
+          value: {{ printf "%s://%s%s/events" $g.websocketsScheme $g.domain $g.subPath | quote }}
+      command:
+        - /bin/sh
+        - -c
+        - |
+          set -eu
+          fail() { echo "FAIL: $*"; exit 1; }
+          get() { wget -q -T 15 -O - "http://$GATEWAY$1"; }
+
+          api=$(get /api/v1/) || fail "no answer on /api/v1/"
+          case "$api" in *'"projects"'*) ;; *) fail "unexpected answer on /api/v1/: $api" ;; esac
+          echo "ok: the backend API answers"
+
+          index=$(get /) || fail "no answer on /"
+          case "$index" in *'<base href="'*) ;; *) fail "the front page is not the Taiga front" ;; esac
+          conf=$(get /conf.json) || fail "no answer on /conf.json"
+          case "$conf" in *"\"api\": \"$EXPECTED_API\""*) ;; *) fail "conf.json does not point to $EXPECTED_API: $conf" ;; esac
+          case "$conf" in *"\"eventsUrl\": \"$EXPECTED_EVENTS\""*) ;; *) fail "conf.json does not point to $EXPECTED_EVENTS" ;; esac
+          echo "ok: the front and its configuration are served ($EXPECTED_API, $EXPECTED_EVENTS)"
+
+          get /static/admin/css/base.css >/dev/null || fail "the Django static files are not served"
+          echo "ok: the static files are served"
+
+          # A websocket handshake: the gateway must pass the upgrade to taiga-events, which answers 101 (stdin
+          # stays open a moment, or nc closes the connection before the answer).
+          status=$({ printf 'GET /events HTTP/1.1\r\nHost: %s\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n' "$GATEWAY"; sleep 3; } |
+            nc -w 5 "${GATEWAY%:*}" "${GATEWAY##*:}" | head -n 1 | tr -d '\r')
+          case "$status" in *" 101 "*) ;; *) fail "no websocket upgrade on /events: '$status'" ;; esac
+          echo "ok: the events websocket endpoint accepts connections"
+
+          # An attachment URL without its signed token must be refused by taiga-protected.
+          if denied=$(wget -q -S -T 15 -O /dev/null "http://$GATEWAY/media/attachments/0/0/0/0/test/none.txt" 2>&1); then
+            fail "taiga-protected served a file without a token"
+          fi
+          case "$denied" in *" 403 "*) ;; *) fail "unexpected answer without a token: $denied" ;; esac
+          echo "ok: taiga-protected refuses an attachment URL without a token"
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          memory: 64Mi

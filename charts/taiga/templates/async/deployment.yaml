@@ -28,7 +28,8 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      {{- with .Values.global.imagePullSecrets }}
+      {{- /* Same image as the backend: its pull secrets too. */}}
+      {{- with (concat .Values.global.imagePullSecrets .Values.backend.imagePullSecrets | uniq) }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -42,8 +43,15 @@ spec:
             {{- include "taiga.securityContext" (dict "ctx" . "values" .Values.async "component" "async") | nindent 12 }}
           image: {{ include "taiga.backImage" (dict "ctx" . "image" .Values.async.image) | quote }}
           imagePullPolicy: {{ .Values.async.image.pullPolicy }}
-          {{- with .Values.async.command }}
+          # Celery worker only: the beat scheduler runs once, in the async-beat pod.
           command:
+            {{- if .Values.async.command }}
+            {{- toYaml .Values.async.command | nindent 12 }}
+            {{- else }}
+            {{- include "taiga.celeryCommand" (dict "ctx" . "args" (list "worker" "--concurrency" "4" "-l" "INFO")) | nindent 12 }}
+            {{- end }}
+          {{- with .Values.async.extraArgs }}
+          args:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           env:

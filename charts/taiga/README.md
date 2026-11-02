@@ -1,6 +1,6 @@
 # Taiga Helm Chart
 
-![Version: 2026.11.1](https://img.shields.io/badge/Version-2026.11.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 6.10.2](https://img.shields.io/badge/AppVersion-6.10.2-informational?style=flat-square)
+![Version: 2026.11.2](https://img.shields.io/badge/Version-2026.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 6.10.2](https://img.shields.io/badge/AppVersion-6.10.2-informational?style=flat-square)
 
 [Taiga](https://taiga.io/) is an open-source project management platform for agile teams (Scrum, Kanban, issues,
 wiki). This chart deploys the whole stack of [taiga-docker](https://github.com/taigaio/taiga-docker): backend API,
@@ -18,13 +18,16 @@ a bundled PostgreSQL. It is maintained by [UnxWares](https://github.com/UnxWares
 - **Supported versions**: PostgreSQL 17, RabbitMQ 4.4, nginx 1.30 (the previous release shipped PostgreSQL 12.3,
   RabbitMQ 3.8 and nginx 1.19, all end-of-life)
 - **Hardened**: with the UnxWares images every pod runs as non-root with a read-only root filesystem and no
-  capability; seccomp `RuntimeDefault`, no service account token
+  capability; seccomp `RuntimeDefault`, no service account token; optional NetworkPolicies that leave the gateway as
+  the only entry point
+- **Periodic tasks sent once**: the Celery beat scheduler runs in its own single pod, so the workers can be scaled
 - **Media that works out of the box**: backend, async workers and gateway share one volume. With a ReadWriteOnce
   volume the chart schedules them on the same node; use ReadWriteMany to spread them
 - Ingress or Gateway API HTTPRoute (websockets included)
 - External PostgreSQL or a bundled single-pod PostgreSQL, existing Secrets and existing claims for every volume
 - Single sign-on with OpenID Connect (`global.oidc`), SMTP email, horizontal pod autoscalers for the backend, the
   workers and the front
+- `helm test` checks the API, the front, the events websocket and the attachment protection without changing anything
 
 ## Architecture
 
@@ -39,13 +42,15 @@ client -> Ingress / HTTPRoute -> taiga-gateway (nginx, :8080)
             /media/       -> taiga-protected  (checks the signed URL) -> X-Accel-Redirect -> media volume
             /events       -> taiga-events     (websockets)
 taiga-backend, taiga-async -> PostgreSQL, taiga-async-rabbitmq, taiga-events-rabbitmq
+taiga-async-beat           -> taiga-async-rabbitmq (periodic tasks for the workers)
 taiga-events               -> taiga-events-rabbitmq
 ```
 
 | Component | Workload | Service (port) | Role | Volumes |
 |-----------|----------|----------------|------|---------|
 | `backend` | Deployment (`backend.replicaCount`, or an HPA with `backend.autoscaling.enabled`) | `taiga-backend` (8000) | Django API and admin. The image entrypoint runs the database migrations at every start | media on `/taiga-back/media`, `/tmp` (emptyDir) |
-| `async` | Deployment (`async.replicaCount`, or an HPA) | none | Celery worker with the beat scheduler: exports, imports, notification emails and other periodic tasks | media, `/tmp` |
+| `async` | Deployment (`async.replicaCount`, or an HPA) | none | Celery workers: exports, imports, timelines, notification emails | media, `/tmp` |
+| `async-beat` | Deployment (1 replica, `Recreate`) | none | Celery beat scheduler: sends the periodic tasks (notification emails every 2 minutes, token cleanup, telemetry when enabled) to the workers | `/tmp` (schedule state) |
 | `events` | Deployment (`events.replicaCount`) | `taiga-events` (8888) | websockets server; health endpoint on 3023 (probes only) | `/tmp` |
 | `frontend` | Deployment (`frontend.replicaCount`, or an HPA) | `taiga-frontend` (80, to container port 8080 with the UnxWares image, 80 with the official one) | Taiga front served by nginx | `/tmp` |
 | `protected` | Deployment (`protected.replicaCount`) | `taiga-protected` (8003) | checks the signed token of attachment URLs (valid `protected.maxAge` seconds) | `/tmp` |
@@ -58,7 +63,8 @@ Other objects:
 
 - **Secret** `taiga`: the values the chart generates or receives inline (`secret-key`, `db-password`,
   `async-rabbitmq-password`, `events-rabbitmq-password`, and `postgres-password`, `email-password`,
-  `oidc-client-secret` when set). Each key is left out when an existing Secret provides the value.
+  `oidc-client-secret` when set). Each key is left out when an existing Secret provides the value. It has
+  `helm.sh/resource-policy: keep`, like the claims (see [Uninstalling](#uninstalling)).
 - **ConfigMaps**: `taiga-gateway` (nginx `default.conf`, not created when `gateway.configMapName` is set) and
   `taiga-rabbitmq` (`20-taiga.conf`, mounted in both brokers).
 - **PersistentVolumeClaims**: `taiga-media` (`global.persistence.media`) and `taiga-db` (`db.persistence`), both with
@@ -66,15 +72,18 @@ Other objects:
   StatefulSets' `volumeClaimTemplates`.
 - **ServiceAccount** `taiga` (`global.serviceAccount.create`), with no Role or RoleBinding.
 - Optional: an Ingress (`ingress.enabled`), an HTTPRoute (`httpRoute.enabled`), HorizontalPodAutoscalers
-  (`backend.autoscaling.enabled`, `async.autoscaling.enabled`, `frontend.autoscaling.enabled`).
+  (`backend.autoscaling.enabled`, `async.autoscaling.enabled`, `frontend.autoscaling.enabled`), one NetworkPolicy per
+  component (`networkPolicy.enabled`).
+- **Test pod** `taiga-test` (`helm test` only, deleted when it succeeds), from the gateway image.
 
-There is no Job or CronJob: migrations run in the backend entrypoint, periodic tasks in the Celery worker.
+There is no Job or CronJob: migrations run in the backend entrypoint; the beat pod sends the periodic tasks, which
+the workers run.
 
 ## Images
 
 | Component | Values | `global.imageProvider: unxwares` (default) | `global.imageProvider: upstream` |
 |-----------|--------|---------------------------------------------|----------------------------------|
-| backend, async, gateway init container | `backend.image`, `async.image` | `ghcr.io/unxwares/taiga-back:6.10.2` | `docker.io/taigaio/taiga-back:6.10.2` |
+| backend, async, async beat, gateway init container | `backend.image`, `async.image` | `ghcr.io/unxwares/taiga-back:6.10.2` | `docker.io/taigaio/taiga-back:6.10.2` |
 | front | `frontend.image` | `ghcr.io/unxwares/taiga-front:6.10.3` (port 8080) | `docker.io/taigaio/taiga-front:6.10.3` (port 80) |
 | events | `events.image` | `ghcr.io/unxwares/taiga-events:6.10.0` | `docker.io/taigaio/taiga-events:6.10.0` |
 | protected | `protected.image` | `ghcr.io/unxwares/taiga-protected:6.10.1` | `docker.io/taigaio/taiga-protected:6.10.1` |
@@ -107,9 +116,8 @@ changes the front container port (80) and the default security contexts: the off
   The OIDC override images have their own `digest` field. The UnxWares images also have one immutable
   `<version>-<YYYYMMDD>` tag per build.
 - **Private registry**: `global.imagePullSecrets` applies to every pod. `backend.imagePullSecrets` and
-  `frontend.imagePullSecrets` replace it for those pods; the gateway uses both the global and the backend ones (its
-  init container runs the backend image); the async pod only uses `global.imagePullSecrets`, so put the secret there
-  when the backend image is private.
+  `frontend.imagePullSecrets` replace it for those pods; the async, async beat and gateway pods, which also run the
+  backend image, use both the global and the backend ones.
 
 ```yaml
 global:
@@ -145,9 +153,10 @@ Kubernetes: `>=1.27.0-0`
   `gateway.clientMaxBodySize` (100M), or the Gateway API CRDs (`gateway.networking.k8s.io/v1` HTTPRoute) and a
   Gateway. A DNS name (`global.domain`) and, with the default `https`/`wss` schemes, a TLS certificate
   (cert-manager or your own Secret).
-- Optional: an SMTP server, an OpenID Connect provider, metrics-server for the autoscalers.
+- Optional: an SMTP server, an OpenID Connect provider, metrics-server for the autoscalers, a network plugin that
+  enforces NetworkPolicies for `networkPolicy.enabled`.
 - Nodes: the UnxWares images are published for amd64 and arm64. With the default values and the bundled database,
-  the pods request about 360m CPU and 1.4 GiB of memory in total.
+  the pods request about 370m CPU and 1.5 GiB of memory in total.
 
 ## Installation
 
@@ -278,7 +287,9 @@ events. They only hold transient messages. Keep `replicaCount: 1`: the chart doe
 
 - Credentials: `auth.user` and `auth.vhost` (both `taiga`), `auth.password` generated when empty. With
   `auth.existingSecret`, the user, password and vhost all come from that Secret (keys `RABBITMQ_USER`,
-  `RABBITMQ_PASS`, `RABBITMQ_VHOST`). Leave `eventsRabbitmq.auth.vhost` at `taiga`.
+  `RABBITMQ_PASS`, `RABBITMQ_VHOST`). The chart gives backend, async and events complete broker URLs, so any vhost
+  works.
+- `service.port` is the AMQP port of the broker's Service (the container listens on 5672); every client uses it.
 - RabbitMQ creates its default user only on an empty data directory: a new password (or a lost chart Secret) does
   not change the user of an existing broker. See [Troubleshooting](#troubleshooting).
 - Persistence: `persistence.enabled` creates a claim through `volumeClaimTemplates`; `persistence.existingClaim` uses
@@ -423,10 +434,13 @@ global:
   existingSecret: taiga-secrets   # keys: SECRET_KEY, POSTGRES_USER, POSTGRES_PASSWORD, RABBITMQ_USER, RABBITMQ_PASS
 ```
 
-Changing the Django key logs every user out. Backend, async and the brokers restart when the chart Secret changes
-(checksum annotation); events and protected do not: restart them with
-`kubectl rollout restart -n taiga deploy/taiga-events deploy/taiga-protected`. Changes to your own Secrets restart
-nothing.
+Changing the Django key logs every user out. The Taiga pods (backend, async, async beat, events, protected) and the
+brokers restart when the chart Secret changes (checksum annotation); the bundled database does not (PostgreSQL only
+reads its password when it initializes its data). Changes to your own Secrets restart nothing.
+
+The chart Secret is kept when the release is uninstalled (`helm.sh/resource-policy: keep`), like the database and
+media claims: a new install with the same release name in the same namespace takes it over, and `lookup` reads the
+generated values back, so the kept database and brokers still accept them.
 
 ### Authentication and SSO
 
@@ -520,8 +534,9 @@ events:
 
 `backend.autoscaling`, `async.autoscaling` and `frontend.autoscaling` create an `autoscaling/v2`
 HorizontalPodAutoscaler on CPU (`targetCPUUtilizationPercentage`, and memory with
-`targetMemoryUtilizationPercentage`); `replicaCount` is then ignored. They need metrics-server. See
-[Operations](#operations) before scaling the async workers.
+`targetMemoryUtilizationPercentage`); `replicaCount` is then ignored. They need metrics-server. The async workers can
+be scaled freely: the beat scheduler is a separate single pod (`async.beat.resources`). Each worker pod runs 4 Celery
+processes by default; `async.extraArgs: ["--concurrency", "2"]` changes that.
 
 ```yaml
 backend:
@@ -569,37 +584,30 @@ db:
 
 ### NetworkPolicy
 
-The chart creates no NetworkPolicy. Without one, any pod of the cluster can reach the brokers (AMQP and management
-ports) and the bundled PostgreSQL, which are protected by their passwords only. A policy that lets only the pods of
-the release reach them:
+`networkPolicy.enabled: true` creates one NetworkPolicy per component (ingress rules only). It needs a network
+plugin that enforces NetworkPolicies (Calico, Cilium, the kindnet of recent kind releases...); others ignore them.
+
+| Component | Accepts connections from | Port |
+|-----------|--------------------------|------|
+| gateway | `networkPolicy.ingressFrom` (any source when empty) and the pods of the release | 8080 |
+| frontend, backend, protected, events | the gateway | their HTTP port |
+| async-rabbitmq | backend, async, async beat | AMQP (the management port accepts no pod) |
+| events-rabbitmq | backend, async, async beat, events | AMQP (the management port accepts no pod) |
+| db (bundled) | backend, async | 5432 |
+| async, async beat | nothing (they listen on no port) | |
+
+Kubelet probes and `kubectl port-forward` are not affected. Egress is not restricted: the backend and the workers
+reach your external database, SMTP server and OpenID Connect provider as before. Name your Ingress controller or
+Gateway in `ingressFrom` to close the gateway to the rest of the cluster:
 
 ```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: taiga-internal
-  namespace: taiga
-spec:
-  # The bundled PostgreSQL and the two brokers accept connections from the pods of the release only.
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/instance: taiga
-    matchExpressions:
-      - key: app.kubernetes.io/component
-        operator: In
-        values: [db, async-rabbitmq, events-rabbitmq]
-  policyTypes:
-    - Ingress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/instance: taiga
+networkPolicy:
+  enabled: true
+  ingressFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
 ```
-
-Policies for the other components must at least allow the Ingress controller or Gateway to reach the gateway pods on
-8080, the gateway to reach front, backend, protected and events, and backend, async and events to reach the database
-and brokers.
 
 ### Extra environment, volumes and configuration
 
@@ -621,9 +629,13 @@ and brokers.
         value: fr
   ```
 
-- `extraVolumes` and `extraVolumeMounts` exist on backend, async, front and gateway (for example a custom
-  `settings/config.py` for the backend, or a `conf.json` for the front, see the comments in `values.yaml`). In the
-  UnxWares backend image, `settings/config.py` also holds the OIDC settings: start from the file of the image.
+- `async.command` replaces the worker command and `async.extraArgs` adds arguments to it (Celery options such as
+  `--concurrency` or `-Q`). A command that starts a beat scheduler (the image's `docker/async_entrypoint.sh`, `-B`,
+  `--beat`) is refused: the beat pod already runs it.
+- `extraVolumes` and `extraVolumeMounts` exist on backend, async (also mounted in the beat pod), front and gateway
+  (for example a custom `settings/config.py` for the backend, or a `conf.json` for the front, see the comments in
+  `values.yaml`). In the UnxWares backend image, `settings/config.py` also holds the OIDC settings: start from the
+  file of the image.
 - `gateway.configMapName`: an existing ConfigMap whose `default.conf` key replaces the built-in nginx configuration.
   It must listen on 8080 (the gateway runs as uid 101). Start from the built-in one, which the chart no longer renders
   once `gateway.configMapName` is set:
@@ -798,12 +810,12 @@ ingress:
 
 ## Security
 
-Defaults of the Taiga pods (backend, async, events, protected, front), when their `podSecurityContext` and
-`securityContext` and the global ones are empty:
+Defaults of the Taiga pods (backend, async, async beat, events, protected, front), when their `podSecurityContext`
+and `securityContext` and the global ones are empty (the async beat pod uses the `async` values):
 
 | | `unxwares` images (default) | `upstream` images |
 |-|-----------------------------|-------------------|
-| User | uid/gid 999 (front: 101), `runAsNonRoot` | root at start; the entrypoints switch to an unprivileged user |
+| User | uid/gid 999 (front: 101), `runAsNonRoot` | root at start, then uid 999 through the image entrypoints (async and beat: `gosu taiga` in the chart's command) |
 | Root filesystem | read-only (`/tmp` and media are volumes) | writable |
 | Capabilities | all dropped | all dropped, then `CHOWN`, `DAC_OVERRIDE`, `FOWNER`, `SETUID`, `SETGID` added (front: `CHOWN`, `DAC_OVERRIDE`, `SETUID`, `SETGID`, `NET_BIND_SERVICE`) |
 | Privilege escalation | not allowed | not allowed |
@@ -824,7 +836,9 @@ read-only root filesystem, no capability, no privilege escalation and seccomp `R
 - **What is exposed**: only the gateway, and only through the Ingress, the HTTPRoute or a `LoadBalancer`/`NodePort`
   gateway Service you enable. It serves the front, the API, `/static/` (public files), `/media/` (only with a valid
   signed URL, checked by `taiga-protected`) and the Django admin on `/admin/`. Every other Service is `ClusterIP`.
-- **NetworkPolicy**: none is created, see [NetworkPolicy](#networkpolicy) for an example.
+- **NetworkPolicy**: with `networkPolicy.enabled`, only the gateway accepts connections from outside the release;
+  the database and the brokers only accept the components that use them (see [NetworkPolicy](#networkpolicy)).
+  Disabled by default: any pod of the cluster can then reach every Service of the release.
 - **Telemetry** is off by default (`global.telemetry.enabled`).
 
 Caveats:
@@ -836,10 +850,8 @@ Caveats:
 - The Django admin (`/admin/`) is reachable by everyone who reaches Taiga, protected by the Django login only.
   Restrict it at your Ingress or Gateway, or with your own gateway configuration, if you do not need it.
 - Traffic inside the cluster (gateway to components, brokers, bundled database) is not encrypted.
-- The broker users are the RabbitMQ default users of the image, with the administrator tag; the management API is
-  reachable inside the cluster on port 15672.
-- The chart Secret has no keep policy: `helm uninstall` deletes the generated Django key and passwords (see
-  [Uninstalling](#uninstalling)).
+- The broker users are the RabbitMQ default users of the image, with the administrator tag; the management API
+  listens on port 15672, reachable inside the cluster unless `networkPolicy.enabled` is set.
 - The official images (`upstream`) start as root, need capabilities and write to their root filesystem at start: the
   chart does not make it read-only for them.
 
@@ -849,29 +861,51 @@ On every pull request, the repository CI runs (the chart-testing steps only for 
 changes):
 
 - `helm lint --strict` with Helm 3.22 and Helm 4.3, on the default values and on each `ci/*-values.yaml`
-  (`ci/default-values.yaml`: UnxWares images and bundled PostgreSQL; `ci/upstream-values.yaml`: the same stack on the
-  official images). With the default values the chart refuses to render (no database password), which `helm lint`
-  only reports as information.
+  (`ci/default-values.yaml`: UnxWares images, bundled PostgreSQL and the NetworkPolicies; `ci/upstream-values.yaml`:
+  the same stack on the official images, without NetworkPolicies). With the default values the chart refuses to
+  render (no database password), which `helm lint` only reports as information.
 - kubeconform (strict, Kubernetes 1.31.0 and 1.34.0) on the manifests rendered from each `ci/*-values.yaml` (the
   default values are skipped because they need user input).
 - `ct lint` (chart-testing: version increment, `Chart.yaml` schema, YAML lint, `helm lint`) and `ct install` on a kind
   cluster, once per `ci/*-values.yaml`: the whole stack is installed and must become ready within 600 seconds,
-  backend migrations included. `ct install` then runs `helm test`, but this chart has no test pods
-  (`templates/tests/` does not exist): nothing checks login, websockets or uploads. There is no end-to-end test yet.
+  backend migrations included, then `helm test` runs (below). kind enforces the NetworkPolicies, so the default
+  values check that they let Taiga work.
 - `ah lint` (Artifact Hub metadata) and a check that `README.md` and `values.schema.json` match what
   `generate-schemas.sh` produces.
 
+`helm test` (pod `taiga-test`, from the gateway image) only reads, through the gateway: the API answers on
+`/api/v1/`, the front serves its page and a `conf.json` that points to `global.scheme`/`global.domain` for the API
+and `global.websocketsScheme` for the events, the Django static files are served, `/events` accepts a websocket
+handshake, and `taiga-protected` refuses an attachment URL without a signed token. It creates no account and no data,
+so it can run on a production release: `helm test taiga -n taiga`.
+
+The end-to-end test (`.github/workflows/e2e.yaml`, script `.github/scripts/taiga-e2e.sh`) runs on the pull requests
+that touch the chart, the Taiga or PostgreSQL images or the script, on every push to main and every week. It builds
+the `taiga-back`, `taiga-front`, `taiga-events`, `taiga-protected` and `postgres` images of the commit, loads them
+into kind and installs the chart with `ci/default-values.yaml`, two async workers, and the events broker on another
+port and vhost than the defaults. After `helm test`, through the gateway as a browser would:
+
+- the front serves its page and its configuration;
+- a superuser created with `kubectl exec ... python manage.py createsuperuser` logs in through the API and gets a
+  token (a wrong password gets 401);
+- a project and a user story are created, read back and listed;
+- a websocket client subscribed on `/events` with that token receives the change of the user story (backend, events
+  broker, taiga-events and gateway together);
+- an attachment is uploaded, then downloaded back unchanged through its signed URL, and refused (403) without the
+  token or with a forged one;
+- the beat pod sends the periodic tasks, and the two workers receive at most one per period (a scheduler in each
+  worker would send more);
+- from a pod outside the release, the gateway answers and every other Service port (front, backend, protected,
+  events, both brokers with their management ports, database) is closed by the NetworkPolicies.
+
+Then the release is uninstalled and installed again: the kept Secret, database and broker volumes must work together
+(the projects of the first pass are still there), and `helm test` and the same checks pass again.
+
+Not tested: external PostgreSQL, OIDC, SMTP, Ingress and HTTPRoute, `global.subPath`, autoscaling, the upstream images
+beyond the chart-testing install, and upgrades from previous chart versions.
+
 The UnxWares images are built and scanned with Trivy by a separate workflow (see
 [images/](https://github.com/UnxWares/helm/tree/main/images)).
-
-After an install, `helm test taiga -n taiga` runs no test (the chart defines none). Check the release instead:
-
-```bash
-kubectl wait --for=condition=Ready pod -n taiga -l app.kubernetes.io/instance=taiga --timeout=15m
-kubectl port-forward -n taiga svc/taiga-gateway 8080:80 &
-sleep 3
-curl -fsS http://localhost:8080/api/v1/ >/dev/null && echo "API answers through the gateway"
-```
 
 ## Operations
 
@@ -902,9 +936,9 @@ exported and imported one by one from the Taiga interface.
 
 - Front, events and protected are stateless. Backend, async and gateway mount the media volume: with ReadWriteOnce,
   all their pods run on the same node.
-- Each async pod also runs the Celery beat scheduler (`-B` in the image entrypoint, as upstream): with more than one
-  async replica (or `async.autoscaling`), periodic tasks run once per replica. Keep one async replica unless you have
-  checked that your periodic tasks tolerate it.
+- The async workers scale with `async.replicaCount` or `async.autoscaling`: the Celery beat scheduler runs in the
+  separate `taiga-async-beat` pod (one replica, `Recreate` strategy), so each periodic task is sent once whatever the
+  number of workers. Its schedule state lives in `/tmp`: after a restart, the intervals start again from the restart.
 - The brokers and the bundled database are single pods: keep `replicaCount: 1` on the brokers.
 
 **Logs and commands.**
@@ -913,6 +947,7 @@ exported and imported one by one from the Taiga interface.
 kubectl get pods -n taiga -l app.kubernetes.io/instance=taiga
 kubectl logs -n taiga deploy/taiga-backend      # migrations at start, then gunicorn access log
 kubectl logs -n taiga deploy/taiga-async        # Celery tasks
+kubectl logs -n taiga deploy/taiga-async-beat   # beat banner (Taiga's logging hides its later messages)
 kubectl logs -n taiga deploy/taiga-events
 kubectl logs -n taiga deploy/taiga-gateway      # nginx access log
 kubectl exec -it -n taiga deploy/taiga-backend -- python manage.py changepassword <user>
@@ -929,6 +964,20 @@ helm upgrade taiga unxwares/taiga --namespace taiga -f values.yaml
 
 Read the notes of every version between yours and the target, and back up first. Database migrations run when the new
 backend pod starts. Generated secrets are kept (see [Secrets](#secrets)).
+
+### To 2026.11.2 (Celery beat in its own pod, Secret kept)
+
+- The Celery beat scheduler moves to a new Deployment, `taiga-async-beat` (one replica, about 120 MiB of memory), and
+  the async workers run without it: more than one worker no longer sends the periodic tasks (notification emails)
+  more than once. `async.command` now defaults to empty, the chart's worker command. If your values still set it to
+  `/taiga-back/docker/async_entrypoint.sh` (the former default) or pass `-B`, the chart refuses to render: remove
+  `async.command`, and put extra Celery options in `async.extraArgs`.
+- The chart Secret now has `helm.sh/resource-policy: keep`: `helm uninstall` leaves it, with the claims (see
+  [Uninstalling](#uninstalling)). Nothing to do on upgrade.
+- taiga-events now connects to `eventsRabbitmq.service.port` (it always used 5672 before, so a changed port broke the
+  events), and events and protected restart when the chart Secret changes: they restart once during this upgrade.
+- The async pods now also use `backend.imagePullSecrets`.
+- NetworkPolicies are available and off by default (`networkPolicy.enabled`, see [NetworkPolicy](#networkpolicy)).
 
 ### To 2026.10.3 (UnxWares images)
 
@@ -991,14 +1040,16 @@ kubectl logs -n taiga deploy/taiga-backend --previous   # last crash
   `not both`: enable exactly one of `externalDatabase.enabled` and `db.enabled`. `externalDatabase.password or
   externalDatabase.existingSecret is required`: give the external database password. OIDC errors: set
   `global.oidc.clientSecret` or `global.oidc.existingSecret`, and with `upstream` images both override images.
-  `cannot be ReadWriteOncePod`: use ReadWriteOnce or ReadWriteMany for the media volume.
+  `cannot be ReadWriteOncePod`: use ReadWriteOnce or ReadWriteMany for the media volume. `must not start a beat
+  scheduler`: remove `async.command` (see [Upgrading](#to-2026112-celery-beat-in-its-own-pod-secret-kept)).
 - **Pods stay `Pending`**: a claim is not bound (no default StorageClass: set the `storageClass` values), or, with a
   ReadWriteOnce media volume, the async and gateway pods wait for a backend pod and must fit on its node (`didn't
   match pod affinity rules` in the events).
 - **The backend restarts or never becomes ready**: its log shows the database error (host, password, `sslmode`) or a
   migration still running. If migrations take longer than ten minutes, raise `backend.startupProbe.failureThreshold`.
 - **`password authentication failed` after a reinstall** with the bundled database: the kept `taiga-db` claim still
-  has the password it was created with. Set `db.auth.password` to the old value (see [Uninstalling](#uninstalling)).
+  has the password it was created with, and the chart Secret that held it was deleted (or the release was installed
+  under another name or namespace). Set `db.auth.password` to the old value (see [Uninstalling](#uninstalling)).
 - **`ACCESS_REFUSED` in the backend, async or events logs**: a broker was initialized with another password (kept
   claim after a reinstall, or a changed password). Set the old password, or, since brokers only hold transient
   messages, recreate the broker's volume:
@@ -1014,6 +1065,9 @@ kubectl logs -n taiga deploy/taiga-backend --previous   # last crash
 - **No live updates**: the websocket on `/events` fails (browser console). Use `wss` with `https`, make sure the
   Ingress or Gateway passes websockets and does not cut idle connections, and check
   `kubectl logs -n taiga deploy/taiga-events`.
+- **`502`, `504` or timeouts at the Ingress after enabling `networkPolicy`**: `networkPolicy.ingressFrom` does not
+  match your Ingress controller or Gateway pods (check the labels of their namespace and pods). A controller on the
+  host network is seen with the node addresses: allow them with an `ipBlock`, or leave `ingressFrom` empty.
 - **Uploads fail with `413`**: raise the body size of the Ingress controller and `gateway.clientMaxBodySize`.
 - **Attachments do not download**: `global.persistence.media` is disabled, or the signed URL expired (raise
   `protected.maxAge` for large files on slow links). Check `kubectl logs -n taiga deploy/taiga-protected` and the
@@ -1032,14 +1086,16 @@ helm uninstall taiga --namespace taiga
 
 Kept after the uninstall:
 
-- the claims `taiga-media` and `taiga-db` (annotation `helm.sh/resource-policy: keep`);
+- the claims `taiga-media` and `taiga-db` and the chart Secret `taiga`, with the generated Django key and passwords
+  (annotation `helm.sh/resource-policy: keep`);
 - the broker claims `data-taiga-async-rabbitmq-0` and `data-taiga-events-rabbitmq-0` (Helm never deletes the claims
   of a StatefulSet);
 - the claims and Secrets you created yourself (`existingClaim`, `existingSecret`).
 
-The chart Secret `taiga` is deleted, with the generated Django key and passwords. To reinstall on the kept volumes,
-read them first and set them as `global.secretKey`, `db.auth.password`, `asyncRabbitmq.auth.password` and
-`eventsRabbitmq.auth.password`:
+A new `helm install` with the same release name in the same namespace takes the kept Secret over and reuses its
+values, so it starts on the kept volumes with the passwords they were initialized with. To install elsewhere on a
+copy of the data, read the values first and set them as `global.secretKey`, `db.auth.password`,
+`asyncRabbitmq.auth.password` and `eventsRabbitmq.auth.password`:
 
 ```bash
 for key in secret-key db-password async-rabbitmq-password events-rabbitmq-password; do
@@ -1047,10 +1103,11 @@ for key in secret-key db-password async-rabbitmq-password events-rabbitmq-passwo
 done
 ```
 
-To delete the data for good (this cannot be undone):
+To delete the data and the generated secrets for good (this cannot be undone):
 
 ```bash
 kubectl delete pvc -n taiga taiga-media taiga-db data-taiga-async-rabbitmq-0 data-taiga-events-rabbitmq-0
+kubectl delete secret -n taiga taiga
 ```
 
 ## Values
@@ -1062,7 +1119,9 @@ kubectl delete pvc -n taiga taiga-media taiga-db data-taiga-async-rabbitmq-0 dat
 | async.autoscaling.maxReplicas | int | `5` |  |
 | async.autoscaling.minReplicas | int | `1` |  |
 | async.autoscaling.targetCPUUtilizationPercentage | int | `80` |  |
-| async.command[0] | string | `"/taiga-back/docker/async_entrypoint.sh"` |  |
+| async.beat.resources | object | `{"limits":{"memory":"256Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}` | Resources of the Celery beat scheduler (Deployment `<release>-async-beat`, one replica, `Recreate` strategy). It sends the periodic tasks (notification emails, token cleanup, telemetry when enabled) to the workers; it shares the other `async` values (image, environment, security contexts, scheduling). |
+| async.command | list | `[]` | Command of the worker container. Empty: the Celery worker without the beat scheduler, 4 processes, log level INFO (`celery -A taiga.celery worker`, through `gosu taiga` with the `upstream` images). The image's `docker/async_entrypoint.sh` is refused: it starts a beat scheduler in every worker. |
+| async.extraArgs | list | `[]` | Arguments added to the worker command, for example `["--concurrency", "2"]` (the last value of an option wins). |
 | async.extraEnv | list | `[]` |  |
 | async.extraEnvFrom | list | `[]` |  |
 | async.extraVolumeMounts | list | `[]` |  |
@@ -1074,7 +1133,7 @@ kubectl delete pvc -n taiga taiga-media taiga-db data-taiga-async-rabbitmq-0 dat
 | async.podAnnotations | object | `{}` |  |
 | async.podLabels | object | `{}` |  |
 | async.podSecurityContext | object | `{}` | Pod security context. Empty: `global.podSecurityContext`, else the defaults of `global.imageProvider` (see Security in the README). |
-| async.replicaCount | int | `1` | Celery worker replicas. |
+| async.replicaCount | int | `1` | Celery worker replicas. The beat scheduler runs in its own pod (`async.beat`), so the workers can be scaled without running the periodic tasks more than once. |
 | async.resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"50m","memory":"256Mi"}}` | Resources. |
 | async.securityContext | object | `{}` | Container security context. Empty: `global.securityContext`, else the defaults of `global.imageProvider`. |
 | async.tolerations | list | `[]` |  |
@@ -1131,7 +1190,7 @@ kubectl delete pvc -n taiga taiga-media taiga-db data-taiga-async-rabbitmq-0 dat
 | backend.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | backend.image.repository | string | `""` | Backend image repository. Empty: `ghcr.io/unxwares/taiga-back` or `docker.io/taigaio/taiga-back`, from `global.imageProvider`. |
 | backend.image.tag | string | `"6.10.2"` | Image tag. |
-| backend.imagePullSecrets | list | `[]` | Image pull secrets (defaults to global.imagePullSecrets). |
+| backend.imagePullSecrets | list | `[]` | Image pull secrets of the backend pod (replace `global.imagePullSecrets`). The async, async beat and gateway pods, which also run the backend image, get both lists. |
 | backend.livenessProbe.httpGet.path | string | `"/api/v1/"` |  |
 | backend.livenessProbe.httpGet.port | string | `"http"` |  |
 | backend.nodeSelector | object | `{}` |  |
@@ -1205,7 +1264,7 @@ kubectl delete pvc -n taiga taiga-media taiga-db data-taiga-async-rabbitmq-0 dat
 | eventsRabbitmq.auth.secretKeys.user | string | `"RABBITMQ_USER"` |  |
 | eventsRabbitmq.auth.secretKeys.vhost | string | `"RABBITMQ_VHOST"` |  |
 | eventsRabbitmq.auth.user | string | `"taiga"` | Broker user. |
-| eventsRabbitmq.auth.vhost | string | `"taiga"` | Virtual host. taiga-events hard-codes `taiga`: do not change it. |
+| eventsRabbitmq.auth.vhost | string | `"taiga"` | Virtual host (used by backend, async and events). |
 | eventsRabbitmq.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | eventsRabbitmq.image.repository | string | `"docker.io/library/rabbitmq"` | RabbitMQ image. |
 | eventsRabbitmq.image.tag | string | `"4.4.0-management-alpine"` | Image tag. |
@@ -1228,7 +1287,7 @@ kubectl delete pvc -n taiga taiga-media taiga-db data-taiga-async-rabbitmq-0 dat
 | eventsRabbitmq.tolerations | list | `[]` |  |
 | externalDatabase.database | string | `"postgres"` | Database name. |
 | externalDatabase.enabled | bool | `true` | Use an external PostgreSQL database (set `db.enabled` and disable this to use the bundled one). |
-| externalDatabase.existingSecret | string | `""` | Existing secret holding the connection settings. |
+| externalDatabase.existingSecret | string | `""` | Existing secret holding the connection settings (host, port, database, user, password). |
 | externalDatabase.host | string | `"127.0.0.1"` | Database host. |
 | externalDatabase.password | string | `""` | Database password (stored in the chart secret). Required unless `existingSecret` is set. |
 | externalDatabase.port | int | `5432` | Database port. |
@@ -1309,10 +1368,10 @@ kubectl delete pvc -n taiga taiga-media taiga-db data-taiga-async-rabbitmq-0 dat
 | global.oidc.clientId | string | `""` | OIDC client ID. |
 | global.oidc.clientSecret | string | `""` | OIDC client secret (stored in the chart secret; ignored with `existingSecret`). |
 | global.oidc.enabled | bool | `false` | Enable OIDC login. The plugin is built into the UnxWares images; with `upstream` images, set OIDC-enabled images in `global.oidc.frontend.overrideImage` and `global.oidc.backend.overrideImage`. |
-| global.oidc.endpoints.authorization | string | `""` |  |
-| global.oidc.endpoints.jwks | string | `""` |  |
-| global.oidc.endpoints.token | string | `""` |  |
-| global.oidc.endpoints.userinfo | string | `""` |  |
+| global.oidc.endpoints.authorization | string | `""` | Authorization endpoint. Empty: `<issuer>/protocol/openid-connect/auth`. |
+| global.oidc.endpoints.jwks | string | `""` | JWKS endpoint. Empty: `<issuer>/protocol/openid-connect/certs`. |
+| global.oidc.endpoints.token | string | `""` | Token endpoint. Empty: `<issuer>/protocol/openid-connect/token`. |
+| global.oidc.endpoints.userinfo | string | `""` | Userinfo endpoint. Empty: `<issuer>/protocol/openid-connect/userinfo`. |
 | global.oidc.existingSecret | string | `""` | Existing secret with the client ID and secret. |
 | global.oidc.frontend.buttonText | string | `"Login with SSO"` | Text of the SSO button. |
 | global.oidc.frontend.enableDefaultLogin | bool | `true` | Keep the username/password login form. |
@@ -1332,17 +1391,17 @@ kubectl delete pvc -n taiga taiga-media taiga-db data-taiga-async-rabbitmq-0 dat
 | global.pod.affinity | object | `{}` | Default affinity for every pod. |
 | global.pod.nodeSelector | object | `{}` | Default node selector for every pod. |
 | global.pod.tolerations | list | `[]` | Default tolerations for every pod. |
-| global.podSecurityContext | object | `{}` | Default pod security context (used when a component does not set its own). |
-| global.resources | object | `{}` | Default resources (used when a component does not set its own). |
+| global.podSecurityContext | object | `{}` | Pod security context of the components whose `podSecurityContext` is empty: by default the Taiga components (backend, async, async beat, events, front, protected). The gateway, brokers and bundled database have their own defaults and use this one only when theirs is set to null or `{}`. |
+| global.resources | object | `{}` | Resources of the components whose `resources` is null or empty. Every component has its own defaults, so set `<component>.resources: null` to use this one. |
 | global.scheme | string | `"https"` | Public URL scheme (`http` or `https`). |
 | global.secretKey | string | `""` | Django secret key shared by back, async, events and protected. Leave empty to generate one (kept across upgrades). |
 | global.secretKeys.secretKey | string | `"SECRET_KEY"` | Key of the Django secret key in `existingSecret`. |
-| global.securityContext | object | `{}` | Default container security context (used when a component does not set its own). |
+| global.securityContext | object | `{}` | Container security context of the components whose `securityContext` is empty (same rule as `podSecurityContext`). |
 | global.serviceAccount.annotations | object | `{}` | Service account annotations. |
 | global.serviceAccount.automount | bool | `false` | Taiga never talks to the Kubernetes API: the token is not mounted. |
 | global.serviceAccount.create | bool | `true` | Create a dedicated service account. |
 | global.serviceAccount.name | string | `""` | Service account name (generated when empty). |
-| global.subPath | string | `""` | Sub-path when Taiga is not served at the root of the domain. |
+| global.subPath | string | `""` | Sub-path when Taiga is not served at the root of the domain (for example `/taiga`). It is passed to the backend, front and protected containers and used as the HTTPRoute path prefix, but the built-in gateway configuration serves Taiga at the root: a sub-path also needs your own `gateway.configMapName`. |
 | global.telemetry.enabled | bool | `false` | Send anonymous usage telemetry to Taiga. |
 | global.websocketsScheme | string | `"wss"` | Websocket scheme (`ws` or `wss`). |
 | httpRoute.annotations | object | `{}` | HTTPRoute annotations. |
@@ -1354,6 +1413,8 @@ kubectl delete pvc -n taiga taiga-media taiga-db data-taiga-async-rabbitmq-0 dat
 | ingress.enabled | bool | `false` | Expose Taiga through an Ingress (to the gateway). |
 | ingress.hosts | list | `[{"host":"taiga.example.com","paths":[{"path":"/","pathType":"Prefix"}]}]` | Ingress hosts. |
 | ingress.tls | list | `[]` | Ingress TLS. |
+| networkPolicy.enabled | bool | `false` | Create NetworkPolicies (ingress only, egress stays open): the gateway accepts `networkPolicy.ingressFrom` on its port; front, backend, protected and events accept the gateway only; the brokers accept the Taiga components that use them, the bundled database the backend and the workers; the workers and the beat accept nothing. Needs a network plugin that enforces NetworkPolicies. |
+| networkPolicy.ingressFrom | list | `[]` | Peers allowed to reach the gateway (for example your Ingress controller or Gateway). Empty allows any source on the gateway port; pods of this release (`helm test`) are always allowed. |
 | protected.affinity | object | `{}` |  |
 | protected.extraEnv | list | `[]` |  |
 | protected.extraEnvFrom | list | `[]` |  |

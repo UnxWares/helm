@@ -1,0 +1,92 @@
+{{- $async := .Values.async }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "taiga.fullname" . }}-async-beat
+  labels:
+    {{- include "taiga.labels" . | nindent 4 }}
+    app.kubernetes.io/component: async-beat
+spec:
+  # Celery needs exactly one beat scheduler, or every periodic task is sent once per scheduler: one replica,
+  # stopped before its replacement starts.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "taiga.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: async-beat
+  template:
+    metadata:
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with $async.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "taiga.labels" . | nindent 8 }}
+        app.kubernetes.io/component: async-beat
+        {{- with $async.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with (concat .Values.global.imagePullSecrets .Values.backend.imagePullSecrets | uniq) }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "taiga.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.global.serviceAccount.automount }}
+      securityContext:
+        {{- include "taiga.podSecurityContext" (dict "ctx" . "values" $async "component" "async-beat") | nindent 8 }}
+      containers:
+        - name: beat
+          securityContext:
+            {{- include "taiga.securityContext" (dict "ctx" . "values" $async "component" "async-beat") | nindent 12 }}
+          image: {{ include "taiga.backImage" (dict "ctx" . "image" $async.image) | quote }}
+          imagePullPolicy: {{ $async.image.pullPolicy }}
+          # The schedule state goes to /tmp: the root filesystem stays read-only.
+          command:
+            {{- include "taiga.celeryCommand" (dict "ctx" . "args" (list "beat" "--schedule" "/tmp/celerybeat-schedule" "-l" "INFO")) | nindent 12 }}
+          env:
+            {{- include "taiga.backendEnv" . | nindent 12 }}
+            {{- with $async.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if or .Values.global.extraEnvFrom $async.extraEnvFrom }}
+          envFrom:
+            {{- with .Values.global.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- with $async.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with (default .Values.global.resources $async.beat.resources) }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- with $async.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+        {{- with $async.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with (default .Values.global.pod.nodeSelector $async.nodeSelector) }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.global.pod.affinity $async.affinity) }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.global.pod.tolerations $async.tolerations) }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
