@@ -2806,7 +2806,7 @@
  ],
  "cve_watch": {
   "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-03T14:15:52Z",
+  "date": "2026-11-03T23:25:05Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
@@ -2842,7 +2842,7 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 15,
-     "HIGH": 218,
+     "HIGH": 219,
      "LOW": 88,
      "MEDIUM": 204,
      "UNKNOWN": 25
@@ -2852,12 +2852,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 15,
-     "HIGH": 218,
+     "HIGH": 219,
      "LOW": 88,
      "MEDIUM": 204,
      "UNKNOWN": 25
     },
-    "total": 550
+    "total": 551
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -3072,9 +3072,9 @@
     "severity": {
      "CRITICAL": 8,
      "HIGH": 167,
-     "LOW": 159,
+     "LOW": 161,
      "MEDIUM": 221,
-     "UNKNOWN": 19
+     "UNKNOWN": 17
     },
     "total": 574
    },
@@ -3097,9 +3097,9 @@
     "severity": {
      "CRITICAL": 0,
      "HIGH": 72,
-     "LOW": 146,
+     "LOW": 147,
      "MEDIUM": 145,
-     "UNKNOWN": 14
+     "UNKNOWN": 13
     },
     "total": 377
    },
@@ -3193,9 +3193,9 @@
     "severity": {
      "CRITICAL": 3,
      "HIGH": 62,
-     "LOW": 160,
+     "LOW": 162,
      "MEDIUM": 167,
-     "UNKNOWN": 14
+     "UNKNOWN": 12
     },
     "total": 406
    },
@@ -3218,9 +3218,9 @@
     "severity": {
      "CRITICAL": 11,
      "HIGH": 181,
-     "LOW": 129,
+     "LOW": 130,
      "MEDIUM": 215,
-     "UNKNOWN": 10
+     "UNKNOWN": 9
     },
     "total": 546
    },
@@ -3293,9 +3293,9 @@
     "severity": {
      "CRITICAL": 3,
      "HIGH": 108,
-     "LOW": 128,
+     "LOW": 129,
      "MEDIUM": 178,
-     "UNKNOWN": 10
+     "UNKNOWN": 9
     },
     "total": 427
    },
@@ -4447,8 +4447,8 @@
     "total": 12
    }
   },
-  "run_id": 41651551946,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/41651551946",
+  "run_id": 41738681184,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/41738681184",
   "source": "report"
  },
  "files": [
@@ -5133,7 +5133,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-03T14:15:52Z",
+ "latest_result": "2026-11-03T23:25:05Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
