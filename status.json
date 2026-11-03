@@ -1134,10 +1134,10 @@
       "eosl": false,
       "fixable": 13,
       "high": 13,
-      "low": 5,
+      "low": 4,
       "medium": 27,
       "open_fixable": 13,
-      "total": 45
+      "total": 44
      },
      "image": "docker.io/rajnandan1/kener:4.1.11-alpine",
      "name": "kener",
@@ -2805,9 +2805,9 @@
   }
  ],
  "cve_watch": {
-  "commit": "a35079d06946c77f3313648b12410f0e2d495d91",
-  "date": "2026-11-02T19:23:45Z",
-  "event": "workflow_run",
+  "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
+  "date": "2026-11-03T00:59:41Z",
+  "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
     "charts": [
@@ -2844,7 +2844,7 @@
      "CRITICAL": 15,
      "HIGH": 216,
      "LOW": 88,
-     "MEDIUM": 204,
+     "MEDIUM": 203,
      "UNKNOWN": 23
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2854,10 +2854,10 @@
      "CRITICAL": 15,
      "HIGH": 216,
      "LOW": 88,
-     "MEDIUM": 204,
+     "MEDIUM": 203,
      "UNKNOWN": 24
     },
-    "total": 547
+    "total": 546
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -3071,10 +3071,10 @@
     "ours": false,
     "severity": {
      "CRITICAL": 8,
-     "HIGH": 165,
+     "HIGH": 167,
      "LOW": 159,
      "MEDIUM": 220,
-     "UNKNOWN": 22
+     "UNKNOWN": 20
     },
     "total": 574
    },
@@ -3096,10 +3096,10 @@
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 70,
+     "HIGH": 72,
      "LOW": 146,
      "MEDIUM": 141,
-     "UNKNOWN": 20
+     "UNKNOWN": 18
     },
     "total": 377
    },
@@ -3169,11 +3169,11 @@
     "severity": {
      "CRITICAL": 0,
      "HIGH": 13,
-     "LOW": 5,
+     "LOW": 4,
      "MEDIUM": 27,
      "UNKNOWN": 0
     },
-    "total": 45
+    "total": 44
    },
    "docker.io/rajnandan1/kener:4.1.11-status": {
     "charts": [
@@ -3193,11 +3193,11 @@
     "severity": {
      "CRITICAL": 3,
      "HIGH": 62,
-     "LOW": 161,
+     "LOW": 160,
      "MEDIUM": 166,
      "UNKNOWN": 15
     },
-    "total": 407
+    "total": 406
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -4302,8 +4302,8 @@
     "total": 12
    }
   },
-  "run_id": 41509152207,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/41509152207",
+  "run_id": 41556492785,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/41556492785",
   "source": "report"
  },
  "files": [
@@ -4988,7 +4988,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-02T23:40:08Z",
+ "latest_result": "2026-11-03T00:59:41Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
