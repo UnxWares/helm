@@ -2806,7 +2806,7 @@
  ],
  "cve_watch": {
   "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-04T06:23:06Z",
+  "date": "2026-11-04T19:47:24Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
@@ -2892,7 +2892,7 @@
      "CRITICAL": 1,
      "HIGH": 28,
      "LOW": 3,
-     "MEDIUM": 33,
+     "MEDIUM": 40,
      "UNKNOWN": 4
     },
     "image": "docker.io/library/mongo:8.0",
@@ -2902,10 +2902,10 @@
      "CRITICAL": 1,
      "HIGH": 28,
      "LOW": 7,
-     "MEDIUM": 67,
+     "MEDIUM": 66,
      "UNKNOWN": 4
     },
-    "total": 107
+    "total": 106
    },
    "docker.io/library/mysql:8.4": {
     "charts": [
@@ -3064,7 +3064,7 @@
      "HIGH": 72,
      "LOW": 3,
      "MEDIUM": 45,
-     "UNKNOWN": 0
+     "UNKNOWN": 2
     },
     "image": "docker.io/powerdns/pdns-auth-51:5.1.5",
     "os": "debian 13.7",
@@ -3072,11 +3072,11 @@
     "severity": {
      "CRITICAL": 8,
      "HIGH": 168,
-     "LOW": 161,
+     "LOW": 160,
      "MEDIUM": 220,
-     "UNKNOWN": 17
+     "UNKNOWN": 19
     },
-    "total": 574
+    "total": 575
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3089,7 +3089,7 @@
      "HIGH": 0,
      "LOW": 0,
      "MEDIUM": 0,
-     "UNKNOWN": 0
+     "UNKNOWN": 2
     },
     "image": "docker.io/powerdns/pdns-recursor-54:5.4.9",
     "os": "debian 13.7",
@@ -3097,11 +3097,11 @@
     "severity": {
      "CRITICAL": 0,
      "HIGH": 73,
-     "LOW": 147,
+     "LOW": 146,
      "MEDIUM": 144,
-     "UNKNOWN": 13
+     "UNKNOWN": 15
     },
-    "total": 377
+    "total": 378
    },
    "docker.io/prometheuscommunity/bind-exporter:master": {
     "charts": [
@@ -3193,11 +3193,11 @@
     "severity": {
      "CRITICAL": 3,
      "HIGH": 62,
-     "LOW": 162,
+     "LOW": 161,
      "MEDIUM": 167,
-     "UNKNOWN": 12
+     "UNKNOWN": 14
     },
-    "total": 406
+    "total": 407
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3210,7 +3210,7 @@
      "HIGH": 136,
      "LOW": 47,
      "MEDIUM": 133,
-     "UNKNOWN": 3
+     "UNKNOWN": 5
     },
     "image": "docker.io/taigaio/taiga-back:6.10.2",
     "os": "debian 13.5",
@@ -3220,9 +3220,9 @@
      "HIGH": 181,
      "LOW": 130,
      "MEDIUM": 215,
-     "UNKNOWN": 9
+     "UNKNOWN": 11
     },
-    "total": 546
+    "total": 548
    },
    "docker.io/taigaio/taiga-events:6.10.0": {
     "charts": [
@@ -3285,7 +3285,7 @@
      "HIGH": 63,
      "LOW": 67,
      "MEDIUM": 106,
-     "UNKNOWN": 3
+     "UNKNOWN": 5
     },
     "image": "docker.io/taigaio/taiga-protected:6.10.1",
     "os": "debian 13.4",
@@ -3295,9 +3295,9 @@
      "HIGH": 108,
      "LOW": 129,
      "MEDIUM": 178,
-     "UNKNOWN": 9
+     "UNKNOWN": 11
     },
-    "total": 427
+    "total": 429
    },
    "docker.io/valkey/valkey:9.1.3-alpine": {
     "charts": [
@@ -4447,8 +4447,8 @@
     "total": 12
    }
   },
-  "run_id": 41784942757,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/41784942757",
+  "run_id": 41899905761,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/41899905761",
   "source": "report"
  },
  "files": [
@@ -5133,7 +5133,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-04T06:23:06Z",
+ "latest_result": "2026-11-04T19:47:24Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
