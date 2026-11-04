@@ -574,11 +574,11 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 2,
-      "high": 2,
+      "fixable": 3,
+      "high": 3,
       "low": 0,
-      "medium": 1,
-      "open_fixable": 2,
+      "medium": 0,
+      "open_fixable": 3,
       "total": 4
      },
      "image": "docker.io/zimengxiong/excalidash-frontend:0.6.7",
@@ -2806,7 +2806,7 @@
  ],
  "cve_watch": {
   "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-03T23:25:05Z",
+  "date": "2026-11-04T06:23:06Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
@@ -2842,9 +2842,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 15,
-     "HIGH": 219,
+     "HIGH": 220,
      "LOW": 88,
-     "MEDIUM": 204,
+     "MEDIUM": 202,
      "UNKNOWN": 25
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2852,12 +2852,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 15,
-     "HIGH": 219,
+     "HIGH": 220,
      "LOW": 88,
-     "MEDIUM": 204,
+     "MEDIUM": 202,
      "UNKNOWN": 25
     },
-    "total": 551
+    "total": 550
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -3071,9 +3071,9 @@
     "ours": false,
     "severity": {
      "CRITICAL": 8,
-     "HIGH": 167,
+     "HIGH": 168,
      "LOW": 161,
-     "MEDIUM": 221,
+     "MEDIUM": 220,
      "UNKNOWN": 17
     },
     "total": 574
@@ -3096,9 +3096,9 @@
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 72,
+     "HIGH": 73,
      "LOW": 147,
-     "MEDIUM": 145,
+     "MEDIUM": 144,
      "UNKNOWN": 13
     },
     "total": 377
@@ -3354,9 +3354,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 2,
+     "HIGH": 3,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 1
     },
     "image": "docker.io/zimengxiong/excalidash-frontend:0.6.7",
@@ -3364,9 +3364,9 @@
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 2,
+     "HIGH": 3,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 1
     },
     "total": 4
@@ -4447,8 +4447,8 @@
     "total": 12
    }
   },
-  "run_id": 41738681184,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/41738681184",
+  "run_id": 41784942757,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/41784942757",
   "source": "report"
  },
  "files": [
@@ -5133,7 +5133,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-03T23:25:05Z",
+ "latest_result": "2026-11-04T06:23:06Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
