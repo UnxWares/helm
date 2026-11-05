@@ -1740,9 +1740,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 18,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 18
+      "total": 0
      },
      "image": "ghcr.io/unxwares/mysql-client:8.4",
      "name": "mysql-client",
@@ -1754,11 +1754,11 @@
       "critical": 0,
       "eosl": false,
       "fixable": 1,
-      "high": 1,
+      "high": 2,
       "low": 8,
       "medium": 38,
       "open_fixable": 0,
-      "total": 47
+      "total": 48
      },
      "image": "ghcr.io/unxwares/mongosh:2.14.1",
      "name": "mongosh",
@@ -2076,9 +2076,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 18,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 18
+      "total": 0
      },
      "image": "ghcr.io/unxwares/mysql-client:8.4",
      "name": "mysql-client",
@@ -2806,8 +2806,8 @@
  ],
  "cve_watch": {
   "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-05T06:47:44Z",
-  "event": "schedule",
+  "date": "2026-11-05T11:40:03Z",
+  "event": "workflow_run",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
     "charts": [
@@ -2844,7 +2844,7 @@
      "CRITICAL": 15,
      "HIGH": 220,
      "LOW": 88,
-     "MEDIUM": 202,
+     "MEDIUM": 203,
      "UNKNOWN": 25
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2854,10 +2854,10 @@
      "CRITICAL": 15,
      "HIGH": 220,
      "LOW": 88,
-     "MEDIUM": 202,
+     "MEDIUM": 203,
      "UNKNOWN": 25
     },
-    "total": 550
+    "total": 551
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -2890,7 +2890,7 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 28,
+     "HIGH": 30,
      "LOW": 3,
      "MEDIUM": 40,
      "UNKNOWN": 4
@@ -3071,12 +3071,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 8,
-     "HIGH": 170,
+     "HIGH": 171,
      "LOW": 160,
      "MEDIUM": 220,
      "UNKNOWN": 17
     },
-    "total": 575
+    "total": 576
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3096,12 +3096,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 75,
+     "HIGH": 76,
      "LOW": 146,
-     "MEDIUM": 144,
-     "UNKNOWN": 13
+     "MEDIUM": 146,
+     "UNKNOWN": 11
     },
-    "total": 378
+    "total": 379
    },
    "docker.io/prometheuscommunity/bind-exporter:master": {
     "charts": [
@@ -3192,12 +3192,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 3,
-     "HIGH": 64,
+     "HIGH": 65,
      "LOW": 161,
      "MEDIUM": 167,
      "UNKNOWN": 12
     },
-    "total": 407
+    "total": 408
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3217,12 +3217,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 11,
-     "HIGH": 183,
+     "HIGH": 184,
      "LOW": 130,
      "MEDIUM": 215,
      "UNKNOWN": 9
     },
-    "total": 548
+    "total": 549
    },
    "docker.io/taigaio/taiga-events:6.10.0": {
     "charts": [
@@ -3292,12 +3292,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 3,
-     "HIGH": 110,
+     "HIGH": 111,
      "LOW": 129,
      "MEDIUM": 178,
      "UNKNOWN": 9
     },
-    "total": 429
+    "total": 430
    },
    "docker.io/valkey/valkey:9.1.3-alpine": {
     "charts": [
@@ -3510,12 +3510,12 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 1,
+     "HIGH": 2,
      "LOW": 8,
      "MEDIUM": 38,
      "UNKNOWN": 0
     },
-    "total": 47,
+    "total": 48,
     "vulnerabilities": [
      {
       "fixed": "6.2.1",
@@ -3524,6 +3524,14 @@
       "package": "basic-ftp",
       "severity": "HIGH",
       "type": "node-pkg"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-76844",
+      "installed": "1:1.3.dfsg+really1.3.1-1+b1",
+      "package": "zlib1g",
+      "severity": "HIGH",
+      "type": "debian"
      },
      {
       "fixed": "",
@@ -3906,7 +3914,7 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 18,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/mysql-client:8.4",
@@ -3916,156 +3924,11 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 18,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 18,
-    "vulnerabilities": [
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-18374",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-19542",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-6368",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-6791",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-77117",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-80489",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-18374",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc-common",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-19542",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc-common",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-6368",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc-common",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-6791",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc-common",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-77117",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc-common",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-80489",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc-common",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-18374",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc-minimal-langpack",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-19542",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc-minimal-langpack",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-6368",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc-minimal-langpack",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-6791",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc-minimal-langpack",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-77117",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc-minimal-langpack",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-283.0.1.el9_8",
-      "id": "CVE-2026-80489",
-      "installed": "2.34-275.0.1.el9_8",
-      "package": "glibc-minimal-langpack",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/pdns-auth:5.1.5": {
     "charts": [
@@ -4447,8 +4310,8 @@
     "total": 12
    }
   },
-  "run_id": 41982559194,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/41982559194",
+  "run_id": 42020530747,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/42020530747",
   "source": "report"
  },
  "files": [
@@ -4937,9 +4800,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 18,
+    "medium": 0,
     "open_fixable": 0,
-    "total": 18
+    "total": 0
    },
    "name": "mysql-client",
    "ref": "ghcr.io/unxwares/mysql-client:8.4",
@@ -4983,11 +4846,11 @@
     "critical": 0,
     "eosl": false,
     "fixable": 1,
-    "high": 1,
+    "high": 2,
     "low": 8,
     "medium": 38,
     "open_fixable": 0,
-    "total": 47
+    "total": 48
    },
    "name": "mongosh",
    "ref": "ghcr.io/unxwares/mongosh:2.14.1",
@@ -5133,7 +4996,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-05T11:37:53Z",
+ "latest_result": "2026-11-05T11:40:03Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
