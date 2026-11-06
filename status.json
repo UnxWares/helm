@@ -574,11 +574,11 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 3,
-      "high": 3,
+      "fixable": 4,
+      "high": 4,
       "low": 0,
       "medium": 0,
-      "open_fixable": 3,
+      "open_fixable": 4,
       "total": 4
      },
      "image": "docker.io/zimengxiong/excalidash-frontend:0.6.7",
@@ -1415,11 +1415,11 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 0,
-      "high": 0,
+      "fixable": 1,
+      "high": 1,
       "low": 0,
-      "medium": 1,
-      "open_fixable": 0,
+      "medium": 0,
+      "open_fixable": 1,
       "total": 3
      },
      "image": "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim",
@@ -1754,9 +1754,9 @@
       "critical": 0,
       "eosl": false,
       "fixable": 1,
-      "high": 2,
+      "high": 3,
       "low": 8,
-      "medium": 38,
+      "medium": 37,
       "open_fixable": 0,
       "total": 48
      },
@@ -2520,11 +2520,11 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 0,
-      "high": 0,
+      "fixable": 1,
+      "high": 1,
       "low": 0,
-      "medium": 1,
-      "open_fixable": 0,
+      "medium": 0,
+      "open_fixable": 1,
       "total": 3
      },
      "image": "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim",
@@ -2806,7 +2806,7 @@
  ],
  "cve_watch": {
   "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-06T06:46:23Z",
+  "date": "2026-11-06T19:26:54Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
@@ -2817,9 +2817,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 14,
+     "HIGH": 15,
      "LOW": 1,
-     "MEDIUM": 23,
+     "MEDIUM": 22,
      "UNKNOWN": 2
     },
     "image": "docker.io/abrar74774/fossflow:master-2b3cee3",
@@ -2827,9 +2827,9 @@
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 14,
+     "HIGH": 15,
      "LOW": 1,
-     "MEDIUM": 23,
+     "MEDIUM": 22,
      "UNKNOWN": 2
     },
     "total": 40
@@ -2842,22 +2842,22 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 15,
-     "HIGH": 220,
+     "HIGH": 221,
      "LOW": 88,
-     "MEDIUM": 202,
-     "UNKNOWN": 25
+     "MEDIUM": 207,
+     "UNKNOWN": 24
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
     "os": "alpine 3.23.3",
     "ours": false,
     "severity": {
      "CRITICAL": 15,
-     "HIGH": 220,
+     "HIGH": 221,
      "LOW": 88,
-     "MEDIUM": 202,
-     "UNKNOWN": 25
+     "MEDIUM": 207,
+     "UNKNOWN": 24
     },
-    "total": 550
+    "total": 555
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -3036,9 +3036,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 0,
+     "HIGH": 1,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 2
     },
     "image": "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim",
@@ -3046,9 +3046,9 @@
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0,
+     "HIGH": 1,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 2
     },
     "total": 3
@@ -3071,10 +3071,10 @@
     "ours": false,
     "severity": {
      "CRITICAL": 8,
-     "HIGH": 171,
+     "HIGH": 177,
      "LOW": 160,
-     "MEDIUM": 220,
-     "UNKNOWN": 17
+     "MEDIUM": 231,
+     "UNKNOWN": 0
     },
     "total": 576
    },
@@ -3096,10 +3096,10 @@
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 76,
+     "HIGH": 82,
      "LOW": 146,
-     "MEDIUM": 146,
-     "UNKNOWN": 11
+     "MEDIUM": 151,
+     "UNKNOWN": 0
     },
     "total": 379
    },
@@ -3192,10 +3192,10 @@
     "ours": false,
     "severity": {
      "CRITICAL": 3,
-     "HIGH": 65,
+     "HIGH": 70,
      "LOW": 161,
-     "MEDIUM": 167,
-     "UNKNOWN": 12
+     "MEDIUM": 174,
+     "UNKNOWN": 0
     },
     "total": 408
    },
@@ -3217,10 +3217,10 @@
     "ours": false,
     "severity": {
      "CRITICAL": 11,
-     "HIGH": 184,
+     "HIGH": 187,
      "LOW": 130,
-     "MEDIUM": 215,
-     "UNKNOWN": 9
+     "MEDIUM": 218,
+     "UNKNOWN": 3
     },
     "total": 549
    },
@@ -3292,10 +3292,10 @@
     "ours": false,
     "severity": {
      "CRITICAL": 3,
-     "HIGH": 111,
+     "HIGH": 114,
      "LOW": 129,
-     "MEDIUM": 178,
-     "UNKNOWN": 9
+     "MEDIUM": 181,
+     "UNKNOWN": 3
     },
     "total": 430
    },
@@ -3354,20 +3354,20 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 3,
+     "HIGH": 4,
      "LOW": 0,
      "MEDIUM": 0,
-     "UNKNOWN": 1
+     "UNKNOWN": 0
     },
     "image": "docker.io/zimengxiong/excalidash-frontend:0.6.7",
     "os": "alpine 3.24.2",
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 3,
+     "HIGH": 4,
      "LOW": 0,
      "MEDIUM": 0,
-     "UNKNOWN": 1
+     "UNKNOWN": 0
     },
     "total": 4
    },
@@ -3510,9 +3510,9 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 2,
+     "HIGH": 3,
      "LOW": 8,
-     "MEDIUM": 38,
+     "MEDIUM": 37,
      "UNKNOWN": 0
     },
     "total": 48,
@@ -3528,6 +3528,14 @@
      {
       "fixed": "",
       "id": "CVE-2026-76844",
+      "installed": "1:1.3.dfsg+really1.3.1-1+b1",
+      "package": "zlib1g",
+      "severity": "HIGH",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-85091",
       "installed": "1:1.3.dfsg+really1.3.1-1+b1",
       "package": "zlib1g",
       "severity": "HIGH",
@@ -3824,14 +3832,6 @@
      {
       "fixed": "",
       "id": "CVE-2026-27171",
-      "installed": "1:1.3.dfsg+really1.3.1-1+b1",
-      "package": "zlib1g",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-85091",
       "installed": "1:1.3.dfsg+really1.3.1-1+b1",
       "package": "zlib1g",
       "severity": "MEDIUM",
@@ -4318,8 +4318,8 @@
     "total": 12
    }
   },
-  "run_id": 42176341573,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/42176341573",
+  "run_id": 42279313473,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/42279313473",
   "source": "report"
  },
  "files": [
@@ -4854,9 +4854,9 @@
     "critical": 0,
     "eosl": false,
     "fixable": 1,
-    "high": 2,
+    "high": 3,
     "low": 8,
-    "medium": 38,
+    "medium": 37,
     "open_fixable": 0,
     "total": 48
    },
@@ -5004,7 +5004,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-06T06:46:23Z",
+ "latest_result": "2026-11-06T19:26:54Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
