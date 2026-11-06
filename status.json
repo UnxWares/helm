@@ -2424,12 +2424,12 @@
       "accepted": 4,
       "critical": 1,
       "eosl": false,
-      "fixable": 4,
-      "high": 3,
+      "fixable": 5,
+      "high": 4,
       "low": 5,
       "medium": 6,
-      "open_fixable": 0,
-      "total": 15
+      "open_fixable": 1,
+      "total": 16
      },
      "image": "ghcr.io/unxwares/taiga-back:6.10.2",
      "name": "taiga-back",
@@ -2806,7 +2806,7 @@
  ],
  "cve_watch": {
   "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-05T19:58:37Z",
+  "date": "2026-11-06T06:46:23Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
@@ -2945,7 +2945,7 @@
      "UNKNOWN": 1
     },
     "image": "docker.io/library/postgres:17.11-alpine",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": false,
     "severity": {
      "CRITICAL": 1,
@@ -2962,23 +2962,23 @@
     ],
     "eosl": false,
     "fixable": {
-     "CRITICAL": 2,
-     "HIGH": 26,
-     "LOW": 25,
-     "MEDIUM": 32,
+     "CRITICAL": 1,
+     "HIGH": 25,
+     "LOW": 3,
+     "MEDIUM": 31,
      "UNKNOWN": 1
     },
     "image": "docker.io/library/postgres:18-alpine",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": false,
     "severity": {
-     "CRITICAL": 2,
-     "HIGH": 26,
-     "LOW": 25,
-     "MEDIUM": 32,
+     "CRITICAL": 1,
+     "HIGH": 25,
+     "LOW": 3,
+     "MEDIUM": 31,
      "UNKNOWN": 1
     },
-    "total": 86
+    "total": 61
    },
    "docker.io/library/postgres:18.6-alpine": {
     "charts": [
@@ -2986,23 +2986,23 @@
     ],
     "eosl": false,
     "fixable": {
-     "CRITICAL": 2,
-     "HIGH": 26,
-     "LOW": 25,
-     "MEDIUM": 32,
+     "CRITICAL": 1,
+     "HIGH": 25,
+     "LOW": 3,
+     "MEDIUM": 31,
      "UNKNOWN": 1
     },
     "image": "docker.io/library/postgres:18.6-alpine",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": false,
     "severity": {
-     "CRITICAL": 2,
-     "HIGH": 26,
-     "LOW": 25,
-     "MEDIUM": 32,
+     "CRITICAL": 1,
+     "HIGH": 25,
+     "LOW": 3,
+     "MEDIUM": 31,
      "UNKNOWN": 1
     },
-    "total": 86
+    "total": 61
    },
    "docker.io/library/rabbitmq:4.4.0-management-alpine": {
     "charts": [
@@ -3017,7 +3017,7 @@
      "UNKNOWN": 0
     },
     "image": "docker.io/library/rabbitmq:4.4.0-management-alpine",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": false,
     "severity": {
      "CRITICAL": 0,
@@ -4068,7 +4068,7 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 3,
+     "HIGH": 4,
      "LOW": 5,
      "MEDIUM": 6,
      "UNKNOWN": 0
@@ -4078,12 +4078,12 @@
     "ours": true,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 3,
+     "HIGH": 4,
      "LOW": 5,
      "MEDIUM": 6,
      "UNKNOWN": 0
     },
-    "total": 15,
+    "total": 16,
     "vulnerabilities": [
      {
       "fixed": "5.2.8, 5.1.14, 4.2.26",
@@ -4114,6 +4114,14 @@
       "id": "CVE-2026-15307",
       "installed": "3.2.25",
       "package": "Django",
+      "severity": "HIGH",
+      "type": "python-pkg"
+     },
+     {
+      "fixed": "4.0.1",
+      "id": "CVE-2026-49272",
+      "installed": "4.0.0",
+      "package": "oauthlib",
       "severity": "HIGH",
       "type": "python-pkg"
      },
@@ -4310,8 +4318,8 @@
     "total": 12
    }
   },
-  "run_id": 42098638786,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/42098638786",
+  "run_id": 42176341573,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/42176341573",
   "source": "report"
  },
  "files": [
@@ -4475,12 +4483,12 @@
     "accepted": 4,
     "critical": 1,
     "eosl": false,
-    "fixable": 4,
-    "high": 3,
+    "fixable": 5,
+    "high": 4,
     "low": 5,
     "medium": 6,
-    "open_fixable": 0,
-    "total": 15
+    "open_fixable": 1,
+    "total": 16
    },
    "name": "taiga-back",
    "ref": "ghcr.io/unxwares/taiga-back:6.10.2",
@@ -4996,7 +5004,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-05T19:58:37Z",
+ "latest_result": "2026-11-06T06:46:23Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
