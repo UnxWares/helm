@@ -1753,11 +1753,11 @@
       "accepted": 1,
       "critical": 0,
       "eosl": false,
-      "fixable": 1,
+      "fixable": 3,
       "high": 3,
       "low": 8,
       "medium": 37,
-      "open_fixable": 0,
+      "open_fixable": 2,
       "total": 48
      },
      "image": "ghcr.io/unxwares/mongosh:2.14.1",
@@ -2806,7 +2806,7 @@
  ],
  "cve_watch": {
   "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-07T13:02:09Z",
+  "date": "2026-11-07T21:52:42Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
@@ -3061,9 +3061,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 74,
+     "HIGH": 76,
      "LOW": 3,
-     "MEDIUM": 45,
+     "MEDIUM": 46,
      "UNKNOWN": 0
     },
     "image": "docker.io/powerdns/pdns-auth-51:5.1.5",
@@ -3071,12 +3071,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 8,
-     "HIGH": 177,
+     "HIGH": 179,
      "LOW": 160,
      "MEDIUM": 231,
      "UNKNOWN": 0
     },
-    "total": 576
+    "total": 578
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3086,9 +3086,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 2,
+     "HIGH": 4,
      "LOW": 0,
-     "MEDIUM": 0,
+     "MEDIUM": 1,
      "UNKNOWN": 0
     },
     "image": "docker.io/powerdns/pdns-recursor-54:5.4.9",
@@ -3194,10 +3194,10 @@
      "CRITICAL": 3,
      "HIGH": 70,
      "LOW": 161,
-     "MEDIUM": 174,
+     "MEDIUM": 171,
      "UNKNOWN": 0
     },
-    "total": 408
+    "total": 405
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3207,9 +3207,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 11,
-     "HIGH": 138,
+     "HIGH": 140,
      "LOW": 47,
-     "MEDIUM": 133,
+     "MEDIUM": 134,
      "UNKNOWN": 3
     },
     "image": "docker.io/taigaio/taiga-back:6.10.2",
@@ -3282,9 +3282,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 3,
-     "HIGH": 65,
+     "HIGH": 67,
      "LOW": 67,
-     "MEDIUM": 106,
+     "MEDIUM": 107,
      "UNKNOWN": 3
     },
     "image": "docker.io/taigaio/taiga-protected:6.10.1",
@@ -3516,9 +3516,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 1,
+     "HIGH": 3,
      "LOW": 0,
-     "MEDIUM": 2,
+     "MEDIUM": 3,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/mongosh:2.14.1",
@@ -3542,7 +3542,7 @@
       "type": "node-pkg"
      },
      {
-      "fixed": "",
+      "fixed": "1:1.3.dfsg+really1.3.1-1+deb13u1",
       "id": "CVE-2026-76844",
       "installed": "1:1.3.dfsg+really1.3.1-1+b1",
       "package": "zlib1g",
@@ -3550,7 +3550,7 @@
       "type": "debian"
      },
      {
-      "fixed": "",
+      "fixed": "1:1.3.dfsg+really1.3.1-1+deb13u1",
       "id": "CVE-2026-85091",
       "installed": "1:1.3.dfsg+really1.3.1-1+b1",
       "package": "zlib1g",
@@ -3846,7 +3846,7 @@
       "type": "node-pkg"
      },
      {
-      "fixed": "",
+      "fixed": "1:1.3.dfsg+really1.3.1-1+deb13u1",
       "id": "CVE-2026-27171",
       "installed": "1:1.3.dfsg+really1.3.1-1+b1",
       "package": "zlib1g",
@@ -4511,8 +4511,8 @@
     "total": 12
    }
   },
-  "run_id": 42374906975,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/42374906975",
+  "run_id": 42417745683,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/42417745683",
   "source": "report"
  },
  "files": [
@@ -5046,11 +5046,11 @@
     "accepted": 1,
     "critical": 0,
     "eosl": false,
-    "fixable": 1,
+    "fixable": 3,
     "high": 3,
     "low": 8,
     "medium": 37,
-    "open_fixable": 0,
+    "open_fixable": 2,
     "total": 48
    },
    "name": "mongosh",
@@ -5197,7 +5197,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-07T13:02:09Z",
+ "latest_result": "2026-11-07T21:52:42Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
