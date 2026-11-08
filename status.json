@@ -338,9 +338,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 3,
+      "medium": 2,
       "open_fixable": 0,
-      "total": 4
+      "total": 3
      },
      "image": "ghcr.io/unxwares/cloudreve:4.19.1",
      "name": "cloudreve",
@@ -853,9 +853,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 2,
+      "medium": 1,
       "open_fixable": 0,
-      "total": 2
+      "total": 1
      },
      "image": "ghcr.io/unxwares/fossflow:1.0.5",
      "name": "fossflow",
@@ -1724,9 +1724,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 1,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 1
+      "total": 0
      },
      "image": "ghcr.io/unxwares/postgresql-client:18",
      "name": "postgresql-client",
@@ -1740,9 +1740,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 12,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 12
+      "total": 0
      },
      "image": "ghcr.io/unxwares/mysql-client:8.4",
      "name": "mysql-client",
@@ -1755,10 +1755,10 @@
       "eosl": false,
       "fixable": 3,
       "high": 3,
-      "low": 8,
+      "low": 12,
       "medium": 37,
       "open_fixable": 2,
-      "total": 48
+      "total": 52
      },
      "image": "ghcr.io/unxwares/mongosh:2.14.1",
      "name": "mongosh",
@@ -2028,9 +2028,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 1,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 1
+      "total": 0
      },
      "image": "ghcr.io/unxwares/pdns-auth:5.1.5",
      "name": "pdns-auth",
@@ -2044,9 +2044,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 1,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 1
+      "total": 0
      },
      "image": "ghcr.io/unxwares/pdns-recursor:5.4.9",
      "name": "pdns-recursor",
@@ -2060,9 +2060,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 1,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 1
+      "total": 0
      },
      "image": "ghcr.io/unxwares/postgresql-client:18",
      "name": "postgresql-client",
@@ -2076,9 +2076,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 12,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 12
+      "total": 0
      },
      "image": "ghcr.io/unxwares/mysql-client:8.4",
      "name": "mysql-client",
@@ -2427,9 +2427,9 @@
       "fixable": 5,
       "high": 4,
       "low": 5,
-      "medium": 7,
+      "medium": 6,
       "open_fixable": 1,
-      "total": 17
+      "total": 16
      },
      "image": "ghcr.io/unxwares/taiga-back:6.10.2",
      "name": "taiga-back",
@@ -2443,9 +2443,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 1,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 1
+      "total": 0
      },
      "image": "ghcr.io/unxwares/taiga-front:6.10.3",
      "name": "taiga-front",
@@ -2459,9 +2459,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 1,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 1
+      "total": 0
      },
      "image": "ghcr.io/unxwares/taiga-events:6.10.0",
      "name": "taiga-events",
@@ -2475,9 +2475,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 1,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 1
+      "total": 0
      },
      "image": "ghcr.io/unxwares/taiga-protected:6.10.1",
      "name": "taiga-protected",
@@ -2491,9 +2491,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 1,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 1
+      "total": 0
      },
      "image": "ghcr.io/unxwares/postgres:17.11-alpine",
      "name": "postgres",
@@ -2806,7 +2806,7 @@
  ],
  "cve_watch": {
   "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-07T21:52:42Z",
+  "date": "2026-11-08T06:01:53Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
@@ -3072,11 +3072,11 @@
     "severity": {
      "CRITICAL": 8,
      "HIGH": 179,
-     "LOW": 160,
+     "LOW": 163,
      "MEDIUM": 231,
-     "UNKNOWN": 0
+     "UNKNOWN": 1
     },
-    "total": 578
+    "total": 582
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3097,11 +3097,11 @@
     "severity": {
      "CRITICAL": 0,
      "HIGH": 82,
-     "LOW": 146,
+     "LOW": 149,
      "MEDIUM": 151,
-     "UNKNOWN": 0
+     "UNKNOWN": 1
     },
-    "total": 379
+    "total": 383
    },
    "docker.io/prometheuscommunity/bind-exporter:master": {
     "charts": [
@@ -3193,11 +3193,11 @@
     "severity": {
      "CRITICAL": 3,
      "HIGH": 70,
-     "LOW": 161,
+     "LOW": 164,
      "MEDIUM": 171,
      "UNKNOWN": 0
     },
-    "total": 405
+    "total": 408
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3218,11 +3218,11 @@
     "severity": {
      "CRITICAL": 11,
      "HIGH": 187,
-     "LOW": 130,
+     "LOW": 133,
      "MEDIUM": 218,
      "UNKNOWN": 3
     },
-    "total": 549
+    "total": 552
    },
    "docker.io/taigaio/taiga-events:6.10.0": {
     "charts": [
@@ -3293,11 +3293,11 @@
     "severity": {
      "CRITICAL": 3,
      "HIGH": 114,
-     "LOW": 129,
+     "LOW": 132,
      "MEDIUM": 181,
      "UNKNOWN": 3
     },
-    "total": 430
+    "total": 433
    },
    "docker.io/valkey/valkey:9.1.3-alpine": {
     "charts": [
@@ -3416,20 +3416,20 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 3,
+     "MEDIUM": 2,
      "UNKNOWN": 1
     },
     "image": "ghcr.io/unxwares/cloudreve:4.19.1",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 3,
+     "MEDIUM": 2,
      "UNKNOWN": 1
     },
-    "total": 4,
+    "total": 3,
     "vulnerabilities": [
      {
       "fixed": "1.3.6",
@@ -3446,14 +3446,6 @@
       "package": "github.com/nwaples/rardecode/v2",
       "severity": "MEDIUM",
       "type": "gobinary"
-     },
-     {
-      "fixed": "1.4-r0",
-      "id": "CVE-2026-4738",
-      "installed": "1.3.2-r1",
-      "package": "zlib",
-      "severity": "MEDIUM",
-      "type": "alpine"
      },
      {
       "fixed": "0.58.1-0.20261009181718-2f1f834330b2",
@@ -3475,20 +3467,20 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 2,
+     "MEDIUM": 1,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/fossflow:1.0.5",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 2,
+     "MEDIUM": 1,
      "UNKNOWN": 0
     },
-    "total": 2,
+    "total": 1,
     "vulnerabilities": [
      {
       "fixed": "11.1.1, 12.0.1, 13.0.1",
@@ -3497,14 +3489,6 @@
       "package": "uuid",
       "severity": "MEDIUM",
       "type": "node-pkg"
-     },
-     {
-      "fixed": "1.4-r0",
-      "id": "CVE-2026-4738",
-      "installed": "1.3.2-r1",
-      "package": "zlib",
-      "severity": "MEDIUM",
-      "type": "alpine"
      }
     ]
    },
@@ -3527,11 +3511,11 @@
     "severity": {
      "CRITICAL": 0,
      "HIGH": 3,
-     "LOW": 8,
+     "LOW": 12,
      "MEDIUM": 37,
      "UNKNOWN": 0
     },
-    "total": 48,
+    "total": 52,
     "vulnerabilities": [
      {
       "fixed": "6.2.1",
@@ -3855,6 +3839,14 @@
      },
      {
       "fixed": "",
+      "id": "CVE-2026-115456",
+      "installed": "14.2.0-19",
+      "package": "gcc-14-base",
+      "severity": "LOW",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
       "id": "CVE-2010-4756",
       "installed": "2.41-12+deb13u4",
       "package": "libc6",
@@ -3916,6 +3908,30 @@
       "package": "libc6",
       "severity": "LOW",
       "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-115456",
+      "installed": "14.2.0-19",
+      "package": "libgcc-s1",
+      "severity": "LOW",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-115456",
+      "installed": "14.2.0-19",
+      "package": "libgomp1",
+      "severity": "LOW",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-115456",
+      "installed": "14.2.0-19",
+      "package": "libstdc++6",
+      "severity": "LOW",
+      "type": "debian"
      }
     ]
    },
@@ -3930,7 +3946,7 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 12,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/mysql-client:8.4",
@@ -3940,108 +3956,11 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 12,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 12,
-    "vulnerabilities": [
-     {
-      "fixed": "2.34-284.0.1.el9_8.4",
-      "id": "CVE-2026-8674",
-      "installed": "2.34-283.0.1.el9_8",
-      "package": "glibc",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-284.0.1.el9_8.4",
-      "id": "CVE-2026-86805",
-      "installed": "2.34-283.0.1.el9_8",
-      "package": "glibc",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-284.0.1.el9_8.4",
-      "id": "CVE-2026-89092",
-      "installed": "2.34-283.0.1.el9_8",
-      "package": "glibc",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-284.0.1.el9_8.4",
-      "id": "CVE-2026-95818",
-      "installed": "2.34-283.0.1.el9_8",
-      "package": "glibc",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-284.0.1.el9_8.4",
-      "id": "CVE-2026-8674",
-      "installed": "2.34-283.0.1.el9_8",
-      "package": "glibc-common",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-284.0.1.el9_8.4",
-      "id": "CVE-2026-86805",
-      "installed": "2.34-283.0.1.el9_8",
-      "package": "glibc-common",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-284.0.1.el9_8.4",
-      "id": "CVE-2026-89092",
-      "installed": "2.34-283.0.1.el9_8",
-      "package": "glibc-common",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-284.0.1.el9_8.4",
-      "id": "CVE-2026-95818",
-      "installed": "2.34-283.0.1.el9_8",
-      "package": "glibc-common",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-284.0.1.el9_8.4",
-      "id": "CVE-2026-8674",
-      "installed": "2.34-283.0.1.el9_8",
-      "package": "glibc-minimal-langpack",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-284.0.1.el9_8.4",
-      "id": "CVE-2026-86805",
-      "installed": "2.34-283.0.1.el9_8",
-      "package": "glibc-minimal-langpack",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-284.0.1.el9_8.4",
-      "id": "CVE-2026-89092",
-      "installed": "2.34-283.0.1.el9_8",
-      "package": "glibc-minimal-langpack",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-284.0.1.el9_8.4",
-      "id": "CVE-2026-95818",
-      "installed": "2.34-283.0.1.el9_8",
-      "package": "glibc-minimal-langpack",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/pdns-auth:5.1.5": {
     "charts": [
@@ -4053,30 +3972,21 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/pdns-auth:5.1.5",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 1,
-    "vulnerabilities": [
-     {
-      "fixed": "1.4-r0",
-      "id": "CVE-2026-4738",
-      "installed": "1.3.2-r1",
-      "package": "zlib",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/pdns-recursor:5.4.9": {
     "charts": [
@@ -4088,30 +3998,21 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/pdns-recursor:5.4.9",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 1,
-    "vulnerabilities": [
-     {
-      "fixed": "1.4-r0",
-      "id": "CVE-2026-4738",
-      "installed": "1.3.2-r1",
-      "package": "zlib",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/postgres:17.11-alpine": {
     "charts": [
@@ -4123,30 +4024,21 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/postgres:17.11-alpine",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 1,
-    "vulnerabilities": [
-     {
-      "fixed": "1.4-r0",
-      "id": "CVE-2026-4738",
-      "installed": "1.3.2-r1",
-      "package": "zlib",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/postgres:18.6-alpine": {
     "charts": [
@@ -4157,30 +4049,21 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/postgres:18.6-alpine",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 1,
-    "vulnerabilities": [
-     {
-      "fixed": "1.4-r0",
-      "id": "CVE-2026-4738",
-      "installed": "1.3.2-r1",
-      "package": "zlib",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/postgresql-client:18": {
     "charts": [
@@ -4193,30 +4076,21 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/postgresql-client:18",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 1,
-    "vulnerabilities": [
-     {
-      "fixed": "1.4-r0",
-      "id": "CVE-2026-4738",
-      "installed": "1.3.2-r1",
-      "package": "zlib",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/taiga-back:6.10.2": {
     "charts": [
@@ -4228,20 +4102,20 @@
      "CRITICAL": 1,
      "HIGH": 4,
      "LOW": 5,
-     "MEDIUM": 7,
+     "MEDIUM": 6,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/taiga-back:6.10.2",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 1,
      "HIGH": 4,
      "LOW": 5,
-     "MEDIUM": 7,
+     "MEDIUM": 6,
      "UNKNOWN": 0
     },
-    "total": 17,
+    "total": 16,
     "vulnerabilities": [
      {
       "fixed": "5.2.8, 5.1.14, 4.2.26",
@@ -4332,14 +4206,6 @@
       "type": "python-pkg"
      },
      {
-      "fixed": "1.4-r0",
-      "id": "CVE-2026-4738",
-      "installed": "1.3.2-r1",
-      "package": "zlib",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
       "fixed": "5.2.15, 6.0.6",
       "id": "CVE-2026-48587",
       "installed": "3.2.25",
@@ -4391,30 +4257,21 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/taiga-events:6.10.0",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 1,
-    "vulnerabilities": [
-     {
-      "fixed": "1.4-r0",
-      "id": "CVE-2026-4738",
-      "installed": "1.3.2-r1",
-      "package": "zlib",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/taiga-front:6.10.3": {
     "charts": [
@@ -4426,7 +4283,7 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/taiga-front:6.10.3",
@@ -4436,20 +4293,11 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 1,
-    "vulnerabilities": [
-     {
-      "fixed": "1.4-r0",
-      "id": "CVE-2026-4738",
-      "installed": "1.3.2-r1",
-      "package": "zlib",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/taiga-protected:6.10.1": {
     "charts": [
@@ -4461,30 +4309,21 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/taiga-protected:6.10.1",
-    "os": "alpine 3.24.3",
+    "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 1,
-    "vulnerabilities": [
-     {
-      "fixed": "1.4-r0",
-      "id": "CVE-2026-4738",
-      "installed": "1.3.2-r1",
-      "package": "zlib",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "registry.k8s.io/kubectl:v1.37.2": {
     "charts": [
@@ -4511,8 +4350,8 @@
     "total": 12
    }
   },
-  "run_id": 42417745683,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/42417745683",
+  "run_id": 42452887964,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/42452887964",
   "source": "report"
  },
  "files": [
@@ -4571,9 +4410,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 1,
+    "medium": 0,
     "open_fixable": 0,
-    "total": 1
+    "total": 0
    },
    "name": "postgres",
    "ref": "ghcr.io/unxwares/postgres:17.11-alpine",
@@ -4617,9 +4456,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 1,
+    "medium": 0,
     "open_fixable": 0,
-    "total": 1
+    "total": 0
    },
    "name": "postgres",
    "ref": "ghcr.io/unxwares/postgres:18.6-alpine",
@@ -4679,9 +4518,9 @@
     "fixable": 5,
     "high": 4,
     "low": 5,
-    "medium": 7,
+    "medium": 6,
     "open_fixable": 1,
-    "total": 17
+    "total": 16
    },
    "name": "taiga-back",
    "ref": "ghcr.io/unxwares/taiga-back:6.10.2",
@@ -4725,9 +4564,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 1,
+    "medium": 0,
     "open_fixable": 0,
-    "total": 1
+    "total": 0
    },
    "name": "taiga-events",
    "ref": "ghcr.io/unxwares/taiga-events:6.10.0",
@@ -4771,9 +4610,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 1,
+    "medium": 0,
     "open_fixable": 0,
-    "total": 1
+    "total": 0
    },
    "name": "taiga-front",
    "ref": "ghcr.io/unxwares/taiga-front:6.10.3",
@@ -4817,9 +4656,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 1,
+    "medium": 0,
     "open_fixable": 0,
-    "total": 1
+    "total": 0
    },
    "name": "taiga-protected",
    "ref": "ghcr.io/unxwares/taiga-protected:6.10.1",
@@ -4863,9 +4702,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 1,
+    "medium": 0,
     "open_fixable": 0,
-    "total": 1
+    "total": 0
    },
    "name": "pdns-auth",
    "ref": "ghcr.io/unxwares/pdns-auth:5.1.5",
@@ -4909,9 +4748,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 1,
+    "medium": 0,
     "open_fixable": 0,
-    "total": 1
+    "total": 0
    },
    "name": "pdns-recursor",
    "ref": "ghcr.io/unxwares/pdns-recursor:5.4.9",
@@ -4955,9 +4794,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 1,
+    "medium": 0,
     "open_fixable": 0,
-    "total": 1
+    "total": 0
    },
    "name": "postgresql-client",
    "ref": "ghcr.io/unxwares/postgresql-client:18",
@@ -5001,9 +4840,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 12,
+    "medium": 0,
     "open_fixable": 0,
-    "total": 12
+    "total": 0
    },
    "name": "mysql-client",
    "ref": "ghcr.io/unxwares/mysql-client:8.4",
@@ -5048,10 +4887,10 @@
     "eosl": false,
     "fixable": 3,
     "high": 3,
-    "low": 8,
+    "low": 12,
     "medium": 37,
     "open_fixable": 2,
-    "total": 48
+    "total": 52
    },
    "name": "mongosh",
    "ref": "ghcr.io/unxwares/mongosh:2.14.1",
@@ -5095,9 +4934,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 3,
+    "medium": 2,
     "open_fixable": 0,
-    "total": 4
+    "total": 3
    },
    "name": "cloudreve",
    "ref": "ghcr.io/unxwares/cloudreve:4.19.1",
@@ -5141,9 +4980,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 2,
+    "medium": 1,
     "open_fixable": 0,
-    "total": 2
+    "total": 1
    },
    "name": "fossflow",
    "ref": "ghcr.io/unxwares/fossflow:1.0.5",
@@ -5197,7 +5036,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-07T22:03:36Z",
+ "latest_result": "2026-11-08T06:01:53Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
