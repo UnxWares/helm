@@ -2806,8 +2806,8 @@
  ],
  "cve_watch": {
   "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-09T12:12:31Z",
-  "event": "workflow_run",
+  "date": "2026-11-09T22:23:42Z",
+  "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
     "charts": [
@@ -2901,11 +2901,11 @@
     "severity": {
      "CRITICAL": 1,
      "HIGH": 31,
-     "LOW": 7,
-     "MEDIUM": 68,
+     "LOW": 9,
+     "MEDIUM": 63,
      "UNKNOWN": 2
     },
-    "total": 109
+    "total": 106
    },
    "docker.io/library/mysql:8.4": {
     "charts": [
@@ -3064,7 +3064,7 @@
      "HIGH": 76,
      "LOW": 3,
      "MEDIUM": 46,
-     "UNKNOWN": 0
+     "UNKNOWN": 3
     },
     "image": "docker.io/powerdns/pdns-auth-51:5.1.5",
     "os": "debian 13.7",
@@ -3074,9 +3074,9 @@
      "HIGH": 179,
      "LOW": 163,
      "MEDIUM": 231,
-     "UNKNOWN": 1
+     "UNKNOWN": 4
     },
-    "total": 582
+    "total": 585
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -4326,8 +4326,8 @@
     "total": 12
    }
   },
-  "run_id": 42614788915,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/42614788915",
+  "run_id": 42711104048,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/42711104048",
   "source": "report"
  },
  "files": [
@@ -5012,7 +5012,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-09T12:12:31Z",
+ "latest_result": "2026-11-09T22:23:42Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
