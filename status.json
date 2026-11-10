@@ -2806,7 +2806,7 @@
  ],
  "cve_watch": {
   "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-09T22:23:42Z",
+  "date": "2026-11-10T07:19:46Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
@@ -2844,7 +2844,7 @@
      "CRITICAL": 16,
      "HIGH": 235,
      "LOW": 93,
-     "MEDIUM": 208,
+     "MEDIUM": 209,
      "UNKNOWN": 20
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2854,10 +2854,10 @@
      "CRITICAL": 16,
      "HIGH": 235,
      "LOW": 93,
-     "MEDIUM": 208,
+     "MEDIUM": 209,
      "UNKNOWN": 20
     },
-    "total": 572
+    "total": 573
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -3074,9 +3074,9 @@
      "HIGH": 179,
      "LOW": 163,
      "MEDIUM": 231,
-     "UNKNOWN": 4
+     "UNKNOWN": 28
     },
-    "total": 585
+    "total": 609
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3099,9 +3099,9 @@
      "HIGH": 82,
      "LOW": 149,
      "MEDIUM": 151,
-     "UNKNOWN": 1
+     "UNKNOWN": 25
     },
-    "total": 383
+    "total": 407
    },
    "docker.io/prometheuscommunity/bind-exporter:master": {
     "charts": [
@@ -3195,9 +3195,9 @@
      "HIGH": 70,
      "LOW": 164,
      "MEDIUM": 171,
-     "UNKNOWN": 0
+     "UNKNOWN": 16
     },
-    "total": 408
+    "total": 424
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3220,9 +3220,9 @@
      "HIGH": 187,
      "LOW": 133,
      "MEDIUM": 218,
-     "UNKNOWN": 3
+     "UNKNOWN": 19
     },
-    "total": 552
+    "total": 568
    },
    "docker.io/taigaio/taiga-events:6.10.0": {
     "charts": [
@@ -4326,8 +4326,8 @@
     "total": 12
    }
   },
-  "run_id": 42711104048,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/42711104048",
+  "run_id": 42774226541,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/42774226541",
   "source": "report"
  },
  "files": [
@@ -5012,7 +5012,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-09T22:23:42Z",
+ "latest_result": "2026-11-10T07:19:46Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
