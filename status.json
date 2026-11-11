@@ -335,12 +335,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 2,
-      "high": 2,
+      "fixable": 0,
+      "high": 0,
       "low": 0,
-      "medium": 3,
-      "open_fixable": 2,
-      "total": 7
+      "medium": 2,
+      "open_fixable": 0,
+      "total": 3
      },
      "image": "ghcr.io/unxwares/cloudreve:4.19.1",
      "name": "cloudreve",
@@ -592,10 +592,10 @@
       "eosl": false,
       "fixable": 0,
       "high": 0,
-      "low": 0,
+      "low": 1,
       "medium": 3,
       "open_fixable": 0,
-      "total": 3
+      "total": 4
      },
      "image": "docker.io/zimengxiong/excalidash-backend:0.6.7",
      "name": "excalidash-backend",
@@ -1134,10 +1134,10 @@
       "eosl": false,
       "fixable": 13,
       "high": 13,
-      "low": 4,
+      "low": 5,
       "medium": 28,
       "open_fixable": 13,
-      "total": 45
+      "total": 46
      },
      "image": "docker.io/rajnandan1/kener:4.1.11-alpine",
      "name": "kener",
@@ -1774,7 +1774,7 @@
       "low": 0,
       "medium": 5,
       "open_fixable": 3,
-      "total": 12
+      "total": 13
      },
      "image": "registry.k8s.io/kubectl:v1.37.2",
      "name": "kubectl",
@@ -2424,12 +2424,12 @@
       "accepted": 4,
       "critical": 1,
       "eosl": false,
-      "fixable": 21,
-      "high": 20,
+      "fixable": 5,
+      "high": 4,
       "low": 5,
-      "medium": 11,
-      "open_fixable": 17,
-      "total": 37
+      "medium": 6,
+      "open_fixable": 1,
+      "total": 16
      },
      "image": "ghcr.io/unxwares/taiga-back:6.10.2",
      "name": "taiga-back",
@@ -2472,12 +2472,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 16,
-      "high": 16,
+      "fixable": 0,
+      "high": 0,
       "low": 0,
-      "medium": 5,
-      "open_fixable": 16,
-      "total": 21
+      "medium": 0,
+      "open_fixable": 0,
+      "total": 0
      },
      "image": "ghcr.io/unxwares/taiga-protected:6.10.1",
      "name": "taiga-protected",
@@ -2488,12 +2488,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 18,
-      "high": 18,
+      "fixable": 0,
+      "high": 0,
       "low": 0,
-      "medium": 6,
-      "open_fixable": 18,
-      "total": 25
+      "medium": 0,
+      "open_fixable": 0,
+      "total": 0
      },
      "image": "ghcr.io/unxwares/postgres:17.11-alpine",
      "name": "postgres",
@@ -2806,7 +2806,7 @@
  ],
  "cve_watch": {
   "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-11T06:20:27Z",
+  "date": "2026-11-11T19:37:39Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
@@ -2844,8 +2844,8 @@
      "CRITICAL": 16,
      "HIGH": 237,
      "LOW": 93,
-     "MEDIUM": 210,
-     "UNKNOWN": 21
+     "MEDIUM": 209,
+     "UNKNOWN": 22
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
     "os": "alpine 3.23.3",
@@ -2854,8 +2854,8 @@
      "CRITICAL": 16,
      "HIGH": 237,
      "LOW": 93,
-     "MEDIUM": 210,
-     "UNKNOWN": 21
+     "MEDIUM": 209,
+     "UNKNOWN": 22
     },
     "total": 577
    },
@@ -2892,8 +2892,8 @@
      "CRITICAL": 1,
      "HIGH": 31,
      "LOW": 3,
-     "MEDIUM": 41,
-     "UNKNOWN": 2
+     "MEDIUM": 42,
+     "UNKNOWN": 3
     },
     "image": "docker.io/library/mongo:8.0",
     "os": "ubuntu 24.04",
@@ -2902,10 +2902,10 @@
      "CRITICAL": 1,
      "HIGH": 31,
      "LOW": 9,
-     "MEDIUM": 75,
-     "UNKNOWN": 2
+     "MEDIUM": 76,
+     "UNKNOWN": 3
     },
-    "total": 118
+    "total": 120
    },
    "docker.io/library/mysql:8.4": {
     "charts": [
@@ -2917,7 +2917,7 @@
      "HIGH": 33,
      "LOW": 7,
      "MEDIUM": 68,
-     "UNKNOWN": 1
+     "UNKNOWN": 2
     },
     "image": "docker.io/library/mysql:8.4",
     "os": "oracle 9.8",
@@ -2927,9 +2927,9 @@
      "HIGH": 33,
      "LOW": 7,
      "MEDIUM": 68,
-     "UNKNOWN": 1
+     "UNKNOWN": 2
     },
-    "total": 111
+    "total": 112
    },
    "docker.io/library/postgres:17.11-alpine": {
     "charts": [
@@ -2942,7 +2942,7 @@
      "HIGH": 43,
      "LOW": 3,
      "MEDIUM": 38,
-     "UNKNOWN": 2
+     "UNKNOWN": 3
     },
     "image": "docker.io/library/postgres:17.11-alpine",
     "os": "alpine 3.24.4",
@@ -2952,9 +2952,9 @@
      "HIGH": 43,
      "LOW": 3,
      "MEDIUM": 38,
-     "UNKNOWN": 2
+     "UNKNOWN": 3
     },
-    "total": 87
+    "total": 88
    },
    "docker.io/library/postgres:18-alpine": {
     "charts": [
@@ -2966,7 +2966,7 @@
      "HIGH": 43,
      "LOW": 3,
      "MEDIUM": 38,
-     "UNKNOWN": 2
+     "UNKNOWN": 3
     },
     "image": "docker.io/library/postgres:18-alpine",
     "os": "alpine 3.24.4",
@@ -2976,9 +2976,9 @@
      "HIGH": 43,
      "LOW": 3,
      "MEDIUM": 38,
-     "UNKNOWN": 2
+     "UNKNOWN": 3
     },
-    "total": 87
+    "total": 88
    },
    "docker.io/library/postgres:18.6-alpine": {
     "charts": [
@@ -2990,7 +2990,7 @@
      "HIGH": 43,
      "LOW": 3,
      "MEDIUM": 38,
-     "UNKNOWN": 2
+     "UNKNOWN": 3
     },
     "image": "docker.io/library/postgres:18.6-alpine",
     "os": "alpine 3.24.4",
@@ -3000,9 +3000,9 @@
      "HIGH": 43,
      "LOW": 3,
      "MEDIUM": 38,
-     "UNKNOWN": 2
+     "UNKNOWN": 3
     },
-    "total": 87
+    "total": 88
    },
    "docker.io/library/rabbitmq:4.4.0-management-alpine": {
     "charts": [
@@ -3113,7 +3113,7 @@
      "HIGH": 3,
      "LOW": 0,
      "MEDIUM": 5,
-     "UNKNOWN": 1
+     "UNKNOWN": 2
     },
     "image": "docker.io/prometheuscommunity/bind-exporter:master",
     "os": "",
@@ -3123,9 +3123,9 @@
      "HIGH": 3,
      "LOW": 0,
      "MEDIUM": 5,
-     "UNKNOWN": 1
+     "UNKNOWN": 2
     },
-    "total": 9
+    "total": 10
    },
    "docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf": {
     "charts": [
@@ -3137,7 +3137,7 @@
      "HIGH": 3,
      "LOW": 0,
      "MEDIUM": 5,
-     "UNKNOWN": 1
+     "UNKNOWN": 2
     },
     "image": "docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf",
     "os": "",
@@ -3147,9 +3147,9 @@
      "HIGH": 3,
      "LOW": 0,
      "MEDIUM": 5,
-     "UNKNOWN": 1
+     "UNKNOWN": 2
     },
-    "total": 9
+    "total": 10
    },
    "docker.io/rajnandan1/kener:4.1.11-alpine": {
     "charts": [
@@ -3159,7 +3159,7 @@
     "fixable": {
      "CRITICAL": 0,
      "HIGH": 13,
-     "LOW": 4,
+     "LOW": 5,
      "MEDIUM": 28,
      "UNKNOWN": 0
     },
@@ -3169,11 +3169,11 @@
     "severity": {
      "CRITICAL": 0,
      "HIGH": 13,
-     "LOW": 4,
+     "LOW": 5,
      "MEDIUM": 28,
      "UNKNOWN": 0
     },
-    "total": 45
+    "total": 46
    },
    "docker.io/rajnandan1/kener:4.1.11-status": {
     "charts": [
@@ -3183,7 +3183,7 @@
     "fixable": {
      "CRITICAL": 0,
      "HIGH": 15,
-     "LOW": 4,
+     "LOW": 5,
      "MEDIUM": 27,
      "UNKNOWN": 0
     },
@@ -3193,11 +3193,11 @@
     "severity": {
      "CRITICAL": 3,
      "HIGH": 126,
-     "LOW": 164,
+     "LOW": 165,
      "MEDIUM": 183,
      "UNKNOWN": 5
     },
-    "total": 481
+    "total": 482
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3331,7 +3331,7 @@
     "fixable": {
      "CRITICAL": 0,
      "HIGH": 0,
-     "LOW": 0,
+     "LOW": 1,
      "MEDIUM": 3,
      "UNKNOWN": 0
     },
@@ -3341,11 +3341,11 @@
     "severity": {
      "CRITICAL": 0,
      "HIGH": 0,
-     "LOW": 0,
+     "LOW": 1,
      "MEDIUM": 3,
      "UNKNOWN": 0
     },
-    "total": 3
+    "total": 4
    },
    "docker.io/zimengxiong/excalidash-frontend:0.6.7": {
     "charts": [
@@ -3414,39 +3414,23 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 2,
+     "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 3,
-     "UNKNOWN": 2
+     "MEDIUM": 2,
+     "UNKNOWN": 1
     },
     "image": "ghcr.io/unxwares/cloudreve:4.19.1",
     "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 2,
+     "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 3,
-     "UNKNOWN": 2
+     "MEDIUM": 2,
+     "UNKNOWN": 1
     },
-    "total": 7,
+    "total": 3,
     "vulnerabilities": [
-     {
-      "fixed": "1.1.43-r4",
-      "id": "CVE-2026-87636",
-      "installed": "1.1.43-r3",
-      "package": "libxslt",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.1.43-r4",
-      "id": "CVE-2026-9947",
-      "installed": "1.1.43-r3",
-      "package": "libxslt",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
      {
       "fixed": "1.3.6",
       "id": "CVE-2023-45292",
@@ -3464,28 +3448,12 @@
       "type": "gobinary"
      },
      {
-      "fixed": "1.1.43-r4",
-      "id": "CVE-2025-10911",
-      "installed": "1.1.43-r3",
-      "package": "libxslt",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
       "fixed": "0.58.1-0.20261009181718-2f1f834330b2",
       "id": "GO-2026-5932",
       "installed": "v0.58.0",
       "package": "golang.org/x/crypto",
       "severity": "UNKNOWN",
       "type": "gobinary"
-     },
-     {
-      "fixed": "1.1.43-r4",
-      "id": "CVE-2026-125350",
-      "installed": "1.1.43-r3",
-      "package": "libxslt",
-      "severity": "UNKNOWN",
-      "type": "alpine"
      }
     ]
    },
@@ -4070,224 +4038,23 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 18,
+     "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 6,
-     "UNKNOWN": 1
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/postgres:17.11-alpine",
     "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 18,
+     "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 6,
-     "UNKNOWN": 1
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
-    "total": 25,
-    "vulnerabilities": [
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107364",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112315",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112316",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112317",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112318",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112319",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112320",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112321",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112322",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112323",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-118380",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-119079",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-40355",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-40356",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-71199",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-71200",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.1.43-r4",
-      "id": "CVE-2026-87636",
-      "installed": "1.1.43-r3",
-      "package": "libxslt",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.1.43-r4",
-      "id": "CVE-2026-9947",
-      "installed": "1.1.43-r3",
-      "package": "libxslt",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107708",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107778",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107884",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-111423",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112314",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.1.43-r4",
-      "id": "CVE-2025-10911",
-      "installed": "1.1.43-r3",
-      "package": "libxslt",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.1.43-r4",
-      "id": "CVE-2026-125350",
-      "installed": "1.1.43-r3",
-      "package": "libxslt",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/postgres:18.6-alpine": {
     "charts": [
@@ -4296,224 +4063,23 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 18,
+     "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 6,
-     "UNKNOWN": 1
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/postgres:18.6-alpine",
     "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 18,
+     "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 6,
-     "UNKNOWN": 1
+     "MEDIUM": 0,
+     "UNKNOWN": 0
     },
-    "total": 25,
-    "vulnerabilities": [
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107364",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112315",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112316",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112317",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112318",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112319",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112320",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112321",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112322",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112323",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-118380",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-119079",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-40355",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-40356",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-71199",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-71200",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.1.43-r4",
-      "id": "CVE-2026-87636",
-      "installed": "1.1.43-r3",
-      "package": "libxslt",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.1.43-r4",
-      "id": "CVE-2026-9947",
-      "installed": "1.1.43-r3",
-      "package": "libxslt",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107708",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107778",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107884",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-111423",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112314",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.1.43-r4",
-      "id": "CVE-2025-10911",
-      "installed": "1.1.43-r3",
-      "package": "libxslt",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.1.43-r4",
-      "id": "CVE-2026-125350",
-      "installed": "1.1.43-r3",
-      "package": "libxslt",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/postgresql-client:18": {
     "charts": [
@@ -4550,9 +4116,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 20,
+     "HIGH": 4,
      "LOW": 5,
-     "MEDIUM": 11,
+     "MEDIUM": 6,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/taiga-back:6.10.2",
@@ -4560,12 +4126,12 @@
     "ours": true,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 20,
+     "HIGH": 4,
      "LOW": 5,
-     "MEDIUM": 11,
+     "MEDIUM": 6,
      "UNKNOWN": 0
     },
-    "total": 37,
+    "total": 16,
     "vulnerabilities": [
      {
       "fixed": "5.2.8, 5.1.14, 4.2.26",
@@ -4598,134 +4164,6 @@
       "package": "Django",
       "severity": "HIGH",
       "type": "python-pkg"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107364",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112315",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112316",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112317",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112318",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112319",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112320",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112321",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112322",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112323",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-118380",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-119079",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-40355",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-40356",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-71199",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-71200",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
      },
      {
       "fixed": "4.0.1",
@@ -4782,46 +4220,6 @@
       "package": "bleach",
       "severity": "MEDIUM",
       "type": "python-pkg"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107708",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107778",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107884",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-111423",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112314",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
      },
      {
       "fixed": "5.2.15, 6.0.6",
@@ -4925,9 +4323,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 16,
+     "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 5,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/taiga-protected:6.10.1",
@@ -4935,182 +4333,13 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 16,
+     "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 5,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 21,
-    "vulnerabilities": [
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107364",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112315",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112316",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112317",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112318",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112319",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112320",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112321",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112322",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112323",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-118380",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-119079",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-40355",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-40356",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-71199",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-71200",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107708",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107778",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-107884",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-111423",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "1.22.3-r0",
-      "id": "CVE-2026-112314",
-      "installed": "1.22.2-r1",
-      "package": "krb5-libs",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "registry.k8s.io/kubectl:v1.37.2": {
     "charts": [
@@ -5122,7 +4351,7 @@
      "HIGH": 3,
      "LOW": 0,
      "MEDIUM": 5,
-     "UNKNOWN": 4
+     "UNKNOWN": 5
     },
     "image": "registry.k8s.io/kubectl:v1.37.2",
     "os": "debian 12.15",
@@ -5132,13 +4361,13 @@
      "HIGH": 3,
      "LOW": 0,
      "MEDIUM": 5,
-     "UNKNOWN": 4
+     "UNKNOWN": 5
     },
-    "total": 12
+    "total": 13
    }
   },
-  "run_id": 42971496540,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/42971496540",
+  "run_id": 43088576245,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/43088576245",
   "source": "report"
  },
  "files": [
@@ -5194,12 +4423,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 18,
-    "high": 18,
+    "fixable": 0,
+    "high": 0,
     "low": 0,
-    "medium": 6,
-    "open_fixable": 18,
-    "total": 25
+    "medium": 0,
+    "open_fixable": 0,
+    "total": 0
    },
    "name": "postgres",
    "ref": "ghcr.io/unxwares/postgres:17.11-alpine",
@@ -5240,12 +4469,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 18,
-    "high": 18,
+    "fixable": 0,
+    "high": 0,
     "low": 0,
-    "medium": 6,
-    "open_fixable": 18,
-    "total": 25
+    "medium": 0,
+    "open_fixable": 0,
+    "total": 0
    },
    "name": "postgres",
    "ref": "ghcr.io/unxwares/postgres:18.6-alpine",
@@ -5302,12 +4531,12 @@
     "accepted": 4,
     "critical": 1,
     "eosl": false,
-    "fixable": 21,
-    "high": 20,
+    "fixable": 5,
+    "high": 4,
     "low": 5,
-    "medium": 11,
-    "open_fixable": 17,
-    "total": 37
+    "medium": 6,
+    "open_fixable": 1,
+    "total": 16
    },
    "name": "taiga-back",
    "ref": "ghcr.io/unxwares/taiga-back:6.10.2",
@@ -5440,12 +4669,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 16,
-    "high": 16,
+    "fixable": 0,
+    "high": 0,
     "low": 0,
-    "medium": 5,
-    "open_fixable": 16,
-    "total": 21
+    "medium": 0,
+    "open_fixable": 0,
+    "total": 0
    },
    "name": "taiga-protected",
    "ref": "ghcr.io/unxwares/taiga-protected:6.10.1",
@@ -5718,12 +4947,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 2,
-    "high": 2,
+    "fixable": 0,
+    "high": 0,
     "low": 0,
-    "medium": 3,
-    "open_fixable": 2,
-    "total": 7
+    "medium": 2,
+    "open_fixable": 0,
+    "total": 3
    },
    "name": "cloudreve",
    "ref": "ghcr.io/unxwares/cloudreve:4.19.1",
@@ -5823,7 +5052,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-11T06:29:20Z",
+ "latest_result": "2026-11-11T19:37:39Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
