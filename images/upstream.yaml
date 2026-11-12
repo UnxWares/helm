@@ -15,5 +15,5 @@ images/mysql-client: docker.io/library/mysql:{tag}
 images/mongosh: docker.io/library/mongo:8.0
 images/cloudreve: docker.io/cloudreve/cloudreve:{tag}
 # Upstream publishes master-<commit> tags only: the commit of the UnxWares build, and the latest master.
-images/fossflow: docker.io/abrar74774/fossflow:master-2b3cee3
+images/fossflow: docker.io/abrar74774/fossflow:master-b06baad
 images/bind-exporter: docker.io/prometheuscommunity/bind-exporter:master

@@ -1,15 +1,16 @@
-# FossFLOW built from the upstream sources, with the dependency updates of patches/ (npm audit fix of the lockfile,
-# from github.com/UnxWares/FossFLOW, branch fix/vulnerable-dependencies), on a current Alpine. One container, run as
-# the non-root `node` user (uid 1000) with a read-only root filesystem: nginx serves the web app on port 8080 and
-# proxies /api/ to the storage backend, which only listens on 127.0.0.1:3001. Same environment variables as
-# abrar74774/fossflow (ENABLE_SERVER_STORAGE, STORAGE_PATH), no su-exec, openssl or npm at runtime.
-ARG VERSION=1.0.5
+# FossFLOW built from the upstream sources, with patches/ (the backend without its unused uuid dependency), on a
+# current Alpine. One container, run as the non-root `node` user (uid 1000) with a read-only root filesystem: nginx
+# serves the web app on port 8080 and proxies /api/ to the storage backend, which only listens on 127.0.0.1:3001.
+# Same environment variables as abrar74774/fossflow (ENABLE_SERVER_STORAGE, STORAGE_PATH), no su-exec, openssl or npm
+# at runtime.
+ARG VERSION=1.0.6
 
-# The commit of the upstream image abrar74774/fossflow:master-2b3cee3 (release v1.0.5: the release commit after it
-# only bumps the version numbers).
+# The commit of the upstream image abrar74774/fossflow:master-b06baad (release v1.0.6: the release commit after it
+# only bumps the version numbers). Its lockfile has the dependency updates of Abrar74774/FossFLOW#24, applied here as
+# a patch up to v1.0.5.
 FROM docker.io/library/node:24-alpine3.24 AS build
-ARG FOSSFLOW_COMMIT=2b3cee387cd3edfafc2653d214db046e4d9d3e38
-ARG FOSSFLOW_SHA256=ddeeec231bc87ca970cf7bb52286fad9ecb928e8e1ff86791b64143a6b338abf
+ARG FOSSFLOW_COMMIT=b06baade1c48e3eb222cbd130b201051b13041a6
+ARG FOSSFLOW_SHA256=45230fea480b115a1a391805922cc407915dabba9cfba81d62e8f499224cf61f
 WORKDIR /src
 COPY patches/ /patches/
 RUN set -eux; \

@@ -1,0 +1,33 @@
+Leave the unused uuid dependency out of the FossFLOW backend (UnxWares, not upstream as of v1.0.6).
+
+packages/fossflow-backend declares uuid ^9.0.1 but server.js never imports it: only fossflow-lib uses it, and the
+web app build bundles it. Installed with the backend production dependencies, uuid 9.0.1 brings CVE-2026-41907
+(GHSA-w5hq-g745-h8pq, medium: v3/v5/v6 write out of bounds into a caller buffer) into the image for nothing. The
+lockfile keeps uuid for fossflow-lib, so the web app build does not change.
+
+diff -u a/package-lock.json b/package-lock.json
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -16482,8 +16482,7 @@
+         "cors": "^2.8.6",
+         "dotenv": "^17.4.2",
+         "express": "^5.2.1",
+-        "express-rate-limit": "^8.4.1",
+-        "uuid": "^9.0.1"
++        "express-rate-limit": "^8.4.1"
+       },
+       "devDependencies": {
+         "nodemon": "^3.1.14"
+diff -u a/packages/fossflow-backend/package.json b/packages/fossflow-backend/package.json
+--- a/packages/fossflow-backend/package.json
++++ b/packages/fossflow-backend/package.json
+@@ -12,8 +12,7 @@
+     "cors": "^2.8.6",
+     "dotenv": "^17.4.2",
+     "express": "^5.2.1",
+-    "express-rate-limit": "^8.4.1",
+-    "uuid": "^9.0.1"
++    "express-rate-limit": "^8.4.1"
+   },
+   "devDependencies": {
+     "nodemon": "^3.1.14"

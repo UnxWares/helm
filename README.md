@@ -79,7 +79,7 @@ default to our own builds, published on `ghcr.io/unxwares`:
 | Image | Used by | What differs from upstream |
 |-------|---------|----------------------------|
 | `cloudreve` | cloudreve | Built from the release sources with current Go modules, current Alpine, no aria2/supervisord |
-| `fossflow` | fossflow | Built from the upstream sources with updated npm dependencies, current Alpine, non-root, read-only root filesystem, backend on 127.0.0.1 only |
+| `fossflow` | fossflow | Built from the upstream sources without the backend's unused `uuid` dependency, current Alpine, non-root, read-only root filesystem, backend on 127.0.0.1 only |
 | `pdns-auth`, `pdns-recursor` | powerdns | Alpine, built from the release tarballs with the backends the chart uses |
 | `postgres` 17, 18 | taiga | Alpine packages upgraded, `su-exec` instead of `gosu` |
 | `taiga-back`, `taiga-front`, `taiga-events`, `taiga-protected` | taiga | Current dependencies, upstream security fixes not released yet, non-root |
