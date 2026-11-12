@@ -11,20 +11,20 @@ ARG VERSION=9.20.30
 ARG SOURCE_SHA256=9e1443a40a72a30272cbc3196d020a6b2e26937111c83e59e101e82e1e3b4fef
 ARG MAKE_JOBS=""
 
-RUN apk add --no-cache build-base pkgconf gnupg fstrm-dev jemalloc-dev json-c-dev krb5-dev libcap-dev libidn2-dev \
+RUN apk add --no-cache build-base pkgconf gpgv fstrm-dev jemalloc-dev json-c-dev krb5-dev libcap-dev libidn2-dev \
         libmaxminddb-dev libuv-dev libxml2-dev lmdb-dev nghttp2-dev openssl-dev protobuf-c-dev userspace-rcu-dev \
         zlib-dev
 
 WORKDIR /build
 COPY isc-keyblock.asc /build/isc-keyblock.asc
+# gpgv checks the signature against these keys only, without a keyring daemon (gpg would start keyboxd, which keeps
+# the build step from ending). It takes a binary keyring: the armored keyblock without its header and checksum.
 RUN set -eux; \
     wget -q -O bind.tar.xz "https://downloads.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.xz"; \
     wget -q -O bind.tar.xz.asc "https://downloads.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.xz.asc"; \
     echo "${SOURCE_SHA256}  bind.tar.xz" | sha256sum -c -; \
-    export GNUPGHOME=/build/gnupg; \
-    mkdir -m 0700 "$GNUPGHOME"; \
-    gpg --batch --quiet --import isc-keyblock.asc; \
-    gpg --batch --verify bind.tar.xz.asc bind.tar.xz; \
+    sed -e '1,/^$/d' -e '/^=/,$d' isc-keyblock.asc | base64 -d > isc-keyring.gpg; \
+    gpgv --keyring /build/isc-keyring.gpg bind.tar.xz.asc bind.tar.xz; \
     tar -xJf bind.tar.xz
 
 # The options of the official image, each feature required (=yes): the build fails instead of leaving one out.
