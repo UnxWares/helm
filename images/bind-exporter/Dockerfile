@@ -1,6 +1,7 @@
 # Prometheus bind_exporter built from its sources: the master branch (its last release, v0.8.0 of November 2024,
 # was built with an old Go toolchain and old dependencies), with the golang.org/x module updates of patches/
-# (proposed upstream in prometheus-community/bind_exporter#301), with a current Go toolchain. A static binary on a
+# (0001 is proposed upstream in prometheus-community/bind_exporter#301; 0002 moves golang.org/x/crypto to v0.59.0,
+# which removes the deprecated openpgp packages of GO-2026-5932), with a current Go toolchain. A static binary on a
 # distroless base, with the same path, flags, port (9119) and user (nobody, uid 65534) as the upstream image.
 # VERSION is `git describe --tags` of the commit: 62 commits after v0.8.0.
 ARG VERSION=0.8.0-62-gbafd56f
