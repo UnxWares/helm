@@ -1758,7 +1758,7 @@
       "low": 12,
       "medium": 36,
       "open_fixable": 0,
-      "total": 54
+      "total": 56
      },
      "image": "ghcr.io/unxwares/mongosh:2.14.1",
      "name": "mongosh",
@@ -2806,7 +2806,7 @@
  ],
  "cve_watch": {
   "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-11T19:37:39Z",
+  "date": "2026-11-12T07:10:56Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
@@ -2844,7 +2844,7 @@
      "CRITICAL": 16,
      "HIGH": 237,
      "LOW": 93,
-     "MEDIUM": 209,
+     "MEDIUM": 210,
      "UNKNOWN": 22
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2854,10 +2854,10 @@
      "CRITICAL": 16,
      "HIGH": 237,
      "LOW": 93,
-     "MEDIUM": 209,
+     "MEDIUM": 210,
      "UNKNOWN": 22
     },
-    "total": 577
+    "total": 578
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -2890,9 +2890,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 31,
+     "HIGH": 29,
      "LOW": 3,
-     "MEDIUM": 42,
+     "MEDIUM": 35,
      "UNKNOWN": 3
     },
     "image": "docker.io/library/mongo:8.0",
@@ -2900,12 +2900,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 31,
+     "HIGH": 29,
      "LOW": 9,
-     "MEDIUM": 76,
+     "MEDIUM": 69,
      "UNKNOWN": 3
     },
-    "total": 120
+    "total": 111
    },
    "docker.io/library/mysql:8.4": {
     "charts": [
@@ -3074,9 +3074,9 @@
      "HIGH": 249,
      "LOW": 163,
      "MEDIUM": 246,
-     "UNKNOWN": 23
+     "UNKNOWN": 27
     },
-    "total": 689
+    "total": 693
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3099,9 +3099,9 @@
      "HIGH": 152,
      "LOW": 149,
      "MEDIUM": 166,
-     "UNKNOWN": 20
+     "UNKNOWN": 24
     },
-    "total": 487
+    "total": 491
    },
    "docker.io/prometheuscommunity/bind-exporter:master": {
     "charts": [
@@ -3195,9 +3195,9 @@
      "HIGH": 126,
      "LOW": 165,
      "MEDIUM": 183,
-     "UNKNOWN": 5
+     "UNKNOWN": 9
     },
-    "total": 482
+    "total": 486
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3220,9 +3220,9 @@
      "HIGH": 243,
      "LOW": 133,
      "MEDIUM": 230,
-     "UNKNOWN": 18
+     "UNKNOWN": 22
     },
-    "total": 635
+    "total": 639
    },
    "docker.io/taigaio/taiga-events:6.10.0": {
     "charts": [
@@ -3295,9 +3295,9 @@
      "HIGH": 114,
      "LOW": 132,
      "MEDIUM": 181,
-     "UNKNOWN": 18
+     "UNKNOWN": 22
     },
-    "total": 448
+    "total": 452
    },
    "docker.io/valkey/valkey:9.1.3-alpine": {
     "charts": [
@@ -3513,9 +3513,9 @@
      "HIGH": 1,
      "LOW": 12,
      "MEDIUM": 36,
-     "UNKNOWN": 5
+     "UNKNOWN": 7
     },
-    "total": 54,
+    "total": 56,
     "vulnerabilities": [
      {
       "fixed": "6.2.1",
@@ -3907,6 +3907,22 @@
       "installed": "14.2.0-19",
       "package": "libstdc++6",
       "severity": "LOW",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-100290",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "UNKNOWN",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-115819",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "UNKNOWN",
       "type": "debian"
      },
      {
@@ -4366,8 +4382,8 @@
     "total": 13
    }
   },
-  "run_id": 43088576245,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/43088576245",
+  "run_id": 43173144191,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/43173144191",
   "source": "report"
  },
  "files": [
@@ -4906,7 +4922,7 @@
     "low": 12,
     "medium": 36,
     "open_fixable": 0,
-    "total": 54
+    "total": 56
    },
    "name": "mongosh",
    "ref": "ghcr.io/unxwares/mongosh:2.14.1",
@@ -5052,7 +5068,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-11T19:37:39Z",
+ "latest_result": "2026-11-12T07:10:56Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
