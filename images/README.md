@@ -16,7 +16,7 @@ the upstream images instead (see its README).
 | `pdns-recursor:5.4.9` | `docker.io/powerdns/pdns-recursor-54` | Alpine, built from the release tarball |
 | `postgresql-client:18` | `docker.io/library/postgres` (its `psql`) | The PostgreSQL client only, from Alpine packages, instead of a whole server image; latest 18.x at each rebuild |
 | `mysql-client:8.4` | `docker.io/library/mysql` (its `mysql`) | The MySQL client only, from the signed packages of the official MySQL repository on Oracle Linux 9 slim; latest 8.4.x at each rebuild |
-| `mongosh:2.14.1` | `docker.io/library/mongo` (its `mongosh`) | The official mongosh release, checked against its SHA-256, on a distroless base; its SBOM stays in the image so that scanners see the bundled dependencies |
+| `mongosh:2.14.2` | `docker.io/library/mongo` (its `mongosh`) | The official mongosh release, checked against its SHA-256, on a distroless base; its SBOM stays in the image so that scanners see the bundled dependencies |
 | `cloudreve:4.19.1` | `docker.io/cloudreve/cloudreve` | Built from the release sources with the Go module updates of `patches/` (cloudreve/cloudreve#3618), current Alpine, same thumbnail tools (libvips, FFmpeg, LibreOffice, libheif, libraw); no aria2 or supervisord, no default time zone, non-root (uid 1000) |
 | `fossflow:1.0.6` | `docker.io/abrar74774/fossflow` | Built from the upstream sources (commit `b06baad`, release v1.0.6) without the unused `uuid` dependency of the backend (`patches/`), current Alpine, no npm, su-exec or openssl; nginx on port 8080 and the backend run as uid 1000 with a read-only root filesystem, the backend listens on 127.0.0.1 only and its CORS headers (any origin) are dropped |
 | `bind-exporter:0.8.0-62-gbafd56f` | `docker.io/prometheuscommunity/bind-exporter` | Built from the sources of the master branch (commit `bafd56f`, 62 commits after v0.8.0) with Go 1.27 and the `golang.org/x` module updates of `patches/` (prometheus-community/bind_exporter#301), static binary on distroless, same path, flags, port and user (`nobody`) |
@@ -49,6 +49,9 @@ end-to-end test in the same way, `bind-exporter` by the `bind9` one, and `pdns-a
 Pull requests fail on a fixable CRITICAL or HIGH vulnerability, unless the image's `.trivyignore` says why it
 is accepted (for `taiga-back`: the Django 3.2 vulnerabilities fixed by the Debian backports or not reachable in
 Taiga, each one documented; for `mongosh`: an FTP client it only uses for proxy auto-configuration files).
+The CVE watch shows the vulnerabilities these files list as accepted; the one of `cloudreve` is a medium one of its
+captcha module, whose fixed versions no longer have the API Cloudreve calls, and whose vulnerable function the
+version in use does not have.
 
 ## Signatures
 

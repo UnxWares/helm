@@ -1,0 +1,9 @@
+# Accepted in the pull request gate of .github/workflows/images.yaml and by the CVE watch (they still show in scans and
+# on Artifact Hub).
+#
+# github.com/mojocn/base64Captcha v0.0.0-20190801020520-752b1cd608b2: the fixed versions (1.3.6 and later) no longer
+# have the API that Cloudreve 4.19.1 calls (ConfigCharacter, GenerateCaptcha, VerifyCaptcha,
+# CaptchaWriteToBase64Encoding), so the module cannot move without changing Cloudreve. The vulnerable function,
+# memoryStore.Verify of 1.x, accepts an empty answer for an unknown captcha id; the 2019 version has no such
+# function, and the VerifyCaptcha that Cloudreve calls refuses an empty answer before it reads the store.
+CVE-2023-45292

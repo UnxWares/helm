@@ -113,7 +113,7 @@ image:
     # -- MongoDB client image repository (mongosh). `docker.io/library/mongo` also works.
     repository: ghcr.io/unxwares/mongosh
     # -- MongoDB client image tag (mongosh version).
-    tag: 2.14.1
+    tag: 2.14.2
     # -- MongoDB client image digest (`sha256:...`).
     digest: ""
   kubectl:  # @schema type:[object, string]

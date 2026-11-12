@@ -1,15 +1,15 @@
 # MongoDB shell (mongosh) for the openeverest-database-tools Jobs: the official release build that links the
 # system OpenSSL 3, on a distroless base (glibc, OpenSSL 3, zlib, no shell), instead of a whole MongoDB server
 # image. The SBOM shipped with the release stays in the image, so that scanners see the bundled dependencies.
-ARG VERSION=2.14.1
+ARG VERSION=2.14.2
 FROM docker.io/library/alpine:3.24 AS download
 
 ARG VERSION
 ARG TARGETARCH
 # Release archives of https://github.com/mongodb-js/mongosh/releases, signed by the Mongosh Release Signing Key
 # (ED58 1728 F2A4 69C9 4D18 BB58 CEED 0419 D361 CB16); the checksums were taken from verified archives.
-ARG MONGOSH_SHA256_AMD64=c2aaf88f8759a1eaf9739c1352e975d65650912845a530bd7f2bb69dc251eff5
-ARG MONGOSH_SHA256_ARM64=d644bdacb42d81e2fee757485108f236853a41bce82a5ed5a4c2b15cb4744df8
+ARG MONGOSH_SHA256_AMD64=b63ebd577f73e0d5c6634650082f5c3db41633c00f456f240cfbc1b7917e5612
+ARG MONGOSH_SHA256_ARM64=29e7cd5184e4517a60ca6e10d217079eb12e62d21d8bc52728e9a16b5cfeb9af
 RUN set -eux; \
     case "$TARGETARCH" in \
         amd64) arch=x64; sha256=$MONGOSH_SHA256_AMD64 ;; \
