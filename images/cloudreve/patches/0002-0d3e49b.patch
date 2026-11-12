@@ -1,4 +1,4 @@
-From 48e061e62c8ab417b0f94bec6ed1e284f5bcc420 Mon Sep 17 00:00:00 2001
+From 0d3e49b210093f22268644f8c397ef4c0de5db49 Mon Sep 17 00:00:00 2001
 From: BaptGosse <baptiste.gosselin@unxwares.com>
 Date: Thu, 12 Nov 2026 14:49:22 +0100
 Subject: [PATCH] chore(deps): update golang.org/x/crypto and the archive
