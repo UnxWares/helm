@@ -1,6 +1,6 @@
 # Kener Helm Chart
 
-![Version: 2026.11.6](https://img.shields.io/badge/Version-2026.11.6-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.1.11](https://img.shields.io/badge/AppVersion-4.1.11-informational?style=flat-square)
+![Version: 2026.11.7](https://img.shields.io/badge/Version-2026.11.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.2.1](https://img.shields.io/badge/AppVersion-4.2.1-informational?style=flat-square)
 [![UWOSC: maintained](https://helm.unxwares.studio/assets/uwosc/mini-maintained.svg)](https://helm.unxwares.studio/#open-source)
 
 [Kener](https://kener.ing) is an open source status page: monitors (HTTP, TCP, DNS, ping, SSL, SQL, gRPC,
@@ -62,12 +62,14 @@ Volumes:
   (emptyDir, 16Mi).
 
 There is no init container, Job or CronJob: Kener runs its database migrations and seeds itself when it starts.
+Inside the Kener container, each check of an API, Ping, TCP or GameDig monitor starts a short-lived Node.js process
+for its eval code (see [Monitor eval code](#monitor-eval-code)).
 
 ## Images
 
 | Component | Default image | Values |
 |-----------|---------------|--------|
-| Kener | `docker.io/rajnandan1/kener:4.1.11-alpine` | `image.*` |
+| Kener | `docker.io/rajnandan1/kener:4.2.1-alpine` | `image.*` |
 | Valkey | `docker.io/valkey/valkey:9.1.3-alpine` | `redis.image.*` |
 
 When `image.tag` is empty, the chart builds the Kener tag from the chart `appVersion`, `kener.basePath` and
@@ -75,8 +77,8 @@ When `image.tag` is empty, the chart builds the Kener tag from the chart `appVer
 
 | `kener.basePath` | `image.variant: alpine` (default) | `image.variant: debian` |
 |------------------|-----------------------------------|-------------------------|
-| `""` (default) | `4.1.11-alpine` | `4.1.11` |
-| `/status` | `4.1.11-status-alpine` | `4.1.11-status` |
+| `""` (default) | `4.2.1-alpine` | `4.2.1` |
+| `/status` | `4.2.1-status-alpine` | `4.2.1-status` |
 
 The Alpine variant (on `node:24-alpine`) carries far fewer known vulnerabilities than the Debian one (on
 `node:24-slim`, the upstream default). The base path is compiled into the image: any path other than `""` and
@@ -89,13 +91,13 @@ for other charts). These images are published for `linux/amd64` and `linux/arm64
 
 To pin an image by digest, set `image.digest` and `redis.image.digest`: the digest takes precedence over the tag and
 the variant logic, so pin the digest of the tag that matches your `kener.basePath` (for example the
-`4.1.11-status-alpine` one for `/status`). `redis.image.tag` has no hidden default: with the bundled Valkey, keep a
-tag or set the digest, or the chart refuses to render. `docker buildx imagetools inspect docker.io/rajnandan1/kener:4.1.11-alpine`
+`4.2.1-status-alpine` one for `/status`). `redis.image.tag` has no hidden default: with the bundled Valkey, keep a
+tag or set the digest, or the chart refuses to render. `docker buildx imagetools inspect docker.io/rajnandan1/kener:4.2.1-alpine`
 prints the digest of a tag.
 
 ```yaml
 image:
-  digest: sha256:<digest of docker.io/rajnandan1/kener:4.1.11-alpine>
+  digest: sha256:<digest of docker.io/rajnandan1/kener:4.2.1-alpine>
 redis:
   image:
     digest: sha256:<digest of docker.io/valkey/valkey:9.1.3-alpine>
@@ -105,7 +107,7 @@ To pull from a mirror, change `image.repository` and `redis.image.repository` an
 `imagePullSecrets` (used by every pod of the chart, the test pod included).
 
 The [CVE watch](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch) scans the default
-images and those of the `ci/` values files (`4.1.11-status` included) every day; chart releases that only bump an
+images and those of the `ci/` values files (`4.2.1-status` included) every day; chart releases that only bump an
 image for vulnerabilities are flagged `containsSecurityUpdates` on Artifact Hub.
 
 ## Requirements
@@ -448,10 +450,31 @@ pingMonitors:
   enabled: true
 ```
 
+### Monitor eval code
+
+Since Kener 4.2, API, Ping, TCP and GameDig monitors run their eval code (the built-in one when a monitor has none) in
+a [sandbox](https://kener.ing/docs/v4/monitors/overview#eval-sandbox): a QuickJS engine compiled to WebAssembly,
+inside a new Node.js process that Kener starts for each check and kills when the eval returns. Each eval is limited
+to 10 seconds and 256 MB, at most 2 run at a time (the next one waits for a free slot), and the eval process gets
+only `TZ` from the container environment. Eval code cannot reach the files of the container, its environment
+variables (secrets included) or the network: `fetch`, `process`, `require`, `Buffer`, `setTimeout`, `URL`, `crypto`,
+`Intl` and the other Node.js and browser features do not exist there.
+
+The chart needs no setting for it. The eval process runs in the Kener container with the same security context
+(uid 1000, read-only root filesystem, no capability, no privilege escalation, seccomp `RuntimeDefault`), writes no
+file, and talks to Kener through a socket pair it inherits, not over the network, so NetworkPolicies do not concern
+it. What it needs is memory: each running eval adds a Node.js process of about 60 MiB plus what the eval allocates,
+up to its 256 MB limit, inside the container `resources.limits.memory`. An eval that reaches its limit is stopped and
+reports **DOWN**; the end-to-end test checks it with the default `1Gi` limit, without Kener restarting. Raise the
+limit if your evals parse large responses (`modules.cheerio`) on an instance that already uses most of it.
+
+`Date` in eval code uses the container time zone, `TZ` (`UTC` in the image, `extraEnv` can change it).
+
 ### Resources and probes
 
 Defaults: Kener requests `100m`/`256Mi` with a `1Gi` memory limit (Kener recommends 1 vCPU and 1 GiB for real
-workloads), Valkey `25m`/`32Mi` with a `256Mi` limit.
+workloads), Valkey `25m`/`32Mi` with a `256Mi` limit. The Kener limit also covers the eval processes of the monitors,
+up to 2 at a time (see [Monitor eval code](#monitor-eval-code)).
 
 ```yaml
 resources:
@@ -611,7 +634,7 @@ networkPolicy:
 ### Under `/status` with the Gateway API
 
 The base path is compiled into the Kener image: the chart picks the upstream `-status` image
-(`4.1.11-status-alpine`) when `kener.basePath` is `/status`. Any other path needs your own build
+(`4.2.1-status-alpine`) when `kener.basePath` is `/status`. Any other path needs your own build
 (`KENER_BASE_PATH` build argument) in `image.tag`.
 
 ```yaml
@@ -701,6 +724,9 @@ Caveats:
 - Kener substitutes any environment variable in monitors and triggers, secrets included (see
   [Secrets for monitors and triggers](#secrets-for-monitors-and-triggers)): monitor and trigger editors can read
   every secret of the container.
+- Monitor eval code runs in a sandbox since Kener 4.2 (see [Monitor eval code](#monitor-eval-code)). Before, it ran
+  inside the Kener process, with its environment, files and network: anyone allowed to edit monitors could run any
+  code there. The `$NAME` substitution above is not affected by the sandbox.
 - Kener egress stays open with `networkPolicy.enabled`, since monitors reach arbitrary hosts. Add your own egress
   policy if your monitors only target known networks.
 - The Kener-Valkey traffic is not encrypted inside the cluster.
@@ -745,6 +771,11 @@ that change the chart, on every push to main and every week. It installs the cha
   valid key, including through a percent-encoded path (the authentication bypass fixed in Kener 4.1.9);
 - an HTTP monitor and a status page are created through the REST API; the monitor runs from the queue (bundled
   Valkey) and records `UP`; the status page lists it as operational, its monitor page and its status badge answer;
+- monitor eval code runs in the Kener sandbox inside the hardened pod: an HTTP monitor whose custom eval reads the
+  health check answer, and finds none of `process`, `require`, `fetch` and `Buffer`, records the status and latency
+  that the eval returns; evals that read `process.env`, loop forever or allocate more than 256 MB record `DOWN`
+  with the sandbox error (`'process' is not defined`, `Timed out after 10000 ms`, `out of memory`), within the
+  default memory limit and without the Kener container restarting;
 - Valkey refuses commands without its password; Kener reaches Valkey, another pod reaches Kener but not Valkey
   (NetworkPolicies);
 - after `helm uninstall` and a new install, the account logs in with the same password and the API key created
@@ -825,6 +856,24 @@ Read the notes of every version between yours and the target, back up the databa
 helm repo update
 helm upgrade status unxwares/kener -n status -f values.yaml
 ```
+
+### To 2026.11.7 (Kener 4.2.1)
+
+Security release, no value to change, but review the eval code of your monitors before upgrading:
+
+- Kener 4.2 runs the eval code of API, Ping, TCP and GameDig monitors in a sandbox (see
+  [Monitor eval code](#monitor-eval-code)). Eval code that uses `fetch`, `process`, `require`, `import()`, `Buffer`,
+  `setTimeout`, `URL`, `TextDecoder`, `crypto` or `Intl` now reports **DOWN** with an error such as
+  `'fetch' is not defined`, and so does a Ping, TCP or GameDig eval that returns a `status` other than `UP`,
+  `DEGRADED`, `DOWN` or `MAINTENANCE`. Search your evals for these names and rewrite them as the
+  [4.2.0 changelog](https://kener.ing/docs/v4/changelogs/v4.2.0) explains. `modules.cheerio` stays, about 20 times
+  slower, without `fromURL`, `loadBuffer`, `stringStream` and `decodeStream`.
+- Each check of these monitors starts a short-lived Node.js process in the Kener container: count about 60 MiB per
+  running eval, 2 at most, plus what the eval allocates (256 MB at most), in `resources.limits.memory`.
+- A migration adds the nullable `maintenances.timezone` column at the first start. Existing recurring maintenances
+  keep repeating in UTC; give one a time zone to keep its local time across clock changes.
+- The chart skips Kener 4.2.0, whose eval sandbox could hang and then report every such monitor **DOWN** until a
+  restart. If you had set `image.tag` to a 4.2.0 image, empty it or move to 4.2.1.
 
 ### To 2026.11.3
 
@@ -926,6 +975,11 @@ the first lines of `kubectl logs` after each upgrade. If the upgrade is refused 
 renders the chart offline, or after a reinstall. Use your own Secret (see
 [Secrets and existing Secrets](#secrets-and-existing-secrets)).
 
+**A monitor reports DOWN since the upgrade to 2026.11.7**, with `is not defined` in the error of its checks: its eval
+code uses a Node.js or browser feature that the Kener 4.2 sandbox does not have (see
+[Monitor eval code](#monitor-eval-code) and the 2026.11.7 upgrading note). `Eval error: Timed out after 10000 ms`
+means the eval ran for more than 10 seconds.
+
 **Ping monitors fail** (`Operation not permitted`): set `pingMonitors.enabled: true`. If the pods are then not
 created, the namespace Pod Security level refuses `NET_RAW`:
 
@@ -1008,7 +1062,7 @@ kubectl -n status delete secret status-kener
 | image.digest | string | `""` | Image digest (`sha256:...`). When set, it takes precedence over the tag. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | image.repository | string | `"docker.io/rajnandan1/kener"` | Kener image repository. |
-| image.tag | string | `""` | Image tag. Empty builds it from the chart appVersion, `kener.basePath` and `image.variant` (`4.1.11-alpine`, `4.1.11`, `4.1.11-status-alpine`...). |
+| image.tag | string | `""` | Image tag. Empty builds it from the chart appVersion, `kener.basePath` and `image.variant` (`4.2.1-alpine`, `4.2.1`, `4.2.1-status-alpine`...). |
 | image.variant | string | `"alpine"` | Base of the published image when `image.tag` is empty: `alpine` (node:24-alpine, far fewer known CVEs) or `debian` (node:24-slim, the upstream default). |
 | imagePullSecrets | list | `[]` | Secrets for pulling images from a private registry. |
 | ingress.annotations | object | `{}` | Ingress annotations. |
@@ -1081,7 +1135,7 @@ kubectl -n status delete secret status-kener
 | redis.service.port | int | `6379` | Valkey service port. |
 | redis.tolerations | list | `[]` | Tolerations. |
 | replicaCount | int | `1` | Number of Kener replicas. Must stay at 1 with SQLite. PostgreSQL/MySQL with a shared Redis can run more (not tested upstream). |
-| resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Resource requests and limits (Kener recommends 1 vCPU / 1 GiB for real workloads). |
+| resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Resource requests and limits (Kener recommends 1 vCPU / 1 GiB for real workloads). Each check of an API, Ping, TCP or GameDig monitor runs its eval code (the built-in one when none is set) in a child process of the Kener container, up to 2 at a time, each about 60 MiB plus up to 256 MB for the eval itself: keep room for them in the memory limit. |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | Container security context. |
 | service.annotations | object | `{}` | Service annotations. |
 | service.port | int | `3000` | Service port (the container always listens on 3000). |

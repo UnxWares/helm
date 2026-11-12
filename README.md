@@ -48,7 +48,7 @@ the same rules:
 | [cloudreve](charts/cloudreve) | Cloudreve 4.19 | UnxWares | Install (UnxWares and upstream images), `helm test`, end to end |
 | [excalidash](charts/excalidash) | ExcaliDash 0.6 | Upstream | Install, `helm test` (health endpoint), end to end |
 | [fossflow](charts/fossflow) | FossFLOW 1.0 | UnxWares | Install (UnxWares and upstream images), `helm test`, end to end |
-| [kener](charts/kener) | Kener 4.1 | Upstream (Kener, Valkey) | Install, `helm test` (strict health check), end to end |
+| [kener](charts/kener) | Kener 4.2 | Upstream (Kener, Valkey) | Install, `helm test` (strict health check), end to end |
 | [laravel-generic](charts/laravel-generic) | Laravel 12 | Your image, nginx-unprivileged | `helm test`, end to end (a Laravel test application built in CI, FrankenPHP and PHP-FPM) |
 | [openeverest-database-tools](charts/openeverest-database-tools) | OpenEverest 1.17 | UnxWares (database clients), kubectl | End to end |
 | [powerdns](charts/powerdns) | PowerDNS Auth 5.1 / Recursor 5.4 | UnxWares | Install (UnxWares and upstream images), `helm test` (API), end to end |
@@ -112,9 +112,10 @@ The end-to-end tests:
   its signed URL (refused without it); the periodic tasks are sent once with two workers; a pod outside the release
   only reaches the gateway (NetworkPolicies); a reinstall starts on the kept Secret and volumes.
 - **kener**: the first account signs up (a second one is refused) and logs in, creates an API key, creates a monitor
-  and a status page through the REST API; the monitor runs and the status page shows it operational. Valkey refuses
-  commands without its password and other pods (NetworkPolicies); after a reinstall the account and API key still
-  work.
+  and a status page through the REST API; the monitor runs and the status page shows it operational. Custom monitor
+  eval code runs in the Kener sandbox inside the hardened pod, and evals that read the environment, loop forever or
+  exhaust their memory are stopped without Kener restarting. Valkey refuses commands without its password and other
+  pods (NetworkPolicies); after a reinstall the account and API key still work.
 - **excalidash**: authentication is turned on, the first administrator registers with the setup code of the logs
   and logs in, creates a drawing, finds it in the listing, exports it and gets the export accepted by the import
   check; cookies are `Secure` behind TLS, the backend refuses other pods, and a reinstall keeps the session and the
