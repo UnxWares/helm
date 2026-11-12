@@ -17,3 +17,5 @@ images/cloudreve: docker.io/cloudreve/cloudreve:{tag}
 # Upstream publishes master-<commit> tags only: the commit of the UnxWares build, and the latest master.
 images/fossflow: docker.io/abrar74774/fossflow:master-b06baad
 images/bind-exporter: docker.io/prometheuscommunity/bind-exporter:master
+# ISC publishes one tag per BIND branch (9.20), moved to each patch release.
+images/bind9: docker.io/internetsystemsconsortium/bind9:9.20

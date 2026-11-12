@@ -1,4 +1,4 @@
-Bind9 is deployed ({{ include "bind9.image" (dict "image" .Values.image "default" .Chart.AppVersion) }}).
+Bind9 is deployed ({{ include "bind9.namedImage" . }}).
 
 Release Name: {{ .Release.Name }}
 Namespace:    {{ .Release.Namespace }}

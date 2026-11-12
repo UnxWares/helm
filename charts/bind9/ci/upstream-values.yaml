@@ -1,4 +1,4 @@
-# The Prometheus community exporter image (imageProvider: upstream), one zone.
+# The official images (imageProvider: upstream): ISC named (amd64 only) and the Prometheus community exporter, one zone.
 imageProvider: upstream
 metrics:
   enabled: true

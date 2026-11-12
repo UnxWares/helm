@@ -17,9 +17,9 @@ spec:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- /* Same image as named: same architecture constraint. */}}
-  {{- with .Values.nodeSelector }}
+  {{- with include "bind9.nodeSelector" . }}
   nodeSelector:
-    {{- toYaml . | nindent 4 }}
+    {{- . | nindent 4 }}
   {{- end }}
   {{- with .Values.tolerations }}
   tolerations:
@@ -33,7 +33,7 @@ spec:
       type: RuntimeDefault
   containers:
     - name: dig
-      image: {{ include "bind9.image" (dict "image" .Values.image "default" .Chart.AppVersion) | quote }}
+      image: {{ include "bind9.namedImage" . | quote }}
       securityContext:
         allowPrivilegeEscalation: false
         readOnlyRootFilesystem: true

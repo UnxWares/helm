@@ -115,7 +115,7 @@ jobs:
               env:
                   BASE: ${{ github.event.pull_request.base.sha }}
               run: |
-                  for image in fossflow; do
+                  for image in fossflow bind9; do
                       git diff --quiet "${BASE:-origin/main}" HEAD -- "images/$image" && continue
                       ref="ghcr.io/unxwares/$image:$(.github/scripts/image-tag.sh "images/$image")"
                       docker build --tag "$ref" "images/$image"

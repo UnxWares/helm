@@ -10,8 +10,8 @@ set -euo pipefail
 
 NAMESPACE=$1
 RELEASE=$2
-# Any image with dig, wget and sleep: the ISC image, as the chart.
-CLIENT_IMAGE=${CLIENT_IMAGE:-docker.io/internetsystemsconsortium/bind9:9.20}
+# Any image with dig, wget and sleep: the UnxWares BIND image, as the chart (CI passes the one it built).
+CLIENT_IMAGE=${CLIENT_IMAGE:-ghcr.io/unxwares/bind9:9.20.30}
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 ok() { echo "ok: $*"; }
@@ -40,7 +40,6 @@ metadata:
 spec:
   restartPolicy: Never
   automountServiceAccountToken: false
-  nodeSelector: { kubernetes.io/arch: amd64 }
   securityContext: { runAsNonRoot: true, runAsUser: 53, runAsGroup: 53, seccompProfile: { type: RuntimeDefault } }
   containers:
     - name: client
