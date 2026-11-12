@@ -32,7 +32,7 @@ trap cleanup EXIT
 # What the memory sampler of the eval checks saw (nothing before they start), printed with the result or the failure.
 memory_report() {
   [ -s "$WORK/memory.log" ] || return 0
-  # Each line: container memory in bytes, then pid:MiB for each node process (pid 1 is Kener, the others its evals).
+  # Each line: container memory in bytes, then pid:MiB of Kener (pid 1) and of its child processes (the evals).
   awk -v before="${memory_before:-?}" -v limit="${memory_limit:-none}" '
     { if ($1 > c) c = $1; n = 0
       for (i = 2; i <= NF; i++) { split($i, f, ":"); if (f[1] == 1) { if (f[2] > k) k = f[2] } else { n++; if (f[2] > e) e = f[2] } }
@@ -175,8 +175,8 @@ cgroup_mib() { k exec "deploy/$kener" -- cat "/sys/fs/cgroup/$1" | awk '{ printf
 memory_limit=$(k get deploy "$kener" -o jsonpath='{.spec.template.spec.containers[0].resources.limits.memory}')
 memory_before=$(cgroup_mib memory.current 2>/dev/null) || memory_before=unknown
 k exec "deploy/$kener" -- sh -c 'while :; do
-    echo "$(cat /sys/fs/cgroup/memory.current)$(cat /proc/[0-9]*/status 2>/dev/null | awk "/^Name:/ { p = (\$2 == \"node\") }
-      p && /^Pid:/ { id = \$2 } p && /^VmRSS:/ { printf \" %s:%d\", id, \$2 / 1024 }")"
+    echo "$(cat /sys/fs/cgroup/memory.current)$(cat /proc/[0-9]*/status 2>/dev/null | awk "/^Pid:/ { id = \$2 }
+      /^PPid:/ { parent = \$2 } /^VmRSS:/ && (id == 1 || parent == 1) { printf \" %s:%d\", id, \$2 / 1024 }")"
     sleep 0.1; done' >"$WORK/memory.log" 2>/dev/null &
 SAMPLER_PID=$!
 api POST /monitors "$(eval_monitor e2e-eval "$sandboxed")" | expect_status 201 "creation of e2e-eval" >/dev/null
