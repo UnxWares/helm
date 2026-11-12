@@ -1,6 +1,6 @@
 # FossFLOW Helm Chart
 
-![Version: 2026.11.4](https://img.shields.io/badge/Version-2026.11.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.5](https://img.shields.io/badge/AppVersion-1.0.5-informational?style=flat-square)
+![Version: 2026.11.5](https://img.shields.io/badge/Version-2026.11.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.6](https://img.shields.io/badge/AppVersion-1.0.6-informational?style=flat-square)
 [![UWOSC: maintained](https://helm.unxwares.studio/assets/uwosc/mini-maintained.svg)](https://helm.unxwares.studio/#open-source)
 
 [FossFLOW](https://github.com/Abrar74774/FossFLOW) is an open-source Progressive Web App for drawing isometric
@@ -13,8 +13,8 @@ available. The chart is maintained by UnxWares; FossFLOW itself is maintained by
 
 ## Features
 
-- **UnxWares image by default**: FossFLOW v1.0.5 built from the upstream sources with updated npm dependencies on a
-  current Alpine (see [Images](#images)); the upstream image (`master-2b3cee3`) stays one value away
+- **UnxWares image by default**: FossFLOW v1.0.6 built from the upstream sources on a current Alpine (see
+  [Images](#images)); the upstream image (`master-b06baad`) stays one value away
 - Two modes: **server storage** (diagrams saved by the backend on a PVC, the default) or **browser-only** (diagrams
   stay in each user's browser, stateless pods that can be scaled or autoscaled)
 - **Hardened pod** with the UnxWares image: uid 1000, read-only root filesystem, every capability dropped, seccomp
@@ -52,8 +52,8 @@ The FossFLOW container and the `helm test` pod use the same image, chosen by `im
 
 | `imageProvider` | Image | Notes |
 |---|---|---|
-| `unxwares` (default) | `ghcr.io/unxwares/fossflow:<appVersion>` | Built from the upstream sources of commit `2b3cee3` (release v1.0.5) with the lockfile of `npm audit fix` (branch [fix/vulnerable-dependencies](https://github.com/UnxWares/FossFLOW/tree/fix/vulnerable-dependencies) of UnxWares/FossFLOW), on a current Alpine without npm, su-exec or openssl. nginx (port 8080) and the backend run as uid 1000 with a read-only root filesystem; the backend listens on `127.0.0.1:3001` and its CORS headers are dropped. Rebuilt twice a week, signed with cosign. |
-| `upstream` | `docker.io/abrar74774/fossflow:master-2b3cee3` | Published by the maintainers of [Abrar74774/FossFLOW](https://github.com/Abrar74774/FossFLOW) from its public sources. Starts as root: nginx on port 80, backend through `su-exec`, writable root filesystem (see [Security](#security)). Upstream only publishes `master-<commit>` tags. |
+| `unxwares` (default) | `ghcr.io/unxwares/fossflow:<appVersion>` | Built from the upstream sources of commit `b06baad` (release v1.0.6, with the dependency updates UnxWares contributed in [Abrar74774/FossFLOW#24](https://github.com/Abrar74774/FossFLOW/pull/24)), without the backend's unused `uuid` dependency, on a current Alpine without npm, su-exec or openssl. nginx (port 8080) and the backend run as uid 1000 with a read-only root filesystem; the backend listens on `127.0.0.1:3001` and its CORS headers are dropped. Rebuilt twice a week, signed with cosign. |
+| `upstream` | `docker.io/abrar74774/fossflow:master-b06baad` | Published by the maintainers of [Abrar74774/FossFLOW](https://github.com/Abrar74774/FossFLOW) from its public sources. Starts as root: nginx on port 80, backend through `su-exec`, writable root filesystem (see [Security](#security)). Upstream only publishes `master-<commit>` tags. |
 
 Both images exist for `linux/amd64` and `linux/arm64` and use the same environment variables (`ENABLE_SERVER_STORAGE`,
 `STORAGE_PATH`, `BACKEND_HOST`) and the same storage format: switching between them keeps the diagrams. Sources,
@@ -61,10 +61,10 @@ build details and the cosign verification command are in
 [images/](https://github.com/UnxWares/helm/tree/main/images).
 
 - Another tag or registry: set `image.repository` and `image.tag` (an empty tag means the appVersion for the
-  UnxWares image, `master-2b3cee3` for the upstream one). The chart picks the port and the security contexts from
+  UnxWares image, `master-b06baad` for the upstream one). The chart picks the port and the security contexts from
   `imageProvider`, so a custom build of the upstream Dockerfile goes with `imageProvider: upstream`.
 - Pin a digest: `image.digest` takes precedence over the tag. Read it with
-  `docker buildx imagetools inspect ghcr.io/unxwares/fossflow:1.0.5` (or `crane digest`):
+  `docker buildx imagetools inspect ghcr.io/unxwares/fossflow:1.0.6` (or `crane digest`):
 
   ```yaml
   image:
@@ -239,7 +239,7 @@ cert-manager as above) or at the Gateway listener referenced by `httpRoute.paren
 ### Authentication
 
 FossFLOW has no user management. The `HTTP_AUTH_USER`/`HTTP_AUTH_PASSWORD` basic auth of the upstream image does not
-work in v1.0.5 (its entrypoint calls `openssl passwd -bcrypt`, which OpenSSL 3 removed), and the UnxWares image
+work in v1.0.6 (its entrypoint calls `openssl passwd -bcrypt`, which OpenSSL 3 removed), and the UnxWares image
 refuses to start when they are set rather than run without the protection they ask for. Protect FossFLOW at the
 ingress:
 
@@ -620,7 +620,7 @@ kubectl -n fossflow delete pod fossflow-test-connection --ignore-not-found
 | image.digest | string | `""` | Image digest (`sha256:...`). When set, it takes precedence over the tag. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | image.repository | string | `""` | Image repository. Empty: `ghcr.io/unxwares/fossflow` or `docker.io/abrar74774/fossflow`, from `imageProvider`. |
-| image.tag | string | `""` | Image tag. Empty: the chart appVersion for the UnxWares image, `master-2b3cee3` for the upstream one (upstream only publishes `master-<commit>` tags: `master-2b3cee3` is release v1.0.5). |
+| image.tag | string | `""` | Image tag. Empty: the chart appVersion for the UnxWares image, `master-b06baad` for the upstream one (upstream only publishes `master-<commit>` tags: `master-b06baad` is release v1.0.6). |
 | imageProvider | string | `"unxwares"` | Image provider. `unxwares`: `ghcr.io/unxwares/fossflow`, FossFLOW built from the upstream sources with updated dependencies on a current Alpine, rebuilt twice a week, signed (https://github.com/UnxWares/helm/tree/main/images): nginx on port 8080 and the backend run as a non-root user, with a read-only root filesystem. `upstream`: `docker.io/abrar74774/fossflow`, built by the maintained continuation of FossFLOW (github.com/Abrar74774/FossFLOW), which starts as root (nginx on port 80, backend through su-exec) with a writable root filesystem. |
 | imagePullSecrets | list | `[]` | Secrets for pulling images from a private registry. |
 | ingress.annotations | object | `{}` | Ingress annotations (add authentication here, e.g. oauth2-proxy or basic auth). |

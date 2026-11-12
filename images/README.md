@@ -18,7 +18,7 @@ the upstream images instead (see its README).
 | `mysql-client:8.4` | `docker.io/library/mysql` (its `mysql`) | The MySQL client only, from the signed packages of the official MySQL repository on Oracle Linux 9 slim; latest 8.4.x at each rebuild |
 | `mongosh:2.14.1` | `docker.io/library/mongo` (its `mongosh`) | The official mongosh release, checked against its SHA-256, on a distroless base; its SBOM stays in the image so that scanners see the bundled dependencies |
 | `cloudreve:4.19.1` | `docker.io/cloudreve/cloudreve` | Built from the release sources with the Go module updates of `patches/` (cloudreve/cloudreve#3618), current Alpine, same thumbnail tools (libvips, FFmpeg, LibreOffice, libheif, libraw); no aria2 or supervisord, no default time zone, non-root (uid 1000) |
-| `fossflow:1.0.5` | `docker.io/abrar74774/fossflow` | Built from the upstream sources (commit `2b3cee3`, release v1.0.5) with the lockfile update of `patches/` (`npm audit fix`), current Alpine, no npm, su-exec or openssl; nginx on port 8080 and the backend run as uid 1000 with a read-only root filesystem, the backend listens on 127.0.0.1 only and its CORS headers (any origin) are dropped |
+| `fossflow:1.0.6` | `docker.io/abrar74774/fossflow` | Built from the upstream sources (commit `b06baad`, release v1.0.6) without the unused `uuid` dependency of the backend (`patches/`), current Alpine, no npm, su-exec or openssl; nginx on port 8080 and the backend run as uid 1000 with a read-only root filesystem, the backend listens on 127.0.0.1 only and its CORS headers (any origin) are dropped |
 | `bind-exporter:0.8.0-62-gbafd56f` | `docker.io/prometheuscommunity/bind-exporter` | Built from the sources of the master branch (commit `bafd56f`, 62 commits after v0.8.0) with Go 1.27 and the `golang.org/x` module updates of `patches/` (prometheus-community/bind_exporter#301), static binary on distroless, same path, flags, port and user (`nobody`) |
 
 The images keep the upstream ports, paths, users and environment variables (PowerDNS: the same `pdns` user,
@@ -71,8 +71,10 @@ cosign verify ghcr.io/unxwares/taiga-back:6.10.2 \
   applying. Drop them when the upstream release that contains them is out.
 - `taiga-events` uses its own `package.json` and `package-lock.json` (current versions of the upstream
   dependencies); `npm audit` reports no vulnerability.
-- `fossflow` builds with the upstream lockfile updated by `npm audit fix` (`patches/0001-d94654d.patch`, from the
-  `fix/vulnerable-dependencies` branch of [UnxWares/FossFLOW](https://github.com/UnxWares/FossFLOW)), and installs
-  the backend dependencies from that lockfile.
+- `fossflow` builds with the upstream lockfile, which has the dependency updates UnxWares contributed upstream
+  (Abrar74774/FossFLOW#24, in v1.0.6), and installs the backend dependencies from that lockfile.
+  `patches/0001-backend-unused-uuid.patch` is ours, not an upstream commit: it removes `uuid` from the backend's
+  `package.json` and lockfile entry, since the backend never imports it (the web app keeps it), so that its known
+  vulnerability stays out of the image.
 - To move to a new upstream version: update `ARG VERSION` and the source checksums, regenerate the locks,
   build locally (`docker build images/<image>`), then bump the chart.

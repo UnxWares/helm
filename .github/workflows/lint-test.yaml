@@ -107,6 +107,21 @@ jobs:
               if: steps.list-changed.outputs.changed == 'true'
               uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
 
+            # A chart that defaults to an UnxWares image can move to a version that main only publishes after the
+            # merge: when the pull request changes one of these images, build it and load it into kind under its
+            # published name, so that ct install runs the chart on it (pullPolicy IfNotPresent).
+            - name: Load the UnxWares images changed by the pull request
+              if: steps.list-changed.outputs.changed == 'true'
+              env:
+                  BASE: ${{ github.event.pull_request.base.sha }}
+              run: |
+                  for image in fossflow; do
+                      git diff --quiet "${BASE:-origin/main}" HEAD -- "images/$image" && continue
+                      ref="ghcr.io/unxwares/$image:$(.github/scripts/image-tag.sh "images/$image")"
+                      docker build --tag "$ref" "images/$image"
+                      kind load docker-image "$ref" --name chart-testing
+                  done
+
             # Linted above but not installed, they need external prerequisites:
             # laravel-generic needs the user's application image (e2e.yaml installs it with a test application
             # built there),
