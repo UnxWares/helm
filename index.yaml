@@ -3501,6 +3501,67 @@ entries:
       artifacthub.io/category: database
       artifacthub.io/changes: |
         - kind: changed
+          description: "MongoDB client image: ghcr.io/unxwares/mongosh 2.14.2, a bug fix release of mongosh (Ctrl+C during an interrupt, TLS key password entered at the prompt). It fixes no known vulnerability: the bundled basic-ftp, glob and minimatch are still the affected versions. The templates are unchanged."
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/displayName: OpenEverest Database Tools
+      artifacthub.io/images: |
+        - name: postgresql-client
+          image: ghcr.io/unxwares/postgresql-client:18
+        - name: mysql-client
+          image: ghcr.io/unxwares/mysql-client:8.4
+        - name: mongosh
+          image: ghcr.io/unxwares/mongosh:2.14.2
+        - name: kubectl
+          image: registry.k8s.io/kubectl:v1.37.2
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/openeverest-database-tools
+        - name: OpenEverest documentation
+          url: https://openeverest.io/documentation/current/
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.17.0
+    created: "2026-11-12T14:09:32.703171022Z"
+    description: Jobs that wait for an OpenEverest DatabaseCluster to be ready, then
+      create PostgreSQL, MySQL and MongoDB databases, users, grants and run init scripts.
+    digest: a01f8dd885ea9c5f4cab388eb3059fe50fc087c15d2d84496fd4e57fb1cc61e1
+    home: https://github.com/UnxWares/helm/tree/main/charts/openeverest-database-tools
+    icon: https://openeverest.io/images/brandkit/icon-full-color-white-min.png
+    keywords:
+    - database
+    - initialization
+    - openeverest
+    - everest
+    - percona
+    - postgresql
+    - mysql
+    - mongodb
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: openeverest-database-tools
+    sources:
+    - https://github.com/openeverest/openeverest
+    - https://github.com/openeverest/openeverest-operator
+    - https://github.com/UnxWares/helm/tree/main/charts/openeverest-database-tools
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/openeverest-database-tools-2026.11.6/openeverest-database-tools-2026.11.6.tgz
+    version: 2026.11.6
+  - annotations:
+      artifacthub.io/category: database
+      artifacthub.io/changes: |
+        - kind: changed
           description: "README: the UnxWares Open Source & Community (UWOSC) badge, the chart being maintained by UnxWares. The templates and values are unchanged."
       artifacthub.io/containsSecurityUpdates: "false"
       artifacthub.io/displayName: OpenEverest Database Tools
@@ -5868,4 +5929,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-11-12T14:00:41.776262057Z"
+generated: "2026-11-12T14:09:32.703582896Z"
