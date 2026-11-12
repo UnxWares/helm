@@ -24,7 +24,8 @@ WORK=$(mktemp -d)
 JAR=$WORK/cookies
 cleanup() {
   [ -n "${FORWARD_PID:-}" ] && kill "$FORWARD_PID" 2>/dev/null
-  [ -n "${SAMPLER_PID:-}" ] && kill "$SAMPLER_PID" 2>/dev/null
+  # The sampler may have stopped already: a failed kill must not fail the script (set -e applies here too).
+  [ -n "${SAMPLER_PID:-}" ] && { kill "$SAMPLER_PID" 2>/dev/null || true; }
   [ -n "${PROBE:-}" ] && kubectl -n "$NAMESPACE" delete pod "$PROBE" --wait=false >/dev/null 2>&1
   true
 }
