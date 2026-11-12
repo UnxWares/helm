@@ -1,4 +1,4 @@
-From c7aa56fd45e3b7cf1a4d806c69181cb9dda86a13 Mon Sep 17 00:00:00 2001
+From 89f90e5156f98a490eae53f4fb2bc49b1b6ff707 Mon Sep 17 00:00:00 2001
 From: BaptGosse <baptiste.gosselin@unxwares.com>
 Date: Thu, 12 Nov 2026 14:50:04 +0100
 Subject: [PATCH] Update golang.org/x/crypto to v0.59.0
