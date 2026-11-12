@@ -62,7 +62,7 @@ annotations:
         - name: Custom eval sandbox
           url: https://kener.ing/docs/v4/monitors/overview#eval-sandbox
     - kind: changed
-      description: "Kener 4.2.1 (from 4.1.11). Eval code that uses Node.js or browser features (fetch, process, require, Buffer, setTimeout, URL, TextDecoder, crypto, Intl) now reports DOWN: review custom evals before upgrading (see Upgrading in the README). Every check of an API, Ping, TCP or GameDig monitor, with the built-in eval too, starts a Node.js process in the Kener container (about 60 MiB plus what the eval allocates, 2 at a time). Recurring maintenances can repeat in a time zone and keep their local time across clock changes (a migration adds a nullable column at the first start), group monitors can list their members inline, and monitors keep honouring HTTP_PROXY, HTTPS_PROXY and NO_PROXY with Axios 1.21."
+      description: "Kener 4.2.1 (from 4.1.11). Eval code that uses Node.js or browser features (fetch, process, require, Buffer, setTimeout, URL, TextDecoder, crypto, Intl) now reports DOWN: review custom evals before upgrading (see Upgrading in the README). Every check of an API, Ping, TCP or GameDig monitor, with the built-in eval too, starts a Node.js process in the Kener container (about 70 MiB plus what the eval allocates, 2 at a time). Recurring maintenances can repeat in a time zone and keep their local time across clock changes (a migration adds a nullable column at the first start), group monitors can list their members inline, and monitors keep honouring HTTP_PROXY, HTTPS_PROXY and NO_PROXY with Axios 1.21."
   artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B

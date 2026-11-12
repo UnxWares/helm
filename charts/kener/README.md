@@ -464,7 +464,8 @@ The chart needs no setting for it. The eval process runs in the Kener container 
 (uid 1000, read-only root filesystem, no capability, no privilege escalation, seccomp `RuntimeDefault`), writes no
 file, and talks to Kener through a socket pair it inherits, not over the network, so NetworkPolicies do not concern
 it. What it needs is memory, inside the container `resources.limits.memory`: each running eval adds a Node.js process
-of about 60 MiB plus what the eval allocates. In the end-to-end test, Kener itself used 240 to 330 MiB.
+of about 70 MiB plus what the eval allocates. In the end-to-end test, Kener itself used 240 to 330 MiB, each eval
+process 65 to 75 MiB, and the container stayed under 230 MiB with the default `1Gi` limit.
 
 **The eval memory limit is not enforced.** Kener sets a 256 MB limit on the QuickJS engine of each eval, but Kener
 4.2.1 does not hold the eval process to it. In the end-to-end test of this chart, an eval that kept allocating 16 MiB
@@ -876,7 +877,7 @@ Security release, no value to change, but review the eval code of your monitors 
   `DEGRADED`, `DOWN` or `MAINTENANCE`. Search your evals for these names and rewrite them as the
   [4.2.0 changelog](https://kener.ing/docs/v4/changelogs/v4.2.0) explains. `modules.cheerio` stays, about 20 times
   slower, without `fromURL`, `loadBuffer`, `stringStream` and `decodeStream`.
-- Each check of these monitors starts a short-lived Node.js process in the Kener container: count about 60 MiB per
+- Each check of these monitors starts a short-lived Node.js process in the Kener container: count about 70 MiB per
   running eval, 2 at most, plus what the eval allocates, in `resources.limits.memory`. Kener 4.2.1 does not hold
   that process to its 256 MB eval limit: an eval that allocates without bound gets Kener `OOMKilled` whatever the
   limit (see [Monitor eval code](#monitor-eval-code)).
@@ -1154,7 +1155,7 @@ kubectl -n status delete secret status-kener
 | redis.service.port | int | `6379` | Valkey service port. |
 | redis.tolerations | list | `[]` | Tolerations. |
 | replicaCount | int | `1` | Number of Kener replicas. Must stay at 1 with SQLite. PostgreSQL/MySQL with a shared Redis can run more (not tested upstream). |
-| resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Resource requests and limits (Kener recommends 1 vCPU / 1 GiB for real workloads). Each check of an API, Ping, TCP or GameDig monitor runs its eval code (the built-in one when none is set) in a child process of the Kener container, up to 2 at a time, each about 60 MiB plus what the eval allocates. Kener 4.2.1 does not hold that process to its 256 MB eval limit: an eval that allocates without bound gets the container OOM-killed whatever the limit (see Monitor eval code in the README). |
+| resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Resource requests and limits (Kener recommends 1 vCPU / 1 GiB for real workloads). Each check of an API, Ping, TCP or GameDig monitor runs its eval code (the built-in one when none is set) in a child process of the Kener container, up to 2 at a time, each about 70 MiB plus what the eval allocates. Kener 4.2.1 does not hold that process to its 256 MB eval limit: an eval that allocates without bound gets the container OOM-killed whatever the limit (see Monitor eval code in the README). |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | Container security context. |
 | service.annotations | object | `{}` | Service annotations. |
 | service.port | int | `3000` | Service port (the container always listens on 3000). |
