@@ -574,11 +574,11 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 6,
-      "high": 6,
+      "fixable": 7,
+      "high": 7,
       "low": 0,
       "medium": 2,
-      "open_fixable": 6,
+      "open_fixable": 7,
       "total": 9
      },
      "image": "docker.io/zimengxiong/excalidash-frontend:0.6.7",
@@ -2806,8 +2806,8 @@
  ],
  "cve_watch": {
   "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-12T07:10:56Z",
-  "event": "schedule",
+  "date": "2026-11-12T12:03:47Z",
+  "event": "workflow_run",
   "images": {
    "docker.io/abrar74774/fossflow:master-2b3cee3": {
     "charts": [
@@ -2842,22 +2842,22 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 16,
-     "HIGH": 237,
+     "HIGH": 238,
      "LOW": 93,
-     "MEDIUM": 210,
-     "UNKNOWN": 22
+     "MEDIUM": 209,
+     "UNKNOWN": 21
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
     "os": "alpine 3.23.3",
     "ours": false,
     "severity": {
      "CRITICAL": 16,
-     "HIGH": 237,
+     "HIGH": 238,
      "LOW": 93,
-     "MEDIUM": 210,
-     "UNKNOWN": 22
+     "MEDIUM": 209,
+     "UNKNOWN": 21
     },
-    "total": 578
+    "total": 577
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -2939,20 +2939,20 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 43,
+     "HIGH": 44,
      "LOW": 3,
      "MEDIUM": 38,
-     "UNKNOWN": 3
+     "UNKNOWN": 2
     },
     "image": "docker.io/library/postgres:17.11-alpine",
     "os": "alpine 3.24.4",
     "ours": false,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 43,
+     "HIGH": 44,
      "LOW": 3,
      "MEDIUM": 38,
-     "UNKNOWN": 3
+     "UNKNOWN": 2
     },
     "total": 88
    },
@@ -2963,20 +2963,20 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 43,
+     "HIGH": 44,
      "LOW": 3,
      "MEDIUM": 38,
-     "UNKNOWN": 3
+     "UNKNOWN": 2
     },
     "image": "docker.io/library/postgres:18-alpine",
     "os": "alpine 3.24.4",
     "ours": false,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 43,
+     "HIGH": 44,
      "LOW": 3,
      "MEDIUM": 38,
-     "UNKNOWN": 3
+     "UNKNOWN": 2
     },
     "total": 88
    },
@@ -2987,20 +2987,20 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 43,
+     "HIGH": 44,
      "LOW": 3,
      "MEDIUM": 38,
-     "UNKNOWN": 3
+     "UNKNOWN": 2
     },
     "image": "docker.io/library/postgres:18.6-alpine",
     "os": "alpine 3.24.4",
     "ours": false,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 43,
+     "HIGH": 44,
      "LOW": 3,
      "MEDIUM": 38,
-     "UNKNOWN": 3
+     "UNKNOWN": 2
     },
     "total": 88
    },
@@ -3354,20 +3354,20 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 6,
+     "HIGH": 7,
      "LOW": 0,
      "MEDIUM": 2,
-     "UNKNOWN": 1
+     "UNKNOWN": 0
     },
     "image": "docker.io/zimengxiong/excalidash-frontend:0.6.7",
     "os": "alpine 3.24.2",
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 6,
+     "HIGH": 7,
      "LOW": 0,
      "MEDIUM": 2,
-     "UNKNOWN": 1
+     "UNKNOWN": 0
     },
     "total": 9
    },
@@ -4382,8 +4382,8 @@
     "total": 13
    }
   },
-  "run_id": 43173144191,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/43173144191",
+  "run_id": 43214182523,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/43214182523",
   "source": "report"
  },
  "files": [
@@ -5068,7 +5068,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-12T07:10:56Z",
+ "latest_result": "2026-11-12T12:03:47Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
