@@ -37,7 +37,7 @@ pymdown-extensions>=11.0.1
 Pillow>=12.3
 Unidecode
 Pygments>=2.20
-oauthlib[signedtoken]>=4
+oauthlib[signedtoken]>=4.0.1 # 4.0.1 fixes CVE-2026-49272
 html5lib
 asana>=3.0,<4.0 # asana v4 is complete rewrite
 
