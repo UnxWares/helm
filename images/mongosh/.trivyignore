@@ -1,6 +1,8 @@
 # Accepted in the pull request gate of .github/workflows/images.yaml (they still show in scans and on Artifact Hub).
 #
-# basic-ftp 5.3.1, bundled in mongosh (listed by its SBOM): an FTP client that mongosh only uses to download a proxy
-# auto-configuration file from an ftp:// URL (proxy-agent, get-uri). The Jobs configure no proxy. Fixed by a newer
-# mongosh release.
+# basic-ftp 5.3.1, still bundled in mongosh 2.14.2 (listed by its SBOM): an FTP client that mongosh only uses to
+# download a proxy auto-configuration file from an ftp:// URL (@mongodb-js/devtools-proxy-support, pac-proxy-agent,
+# get-uri). The vulnerability is a CPU denial of service in Client.list(), which get-uri calls on such a URL, so it
+# needs a proxy configuration that points mongosh to a hostile FTP server. The Jobs configure no proxy. To remove
+# when a mongosh release bundles basic-ftp 6.2.1 or later.
 CVE-2026-102990

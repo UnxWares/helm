@@ -1,6 +1,6 @@
 # OpenEverest Database Tools Helm Chart
 
-![Version: 2026.11.5](https://img.shields.io/badge/Version-2026.11.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.17.0](https://img.shields.io/badge/AppVersion-1.17.0-informational?style=flat-square)
+![Version: 2026.11.6](https://img.shields.io/badge/Version-2026.11.6-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.17.0](https://img.shields.io/badge/AppVersion-1.17.0-informational?style=flat-square)
 [![UWOSC: maintained](https://helm.unxwares.studio/assets/uwosc/mini-maintained.svg)](https://helm.unxwares.studio/#open-source)
 
 Database initialization Jobs for [OpenEverest](https://openeverest.io) by UnxWares. Each Job waits until an
@@ -436,7 +436,7 @@ cluster yourself if they are no longer needed.
 | image.kubectl.tag | string | `"v1.37.2"` | kubectl image tag. |
 | image.mongodb.digest | string | `""` | MongoDB client image digest (`sha256:...`). |
 | image.mongodb.repository | string | `"ghcr.io/unxwares/mongosh"` | MongoDB client image repository (mongosh). `docker.io/library/mongo` also works. |
-| image.mongodb.tag | string | `"2.14.1"` | MongoDB client image tag (mongosh version). |
+| image.mongodb.tag | string | `"2.14.2"` | MongoDB client image tag (mongosh version). |
 | image.mysql.digest | string | `""` | MySQL client image digest (`sha256:...`). |
 | image.mysql.repository | string | `"ghcr.io/unxwares/mysql-client"` | MySQL client image repository (mysql). `docker.io/library/mysql` also works. |
 | image.mysql.tag | string | `"8.4"` | MySQL client image tag (MySQL release series, latest client at each weekly rebuild). |

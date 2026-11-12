@@ -2,7 +2,7 @@ apiVersion: v2
 name: openeverest-database-tools
 description: Jobs that wait for an OpenEverest DatabaseCluster to be ready, then create PostgreSQL, MySQL and MongoDB databases, users, grants and run init scripts.
 type: application
-version: 2026.11.5
+version: 2026.11.6
 # OpenEverest release the chart is tested against (DatabaseCluster everest.percona.com/v1alpha1, 1.x series).
 appVersion: "1.17.0"
 kubeVersion: ">=1.27.0-0"
@@ -49,13 +49,13 @@ annotations:
     - name: mysql-client
       image: ghcr.io/unxwares/mysql-client:8.4
     - name: mongosh
-      image: ghcr.io/unxwares/mongosh:2.14.1
+      image: ghcr.io/unxwares/mongosh:2.14.2
     - name: kubectl
       image: registry.k8s.io/kubectl:v1.37.2
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/changes: |
     - kind: changed
-      description: "README: the UnxWares Open Source & Community (UWOSC) badge, the chart being maintained by UnxWares. The templates and values are unchanged."
+      description: "MongoDB client image: ghcr.io/unxwares/mongosh 2.14.2, a bug fix release of mongosh (Ctrl+C during an interrupt, TLS key password entered at the prompt). It fixes no known vulnerability: the bundled basic-ftp, glob and minimatch are still the affected versions. The templates are unchanged."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

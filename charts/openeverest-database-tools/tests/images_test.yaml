@@ -40,7 +40,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/unxwares/mongosh:2.14.1
+          value: ghcr.io/unxwares/mongosh:2.14.2
 
   - it: uses the pinned kubectl image for both wait containers
     templates:
