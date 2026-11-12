@@ -5,12 +5,12 @@ release:
   name: status
   namespace: status
 chart:
-  appVersion: 4.1.11
+  appVersion: 4.2.1
 tests:
   - it: gives the image, the port-forward command and the sign-in page to visit first
     asserts:
       - matchRegexRaw:
-          pattern: 'Kener 4\.1\.11 is deployed \(docker\.io/rajnandan1/kener:4\.1\.11-alpine\)\.'
+          pattern: 'Kener 4\.2\.1 is deployed \(docker\.io/rajnandan1/kener:4\.2\.1-alpine\)\.'
       - matchRegexRaw:
           pattern: 'kubectl port-forward -n status svc/status-kener 3000:3000'
       - matchRegexRaw:

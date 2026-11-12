@@ -9,14 +9,14 @@ release:
   name: status
   namespace: status
 chart:
-  appVersion: 4.1.11
+  appVersion: 4.2.1
 tests:
   - it: defaults to the Alpine variant of the upstream image, tagged with the chart appVersion
     template: deployment.yaml
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: docker.io/rajnandan1/kener:4.1.11-alpine
+          value: docker.io/rajnandan1/kener:4.2.1-alpine
       - equal:
           path: spec.template.spec.containers[0].imagePullPolicy
           value: IfNotPresent
@@ -37,7 +37,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: docker.io/rajnandan1/kener:4.1.11
+          value: docker.io/rajnandan1/kener:4.2.1
 
   - it: picks the -status image for the /status base path
     template: deployment.yaml
@@ -46,7 +46,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: docker.io/rajnandan1/kener:4.1.11-status-alpine
+          value: docker.io/rajnandan1/kener:4.2.1-status-alpine
 
   - it: picks the Debian -status image for the /status base path
     template: deployment.yaml
@@ -56,7 +56,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: docker.io/rajnandan1/kener:4.1.11-status
+          value: docker.io/rajnandan1/kener:4.2.1-status
 
   - it: lets an explicit repository and tag override the variant and the base path
     template: deployment.yaml
@@ -165,7 +165,7 @@ tests:
     asserts:
       - equal:
           path: spec.containers[0].image
-          value: docker.io/rajnandan1/kener:4.1.11-status
+          value: docker.io/rajnandan1/kener:4.2.1-status
 
   - it: runs the helm test with tests.image when set
     template: tests/test-healthcheck.yaml

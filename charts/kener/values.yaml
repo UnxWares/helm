@@ -14,7 +14,7 @@ imagePullSecrets: []
 image:
   # -- Kener image repository.
   repository: docker.io/rajnandan1/kener
-  # -- Image tag. Empty builds it from the chart appVersion, `kener.basePath` and `image.variant` (`4.1.11-alpine`, `4.1.11`, `4.1.11-status-alpine`...).
+  # -- Image tag. Empty builds it from the chart appVersion, `kener.basePath` and `image.variant` (`4.2.1-alpine`, `4.2.1`, `4.2.1-status-alpine`...).
   tag: ""
   # -- Base of the published image when `image.tag` is empty: `alpine` (node:24-alpine, far fewer known CVEs) or `debian` (node:24-slim, the upstream default).
   variant: alpine  # @schema enum:[alpine, debian]
@@ -337,7 +337,7 @@ httpRoute:
             type: PathPrefix
             value: /
 
-# -- Resource requests and limits (Kener recommends 1 vCPU / 1 GiB for real workloads).
+# -- Resource requests and limits (Kener recommends 1 vCPU / 1 GiB for real workloads). Each check of an API, Ping, TCP or GameDig monitor runs its eval code (the built-in one when none is set) in a child process of the Kener container, up to 2 at a time, each about 70 MiB plus what the eval allocates. Kener 4.2.1 does not hold that process to its 256 MB eval limit: an eval that allocates without bound gets the container OOM-killed whatever the limit (see Monitor eval code in the README).
 resources:  # @schema skipProperties:true
   requests:
     cpu: 100m
