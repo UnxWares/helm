@@ -20,12 +20,15 @@ the upstream images instead (see its README).
 | `cloudreve:4.19.1` | `docker.io/cloudreve/cloudreve` | Built from the release sources with the Go module updates of `patches/` (cloudreve/cloudreve#3618), current Alpine, same thumbnail tools (libvips, FFmpeg, LibreOffice, libheif, libraw); no aria2 or supervisord, no default time zone, non-root (uid 1000) |
 | `fossflow:1.0.6` | `docker.io/abrar74774/fossflow` | Built from the upstream sources (commit `b06baad`, release v1.0.6) without the unused `uuid` dependency of the backend (`patches/`), current Alpine, no npm, su-exec or openssl; nginx on port 8080 and the backend run as uid 1000 with a read-only root filesystem, the backend listens on 127.0.0.1 only and its CORS headers (any origin) are dropped |
 | `bind-exporter:0.8.0-62-gbafd56f` | `docker.io/prometheuscommunity/bind-exporter` | Built from the sources of the master branch (commit `bafd56f`, 62 commits after v0.8.0) with Go 1.27 and the `golang.org/x` module updates of `patches/` (prometheus-community/bind_exporter#301), static binary on distroless, same path, flags, port and user (`nobody`) |
+| `bind9:9.20.30` | `docker.io/internetsystemsconsortium/bind9` | Built from the release tarball, checked against its SHA-256 and the OpenPGP signature of an ISC code-signing key, with the base (Alpine 3.24), build options, paths, ports and user (`bind`, uid 53) of the official image; rebuilt twice a week on current Alpine packages (the official image is rebuilt once per BIND release); starts as `bind` instead of root, logs to stderr, no procps, headers or static libraries |
 
 The images keep the upstream ports, paths, users and environment variables (PowerDNS: the same `pdns` user,
 startup script and Jinja2 templates), except `taiga-front`, which listens on 8080 instead of 80, and `cloudreve`,
 whose entrypoint is the binary itself (the upstream one starts aria2 under supervisord as root). `fossflow` listens on
 8080 instead of 80, runs nginx and the backend as uid 1000 instead of starting as root, and refuses
-`HTTP_AUTH_USER`/`HTTP_AUTH_PASSWORD` (the upstream entrypoint cannot hash them with OpenSSL 3). The client images
+`HTTP_AUTH_USER`/`HTTP_AUTH_PASSWORD` (the upstream entrypoint cannot hash them with OpenSSL 3). `bind9` runs
+named as `bind` (uid 53) from the start instead of starting it as root with `-u bind`, and its default command is
+`named -g` (logs to stderr) instead of `named -f` with a log file in `/var/log/bind`. The client images
 (`postgresql-client`, `mysql-client`, `mongosh`) run as uid 65532 with `HOME=/tmp`, for the Jobs of
 `openeverest-database-tools`.
 
@@ -44,7 +47,7 @@ The images of `cloudreve`, `fossflow` and `openeverest-database-tools` are also 
 (`.github/workflows/e2e.yaml`), which run the chart on them in kind and check what the application does, so a change
 to one of these images is tested before it is published.
 The `taiga-back`, `taiga-front`, `taiga-events`, `taiga-protected` and `postgres` (17) images are built by the `taiga`
-end-to-end test in the same way, `bind-exporter` by the `bind9` one, and `pdns-auth`, `pdns-recursor`,
+end-to-end test in the same way, `bind9` and `bind-exporter` by the `bind9` one, and `pdns-auth`, `pdns-recursor`,
 `postgresql-client` and `mysql-client` by the `powerdns` one.
 Pull requests fail on a fixable CRITICAL or HIGH vulnerability, unless the image's `.trivyignore` says why it
 is accepted (for `taiga-back`: the Django 3.2 vulnerabilities fixed by the Debian backports or not reachable in
@@ -67,6 +70,9 @@ cosign verify ghcr.io/unxwares/taiga-back:6.10.2 \
 
 - Upstream sources are downloaded from GitHub release tarballs and checked against the SHA-256 in each
   Dockerfile (`ARG *_SHA256`).
+- `bind9` also checks the OpenPGP signature of the BIND tarball against the ISC code-signing keys of
+  `bind9/isc-keyblock.asc` (from <https://www.isc.org/pgpkey/>); the build fails on a bad signature or on
+  a key that is not in this file. Update the file when ISC publishes a new key.
 - Python dependencies are pinned with hashes in `requirements.txt`, generated from `requirements.in` with
   `images/lock.sh <image directory>` (pip-compile in the image's own base).
 - Security fixes merged upstream but not released yet are applied as `patches/*.patch`, taken as is from the

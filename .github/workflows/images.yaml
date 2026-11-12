@@ -57,6 +57,7 @@ jobs:
                     - { name: cloudreve, context: images/cloudreve, suffix: "" }
                     - { name: fossflow, context: images/fossflow, suffix: "" }
                     - { name: bind-exporter, context: images/bind-exporter, suffix: "" }
+                    - { name: bind9, context: images/bind9, suffix: "" }
                 platform:
                     - { arch: amd64, runner: ubuntu-24.04, trivy: Linux-64bit }
                     - { arch: arm64, runner: ubuntu-24.04-arm, trivy: Linux-ARM64 }
@@ -141,6 +142,7 @@ jobs:
                     - { name: cloudreve, context: images/cloudreve, suffix: "" }
                     - { name: fossflow, context: images/fossflow, suffix: "" }
                     - { name: bind-exporter, context: images/bind-exporter, suffix: "" }
+                    - { name: bind9, context: images/bind9, suffix: "" }
         runs-on: ubuntu-24.04
         permissions:
             contents: read
