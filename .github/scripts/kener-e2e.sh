@@ -2,9 +2,11 @@
 # shellcheck disable=SC2016 # the $names in single quotes are jq variables
 # End-to-end check of a fresh kener release, through its Service: the first account signs up (and only the first
 # one), logs in, creates an API key, creates an HTTP monitor through the REST API and puts it on a status page;
-# the monitor then runs from the background queue (bundled Valkey) and the status page and badge show it UP. Also
-# checks that the API refuses requests without a valid key, that Valkey refuses commands without its password and,
-# when the release has NetworkPolicies, that another pod reaches Kener but not Valkey.
+# the monitor then runs from the background queue (bundled Valkey) and the status page and badge show it UP. Custom
+# monitor eval code runs in the Kener sandbox (a QuickJS process per check, inside the hardened Kener container): its
+# result is recorded, and evals that read the environment, loop forever or exhaust their memory are stopped without
+# Kener restarting. Also checks that the API refuses requests without a valid key, that Valkey refuses commands
+# without its password and, when the release has NetworkPolicies, that another pod reaches Kener but not Valkey.
 #
 # Run it again with "after-reinstall" once the release was uninstalled and installed again: the account, the API key
 # and the monitor must have survived (kept PVC and Secret).
@@ -121,6 +123,42 @@ page=$(jq -n --arg tag "$tag" '{page_path: "e2e", page_title: "E2E", page_header
 api POST /pages "$page" | expect_status 201 "status page creation" >/dev/null
 ok "a monitor and a status page are created through the REST API"
 
+# Since Kener 4.2, monitor eval code runs in a sandbox: QuickJS compiled to WebAssembly, in a new Node.js process that
+# Kener starts inside its own container (same uid, read-only root filesystem, no capability) for each check. These
+# monitors probe the strict health check of Kener; their evals run in the same minute as the monitor above.
+eval_monitor() { # tag, eval code
+  jq -n --arg tag "$1" --arg eval "$2" \
+    --arg url "http://$service:$service_port$(env_of KENER_BASE_PATH)/healthcheck?strict=1" \
+    '{tag: $tag, name: $tag, monitor_type: "API", cron: "* * * * *",
+      type_data: {url: $url, method: "GET", timeout: 5000, headers: [], body: "", eval: $eval}}'
+}
+# DEGRADED and 4242 come from the eval itself, only when no Node.js global is in its reach (Kener 4.1 ran evals in
+# its own process, where they all were). The default eval would record UP with the measured latency.
+sandboxed='async function (statusCode, responseTime, responseRaw) {
+  const nodeGlobals = [typeof process, typeof require, typeof fetch, typeof Buffer].filter((type) => type !== "undefined");
+  const health = JSON.parse(responseRaw);
+  const healthy = statusCode === 200 && health.db === true && health.redis === true;
+  return { status: nodeGlobals.length === 0 && healthy ? "DEGRADED" : "DOWN", latency: 4242 };
+}'
+# Each of these must be stopped: the stored error of its checks contains the given message.
+declare -A stopped=(
+  [e2e-eval-env]="Eval error: 'process' is not defined"
+  [e2e-eval-loop]="Eval error: Timed out after 10000 ms"
+  [e2e-eval-memory]="Eval error: out of memory"
+)
+declare -A stopped_eval=(
+  [e2e-eval-env]='async function () { return { status: process.env.KENER_SECRET_KEY ? "UP" : "DEGRADED", latency: 1 }; }'
+  [e2e-eval-loop]='async function () { for (;;) {} }'
+  # 16 MiB blocks, written so that they take real memory, until the 256 MB limit of the sandbox.
+  [e2e-eval-memory]='async function () { const blocks = []; for (;;) blocks.push(new Uint8Array(16777216).fill(1)); }'
+)
+api POST /monitors "$(eval_monitor e2e-eval "$sandboxed")" | expect_status 201 "creation of e2e-eval" >/dev/null
+for eval_tag in "${!stopped_eval[@]}"; do
+  api POST /monitors "$(eval_monitor "$eval_tag" "${stopped_eval[$eval_tag]}")" |
+    expect_status 201 "creation of $eval_tag" >/dev/null
+done
+ok "monitors with custom eval code are created through the REST API"
+
 status=""
 for _ in $(seq 36); do
   now=$(date +%s)
@@ -141,6 +179,42 @@ grep -q "E2E self check" "$WORK/monitor.html" || fail "the monitor page does not
 curl -sSf "$BASE/badge/$tag/status" >"$WORK/badge.svg"
 grep -q "E2E self check: Operational" "$WORK/badge.svg" || fail "the status badge does not say Operational"
 ok "the public status page lists the monitor as operational, its page and badge answer"
+
+wait_check() { # tag: sets $check to "<type> <status> <latency>" of the latest check, waiting up to 3 minutes
+  local now
+  check=""
+  for _ in $(seq 36); do
+    now=$(date +%s)
+    check=$(api GET "/monitors/$1/data?start_ts=$((now - 600))&end_ts=$((now + 60))" |
+      expect_status 200 "data of $1" | jq -r '.data | last // empty | "\(.type) \(.status) \(.latency)"')
+    [ -n "$check" ] && return 0
+    sleep 5
+  done
+}
+last_error() { # tag: error message of the latest check, as the dashboard shows it
+  curl -sS -b "$JAR" -H "Origin: $ORIGIN" -H 'content-type: application/json' \
+    --data "$(jq -n --arg tag "$1" '{action: "getMonitoringDataPaginated", data: {page: 1, limit: 1, monitor_tag: $tag}}')" \
+    "$BASE/manage/api" | jq -r '.data[0].error_message // empty'
+}
+
+wait_check e2e-eval
+[ "$check" = "REALTIME DEGRADED 4242" ] ||
+  fail "the custom eval did not record its own result from the sandbox (latest check: ${check:-none})"
+ok "custom eval code runs in the sandbox, without process, require, fetch or Buffer, and records its own status and latency"
+
+for eval_tag in e2e-eval-env e2e-eval-loop e2e-eval-memory; do
+  wait_check "$eval_tag"
+  [ "${check% *}" = "ERROR DOWN" ] || fail "the eval of $eval_tag was not stopped (latest check: ${check:-none})"
+  error=$(last_error "$eval_tag")
+  [[ $error == *"${stopped[$eval_tag]}"* ]] ||
+    fail "the eval of $eval_tag was stopped with '${error:-no error}', expected '${stopped[$eval_tag]}'"
+  # Removed: they would keep using CPU and memory every minute until the end of the test.
+  api DELETE "/monitors/$eval_tag" | expect_status 200 "deletion of $eval_tag" >/dev/null
+done
+restarts=$(k get pods -l "app.kubernetes.io/instance=$RELEASE,app.kubernetes.io/component=web" \
+  -o jsonpath='{.items[*].status.containerStatuses[*].restartCount}')
+[ "$restarts" = 0 ] || fail "the Kener container restarted during the eval checks (restart count: ${restarts:-none})"
+ok "evals that read process.env, loop forever or exceed 256 MB are stopped (DOWN, sandbox error), and Kener does not restart"
 
 valkey=$(component deploy redis 2>/dev/null || true)
 if [ -n "$valkey" ]; then
