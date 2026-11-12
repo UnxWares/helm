@@ -239,14 +239,14 @@
      "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 2 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 3 renderings",
      "note": "",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T13:55:06Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:30:21Z",
       "event": "pull_request",
       "helm": {
        "v3.22.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278666",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881517",
         "lint_failed": 0,
         "lint_runs": 3,
         "schema": {
@@ -266,7 +266,7 @@
        "v4.3.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278490",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881723",
         "lint_failed": 0,
         "lint_runs": 3,
         "schema": {
@@ -285,13 +285,13 @@
        }
       },
       "lint_status": "passed",
-      "pr": 43,
-      "pr_url": "https://github.com/UnxWares/helm/pull/43",
-      "run_id": 43231667492,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43231667492",
+      "pr": 42,
+      "pr_url": "https://github.com/UnxWares/helm/pull/42",
+      "run_id": 43237277990,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43237277990",
       "schema_status": "passed",
       "status": "passed",
-      "tested_commit": "429bc6e3ad39c2ca2abdcc126d97e9be6693ab03"
+      "tested_commit": "f5da647acfe80cc8d99f4d7e9f0eadb0408de511"
      },
      "status": "passed",
      "summary": "Passed"
@@ -300,14 +300,14 @@
      "detail": "107 tests in 13 suites, all passed",
      "note": "107 tests",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T14:10:35Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:36:13Z",
       "event": "push",
       "failed": 0,
       "failures": [],
       "passed": 107,
-      "run_id": 43234162895,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43234162895",
+      "run_id": 43238840787,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43238840787",
       "skipped": 0,
       "status": "passed",
       "suites": 13,
@@ -478,14 +478,14 @@
      "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 2 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 3 renderings",
      "note": "",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T13:55:06Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:30:21Z",
       "event": "pull_request",
       "helm": {
        "v3.22.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278666",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881517",
         "lint_failed": 0,
         "lint_runs": 3,
         "schema": {
@@ -505,7 +505,7 @@
        "v4.3.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278490",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881723",
         "lint_failed": 0,
         "lint_runs": 3,
         "schema": {
@@ -524,13 +524,13 @@
        }
       },
       "lint_status": "passed",
-      "pr": 43,
-      "pr_url": "https://github.com/UnxWares/helm/pull/43",
-      "run_id": 43231667492,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43231667492",
+      "pr": 42,
+      "pr_url": "https://github.com/UnxWares/helm/pull/42",
+      "run_id": 43237277990,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43237277990",
       "schema_status": "passed",
       "status": "passed",
-      "tested_commit": "429bc6e3ad39c2ca2abdcc126d97e9be6693ab03"
+      "tested_commit": "f5da647acfe80cc8d99f4d7e9f0eadb0408de511"
      },
      "status": "passed",
      "summary": "Passed"
@@ -539,14 +539,14 @@
      "detail": "99 tests in 10 suites, all passed",
      "note": "99 tests",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T14:10:35Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:36:13Z",
       "event": "push",
       "failed": 0,
       "failures": [],
       "passed": 99,
-      "run_id": 43234162895,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43234162895",
+      "run_id": 43238840787,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43238840787",
       "skipped": 0,
       "status": "passed",
       "suites": 10,
@@ -756,14 +756,14 @@
      "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 1 ci values file; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 2 renderings",
      "note": "",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T13:55:06Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:30:21Z",
       "event": "pull_request",
       "helm": {
        "v3.22.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278666",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881517",
         "lint_failed": 0,
         "lint_runs": 2,
         "schema": {
@@ -782,7 +782,7 @@
        "v4.3.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278490",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881723",
         "lint_failed": 0,
         "lint_runs": 2,
         "schema": {
@@ -800,13 +800,13 @@
        }
       },
       "lint_status": "passed",
-      "pr": 43,
-      "pr_url": "https://github.com/UnxWares/helm/pull/43",
-      "run_id": 43231667492,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43231667492",
+      "pr": 42,
+      "pr_url": "https://github.com/UnxWares/helm/pull/42",
+      "run_id": 43237277990,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43237277990",
       "schema_status": "passed",
       "status": "passed",
-      "tested_commit": "429bc6e3ad39c2ca2abdcc126d97e9be6693ab03"
+      "tested_commit": "f5da647acfe80cc8d99f4d7e9f0eadb0408de511"
      },
      "status": "passed",
      "summary": "Passed"
@@ -815,14 +815,14 @@
      "detail": "106 tests in 13 suites, all passed",
      "note": "106 tests",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T14:10:35Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:36:13Z",
       "event": "push",
       "failed": 0,
       "failures": [],
       "passed": 106,
-      "run_id": 43234162895,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43234162895",
+      "run_id": 43238840787,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43238840787",
       "skipped": 0,
       "status": "passed",
       "suites": 13,
@@ -1042,14 +1042,14 @@
      "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 3 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 4 renderings",
      "note": "",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T13:55:06Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:30:21Z",
       "event": "pull_request",
       "helm": {
        "v3.22.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278666",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881517",
         "lint_failed": 0,
         "lint_runs": 4,
         "schema": {
@@ -1070,7 +1070,7 @@
        "v4.3.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278490",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881723",
         "lint_failed": 0,
         "lint_runs": 4,
         "schema": {
@@ -1090,13 +1090,13 @@
        }
       },
       "lint_status": "passed",
-      "pr": 43,
-      "pr_url": "https://github.com/UnxWares/helm/pull/43",
-      "run_id": 43231667492,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43231667492",
+      "pr": 42,
+      "pr_url": "https://github.com/UnxWares/helm/pull/42",
+      "run_id": 43237277990,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43237277990",
       "schema_status": "passed",
       "status": "passed",
-      "tested_commit": "429bc6e3ad39c2ca2abdcc126d97e9be6693ab03"
+      "tested_commit": "f5da647acfe80cc8d99f4d7e9f0eadb0408de511"
      },
      "status": "passed",
      "summary": "Passed"
@@ -1105,14 +1105,14 @@
      "detail": "89 tests in 11 suites, all passed",
      "note": "89 tests",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T14:10:35Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:36:13Z",
       "event": "push",
       "failed": 0,
       "failures": [],
       "passed": 89,
-      "run_id": 43234162895,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43234162895",
+      "run_id": 43238840787,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43238840787",
       "skipped": 0,
       "status": "passed",
       "suites": 11,
@@ -1125,29 +1125,27 @@
    "version": "2026.11.5"
   },
   {
-   "appVersion": "4.1.11",
+   "appVersion": "4.2.1",
    "changes": [
     {
-     "description": "README: the UnxWares Open Source & Community (UWOSC) badge, the chart being maintained by UnxWares. The templates and values are unchanged.",
+     "description": "Kener 4.2.0 moves nodemailer (7 to 10), sharp (0.34 to 0.35, libvips, libheif and librsvg in its prebuilt binaries) and glob (13 to 14, with minimatch 11) past their advisories: npm audit of the production dependencies goes from 2 high and 3 moderate findings to none.",
+     "kind": "security"
+    },
+    {
+     "description": "Custom monitor eval code (API, Ping, TCP and GameDig monitors) no longer runs inside the Kener server process, where it could read the container environment (KENER_SECRET_KEY, DATABASE_URL, REDIS_URL...), its files and the network, without a time limit. Kener 4.2.1 runs each eval in a QuickJS sandbox compiled to WebAssembly, in its own short-lived Node.js process with only TZ from the environment, stopped after 10 seconds, at most 2 at a time. It works under the chart hardening as is (no writable path, capability or variable added), and the end-to-end test now checks it. Its 256 MB memory limit does not bound the eval process yet: an eval that allocates without bound still gets Kener OOM-killed (see Monitor eval code in the README).",
+     "kind": "security"
+    },
+    {
+     "description": "Kener 4.2.1 (from 4.1.11). Eval code that uses Node.js or browser features (fetch, process, require, Buffer, setTimeout, URL, TextDecoder, crypto, Intl) now reports DOWN: review custom evals before upgrading (see Upgrading in the README). Every check of an API, Ping, TCP or GameDig monitor, with the built-in eval too, starts a Node.js process in the Kener container (about 70 MiB plus what the eval allocates, 2 at a time). Recurring maintenances can repeat in a time zone and keep their local time across clock changes (a migration adds a nullable column at the first start), group monitors can list their members inline, and monitors keep honouring HTTP_PROXY, HTTPS_PROXY and NO_PROXY with Axios 1.21.",
      "kind": "changed"
     }
    ],
-   "containsSecurityUpdates": false,
+   "containsSecurityUpdates": true,
    "description": "Kener 4 status page with SQLite/PostgreSQL/MySQL, a bundled hardened Valkey for its queues, and secure defaults for Kubernetes.",
    "images": [
     {
-     "cve": {
-      "accepted": 0,
-      "critical": 0,
-      "eosl": false,
-      "fixable": 13,
-      "high": 13,
-      "low": 5,
-      "medium": 28,
-      "open_fixable": 13,
-      "total": 46
-     },
-     "image": "docker.io/rajnandan1/kener:4.1.11-alpine",
+     "cve": null,
+     "image": "docker.io/rajnandan1/kener:4.2.1-alpine",
      "name": "kener",
      "ours": false
     },
@@ -1283,20 +1281,20 @@
      "detail": "`ct lint` passed (version increment, YAML lint). Installed on kind with `default-values.yaml` and `status-debian-values.yaml`; `helm test`: 2 of 2 test pods succeeded",
      "note": "helm test 2 of 2",
      "result": {
-      "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
       "ct_lint": {
        "ok": true,
-       "version": "2026.11.6"
+       "version": "2026.11.7"
       },
-      "date": "2026-11-02T22:52:28Z",
+      "date": "2026-11-12T14:30:21Z",
       "event": "pull_request",
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/41539422815/job/125599641563",
-      "pr": 40,
-      "pr_url": "https://github.com/UnxWares/helm/pull/40",
-      "run_id": 41539422815,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/41539422815",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131248098245",
+      "pr": 42,
+      "pr_url": "https://github.com/UnxWares/helm/pull/42",
+      "run_id": 43237277990,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43237277990",
       "status": "passed",
-      "tested_commit": "3cd0c2408a30f392f5d17c7da94a666c24a599db",
+      "tested_commit": "f5da647acfe80cc8d99f4d7e9f0eadb0408de511",
       "tests_passed": 2,
       "tests_total": 2,
       "values": [
@@ -1304,7 +1302,7 @@
         "file": "default-values.yaml",
         "tests": [
          {
-          "name": "kener-8fosr2g3qr-test-healthcheck",
+          "name": "kener-ak11i7tei4-test-healthcheck",
           "phase": "Succeeded"
          }
         ]
@@ -1313,7 +1311,7 @@
         "file": "status-debian-values.yaml",
         "tests": [
          {
-          "name": "kener-61rw0odvb3-test-healthcheck",
+          "name": "kener-qhnwm8obs9-test-healthcheck",
           "phase": "Succeeded"
          }
         ]
@@ -1327,14 +1325,14 @@
      "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 2 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 3 renderings",
      "note": "",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T13:55:06Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:30:21Z",
       "event": "pull_request",
       "helm": {
        "v3.22.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278666",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881517",
         "lint_failed": 0,
         "lint_runs": 3,
         "schema": {
@@ -1354,7 +1352,7 @@
        "v4.3.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278490",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881723",
         "lint_failed": 0,
         "lint_runs": 3,
         "schema": {
@@ -1373,13 +1371,13 @@
        }
       },
       "lint_status": "passed",
-      "pr": 43,
-      "pr_url": "https://github.com/UnxWares/helm/pull/43",
-      "run_id": 43231667492,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43231667492",
+      "pr": 42,
+      "pr_url": "https://github.com/UnxWares/helm/pull/42",
+      "run_id": 43237277990,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43237277990",
       "schema_status": "passed",
       "status": "passed",
-      "tested_commit": "429bc6e3ad39c2ca2abdcc126d97e9be6693ab03"
+      "tested_commit": "f5da647acfe80cc8d99f4d7e9f0eadb0408de511"
      },
      "status": "passed",
      "summary": "Passed"
@@ -1388,14 +1386,14 @@
      "detail": "162 tests in 14 suites, all passed",
      "note": "162 tests",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T14:10:35Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:36:13Z",
       "event": "push",
       "failed": 0,
       "failures": [],
       "passed": 162,
-      "run_id": 43234162895,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43234162895",
+      "run_id": 43238840787,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43238840787",
       "skipped": 0,
       "status": "passed",
       "suites": 14,
@@ -1405,7 +1403,7 @@
      "summary": "Passed"
     }
    },
-   "version": "2026.11.6"
+   "version": "2026.11.7"
   },
   {
    "appVersion": "12.x",
@@ -1633,15 +1631,15 @@
      "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 2 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 2 renderings. The default values need your input (image.repository is required: set it to your Laravel application image (e.g. registry.example.com/acme/shop)): they are rendered with the ci values only",
      "note": "",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T13:55:06Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:30:21Z",
       "event": "pull_request",
       "helm": {
        "v3.22.1": {
         "default_values_note": "image.repository is required: set it to your Laravel application image (e.g. registry.example.com/acme/shop)",
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278666",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881517",
         "lint_failed": 0,
         "lint_runs": 3,
         "schema": {
@@ -1661,7 +1659,7 @@
         "default_values_note": "image.repository is required: set it to your Laravel application image (e.g. registry.example.com/acme/shop)",
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278490",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881723",
         "lint_failed": 0,
         "lint_runs": 3,
         "schema": {
@@ -1679,13 +1677,13 @@
        }
       },
       "lint_status": "passed",
-      "pr": 43,
-      "pr_url": "https://github.com/UnxWares/helm/pull/43",
-      "run_id": 43231667492,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43231667492",
+      "pr": 42,
+      "pr_url": "https://github.com/UnxWares/helm/pull/42",
+      "run_id": 43237277990,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43237277990",
       "schema_status": "passed",
       "status": "passed",
-      "tested_commit": "429bc6e3ad39c2ca2abdcc126d97e9be6693ab03"
+      "tested_commit": "f5da647acfe80cc8d99f4d7e9f0eadb0408de511"
      },
      "status": "passed",
      "summary": "Passed"
@@ -1694,14 +1692,14 @@
      "detail": "150 tests in 12 suites, all passed",
      "note": "150 tests",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T14:10:35Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:36:13Z",
       "event": "push",
       "failed": 0,
       "failures": [],
       "passed": 150,
-      "run_id": 43234162895,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43234162895",
+      "run_id": 43238840787,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43238840787",
       "skipped": 0,
       "status": "passed",
       "suites": 12,
@@ -1935,14 +1933,14 @@
      "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 3 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 4 renderings",
      "note": "",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T13:55:06Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:30:21Z",
       "event": "pull_request",
       "helm": {
        "v3.22.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278666",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881517",
         "lint_failed": 0,
         "lint_runs": 4,
         "schema": {
@@ -1963,7 +1961,7 @@
        "v4.3.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278490",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881723",
         "lint_failed": 0,
         "lint_runs": 4,
         "schema": {
@@ -1983,13 +1981,13 @@
        }
       },
       "lint_status": "passed",
-      "pr": 43,
-      "pr_url": "https://github.com/UnxWares/helm/pull/43",
-      "run_id": 43231667492,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43231667492",
+      "pr": 42,
+      "pr_url": "https://github.com/UnxWares/helm/pull/42",
+      "run_id": 43237277990,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43237277990",
       "schema_status": "passed",
       "status": "passed",
-      "tested_commit": "429bc6e3ad39c2ca2abdcc126d97e9be6693ab03"
+      "tested_commit": "f5da647acfe80cc8d99f4d7e9f0eadb0408de511"
      },
      "status": "passed",
      "summary": "Passed"
@@ -1998,14 +1996,14 @@
      "detail": "121 tests in 10 suites, all passed",
      "note": "121 tests",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T14:10:35Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:36:13Z",
       "event": "push",
       "failed": 0,
       "failures": [],
       "passed": 121,
-      "run_id": 43234162895,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43234162895",
+      "run_id": 43238840787,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43238840787",
       "skipped": 0,
       "status": "passed",
       "suites": 10,
@@ -2336,14 +2334,14 @@
      "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 2 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 3 renderings",
      "note": "",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T13:55:06Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:30:21Z",
       "event": "pull_request",
       "helm": {
        "v3.22.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278666",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881517",
         "lint_failed": 0,
         "lint_runs": 3,
         "schema": {
@@ -2363,7 +2361,7 @@
        "v4.3.1": {
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278490",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881723",
         "lint_failed": 0,
         "lint_runs": 3,
         "schema": {
@@ -2382,13 +2380,13 @@
        }
       },
       "lint_status": "passed",
-      "pr": 43,
-      "pr_url": "https://github.com/UnxWares/helm/pull/43",
-      "run_id": 43231667492,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43231667492",
+      "pr": 42,
+      "pr_url": "https://github.com/UnxWares/helm/pull/42",
+      "run_id": 43237277990,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43237277990",
       "schema_status": "passed",
       "status": "passed",
-      "tested_commit": "429bc6e3ad39c2ca2abdcc126d97e9be6693ab03"
+      "tested_commit": "f5da647acfe80cc8d99f4d7e9f0eadb0408de511"
      },
      "status": "passed",
      "summary": "Passed"
@@ -2397,14 +2395,14 @@
      "detail": "159 tests in 16 suites, all passed",
      "note": "159 tests",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T14:10:35Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:36:13Z",
       "event": "push",
       "failed": 0,
       "failures": [],
       "passed": 159,
-      "run_id": 43234162895,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43234162895",
+      "run_id": 43238840787,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43238840787",
       "skipped": 0,
       "status": "passed",
       "suites": 16,
@@ -2731,15 +2729,15 @@
      "detail": "`helm lint --strict` with Helm v3.22.1 and v4.3.1, on the default values and 2 ci values files; `kubeconform` on Kubernetes 1.31.0 and 1.34.0, 2 renderings. The default values need your input (externalDatabase.password or externalDatabase.existingSecret is required): they are rendered with the ci values only",
      "note": "",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T13:55:06Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:30:21Z",
       "event": "pull_request",
       "helm": {
        "v3.22.1": {
         "default_values_note": "externalDatabase.password or externalDatabase.existingSecret is required",
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278666",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881517",
         "lint_failed": 0,
         "lint_runs": 3,
         "schema": {
@@ -2759,7 +2757,7 @@
         "default_values_note": "externalDatabase.password or externalDatabase.existingSecret is required",
         "failed_step": null,
         "job_conclusion": "success",
-        "job_url": "https://github.com/UnxWares/helm/actions/runs/43231667492/job/131228278490",
+        "job_url": "https://github.com/UnxWares/helm/actions/runs/43237277990/job/131247881723",
         "lint_failed": 0,
         "lint_runs": 3,
         "schema": {
@@ -2777,13 +2775,13 @@
        }
       },
       "lint_status": "passed",
-      "pr": 43,
-      "pr_url": "https://github.com/UnxWares/helm/pull/43",
-      "run_id": 43231667492,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43231667492",
+      "pr": 42,
+      "pr_url": "https://github.com/UnxWares/helm/pull/42",
+      "run_id": 43237277990,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43237277990",
       "schema_status": "passed",
       "status": "passed",
-      "tested_commit": "429bc6e3ad39c2ca2abdcc126d97e9be6693ab03"
+      "tested_commit": "f5da647acfe80cc8d99f4d7e9f0eadb0408de511"
      },
      "status": "passed",
      "summary": "Passed"
@@ -2792,14 +2790,14 @@
      "detail": "202 tests in 12 suites, all passed",
      "note": "202 tests",
      "result": {
-      "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-      "date": "2026-11-12T14:10:35Z",
+      "commit": "27e3629fdeb5b0addf886884023954b59fa5b625",
+      "date": "2026-11-12T14:36:13Z",
       "event": "push",
       "failed": 0,
       "failures": [],
       "passed": 202,
-      "run_id": 43234162895,
-      "run_url": "https://github.com/UnxWares/helm/actions/runs/43234162895",
+      "run_id": 43238840787,
+      "run_url": "https://github.com/UnxWares/helm/actions/runs/43238840787",
       "skipped": 0,
       "status": "passed",
       "suites": 12,
@@ -5036,7 +5034,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-12T14:33:04Z",
+ "latest_result": "2026-11-12T14:36:13Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
