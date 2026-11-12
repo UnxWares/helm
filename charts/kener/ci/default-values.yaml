@@ -3,3 +3,10 @@ kener:
   origin: http://localhost
 networkPolicy:
   enabled: true
+# Temporary: measure the memory of the eval sandbox without an OOM kill.
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 2Gi

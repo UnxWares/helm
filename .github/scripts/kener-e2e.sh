@@ -23,12 +23,20 @@ WORK=$(mktemp -d)
 JAR=$WORK/cookies
 cleanup() {
   [ -n "${FORWARD_PID:-}" ] && kill "$FORWARD_PID" 2>/dev/null
+  [ -n "${SAMPLER_PID:-}" ] && kill "$SAMPLER_PID" 2>/dev/null
   [ -n "${PROBE:-}" ] && kubectl -n "$NAMESPACE" delete pod "$PROBE" --wait=false >/dev/null 2>&1
   true
 }
 trap cleanup EXIT
 
-fail() { echo "FAIL: $*" >&2; exit 1; }
+# What the memory sampler of the eval checks saw (nothing before they start), printed with the result or the failure.
+memory_report() {
+  [ -s "$WORK/memory.log" ] || return 0
+  awk -v before="${memory_before:-?}" -v limit="${memory_limit:-none}" '$1 > c { c = $1 } $2 > r { r = $2 }
+    END { printf "info: Kener container memory (limit %s): %s MiB before the evals, up to %d MiB sampled while they ran; Kener process up to %d MiB\n", limit, before, c / 1048576, r / 1024 }' \
+    "$WORK/memory.log"
+}
+fail() { memory_report >&2; echo "FAIL: $*" >&2; exit 1; }
 ok() { echo "ok: $*"; }
 k() { kubectl -n "$NAMESPACE" "$@"; }
 component() { # kind, component: name of the release's resource
@@ -140,20 +148,34 @@ sandboxed='async function (statusCode, responseTime, responseRaw) {
   const healthy = statusCode === 200 && health.db === true && health.redis === true;
   return { status: nodeGlobals.length === 0 && healthy ? "DEGRADED" : "DOWN", latency: 4242 };
 }'
-# Each of these must be stopped: the stored error of its checks contains the given message.
+# Each of these must be stopped: the stored error of its checks contains the given message. The two memory evals
+# fill 16 MiB blocks, written so that they take real memory, up to the 256 MB limit of the sandbox: created first,
+# they usually run at the same time, the worst case of the sandbox (2 evals at once).
+stopped_tags=(e2e-eval-memory e2e-eval-memory-2 e2e-eval-env e2e-eval-loop)
+hog='async function () { const blocks = []; for (;;) blocks.push(new Uint8Array(16777216).fill(1)); }'
 declare -A stopped=(
+  [e2e-eval-memory]="Eval error: out of memory"
+  [e2e-eval-memory-2]="Eval error: out of memory"
   [e2e-eval-env]="Eval error: 'process' is not defined"
   [e2e-eval-loop]="Eval error: Timed out after 10000 ms"
-  [e2e-eval-memory]="Eval error: out of memory"
 )
 declare -A stopped_eval=(
+  [e2e-eval-memory]=$hog
+  [e2e-eval-memory-2]=$hog
   [e2e-eval-env]='async function () { return { status: process.env.KENER_SECRET_KEY ? "UP" : "DEGRADED", latency: 1 }; }'
   [e2e-eval-loop]='async function () { for (;;) {} }'
-  # 16 MiB blocks, written so that they take real memory, until the 256 MB limit of the sandbox.
-  [e2e-eval-memory]='async function () { const blocks = []; for (;;) blocks.push(new Uint8Array(16777216).fill(1)); }'
 )
+# Memory of the Kener container (cgroup v2, in its own cgroup namespace) and of the Kener process (pid 1), sampled
+# while the evals run.
+cgroup_mib() { k exec "deploy/$kener" -- cat "/sys/fs/cgroup/$1" | awk '{ printf "%d", $1 / 1048576 }'; }
+memory_limit=$(k get deploy "$kener" -o jsonpath='{.spec.template.spec.containers[0].resources.limits.memory}')
+memory_before=$(cgroup_mib memory.current 2>/dev/null) || memory_before=unknown
+k exec "deploy/$kener" -- sh -c 'while :; do
+    echo "$(cat /sys/fs/cgroup/memory.current) $(awk "/^VmRSS:/ { print \$2 }" /proc/1/status)"; sleep 0.2; done' \
+  >"$WORK/memory.log" 2>/dev/null &
+SAMPLER_PID=$!
 api POST /monitors "$(eval_monitor e2e-eval "$sandboxed")" | expect_status 201 "creation of e2e-eval" >/dev/null
-for eval_tag in "${!stopped_eval[@]}"; do
+for eval_tag in "${stopped_tags[@]}"; do
   api POST /monitors "$(eval_monitor "$eval_tag" "${stopped_eval[$eval_tag]}")" |
     expect_status 201 "creation of $eval_tag" >/dev/null
 done
@@ -202,7 +224,7 @@ wait_check e2e-eval
   fail "the custom eval did not record its own result from the sandbox (latest check: ${check:-none})"
 ok "custom eval code runs in the sandbox, without process, require, fetch or Buffer, and records its own status and latency"
 
-for eval_tag in e2e-eval-env e2e-eval-loop e2e-eval-memory; do
+for eval_tag in "${stopped_tags[@]}"; do
   wait_check "$eval_tag"
   [ "${check% *}" = "ERROR DOWN" ] || fail "the eval of $eval_tag was not stopped (latest check: ${check:-none})"
   error=$(last_error "$eval_tag")
@@ -211,9 +233,13 @@ for eval_tag in e2e-eval-env e2e-eval-loop e2e-eval-memory; do
   # Removed: they would keep using CPU and memory every minute until the end of the test.
   api DELETE "/monitors/$eval_tag" | expect_status 200 "deletion of $eval_tag" >/dev/null
 done
+kill "$SAMPLER_PID" 2>/dev/null || true
 restarts=$(k get pods -l "app.kubernetes.io/instance=$RELEASE,app.kubernetes.io/component=web" \
   -o jsonpath='{.items[*].status.containerStatuses[*].restartCount}')
 [ "$restarts" = 0 ] || fail "the Kener container restarted during the eval checks (restart count: ${restarts:-none})"
+memory_report
+peak=$(cgroup_mib memory.peak 2>/dev/null) || peak=unknown
+echo "info: memory peak of the Kener container since it started: $peak MiB"
 ok "evals that read process.env, loop forever or exceed 256 MB are stopped (DOWN, sandbox error), and Kener does not restart"
 
 valkey=$(component deploy redis 2>/dev/null || true)
