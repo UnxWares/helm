@@ -2289,6 +2289,76 @@ entries:
   - annotations:
       artifacthub.io/category: monitoring-logging
       artifacthub.io/changes: |
+        - kind: security
+          description: "Kener 4.2.0 moves nodemailer (7 to 10), sharp (0.34 to 0.35, libvips, libheif and librsvg in its prebuilt binaries) and glob (13 to 14, with minimatch 11) past their advisories: npm audit of the production dependencies goes from 2 high and 3 moderate findings to none."
+          links:
+            - name: Kener 4.2.0
+              url: https://github.com/rajnandan1/kener/releases/tag/v4.2.0
+            - name: rajnandan1/kener#916
+              url: https://github.com/rajnandan1/kener/pull/916
+        - kind: security
+          description: "Custom monitor eval code (API, Ping, TCP and GameDig monitors) no longer runs inside the Kener server process, where it could read the container environment (KENER_SECRET_KEY, DATABASE_URL, REDIS_URL...), its files and the network, without a time limit. Kener 4.2.1 runs each eval in a QuickJS sandbox compiled to WebAssembly, in its own short-lived Node.js process with only TZ from the environment, stopped after 10 seconds, at most 2 at a time. It works under the chart hardening as is (no writable path, capability or variable added), and the end-to-end test now checks it. Its 256 MB memory limit does not bound the eval process yet: an eval that allocates without bound still gets Kener OOM-killed (see Monitor eval code in the README)."
+          links:
+            - name: Kener 4.2.1
+              url: https://github.com/rajnandan1/kener/releases/tag/v4.2.1
+            - name: Custom eval sandbox
+              url: https://kener.ing/docs/v4/monitors/overview#eval-sandbox
+        - kind: changed
+          description: "Kener 4.2.1 (from 4.1.11). Eval code that uses Node.js or browser features (fetch, process, require, Buffer, setTimeout, URL, TextDecoder, crypto, Intl) now reports DOWN: review custom evals before upgrading (see Upgrading in the README). Every check of an API, Ping, TCP or GameDig monitor, with the built-in eval too, starts a Node.js process in the Kener container (about 70 MiB plus what the eval allocates, 2 at a time). Recurring maintenances can repeat in a time zone and keep their local time across clock changes (a migration adds a nullable column at the first start), group monitors can list their members inline, and monitors keep honouring HTTP_PROXY, HTTPS_PROXY and NO_PROXY with Axios 1.21."
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: Kener
+      artifacthub.io/images: |
+        - name: kener
+          image: docker.io/rajnandan1/kener:4.2.1-alpine
+        - name: valkey
+          image: docker.io/valkey/valkey:9.1.3-alpine
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/kener
+        - name: Kener documentation
+          url: https://kener.ing/docs/v4/setup/environment-variables
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 4.2.1
+    created: "2026-11-12T14:36:02.513044567Z"
+    description: Kener 4 status page with SQLite/PostgreSQL/MySQL, a bundled hardened
+      Valkey for its queues, and secure defaults for Kubernetes.
+    digest: 2193849b877b4c716c37b2c9e92315b6dbd1c22d43d81697a53ac0eb436a1f53
+    home: https://github.com/UnxWares/helm/tree/main/charts/kener
+    icon: https://kener.ing/logo.png
+    keywords:
+    - kener
+    - status
+    - status-page
+    - uptime
+    - monitoring
+    - incident
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: kener
+    sources:
+    - https://github.com/rajnandan1/kener
+    - https://hub.docker.com/r/rajnandan1/kener
+    - https://github.com/valkey-io/valkey
+    - https://github.com/UnxWares/helm/tree/main/charts/kener
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/kener-2026.11.7/kener-2026.11.7.tgz
+    version: 2026.11.7
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/changes: |
         - kind: changed
           description: "README: the UnxWares Open Source & Community (UWOSC) badge, the chart being maintained by UnxWares. The templates and values are unchanged."
       artifacthub.io/containsSecurityUpdates: "false"
@@ -5929,4 +5999,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-11-12T14:09:32.703582896Z"
+generated: "2026-11-12T14:36:02.513291648Z"
