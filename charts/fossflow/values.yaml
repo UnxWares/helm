@@ -13,7 +13,7 @@ image:
   repository: ""
   # -- Image pull policy.
   pullPolicy: IfNotPresent  # @schema enum:[Always, IfNotPresent, Never]
-  # -- Image tag. Empty: the chart appVersion for the UnxWares image, `master-2b3cee3` for the upstream one (upstream only publishes `master-<commit>` tags: `master-2b3cee3` is release v1.0.5).
+  # -- Image tag. Empty: the chart appVersion for the UnxWares image, `master-b06baad` for the upstream one (upstream only publishes `master-<commit>` tags: `master-b06baad` is release v1.0.6).
   tag: ""
   # -- Image digest (`sha256:...`). When set, it takes precedence over the tag.
   digest: ""

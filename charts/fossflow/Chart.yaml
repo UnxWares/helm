@@ -2,11 +2,11 @@ apiVersion: v2
 name: fossflow
 description: FossFLOW, an open source web app to draw isometric infrastructure diagrams, with optional server-side storage of the diagrams.
 type: application
-version: 2026.11.4
-appVersion: "1.0.5"
+version: 2026.11.5
+appVersion: "1.0.6"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/fossflow
-icon: https://raw.githubusercontent.com/Abrar74774/FossFLOW/v1.0.5/packages/fossflow-app/public/logo512.png
+icon: https://raw.githubusercontent.com/Abrar74774/FossFLOW/v1.0.6/packages/fossflow-app/public/logo512.png
 
 sources:
   - https://github.com/Abrar74774/FossFLOW
@@ -41,11 +41,15 @@ annotations:
       url: https://github.com/UnxWares/helm/issues
   artifacthub.io/images: |
     - name: fossflow
-      image: ghcr.io/unxwares/fossflow:1.0.5
-  artifacthub.io/containsSecurityUpdates: "false"
+      image: ghcr.io/unxwares/fossflow:1.0.6
+  artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/changes: |
     - kind: changed
-      description: "README: the UnxWares Open Source & Community (UWOSC) badge, the chart being maintained by UnxWares. The templates and values are unchanged."
+      description: "FossFLOW 1.0.6: default image ghcr.io/unxwares/fossflow:1.0.6. Same ports, paths, environment variables and storage format: the diagrams are kept."
+    - kind: security
+      description: "The upstream image (imageProvider: upstream) defaults to master-b06baad, release v1.0.6, with updated npm dependencies and Alpine packages and without npm (Abrar74774/FossFLOW#24, contributed by UnxWares)."
+    - kind: security
+      description: "The UnxWares image no longer installs the uuid package the backend declares but never uses (CVE-2026-41907). Its other dependencies are unchanged: the updates it applied as a patch are now part of FossFLOW 1.0.6."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

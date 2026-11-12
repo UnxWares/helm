@@ -6,14 +6,14 @@ release:
   name: diagrams
   namespace: tools
 chart:
-  appVersion: 1.0.5
+  appVersion: 1.0.6
 tests:
   - it: defaults to the UnxWares image tagged with the chart appVersion
     template: deployment.yaml
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/unxwares/fossflow:1.0.5
+          value: ghcr.io/unxwares/fossflow:1.0.6
       - equal:
           path: spec.template.spec.containers[0].imagePullPolicy
           value: IfNotPresent
@@ -27,14 +27,14 @@ tests:
           path: spec.template.spec.containers[0].image
           value: ghcr.io/unxwares/fossflow:9.8.7
 
-  - it: switches to the upstream image and its master-2b3cee3 tag (release v1.0.5) with imageProvider upstream
+  - it: switches to the upstream image and its master-b06baad tag (release v1.0.6) with imageProvider upstream
     template: deployment.yaml
     set:
       imageProvider: upstream
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: docker.io/abrar74774/fossflow:master-2b3cee3
+          value: docker.io/abrar74774/fossflow:master-b06baad
 
   - it: listens on 8080 with the UnxWares image
     template: deployment.yaml
@@ -77,11 +77,11 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: registry.example.com/mirror/fossflow:1.0.5
+          value: registry.example.com/mirror/fossflow:1.0.6
         template: deployment.yaml
       - equal:
           path: spec.containers[0].image
-          value: registry.example.com/mirror/fossflow:1.0.5
+          value: registry.example.com/mirror/fossflow:1.0.6
         template: tests/test-connection.yaml
 
   - it: keeps the upstream tag with an explicit repository and imageProvider upstream
@@ -93,7 +93,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: registry.example.com/mirror/fossflow:master-2b3cee3
+          value: registry.example.com/mirror/fossflow:master-b06baad
 
   - it: prefers the digest over the tag
     set:
@@ -117,7 +117,7 @@ tests:
     asserts:
       - equal:
           path: spec.containers[0].image
-          value: docker.io/abrar74774/fossflow:master-2b3cee3
+          value: docker.io/abrar74774/fossflow:master-b06baad
 
   - it: applies the pull policy and pull secrets to the pod and to the helm test pod
     set:

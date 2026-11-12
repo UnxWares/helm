@@ -70,7 +70,7 @@ Whether the pod runs the UnxWares image (imageProvider).
 
 {{/*
 Image reference: image.repository, or the image of imageProvider when it is empty (digest takes precedence over the
-tag). Upstream only publishes `master-<commit>` tags: master-2b3cee3 is release v1.0.5.
+tag). Upstream only publishes `master-<commit>` tags: master-b06baad is release v1.0.6.
 */}}
 {{- define "fossflow.image" -}}
 {{- $unxwares := include "fossflow.unxwaresImage" . }}
@@ -78,7 +78,7 @@ tag). Upstream only publishes `master-<commit>` tags: master-2b3cee3 is release 
 {{- if .Values.image.digest }}
 {{- printf "%s@%s" $repository .Values.image.digest }}
 {{- else }}
-{{- printf "%s:%s" $repository (.Values.image.tag | default (ternary .Chart.AppVersion "master-2b3cee3" (eq $unxwares "true")) | toString) }}
+{{- printf "%s:%s" $repository (.Values.image.tag | default (ternary .Chart.AppVersion "master-b06baad" (eq $unxwares "true")) | toString) }}
 {{- end }}
 {{- end }}
 

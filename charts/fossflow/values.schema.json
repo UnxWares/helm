@@ -130,7 +130,7 @@
                     "type": "string"
                 },
                 "tag": {
-                    "description": "Image tag. Empty: the chart appVersion for the UnxWares image, `master-2b3cee3` for the upstream one (upstream only publishes `master-\u003ccommit\u003e` tags: `master-2b3cee3` is release v1.0.5).",
+                    "description": "Image tag. Empty: the chart appVersion for the UnxWares image, `master-b06baad` for the upstream one (upstream only publishes `master-\u003ccommit\u003e` tags: `master-b06baad` is release v1.0.6).",
                     "type": "string"
                 }
             }

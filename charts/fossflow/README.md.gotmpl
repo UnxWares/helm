@@ -13,8 +13,8 @@ available. The chart is maintained by UnxWares; FossFLOW itself is maintained by
 
 ## Features
 
-- **UnxWares image by default**: FossFLOW v1.0.5 built from the upstream sources with updated npm dependencies on a
-  current Alpine (see [Images](#images)); the upstream image (`master-2b3cee3`) stays one value away
+- **UnxWares image by default**: FossFLOW v1.0.6 built from the upstream sources on a current Alpine (see
+  [Images](#images)); the upstream image (`master-b06baad`) stays one value away
 - Two modes: **server storage** (diagrams saved by the backend on a PVC, the default) or **browser-only** (diagrams
   stay in each user's browser, stateless pods that can be scaled or autoscaled)
 - **Hardened pod** with the UnxWares image: uid 1000, read-only root filesystem, every capability dropped, seccomp
@@ -52,8 +52,8 @@ The FossFLOW container and the `helm test` pod use the same image, chosen by `im
 
 | `imageProvider` | Image | Notes |
 |---|---|---|
-| `unxwares` (default) | `ghcr.io/unxwares/fossflow:<appVersion>` | Built from the upstream sources of commit `2b3cee3` (release v1.0.5) with the lockfile of `npm audit fix` (branch [fix/vulnerable-dependencies](https://github.com/UnxWares/FossFLOW/tree/fix/vulnerable-dependencies) of UnxWares/FossFLOW), on a current Alpine without npm, su-exec or openssl. nginx (port 8080) and the backend run as uid 1000 with a read-only root filesystem; the backend listens on `127.0.0.1:3001` and its CORS headers are dropped. Rebuilt twice a week, signed with cosign. |
-| `upstream` | `docker.io/abrar74774/fossflow:master-2b3cee3` | Published by the maintainers of [Abrar74774/FossFLOW](https://github.com/Abrar74774/FossFLOW) from its public sources. Starts as root: nginx on port 80, backend through `su-exec`, writable root filesystem (see [Security](#security)). Upstream only publishes `master-<commit>` tags. |
+| `unxwares` (default) | `ghcr.io/unxwares/fossflow:<appVersion>` | Built from the upstream sources of commit `b06baad` (release v1.0.6, with the dependency updates UnxWares contributed in [Abrar74774/FossFLOW#24](https://github.com/Abrar74774/FossFLOW/pull/24)), without the backend's unused `uuid` dependency, on a current Alpine without npm, su-exec or openssl. nginx (port 8080) and the backend run as uid 1000 with a read-only root filesystem; the backend listens on `127.0.0.1:3001` and its CORS headers are dropped. Rebuilt twice a week, signed with cosign. |
+| `upstream` | `docker.io/abrar74774/fossflow:master-b06baad` | Published by the maintainers of [Abrar74774/FossFLOW](https://github.com/Abrar74774/FossFLOW) from its public sources. Starts as root: nginx on port 80, backend through `su-exec`, writable root filesystem (see [Security](#security)). Upstream only publishes `master-<commit>` tags. |
 
 Both images exist for `linux/amd64` and `linux/arm64` and use the same environment variables (`ENABLE_SERVER_STORAGE`,
 `STORAGE_PATH`, `BACKEND_HOST`) and the same storage format: switching between them keeps the diagrams. Sources,
@@ -61,10 +61,10 @@ build details and the cosign verification command are in
 [images/](https://github.com/UnxWares/helm/tree/main/images).
 
 - Another tag or registry: set `image.repository` and `image.tag` (an empty tag means the appVersion for the
-  UnxWares image, `master-2b3cee3` for the upstream one). The chart picks the port and the security contexts from
+  UnxWares image, `master-b06baad` for the upstream one). The chart picks the port and the security contexts from
   `imageProvider`, so a custom build of the upstream Dockerfile goes with `imageProvider: upstream`.
 - Pin a digest: `image.digest` takes precedence over the tag. Read it with
-  `docker buildx imagetools inspect ghcr.io/unxwares/fossflow:1.0.5` (or `crane digest`):
+  `docker buildx imagetools inspect ghcr.io/unxwares/fossflow:1.0.6` (or `crane digest`):
 
   ```yaml
   image:
@@ -237,7 +237,7 @@ cert-manager as above) or at the Gateway listener referenced by `httpRoute.paren
 ### Authentication
 
 FossFLOW has no user management. The `HTTP_AUTH_USER`/`HTTP_AUTH_PASSWORD` basic auth of the upstream image does not
-work in v1.0.5 (its entrypoint calls `openssl passwd -bcrypt`, which OpenSSL 3 removed), and the UnxWares image
+work in v1.0.6 (its entrypoint calls `openssl passwd -bcrypt`, which OpenSSL 3 removed), and the UnxWares image
 refuses to start when they are set rather than run without the protection they ask for. Protect FossFLOW at the
 ingress:
 
