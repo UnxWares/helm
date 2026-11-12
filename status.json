@@ -52,95 +52,10 @@
    "name": "bind9",
    "results": {
     "e2e": {
-     "detail": "21 checks, all passed",
-     "note": "21 checks",
+     "detail": "0 checks, all passed",
+     "note": "0 checks",
      "result": {
-      "checks": [
-       {
-        "name": "A record (+notcp)",
-        "runs": 1
-       },
-       {
-        "name": "AAAA record (+notcp)",
-        "runs": 1
-       },
-       {
-        "name": "A record (+tcp)",
-        "runs": 1
-       },
-       {
-        "name": "AAAA record (+tcp)",
-        "runs": 1
-       },
-       {
-        "name": "MX record",
-        "runs": 1
-       },
-       {
-        "name": "TXT record",
-        "runs": 1
-       },
-       {
-        "name": "CNAME followed in the zone",
-        "runs": 1
-       },
-       {
-        "name": "SOA serial",
-        "runs": 1
-       },
-       {
-        "name": "PTR record of the second zone",
-        "runs": 1
-       },
-       {
-        "name": "answers are authoritative",
-        "runs": 1
-       },
-       {
-        "name": "unknown name: authoritative NXDOMAIN",
-        "runs": 1
-       },
-       {
-        "name": "zone not served: REFUSED",
-        "runs": 1
-       },
-       {
-        "name": "zone transfers are refused",
-        "runs": 1
-       },
-       {
-        "name": "the version is not revealed",
-        "runs": 1
-       },
-       {
-        "name": "named runs as uid 53",
-        "runs": 1
-       },
-       {
-        "name": "named has no capability",
-        "runs": 1
-       },
-       {
-        "name": "the DNS Service only carries DNS",
-        "runs": 1
-       },
-       {
-        "name": "the admin Service carries the metrics",
-        "runs": 1
-       },
-       {
-        "name": "the exporter reads named's statistics (bind_up 1)",
-        "runs": 1
-       },
-       {
-        "name": "the exporter counts the queries (2 AAAA)",
-        "runs": 1
-       },
-       {
-        "name": "a pod outside networkPolicy.adminAllowedFrom cannot reach the metrics, and still gets DNS answers",
-        "runs": 1
-       }
-      ],
+      "checks": [],
       "commit": "0b8e8f440e16811a0d5b66bbf28c81e30184784b",
       "date": "2026-11-12T14:09:02Z",
       "event": "push",
@@ -854,7 +769,17 @@
    "description": "FossFLOW, an open source web app to draw isometric infrastructure diagrams, with optional server-side storage of the diagrams.",
    "images": [
     {
-     "cve": null,
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": 0,
+      "medium": 0,
+      "open_fixable": 0,
+      "total": 0
+     },
      "image": "ghcr.io/unxwares/fossflow:1.0.6",
      "name": "fossflow",
      "ours": true
@@ -2793,34 +2718,34 @@
   }
  ],
  "cve_watch": {
-  "commit": "e1954dd2ab746b116b5abda29ed07051a01741f9",
-  "date": "2026-11-12T12:03:47Z",
+  "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
+  "date": "2026-11-12T14:18:18Z",
   "event": "workflow_run",
   "images": {
-   "docker.io/abrar74774/fossflow:master-2b3cee3": {
+   "docker.io/abrar74774/fossflow:master-b06baad": {
     "charts": [
      "fossflow",
-     "official image replaced by fossflow:1.0.5"
+     "official image replaced by fossflow:1.0.6"
     ],
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 17,
-     "LOW": 1,
-     "MEDIUM": 23,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 2,
      "UNKNOWN": 0
     },
-    "image": "docker.io/abrar74774/fossflow:master-2b3cee3",
-    "os": "alpine 3.24.2",
+    "image": "docker.io/abrar74774/fossflow:master-b06baad",
+    "os": "alpine 3.24.4",
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 17,
-     "LOW": 1,
-     "MEDIUM": 23,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 2,
      "UNKNOWN": 0
     },
-    "total": 41
+    "total": 2
    },
    "docker.io/cloudreve/cloudreve:4.19.1": {
     "charts": [
@@ -2832,7 +2757,7 @@
      "CRITICAL": 16,
      "HIGH": 238,
      "LOW": 93,
-     "MEDIUM": 209,
+     "MEDIUM": 210,
      "UNKNOWN": 21
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2842,10 +2767,10 @@
      "CRITICAL": 16,
      "HIGH": 238,
      "LOW": 93,
-     "MEDIUM": 209,
+     "MEDIUM": 210,
      "UNKNOWN": 21
     },
-    "total": 577
+    "total": 578
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -2873,7 +2798,7 @@
    },
    "docker.io/library/mongo:8.0": {
     "charts": [
-     "official image replaced by mongosh:2.14.1"
+     "official image replaced by mongosh:2.14.2"
     ],
     "eosl": false,
     "fixable": {
@@ -3445,7 +3370,7 @@
      }
     ]
    },
-   "ghcr.io/unxwares/fossflow:1.0.5": {
+   "ghcr.io/unxwares/fossflow:1.0.6": {
     "charts": [
      "UnxWares image",
      "fossflow"
@@ -3455,505 +3380,30 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "image": "ghcr.io/unxwares/fossflow:1.0.5",
+    "image": "ghcr.io/unxwares/fossflow:1.0.6",
     "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 1,
-    "vulnerabilities": [
-     {
-      "fixed": "11.1.1, 12.0.1, 13.0.1",
-      "id": "CVE-2026-41907",
-      "installed": "9.0.1",
-      "package": "uuid",
-      "severity": "MEDIUM",
-      "type": "node-pkg"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
-   "ghcr.io/unxwares/mongosh:2.14.1": {
+   "ghcr.io/unxwares/mongosh:2.14.2": {
     "charts": [
      "UnxWares image",
      "openeverest-database-tools"
     ],
-    "eosl": false,
-    "fixable": {
-     "CRITICAL": 0,
-     "HIGH": 1,
-     "LOW": 0,
-     "MEDIUM": 2,
-     "UNKNOWN": 0
-    },
-    "image": "ghcr.io/unxwares/mongosh:2.14.1",
-    "os": "debian 13.7",
+    "image": "ghcr.io/unxwares/mongosh:2.14.2",
     "ours": true,
-    "severity": {
-     "CRITICAL": 0,
-     "HIGH": 1,
-     "LOW": 12,
-     "MEDIUM": 36,
-     "UNKNOWN": 7
-    },
-    "total": 56,
-    "vulnerabilities": [
-     {
-      "fixed": "6.2.1",
-      "id": "CVE-2026-102990",
-      "installed": "5.3.1",
-      "package": "basic-ftp",
-      "severity": "HIGH",
-      "type": "node-pkg"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-102010",
-      "installed": "14.2.0-19",
-      "package": "gcc-14-base",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-114690",
-      "installed": "14.2.0-19",
-      "package": "gcc-14-base",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-114691",
-      "installed": "14.2.0-19",
-      "package": "gcc-14-base",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-115455",
-      "installed": "14.2.0-19",
-      "package": "gcc-14-base",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-95619",
-      "installed": "14.2.0-19",
-      "package": "gcc-14-base",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "14.0.2",
-      "id": "CVE-2026-118773",
-      "installed": "10.5.0",
-      "package": "glob",
-      "severity": "MEDIUM",
-      "type": "node-pkg"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-18374",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-19499",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-19542",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-5435",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-6238",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-6368",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-6791",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-77117",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-80489",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-84243",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-8674",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-86805",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-89092",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-95818",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-102010",
-      "installed": "14.2.0-19",
-      "package": "libgcc-s1",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-114690",
-      "installed": "14.2.0-19",
-      "package": "libgcc-s1",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-114691",
-      "installed": "14.2.0-19",
-      "package": "libgcc-s1",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-115455",
-      "installed": "14.2.0-19",
-      "package": "libgcc-s1",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-95619",
-      "installed": "14.2.0-19",
-      "package": "libgcc-s1",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-102010",
-      "installed": "14.2.0-19",
-      "package": "libgomp1",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-114690",
-      "installed": "14.2.0-19",
-      "package": "libgomp1",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-114691",
-      "installed": "14.2.0-19",
-      "package": "libgomp1",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-115455",
-      "installed": "14.2.0-19",
-      "package": "libgomp1",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-95619",
-      "installed": "14.2.0-19",
-      "package": "libgomp1",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-102010",
-      "installed": "14.2.0-19",
-      "package": "libstdc++6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-114690",
-      "installed": "14.2.0-19",
-      "package": "libstdc++6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-114691",
-      "installed": "14.2.0-19",
-      "package": "libstdc++6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-115455",
-      "installed": "14.2.0-19",
-      "package": "libstdc++6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-95619",
-      "installed": "14.2.0-19",
-      "package": "libstdc++6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "11.0.1",
-      "id": "CVE-2026-118764",
-      "installed": "9.0.9",
-      "package": "minimatch",
-      "severity": "MEDIUM",
-      "type": "node-pkg"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-115456",
-      "installed": "14.2.0-19",
-      "package": "gcc-14-base",
-      "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2010-4756",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2018-20796",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2019-1010022",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2019-1010023",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2019-1010024",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2019-1010025",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2019-9192",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-97399",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-115456",
-      "installed": "14.2.0-19",
-      "package": "libgcc-s1",
-      "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-115456",
-      "installed": "14.2.0-19",
-      "package": "libgomp1",
-      "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-115456",
-      "installed": "14.2.0-19",
-      "package": "libstdc++6",
-      "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-100290",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "UNKNOWN",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-115819",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "UNKNOWN",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-107496",
-      "installed": "3.5.7-1~deb13u3",
-      "package": "libssl3t64",
-      "severity": "UNKNOWN",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-88822",
-      "installed": "3.5.7-1~deb13u3",
-      "package": "libssl3t64",
-      "severity": "UNKNOWN",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-88823",
-      "installed": "3.5.7-1~deb13u3",
-      "package": "libssl3t64",
-      "severity": "UNKNOWN",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-95691",
-      "installed": "3.5.7-1~deb13u3",
-      "package": "libssl3t64",
-      "severity": "UNKNOWN",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-95692",
-      "installed": "3.5.7-1~deb13u3",
-      "package": "libssl3t64",
-      "severity": "UNKNOWN",
-      "type": "debian"
-     }
-    ]
+    "scan_failed": true
    },
    "ghcr.io/unxwares/mysql-client:8.4": {
     "charts": [
@@ -4370,8 +3820,8 @@
     "total": 13
    }
   },
-  "run_id": 43214182523,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/43214182523",
+  "run_id": 43235365361,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/43235365361",
   "source": "report"
  },
  "files": [
@@ -4985,7 +4435,17 @@
    },
    "changes": "Built from the upstream sources (commit `b06baad`, release v1.0.6) without the unused `uuid` dependency of the backend (`patches/`), current Alpine, no npm, su-exec or openssl; nginx on port 8080 and the backend run as uid 1000 with a read-only root filesystem, the backend listens on 127.0.0.1 only and its CORS headers (any origin) are dropped",
    "context": "images/fossflow",
-   "cve": null,
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": 0,
+    "medium": 0,
+    "open_fixable": 0,
+    "total": 0
+   },
    "name": "fossflow",
    "ref": "ghcr.io/unxwares/fossflow:1.0.6",
    "tag": "1.0.6",
@@ -5038,7 +4498,7 @@
    "upstream": "`docker.io/prometheuscommunity/bind-exporter`"
   }
  ],
- "latest_result": "2026-11-12T14:15:45Z",
+ "latest_result": "2026-11-12T14:18:18Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
