@@ -1,7 +1,9 @@
-# Cloudreve built from the release sources, with the Go module updates of patches/ (proposed upstream in
-# cloudreve/cloudreve#3618), on a current Alpine. The runtime keeps the thumbnail and media tools of the upstream
-# image (libvips, FFmpeg, LibreOffice, libheif, libraw); aria2 and supervisord are left out (the chart starts the
-# binary directly), and so is the Asia/Shanghai default time zone (the chart sets TZ).
+# Cloudreve built from the release sources, with the Go module updates of patches/ (reported upstream in
+# cloudreve/cloudreve#3618; 0002 adds golang.org/x/crypto v0.59.0, rardecode v2.2.0 with mholt/archives v0.1.5,
+# klauspost/compress v1.20.2 and brotli v1.2.7; base64Captcha keeps its 2019 version, see .trivyignore), on a
+# current Alpine. The runtime keeps the thumbnail and media tools of the upstream image (libvips, FFmpeg,
+# LibreOffice, libheif, libraw); aria2 and supervisord are left out (the chart starts the binary directly), and so is
+# the Asia/Shanghai default time zone (the chart sets TZ).
 ARG VERSION=4.19.1
 
 # Web UI: the cloudreve/frontend commit the 4.19.1 tag points to (its "assets" submodule), built as
