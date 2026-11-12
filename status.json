@@ -24,7 +24,17 @@
    "description": "A flexible and production-ready Helm chart for running ISC Bind9 DNS server on Kubernetes.",
    "images": [
     {
-     "cve": null,
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 0,
+      "high": 0,
+      "low": 0,
+      "medium": 0,
+      "open_fixable": 0,
+      "total": 0
+     },
      "image": "ghcr.io/unxwares/bind9:9.20.30",
      "name": "bind9",
      "ours": true
@@ -1146,7 +1156,17 @@
    "description": "Kener 4 status page with SQLite/PostgreSQL/MySQL, a bundled hardened Valkey for its queues, and secure defaults for Kubernetes.",
    "images": [
     {
-     "cve": null,
+     "cve": {
+      "accepted": 0,
+      "critical": 0,
+      "eosl": false,
+      "fixable": 6,
+      "high": 6,
+      "low": 4,
+      "medium": 13,
+      "open_fixable": 6,
+      "total": 23
+     },
      "image": "docker.io/rajnandan1/kener:4.2.1-alpine",
      "name": "kener",
      "ours": false
@@ -2825,8 +2845,8 @@
   }
  ],
  "cve_watch": {
-  "commit": "527a7165700e30ea7dc88e66c974be9fc1c85dcd",
-  "date": "2026-11-12T14:28:16Z",
+  "commit": "cb4cc31179415ebae741045550344f659a830d88",
+  "date": "2026-11-12T15:24:59Z",
   "event": "workflow_run",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
@@ -2881,7 +2901,8 @@
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
-     "bind9"
+     "bind9",
+     "official image replaced by bind9:9.20.30"
     ],
     "eosl": false,
     "fixable": {
@@ -3171,53 +3192,53 @@
     },
     "total": 10
    },
-   "docker.io/rajnandan1/kener:4.1.11-alpine": {
+   "docker.io/rajnandan1/kener:4.2.1-alpine": {
     "charts": [
      "kener"
     ],
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 13,
-     "LOW": 5,
-     "MEDIUM": 28,
+     "HIGH": 6,
+     "LOW": 4,
+     "MEDIUM": 13,
      "UNKNOWN": 0
     },
-    "image": "docker.io/rajnandan1/kener:4.1.11-alpine",
-    "os": "alpine 3.24.3",
+    "image": "docker.io/rajnandan1/kener:4.2.1-alpine",
+    "os": "alpine 3.24.4",
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 13,
-     "LOW": 5,
-     "MEDIUM": 28,
+     "HIGH": 6,
+     "LOW": 4,
+     "MEDIUM": 13,
      "UNKNOWN": 0
     },
-    "total": 46
+    "total": 23
    },
-   "docker.io/rajnandan1/kener:4.1.11-status": {
+   "docker.io/rajnandan1/kener:4.2.1-status": {
     "charts": [
      "kener"
     ],
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 15,
-     "LOW": 5,
-     "MEDIUM": 27,
+     "HIGH": 6,
+     "LOW": 4,
+     "MEDIUM": 12,
      "UNKNOWN": 0
     },
-    "image": "docker.io/rajnandan1/kener:4.1.11-status",
+    "image": "docker.io/rajnandan1/kener:4.2.1-status",
     "os": "debian 12.15",
     "ours": false,
     "severity": {
      "CRITICAL": 3,
-     "HIGH": 126,
-     "LOW": 165,
-     "MEDIUM": 183,
+     "HIGH": 117,
+     "LOW": 164,
+     "MEDIUM": 168,
      "UNKNOWN": 9
     },
-    "total": 486
+    "total": 461
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3406,6 +3427,32 @@
     },
     "image": "ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f",
     "os": "debian 13.7",
+    "ours": true,
+    "severity": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
+    "total": 0,
+    "vulnerabilities": []
+   },
+   "ghcr.io/unxwares/bind9:9.20.30": {
+    "charts": [
+     "UnxWares image",
+     "bind9"
+    ],
+    "eosl": false,
+    "fixable": {
+     "CRITICAL": 0,
+     "HIGH": 0,
+     "LOW": 0,
+     "MEDIUM": 0,
+     "UNKNOWN": 0
+    },
+    "image": "ghcr.io/unxwares/bind9:9.20.30",
+    "os": "alpine 3.24.4",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
@@ -4360,8 +4407,8 @@
     "total": 13
    }
   },
-  "run_id": 43237174790,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/43237174790",
+  "run_id": 43246830483,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/43246830483",
   "source": "report"
  },
  "files": [
@@ -4826,6 +4873,7 @@
      "arm64": {
       "failed_step": null,
       "job_url": "https://github.com/UnxWares/helm/actions/runs/43245095845/job/131275507314",
+      "scan_findings": 0,
       "status": "passed"
      }
     },
@@ -5076,14 +5124,24 @@
    },
    "changes": "Built from the release tarball, checked against its SHA-256 and the OpenPGP signature of an ISC code-signing key, with the base (Alpine 3.24), build options, paths, ports and user (`bind`, uid 53) of the official image; rebuilt twice a week on current Alpine packages (the official image is rebuilt once per BIND release); starts as `bind` instead of root, logs to stderr, no procps, headers or static libraries",
    "context": "images/bind9",
-   "cve": null,
+   "cve": {
+    "accepted": 0,
+    "critical": 0,
+    "eosl": false,
+    "fixable": 0,
+    "high": 0,
+    "low": 0,
+    "medium": 0,
+    "open_fixable": 0,
+    "total": 0
+   },
    "name": "bind9",
    "ref": "ghcr.io/unxwares/bind9:9.20.30",
    "tag": "9.20.30",
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-12T15:21:01Z",
+ "latest_result": "2026-11-12T15:24:59Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
