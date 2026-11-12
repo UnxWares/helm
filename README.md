@@ -44,7 +44,7 @@ the same rules:
 
 | Chart | Application | Default images | Tested in CI |
 |-------|-------------|----------------|--------------|
-| [bind9](charts/bind9) | ISC BIND 9.20 | ISC (named), UnxWares (exporter) | Install (UnxWares and upstream exporter), `helm test` (DNS query), end to end |
+| [bind9](charts/bind9) | ISC BIND 9.20 | UnxWares | Install (UnxWares and upstream images), `helm test` (DNS query), end to end |
 | [cloudreve](charts/cloudreve) | Cloudreve 4.19 | UnxWares | Install (UnxWares and upstream images), `helm test`, end to end |
 | [excalidash](charts/excalidash) | ExcaliDash 0.6 | Upstream | Install, `helm test` (health endpoint), end to end |
 | [fossflow](charts/fossflow) | FossFLOW 1.0 | UnxWares | Install (UnxWares and upstream images), `helm test`, end to end |
@@ -85,6 +85,7 @@ default to our own builds, published on `ghcr.io/unxwares`:
 | `taiga-back`, `taiga-front`, `taiga-events`, `taiga-protected` | taiga | Current dependencies, upstream security fixes not released yet, non-root |
 | `postgresql-client`, `mysql-client`, `mongosh` | openeverest-database-tools, powerdns (schema init) | The database clients alone instead of whole server images |
 | `bind-exporter` | bind9 | Built from the master sources with Go 1.27 and current `golang.org/x` modules, distroless, non-root |
+| `bind9` | bind9 | Built from the signed ISC release tarball with the options of the official image, current Alpine packages, non-root from the start |
 
 They are rebuilt every Monday and Thursday on current bases, and sooner when the CVE watch finds a critical or high
 vulnerability that a rebuild fixes; they are scanned with Trivy and signed with cosign, and each chart can still use

@@ -75,7 +75,7 @@ jobs:
                   if matches "$common|^charts/fossflow/|^images/fossflow/|^\.github/scripts/fossflow-e2e\.sh$"; then
                       echo "fossflow=true" >> "$GITHUB_OUTPUT"
                   fi
-                  if matches "$common|^charts/bind9/|^images/bind-exporter/|^\.github/scripts/bind9-e2e\.sh$"; then
+                  if matches "$common|^charts/bind9/|^images/(bind9|bind-exporter)/|^\.github/scripts/bind9-e2e\.sh$"; then
                       echo "bind9=true" >> "$GITHUB_OUTPUT"
                   fi
                   if matches "$common|^charts/powerdns/|^images/(pdns-auth|pdns-recursor|postgresql-client|mysql-client)/|^\.github/scripts/powerdns-e2e"; then
@@ -497,15 +497,21 @@ jobs:
               with:
                   persist-credentials: false
 
-            # The exporter image of this commit, so that a change to it is tested before it is published.
-            - name: Build the exporter image
-              run: docker build --tag local/bind-exporter:e2e images/bind-exporter
+            # The images of this commit, so that a change to them is tested before they are published.
+            - name: Build the BIND and exporter images
+              run: |
+                  for image in bind9 bind-exporter; do
+                      docker build --tag "local/$image:e2e" "images/$image"
+                  done
 
             - name: Create kind cluster
               uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
 
-            - name: Load the exporter image
-              run: kind load docker-image local/bind-exporter:e2e --name chart-testing
+            - name: Load the images
+              run: |
+                  for image in bind9 bind-exporter; do
+                      kind load docker-image "local/$image:e2e" --name chart-testing
+                  done
 
             - name: Install Helm
               uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
@@ -520,13 +526,17 @@ jobs:
                   kubectl label namespace "$RELEASE" pod-security.kubernetes.io/enforce=restricted
                   helm install "$RELEASE" "$CHART" --namespace "$RELEASE" \
                       --values "$CHART/ci/default-values.yaml" \
+                      --set image.repository=local/bind9 --set image.tag=e2e \
                       --set metrics.image.repository=local/bind-exporter --set metrics.image.tag=e2e \
                       --wait --timeout 5m
 
             - name: helm test
               run: helm test "$RELEASE" --namespace "$RELEASE"
 
+            # The client pods run the BIND image of this commit too (dig, wget).
             - name: Query the zones, read the metrics, check the NetworkPolicy
+              env:
+                  CLIENT_IMAGE: local/bind9:e2e
               run: .github/scripts/bind9-e2e.sh "$RELEASE" "$RELEASE"
 
             - name: Diagnostics

@@ -90,17 +90,17 @@
                     ]
                 },
                 "repository": {
-                    "description": "Bind9 image repository (ISC official image).",
+                    "description": "Bind9 image repository. Empty: `ghcr.io/unxwares/bind9` or `docker.io/internetsystemsconsortium/bind9`, from `imageProvider`.",
                     "type": "string"
                 },
                 "tag": {
-                    "description": "Image tag (defaults to the chart appVersion, the current ISC stable branch). `9.21` is ISC's development branch. The ISC image is published for linux/amd64 only: see `nodeSelector`.",
+                    "description": "Image tag. Empty: the chart appVersion (`9.20.30`, the BIND release) for the UnxWares image, its branch (`9.20`, which ISC moves to each patch release) for the ISC image (a repository ending in `internetsystemsconsortium/bind9`). `9.21` is ISC's development branch.",
                     "type": "string"
                 }
             }
         },
         "imageProvider": {
-            "description": "Exporter image used when `metrics.image.repository` is empty. `unxwares`: `ghcr.io/unxwares/bind-exporter`, bind_exporter built by UnxWares from its sources (master branch, current Go toolchain and golang.org/x modules) on a distroless base, rebuilt twice a week (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the Prometheus community image `docker.io/prometheuscommunity/bind-exporter`. named always runs the ISC image.",
+            "description": "Images used when `image.repository` and `metrics.image.repository` are empty. `unxwares`: `ghcr.io/unxwares/bind9`, BIND built by UnxWares from the signed ISC release tarball with the build options, paths and user (`bind`, uid 53) of the official image, and `ghcr.io/unxwares/bind-exporter`, bind_exporter built from its sources (master branch, current Go toolchain and golang.org/x modules) on a distroless base, both rebuilt twice a week on current bases and published for amd64 and arm64 (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the official ISC image `docker.io/internetsystemsconsortium/bind9` (linux/amd64 only, see `nodeSelector`) and the Prometheus community image `docker.io/prometheuscommunity/bind-exporter`.",
             "type": "string",
             "enum": [
                 "unxwares",
@@ -219,13 +219,8 @@
             }
         },
         "nodeSelector": {
-            "description": "Node selector. The ISC image is published for linux/amd64 only, so the pods (and the `helm test` pod) only run on amd64 nodes. With a multi-architecture image, set `kubernetes.io/arch: null` to remove the constraint.",
-            "type": "object",
-            "properties": {
-                "kubernetes.io/arch": {
-                    "type": "string"
-                }
-            }
+            "description": "Node selector of the pods and of the `helm test` pod. When named runs the ISC image (a repository ending in `internetsystemsconsortium/bind9`, as with `imageProvider: upstream`), published for linux/amd64 only, the chart adds `kubernetes.io/arch: amd64` unless this map sets `kubernetes.io/arch`. The UnxWares image runs on amd64 and arm64.",
+            "type": "object"
         },
         "persistence": {
             "type": "object",

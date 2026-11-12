@@ -8,14 +8,14 @@ release:
   name: my-dns
   namespace: dns-system
 chart:
-  appVersion: "9.20"
+  appVersion: "9.20.30"
 tests:
-  - it: runs the ISC image tagged with the chart appVersion
+  - it: runs the UnxWares image tagged with the chart appVersion (the BIND release)
     template: deployment.yaml
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: docker.io/internetsystemsconsortium/bind9:9.20
+          value: ghcr.io/unxwares/bind9:9.20.30
       - equal:
           path: spec.template.spec.containers[0].imagePullPolicy
           value: IfNotPresent
@@ -23,7 +23,27 @@ tests:
   - it: follows the chart appVersion when the tag is empty
     template: deployment.yaml
     chart:
-      appVersion: "9.22"
+      appVersion: "9.22.1"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/unxwares/bind9:9.22.1
+
+  - it: switches to the ISC image, tagged with the branch of the appVersion, with imageProvider upstream
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/internetsystemsconsortium/bind9:9.20
+
+  - it: follows the branch of the chart appVersion for the ISC image
+    template: deployment.yaml
+    chart:
+      appVersion: "9.22.1"
+    set:
+      imageProvider: upstream
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
@@ -32,6 +52,7 @@ tests:
   - it: keeps a numeric-looking tag as written (9.21, the ISC development branch)
     template: deployment.yaml
     set:
+      imageProvider: upstream
       image.tag: "9.21"
     asserts:
       - equal:
@@ -42,17 +63,27 @@ tests:
     template: deployment.yaml
     set:
       image:
-        tag: "9.20"
+        tag: "9.20.30"
         digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: docker.io/internetsystemsconsortium/bind9@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          value: ghcr.io/unxwares/bind9@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 
-  - it: runs named from the ISC image whatever imageProvider says
+  - it: lets an explicit repository override the provider, tagged with the appVersion
     template: deployment.yaml
     set:
       imageProvider: upstream
+      image.repository: registry.example.com/mirror/bind9
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/mirror/bind9:9.20.30
+
+  - it: tags an explicit ISC repository with the branch (values written for the previous default)
+    template: deployment.yaml
+    set:
+      image.repository: docker.io/internetsystemsconsortium/bind9
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
@@ -140,4 +171,13 @@ tests:
     asserts:
       - equal:
           path: spec.containers[0].image
-          value: docker.io/internetsystemsconsortium/bind9@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          value: ghcr.io/unxwares/bind9@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+  - it: runs the helm test pod with the ISC image with imageProvider upstream
+    template: tests/test-dns.yaml
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.containers[0].image
+          value: docker.io/internetsystemsconsortium/bind9:9.20

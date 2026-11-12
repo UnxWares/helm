@@ -54,7 +54,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "bind9.image" (dict "image" .Values.image "default" .Chart.AppVersion) | quote }}
+          image: {{ include "bind9.namedImage" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           workingDir: /var/cache/bind
           command: ["/usr/sbin/named"]
@@ -187,9 +187,9 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
 
-      {{- with .Values.nodeSelector }}
+      {{- with include "bind9.nodeSelector" . }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
+        {{- . | nindent 8 }}
       {{- end }}
       {{- with .Values.affinity }}
       affinity:

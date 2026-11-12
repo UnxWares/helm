@@ -1,17 +1,21 @@
 # Bind9 Helm Chart
 
-![Version: 2026.11.4](https://img.shields.io/badge/Version-2026.11.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 9.20](https://img.shields.io/badge/AppVersion-9.20-informational?style=flat-square)
+![Version: 2026.11.5](https://img.shields.io/badge/Version-2026.11.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 9.20.30](https://img.shields.io/badge/AppVersion-9.20.30-informational?style=flat-square)
 [![UWOSC: maintained](https://helm.unxwares.studio/assets/uwosc/mini-maintained.svg)](https://helm.unxwares.studio/#open-source)
 
 [ISC BIND 9](https://www.isc.org/bind/) is the reference implementation of the DNS protocol: it serves as an
-authoritative server, a recursive resolver or both. This chart runs `named` from the official
-`internetsystemsconsortium/bind9` image as a Deployment, configured with your own `named.conf` and zone files, with
-an optional Prometheus exporter (`bind_exporter`, built by UnxWares by default). The chart is maintained by UnxWares.
+authoritative server, a recursive resolver or both. This chart runs `named` as a Deployment, configured with your own
+`named.conf` and zone files, from a BIND image built by UnxWares from the signed ISC release (`ghcr.io/unxwares/bind9`)
+or from the official `internetsystemsconsortium/bind9` image, with an optional Prometheus exporter (`bind_exporter`,
+built by UnxWares by default). The chart is maintained by UnxWares.
 
 ## Features
 
 - Authoritative or recursive DNS, configured with your own `named.conf` (`bind.namedConf`) and zone files
   (`bind.zones`). The default configuration is authoritative only: no recursion, no zone transfers, version hidden.
+- named from `ghcr.io/unxwares/bind9` by default: BIND built from the ISC release tarball (SHA-256 and OpenPGP
+  signature checked) with the build options, paths and user of the official image, rebuilt twice a week on current
+  Alpine packages, for amd64 and arm64. The official ISC image stays available (`imageProvider: upstream`).
 - Hardened: named runs as the `bind` user (uid 53) from the start, without any capability; the pods meet the
   `restricted` Pod Security Standard. Read-only root filesystem, seccomp `RuntimeDefault`, no service account token.
 - Pods restart on their own when `named.conf` or a zone file changes (checksum annotation).
@@ -57,37 +61,52 @@ The exporter reads named's statistics channel on `127.0.0.1:8053` inside the pod
 
 ## Images
 
-| Container | Default image | Values |
-|-----------|---------------|--------|
-| `bind9` (and the `helm test` pod) | `docker.io/internetsystemsconsortium/bind9:9.20` (the tag defaults to the chart `appVersion`) | `image.repository`, `image.tag`, `image.digest` |
-| `bind9-exporter` (`metrics.enabled`) | `ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f` (`imageProvider: unxwares`) or `docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf` (`imageProvider: upstream`) | `imageProvider`, `metrics.image.repository`, `metrics.image.tag`, `metrics.image.digest` |
+| Container | `imageProvider: unxwares` (default) | `imageProvider: upstream` | Values |
+|-----------|-------------------------------------|---------------------------|--------|
+| `bind9` (and the `helm test` pod) | `ghcr.io/unxwares/bind9:9.20.30` | `docker.io/internetsystemsconsortium/bind9:9.20` | `image.repository`, `image.tag`, `image.digest` |
+| `bind9-exporter` (`metrics.enabled`) | `ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f` | `docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf` | `metrics.image.repository`, `metrics.image.tag`, `metrics.image.digest` |
 
-`imageProvider` only selects the exporter image: there is no UnxWares build of BIND, named always runs the official
-ISC image.
+`imageProvider` selects both images; `image.repository` or `metrics.image.repository` replaces one of them (a mirror,
+your own build). An empty `image.tag` follows the image: the chart `appVersion` (`9.20.30`, the BIND release) for
+the UnxWares image, its branch (`9.20`) for the ISC image (any repository ending in
+`internetsystemsconsortium/bind9`).
 
-- ISC publishes one tag per maintained branch (`9.18`, `9.20`, `9.21`) and moves it to each new patch release.
-  `9.20` is the current stable branch, `9.21` the development branch.
-- `imageProvider: unxwares` (default): bind_exporter built by UnxWares from its sources, the `master` branch at commit
-  `bafd56f` (62 commits after `v0.8.0`), with Go 1.27 and current `golang.org/x` modules (proposed upstream in
-  [prometheus-community/bind_exporter#301](https://github.com/prometheus-community/bind_exporter/pull/301)), as a
-  static binary on a distroless base, running as `nobody`. It is rebuilt twice a week, scanned and signed; see
-  [images/](https://github.com/UnxWares/helm/tree/main/images).
-- `imageProvider: upstream`: the Prometheus community image, its `master` build of 2026-10-14 pinned by digest.
-  `v0.8.0`, its latest release (November 2024), was built with an old Go toolchain: set `imageProvider: upstream` and
-  `metrics.image.tag: v0.8.0` to use it.
-- The ISC image is published for `linux/amd64` only, so `nodeSelector` defaults to `kubernetes.io/arch: amd64` (see
-  [Requirements](#requirements)); the exporter images are multi-architecture.
+- `imageProvider: unxwares` (default):
+  - named: BIND built by UnxWares from the ISC release tarball, checked against its SHA-256 and the OpenPGP signature
+    of an ISC code-signing key. It has the base (Alpine 3.24), the build options (DNS over TLS and HTTPS, GeoIP2,
+    LMDB, GSS-TSIG, dnstap, JSON and XML statistics), the paths (`/etc/bind`, `/var/cache/bind`, `/var/lib/bind`,
+    `/run/named`), the ports and the user (`bind`, uid 53) of the official image, so the same `named.conf` and
+    volumes work with both. ISC rebuilds its image at each BIND release; this one is rebuilt twice a week on the
+    current Alpine packages, and sooner when the CVE watch finds a critical or high vulnerability that a rebuild
+    fixes. It is published for `linux/amd64` and `linux/arm64`, scanned and signed; see
+    [images/](https://github.com/UnxWares/helm/tree/main/images).
+  - exporter: bind_exporter built by UnxWares from its sources, the `master` branch at commit `bafd56f` (62 commits
+    after `v0.8.0`), with Go 1.27 and current `golang.org/x` modules (proposed upstream in
+    [prometheus-community/bind_exporter#301](https://github.com/prometheus-community/bind_exporter/pull/301)), as a
+    static binary on a distroless base, running as `nobody`. It is rebuilt twice a week, scanned and signed.
+- `imageProvider: upstream`:
+  - named: the official ISC image. ISC publishes one tag per maintained branch (`9.18`, `9.20`, `9.21`) and moves it
+    to each new patch release: `9.20` is the current stable branch, `9.21` the development branch. It is published
+    for `linux/amd64` only: the chart then keeps the pods on amd64 nodes (see [Scheduling](#scheduling)).
+  - exporter: the Prometheus community image, its `master` build of 2026-10-14 pinned by digest. `v0.8.0`, its latest
+    release (November 2024), was built with an old Go toolchain: set `metrics.image.tag: v0.8.0` to use it.
+
+To keep the ISC image for named only, set `image.repository: docker.io/internetsystemsconsortium/bind9`: the tag
+and the node selector follow.
 
 To pin an image, set its `digest`: it takes precedence over the tag. Read the current digest of a tag with:
 
 ```bash
-docker buildx imagetools inspect docker.io/internetsystemsconsortium/bind9:9.20   # prints "Digest: sha256:..."
+docker buildx imagetools inspect ghcr.io/unxwares/bind9:9.20.30   # prints "Digest: sha256:..."
 ```
 
 ```yaml
+imageProvider: upstream
 image:
-  digest: sha256:66092edb53c081fa11b1fa8219e99065b0f497cb38f568ba789702a4c10e2590   # 9.20 on 2026-10-21
+  digest: sha256:66092edb53c081fa11b1fa8219e99065b0f497cb38f568ba789702a4c10e2590   # ISC 9.20 on 2026-10-21
 ```
+
+The UnxWares tags also exist per build (`9.20.30-<YYYYMMDD>`): `image.tag` set to one of them pins that build.
 
 Known vulnerabilities of the images the charts of this repository can deploy are tracked in the
 [CVE watch issue](https://github.com/UnxWares/helm/issues?q=is%3Aissue+is%3Aopen+label%3Acve-watch).
@@ -99,9 +118,9 @@ Kubernetes: `>=1.27.0-0`
 - **Kubernetes 1.27 to 1.29**: supported; the preStop hook (see
   [Shutdown and rolling updates](#shutdown-and-rolling-updates)) runs `sleep` from the image there, and uses the
   `sleep` lifecycle action from 1.30, where that action is enabled by default.
-- **Node architecture**: `linux/amd64`. The ISC image has no arm64 build: the default `nodeSelector`
-  (`kubernetes.io/arch: amd64`) keeps the pods on amd64 nodes, so a cluster needs at least one (see
-  [Scheduling](#scheduling)).
+- **Node architecture**: `linux/amd64` or `linux/arm64` with the UnxWares image. The ISC image
+  (`imageProvider: upstream`) has no arm64 build: the chart then keeps the pods on amd64 nodes, so the cluster needs
+  at least one (see [Scheduling](#scheduling)).
 - **Pod sysctl**: the pods set `net.ipv4.ip_unprivileged_port_start=53`, one of the sysctls Kubernetes considers safe
   (allowed by default, and by the `restricted` Pod Security Standard). A policy engine that forbids every sysctl
   rejects the pods: see [Security](#security) for the alternatives.
@@ -316,8 +335,7 @@ podDisruptionBudget:
 ### Scheduling
 
 ```yaml
-nodeSelector:
-  kubernetes.io/arch: amd64
+nodeSelector: {}
 topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: kubernetes.io/hostname
@@ -331,16 +349,10 @@ tolerations: []
 affinity: {}
 ```
 
-`nodeSelector` defaults to `kubernetes.io/arch: amd64` because the ISC image is amd64 only; it also applies to the
-`helm test` pod. Your own keys are added to it (Helm merges the maps). If you run named from a multi-architecture
-image, remove the constraint with `kubernetes.io/arch: null`:
-
-```yaml
-image:
-  repository: registry.example.com/bind9   # a multi-architecture build
-nodeSelector:
-  kubernetes.io/arch: null
-```
+`nodeSelector` is empty by default and also applies to the `helm test` pod. The UnxWares image runs on amd64 and
+arm64 nodes. When named runs the ISC image (`imageProvider: upstream`, or an `image.repository` ending in
+`internetsystemsconsortium/bind9`), which is published for amd64 only, the chart adds `kubernetes.io/arch: amd64`
+to your node selector; setting `kubernetes.io/arch` yourself replaces it (`null` removes it).
 
 The chart sets no topology spread constraint by default.
 
@@ -367,8 +379,8 @@ named would already be gone and the queries sent to it meanwhile would be refuse
 answering for `preStopSleepSeconds` (5 s) before it gets SIGTERM; the exporter stops at once.
 
 - On Kubernetes 1.30 and later the hook is the `sleep` lifecycle action. On older clusters, where that action is off
-  by default, the chart renders an `exec` hook that runs `sleep` from the image instead (the ISC image has it; check
-  a custom `image.repository` does too). The chart picks the form from the Kubernetes version Helm reports: with
+  by default, the chart renders an `exec` hook that runs `sleep` from the image instead (both images have it; check
+  that a custom `image.repository` does too). The chart picks the form from the Kubernetes version Helm reports: with
   `helm template`, pass `--kube-version`.
 - `terminationGracePeriodSeconds` covers the sleep and the stop of named after SIGTERM: the chart refuses a value
   that is not greater than `preStopSleepSeconds`.
@@ -601,7 +613,9 @@ Caveats:
   and never open recursion to the Internet.
 - `adminService.type: LoadBalancer` or `NodePort` publishes the metrics and rndc ports: restrict them with the
   NetworkPolicy and named's `controls` statement.
-- The ISC image tag moves with each patch release: pin `image.digest` if you need reproducible deployments.
+- The default tags move: the UnxWares tag (`9.20.30`) to each rebuild on current Alpine packages, the ISC tag
+  (`9.20`) to each patch release. Pin `image.digest`, or the tag of one UnxWares build, if you need reproducible
+  deployments.
 
 ## Testing
 
@@ -614,18 +628,20 @@ On every pull request, the repository CI checks this chart with:
 - `ah lint` (Artifact Hub metadata).
 
 When the pull request changes the chart, `ct lint` (chart-testing, including the version bump check) and `ct install`
-also run: the chart is installed on a kind cluster with `ci/default-values.yaml` (two zones, the metrics sidecar and
-the NetworkPolicy enabled) and with `ci/upstream-values.yaml` (the Prometheus community exporter), its pods must
-become ready, then `helm test` runs.
+also run: the chart is installed on a kind cluster with `ci/default-values.yaml` (the UnxWares images, two zones, the
+metrics sidecar and the NetworkPolicy enabled) and with `ci/upstream-values.yaml` (the ISC image and the Prometheus
+community exporter), its pods must become ready, then `helm test` runs. When the pull request also changes
+`images/bind9`, that image is built and loaded into kind under its published name first.
 
 The test pod `<fullname>-test-dns` (bind9 image, uid 53, read-only root filesystem) queries the Service for
 `version.bind TXT CH`, once over UDP and once over TCP. It passes when named answers both, whatever the response
 code; it does not check the content of your zones.
 
 The end-to-end test (`.github/workflows/e2e.yaml`, script `.github/scripts/bind9-e2e.sh`) runs on pull requests that
-touch the chart or the exporter image, on every push to main and every week. It builds the exporter image of the
-commit, installs the chart with `ci/default-values.yaml` in a namespace that enforces the `restricted` Pod Security
-Standard, runs `helm test`, then checks from other pods:
+touch the chart, the BIND image or the exporter image, on every push to main and every week. It builds the BIND and
+exporter images of the commit, installs the chart on them with `ci/default-values.yaml` in a namespace that enforces
+the `restricted` Pod Security Standard, runs `helm test`, then checks from other pods (running the same BIND image,
+for `dig`):
 
 - the A and AAAA records over UDP and TCP, the MX, TXT, CNAME and SOA records, the PTR record of the second zone,
   with the authoritative flag, and NXDOMAIN for an unknown name;
@@ -636,7 +652,8 @@ Standard, runs `helm test`, then checks from other pods:
 - the exporter reports `bind_up 1` and counts the queries made by the test, for a pod allowed by
   `networkPolicy.adminAllowedFrom`; a pod that is not allowed cannot reach the metrics but still gets DNS answers.
 
-It does not test secondary zones, dynamic updates, DNSSEC or persistence.
+It does not test secondary zones, dynamic updates, DNSSEC or persistence, and it does not run the ISC image (only
+`ct install` and `helm test` do).
 
 Run the test after an install:
 
@@ -647,10 +664,11 @@ helm test my-dns -n dns-system --logs
 Unit tests (`tests/*_test.yaml`, [helm-unittest](https://github.com/helm-unittest/helm-unittest), run by
 `.github/workflows/unit.yaml` on pull requests, every push to main and every Tuesday) render the chart without a
 cluster and check the security contexts of named, the exporter and the test pod (uid 53, the port sysctl, no
-capability, with both exporter images), the image selection (ISC tag, digest, exporter provider, repository, tag and
-digest), `named.conf` and the zone files, persistence and the `Recreate` strategy, the DNS and admin Services and
-their ports, the ServiceMonitor, the NetworkPolicy, the HPA and PDB, the preStop hook on both sides of Kubernetes 1.30
-and its grace period check, the release notes, and the examples of this README.
+capability, with both exporter images), the image selection (UnxWares and ISC images and their tags, repository,
+digest, exporter provider, repository, tag and digest), the node selector of each image, `named.conf` and the zone
+files, persistence and the `Recreate` strategy, the DNS and admin Services and their ports, the ServiceMonitor, the
+NetworkPolicy, the HPA and PDB, the preStop hook on both sides of Kubernetes 1.30 and its grace period check, the
+release notes, and the examples of this README.
 
 ## Operations
 
@@ -672,6 +690,19 @@ kubectl exec -n dns-system deploy/my-dns-bind9 -c bind9 -- cat /etc/bind/named.c
 ```
 
 ## Upgrading
+
+### To 2026.11.5
+
+- **Default image**: named now runs `ghcr.io/unxwares/bind9:9.20.30`, BIND built by UnxWares with the build options,
+  paths and user (`bind`, uid 53) of the ISC image: `named.conf`, the zone files and the volumes work unchanged. To
+  keep the ISC image for named, set `image.repository: docker.io/internetsystemsconsortium/bind9`; to go back to both
+  official images, set `imageProvider: upstream`. Values that already set `image.repository` to the ISC image (the
+  previous default, written in full) keep it, tagged `9.20`.
+- **appVersion** is now the BIND release (`9.20.30`) instead of the branch (`9.20`): the `app.kubernetes.io/version`
+  label changes with it.
+- **Node architecture**: `nodeSelector` is now empty by default; the chart adds `kubernetes.io/arch: amd64` itself
+  when named runs the ISC image. Pods running the UnxWares image may now be scheduled on arm64 nodes. A
+  `kubernetes.io/arch: null` key in your values, which removed the previous default, is left out.
 
 ### To 2026.11.3
 
@@ -735,10 +766,10 @@ kubectl logs -n dns-system deploy/my-dns-bind9 -c bind9 --previous
 - **`permission denied` on files under /var/lib/bind**: the files must be readable/writable by uid or gid 53.
 - **`permission denied` or `read-only file system` when named writes a zone or a journal**: the zone file is under
   `/etc/bind`, which is read-only. Move the zones that named writes to `/var/lib/bind`.
-- **`exec format error`**: the pod runs on an arm64 node and the ISC image is amd64 only. Keep the default
-  `nodeSelector` (`kubernetes.io/arch: amd64`).
-- **Pod `Pending` with no amd64 node**: the default `nodeSelector` needs an amd64 node, see
-  [Requirements](#requirements).
+- **`exec format error`**: the pod runs the ISC image (amd64 only) on an arm64 node. Do not set
+  `nodeSelector.kubernetes.io/arch` to another architecture with the ISC image, or use the UnxWares image.
+- **Pod `Pending` with no amd64 node**: with the ISC image the pods need an amd64 node, see
+  [Requirements](#requirements); the UnxWares image also runs on arm64.
 - **`forbidden sysctl` or the pod is rejected by a policy engine**: allow `net.ipv4.ip_unprivileged_port_start`, or
   use the root mode of [Security](#security).
 - **named runs but does not answer, `creating IPv4 interface eth0 failed` in the logs**: named could not bind port
@@ -788,9 +819,9 @@ kubectl delete pvc -n dns-system my-dns-bind9-pvc
 | fullnameOverride | string | `""` | Override the full resource names. |
 | image.digest | string | `""` | Image digest (`sha256:...`). When set, it takes precedence over the tag. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
-| image.repository | string | `"docker.io/internetsystemsconsortium/bind9"` | Bind9 image repository (ISC official image). |
-| image.tag | string | `""` | Image tag (defaults to the chart appVersion, the current ISC stable branch). `9.21` is ISC's development branch. The ISC image is published for linux/amd64 only: see `nodeSelector`. |
-| imageProvider | string | `"unxwares"` | Exporter image used when `metrics.image.repository` is empty. `unxwares`: `ghcr.io/unxwares/bind-exporter`, bind_exporter built by UnxWares from its sources (master branch, current Go toolchain and golang.org/x modules) on a distroless base, rebuilt twice a week (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the Prometheus community image `docker.io/prometheuscommunity/bind-exporter`. named always runs the ISC image. |
+| image.repository | string | `""` | Bind9 image repository. Empty: `ghcr.io/unxwares/bind9` or `docker.io/internetsystemsconsortium/bind9`, from `imageProvider`. |
+| image.tag | string | `""` | Image tag. Empty: the chart appVersion (`9.20.30`, the BIND release) for the UnxWares image, its branch (`9.20`, which ISC moves to each patch release) for the ISC image (a repository ending in `internetsystemsconsortium/bind9`). `9.21` is ISC's development branch. |
+| imageProvider | string | `"unxwares"` | Images used when `image.repository` and `metrics.image.repository` are empty. `unxwares`: `ghcr.io/unxwares/bind9`, BIND built by UnxWares from the signed ISC release tarball with the build options, paths and user (`bind`, uid 53) of the official image, and `ghcr.io/unxwares/bind-exporter`, bind_exporter built from its sources (master branch, current Go toolchain and golang.org/x modules) on a distroless base, both rebuilt twice a week on current bases and published for amd64 and arm64 (https://github.com/UnxWares/helm/tree/main/images). `upstream`: the official ISC image `docker.io/internetsystemsconsortium/bind9` (linux/amd64 only, see `nodeSelector`) and the Prometheus community image `docker.io/prometheuscommunity/bind-exporter`. |
 | imagePullSecrets | list | `[]` | Secrets for pulling images from a private registry. |
 | livenessProbe | object | `{"exec":{"command":["dig","+time=2","+tries=1","@127.0.0.1","version.bind","txt","chaos"]},"initialDelaySeconds":10,"periodSeconds":15,"timeoutSeconds":5}` | Liveness probe (dig exits 0 as soon as the server answers, whatever the answer). |
 | metrics.enabled | bool | `false` | Run the Prometheus bind_exporter sidecar (reads the statistics channel on 127.0.0.1:8053). |
@@ -809,7 +840,7 @@ kubectl delete pvc -n dns-system my-dns-bind9-pvc
 | nameOverride | string | `""` | Override the chart name. |
 | networkPolicy.adminAllowedFrom | list | `[]` | Peers allowed to reach rndc and metrics (e.g. your Prometheus namespace). |
 | networkPolicy.enabled | bool | `false` | Create a NetworkPolicy: DNS stays open, rndc and metrics only accept the peers below. |
-| nodeSelector | object | `{"kubernetes.io/arch":"amd64"}` | Node selector. The ISC image is published for linux/amd64 only, so the pods (and the `helm test` pod) only run on amd64 nodes. With a multi-architecture image, set `kubernetes.io/arch: null` to remove the constraint. |
+| nodeSelector | object | `{}` | Node selector of the pods and of the `helm test` pod. When named runs the ISC image (a repository ending in `internetsystemsconsortium/bind9`, as with `imageProvider: upstream`), published for linux/amd64 only, the chart adds `kubernetes.io/arch: amd64` unless this map sets `kubernetes.io/arch`. The UnxWares image runs on amd64 and arm64. |
 | persistence.accessMode | string | `"ReadWriteOnce"` | Access mode. |
 | persistence.emptyDirSizeLimit | string | `""` | Size limit of the emptyDir used when persistence is disabled. |
 | persistence.enabled | bool | `false` | Persist /var/lib/bind in a PVC. Without it an emptyDir is used. |

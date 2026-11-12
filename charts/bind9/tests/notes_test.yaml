@@ -5,12 +5,12 @@ release:
   name: my-dns
   namespace: dns-system
 chart:
-  appVersion: "9.20"
+  appVersion: "9.20.30"
 tests:
   - it: shows the image actually deployed and the DNS Service
     asserts:
       - matchRegexRaw:
-          pattern: 'Bind9 is deployed \(docker\.io/internetsystemsconsortium/bind9:9\.20\)\.'
+          pattern: 'Bind9 is deployed \(ghcr\.io/unxwares/bind9:9\.20\.30\)\.'
       - matchRegexRaw:
           pattern: 'DNS service: my-dns-bind9\.dns-system\.svc \(ClusterIP, ports 53/udp and 53/tcp\)'
       - notMatchRegexRaw:
@@ -21,7 +21,14 @@ tests:
       image.digest: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     asserts:
       - matchRegexRaw:
-          pattern: 'Bind9 is deployed \(docker\.io/internetsystemsconsortium/bind9@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\)\.'
+          pattern: 'Bind9 is deployed \(ghcr\.io/unxwares/bind9@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\)\.'
+
+  - it: shows the ISC image with imageProvider upstream
+    set:
+      imageProvider: upstream
+    asserts:
+      - matchRegexRaw:
+          pattern: 'Bind9 is deployed \(docker\.io/internetsystemsconsortium/bind9:9\.20\)\.'
 
   - it: lists the admin Service ports that exist
     set:

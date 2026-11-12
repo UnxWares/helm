@@ -157,15 +157,61 @@ tests:
           path: spec.template.spec.containers[1].ports[0].containerPort
           value: 9200
 
-  - it: keeps the pods on amd64 nodes by default (the ISC image is amd64 only)
+  - it: sets no node selector by default (the UnxWares image is published for amd64 and arm64)
     template: deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.nodeSelector
+
+  - it: keeps the pods on amd64 nodes with the ISC image (amd64 only)
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
     asserts:
       - equal:
           path: spec.template.spec.nodeSelector
           value:
             kubernetes.io/arch: amd64
 
-  - it: removes the architecture constraint with kubernetes.io/arch null and adds other keys
+  - it: keeps the amd64 constraint for an ISC repository set explicitly, and adds the keys of nodeSelector
+    template: deployment.yaml
+    set:
+      image.repository: registry.example.com/mirror/internetsystemsconsortium/bind9
+      nodeSelector:
+        dns: "true"
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: amd64
+            dns: "true"
+
+  - it: lets nodeSelector set kubernetes.io/arch itself with the ISC image
+    template: deployment.yaml
+    set:
+      imageProvider: upstream
+      nodeSelector:
+        kubernetes.io/arch: arm64
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: arm64
+
+  - it: uses nodeSelector as is with the UnxWares image
+    template: deployment.yaml
+    set:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+        dns: "true"
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/arch: arm64
+            dns: "true"
+
+  - it: leaves out a key set to null (values written for the previous amd64 default)
     template: deployment.yaml
     set:
       nodeSelector:

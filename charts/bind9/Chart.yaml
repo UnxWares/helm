@@ -3,8 +3,8 @@ name: bind9
 description: A flexible and production-ready Helm chart for running ISC Bind9 DNS server on Kubernetes.
 type: application
 
-version: 2026.11.4
-appVersion: "9.20"
+version: 2026.11.5
+appVersion: "9.20.30"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/UnxWares/helm/tree/main/charts/bind9
 icon: https://avatars.githubusercontent.com/u/3965132?v=4
@@ -13,6 +13,7 @@ sources:
   - https://gitlab.isc.org/isc-projects/bind9
   - https://github.com/isc-projects/bind9-docker
   - https://hub.docker.com/r/internetsystemsconsortium/bind9
+  - https://github.com/UnxWares/helm/tree/main/images/bind9
   - https://github.com/prometheus-community/bind_exporter
   - https://github.com/UnxWares/helm/tree/main/charts/bind9
 
@@ -48,13 +49,19 @@ annotations:
       url: https://github.com/UnxWares/helm/issues
   artifacthub.io/images: |
     - name: bind9
-      image: docker.io/internetsystemsconsortium/bind9:9.20
+      image: ghcr.io/unxwares/bind9:9.20.30
     - name: bind-exporter
       image: ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f
-  artifacthub.io/containsSecurityUpdates: "false"
+  artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/changes: |
+    - kind: security
+      description: "named runs by default on ghcr.io/unxwares/bind9:9.20.30 (imageProvider: unxwares): BIND 9.20.30 built by UnxWares from the ISC release tarball, checked against its SHA-256 and ISC's OpenPGP signature, with the build options, paths and user (bind, uid 53) of the official image, rebuilt twice a week on the current Alpine packages. It replaces docker.io/internetsystemsconsortium/bind9:9.20, whose Alpine packages carry 18 fixable high vulnerabilities (the image is only rebuilt at each BIND release); imageProvider: upstream keeps it."
     - kind: changed
-      description: "README: the UnxWares Open Source & Community (UWOSC) badge, the chart being maintained by UnxWares. The templates and values are unchanged."
+      description: "imageProvider now also selects the named image (and the helm test pod image). image.repository is empty by default and an empty image.tag follows the provider: the BIND release (9.20.30, the new appVersion) for the UnxWares image, the branch (9.20) for the ISC image."
+    - kind: changed
+      description: "nodeSelector is empty by default: the UnxWares image is published for amd64 and arm64. When named runs the ISC image (amd64 only), the chart adds kubernetes.io/arch: amd64 itself, unless nodeSelector sets that key."
+    - kind: changed
+      description: "Tests: the end-to-end test runs named (and its client pods) on the BIND image of the commit, built in CI; chart-testing installs ci/default-values.yaml on the UnxWares images and ci/upstream-values.yaml on the official ones; unit tests cover the image, tag and node selector of both providers."
   artifacthub.io/signKey: |
     fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
     url: https://helm.unxwares.studio/pgp-public-key.asc

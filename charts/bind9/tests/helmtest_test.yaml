@@ -53,6 +53,8 @@ tests:
     set:
       imagePullSecrets:
         - name: registry-credentials
+      nodeSelector:
+        dns: "true"
       tolerations:
         - key: dedicated
           operator: Equal
@@ -66,7 +68,16 @@ tests:
       - equal:
           path: spec.nodeSelector
           value:
-            kubernetes.io/arch: amd64
+            dns: "true"
       - equal:
           path: spec.tolerations[0].value
           value: dns
+
+  - it: keeps the test pod on amd64 nodes with the ISC image, like named
+    set:
+      imageProvider: upstream
+    asserts:
+      - equal:
+          path: spec.nodeSelector
+          value:
+            kubernetes.io/arch: amd64
