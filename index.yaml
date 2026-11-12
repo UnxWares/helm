@@ -1920,6 +1920,62 @@ entries:
       artifacthub.io/category: skip-prediction
       artifacthub.io/changes: |
         - kind: changed
+          description: "FossFLOW 1.0.6: default image ghcr.io/unxwares/fossflow:1.0.6. Same ports, paths, environment variables and storage format: the diagrams are kept."
+        - kind: security
+          description: "The upstream image (imageProvider: upstream) defaults to master-b06baad, release v1.0.6, with updated npm dependencies and Alpine packages and without npm (Abrar74774/FossFLOW#24, contributed by UnxWares)."
+        - kind: security
+          description: "The UnxWares image no longer installs the uuid package the backend declares but never uses (CVE-2026-41907). Its other dependencies are unchanged: the updates it applied as a patch are now part of FossFLOW 1.0.6."
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/displayName: FossFLOW
+      artifacthub.io/images: |
+        - name: fossflow
+          image: ghcr.io/unxwares/fossflow:1.0.6
+      artifacthub.io/license: MIT
+      artifacthub.io/links: |
+        - name: Chart source
+          url: https://github.com/UnxWares/helm/tree/main/charts/fossflow
+        - name: FossFLOW (maintained continuation)
+          url: https://github.com/Abrar74774/FossFLOW
+        - name: Support
+          url: https://github.com/UnxWares/helm/issues
+      artifacthub.io/signKey: |
+        fingerprint: 7902E52EA435EF27C6432E5378D6B532C599DA9B
+        url: https://helm.unxwares.studio/pgp-public-key.asc
+    apiVersion: v2
+    appVersion: 1.0.6
+    created: "2026-11-12T14:00:41.776013635Z"
+    description: FossFLOW, an open source web app to draw isometric infrastructure
+      diagrams, with optional server-side storage of the diagrams.
+    digest: 9e3283ddfe4083886f0be1b602078844a6dd91f0f62c1ba530009b6ca399f608
+    home: https://github.com/UnxWares/helm/tree/main/charts/fossflow
+    icon: https://raw.githubusercontent.com/Abrar74774/FossFLOW/v1.0.6/packages/fossflow-app/public/logo512.png
+    keywords:
+    - flow
+    - diagram
+    - pwa
+    - isometric
+    - open-source
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: david.gheghea@unxwares.com
+      name: David Gheghea
+      url: https://github.com/UnxWares
+    - email: baptiste.gosselin@unxwares.com
+      name: Baptiste Gosselin
+      url: https://github.com/UnxWares
+    name: fossflow
+    sources:
+    - https://github.com/Abrar74774/FossFLOW
+    - https://hub.docker.com/r/abrar74774/fossflow
+    - https://github.com/UnxWares/helm/tree/main/charts/fossflow
+    type: application
+    urls:
+    - https://github.com/UnxWares/helm/releases/download/fossflow-2026.11.5/fossflow-2026.11.5.tgz
+    version: 2026.11.5
+  - annotations:
+      artifacthub.io/category: skip-prediction
+      artifacthub.io/changes: |
+        - kind: changed
           description: "README: the UnxWares Open Source & Community (UWOSC) badge, the chart being maintained by UnxWares. The templates and values are unchanged."
       artifacthub.io/containsSecurityUpdates: "false"
       artifacthub.io/displayName: FossFLOW
@@ -5812,4 +5868,4 @@ entries:
     urls:
     - https://github.com/UnxWares/helm/releases/download/taiga-2026.2.2/taiga-2026.2.2.tgz
     version: 2026.2.2
-generated: "2026-11-02T23:19:41.890205699Z"
+generated: "2026-11-12T14:00:41.776262057Z"
