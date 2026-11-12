@@ -337,7 +337,7 @@ httpRoute:
             type: PathPrefix
             value: /
 
-# -- Resource requests and limits (Kener recommends 1 vCPU / 1 GiB for real workloads). Each check of an API, Ping, TCP or GameDig monitor runs its eval code (the built-in one when none is set) in a child process of the Kener container, up to 2 at a time, each about 60 MiB plus up to 256 MB for the eval itself: keep room for them in the memory limit.
+# -- Resource requests and limits (Kener recommends 1 vCPU / 1 GiB for real workloads). Each check of an API, Ping, TCP or GameDig monitor runs its eval code (the built-in one when none is set) in a child process of the Kener container, up to 2 at a time, each about 60 MiB plus what the eval allocates. Kener 4.2.1 does not hold that process to its 256 MB eval limit: an eval that allocates without bound gets the container OOM-killed whatever the limit (see Monitor eval code in the README).
 resources:  # @schema skipProperties:true
   requests:
     cpu: 100m
