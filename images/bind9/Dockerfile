@@ -11,7 +11,8 @@ ARG VERSION=9.20.30
 ARG SOURCE_SHA256=9e1443a40a72a30272cbc3196d020a6b2e26937111c83e59e101e82e1e3b4fef
 ARG MAKE_JOBS=""
 
-RUN apk add --no-cache build-base pkgconf gpgv fstrm-dev jemalloc-dev json-c-dev krb5-dev libcap-dev libidn2-dev \
+# perl generates bind.keys.h (the built-in trust anchors) and the option lists of doc/misc.
+RUN apk add --no-cache build-base perl pkgconf gpgv fstrm-dev jemalloc-dev json-c-dev krb5-dev libcap-dev libidn2-dev \
         libmaxminddb-dev libuv-dev libxml2-dev lmdb-dev nghttp2-dev openssl-dev protobuf-c-dev userspace-rcu-dev \
         zlib-dev
 
