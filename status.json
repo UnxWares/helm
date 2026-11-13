@@ -347,12 +347,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 0,
-      "high": 0,
-      "low": 0,
-      "medium": 1,
-      "open_fixable": 0,
-      "total": 1
+      "fixable": 38,
+      "high": 38,
+      "low": 2,
+      "medium": 13,
+      "open_fixable": 38,
+      "total": 53
      },
      "image": "ghcr.io/unxwares/cloudreve:4.19.1",
      "name": "cloudreve",
@@ -1761,12 +1761,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 0,
-      "high": 0,
-      "low": 0,
-      "medium": 0,
-      "open_fixable": 0,
-      "total": 0
+      "fixable": 76,
+      "high": 76,
+      "low": 4,
+      "medium": 24,
+      "open_fixable": 76,
+      "total": 104
      },
      "image": "ghcr.io/unxwares/postgresql-client:18",
      "name": "postgresql-client",
@@ -2065,12 +2065,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 0,
-      "high": 0,
-      "low": 0,
-      "medium": 0,
-      "open_fixable": 0,
-      "total": 0
+      "fixable": 38,
+      "high": 38,
+      "low": 2,
+      "medium": 12,
+      "open_fixable": 38,
+      "total": 52
      },
      "image": "ghcr.io/unxwares/pdns-auth:5.1.5",
      "name": "pdns-auth",
@@ -2097,12 +2097,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 0,
-      "high": 0,
-      "low": 0,
-      "medium": 0,
-      "open_fixable": 0,
-      "total": 0
+      "fixable": 76,
+      "high": 76,
+      "low": 4,
+      "medium": 24,
+      "open_fixable": 76,
+      "total": 104
      },
      "image": "ghcr.io/unxwares/postgresql-client:18",
      "name": "postgresql-client",
@@ -2464,12 +2464,12 @@
       "accepted": 4,
       "critical": 1,
       "eosl": false,
-      "fixable": 4,
-      "high": 3,
-      "low": 5,
-      "medium": 6,
-      "open_fixable": 0,
-      "total": 15
+      "fixable": 42,
+      "high": 41,
+      "low": 7,
+      "medium": 18,
+      "open_fixable": 38,
+      "total": 67
      },
      "image": "ghcr.io/unxwares/taiga-back:6.10.2",
      "name": "taiga-back",
@@ -2846,7 +2846,7 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-13T06:47:06Z",
+  "date": "2026-11-13T19:43:45Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
@@ -2882,9 +2882,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 16,
-     "HIGH": 238,
-     "LOW": 93,
-     "MEDIUM": 209,
+     "HIGH": 276,
+     "LOW": 95,
+     "MEDIUM": 222,
      "UNKNOWN": 21
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2892,12 +2892,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 16,
-     "HIGH": 238,
-     "LOW": 93,
-     "MEDIUM": 209,
+     "HIGH": 276,
+     "LOW": 95,
+     "MEDIUM": 222,
      "UNKNOWN": 21
     },
-    "total": 577
+    "total": 630
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -2933,7 +2933,7 @@
      "CRITICAL": 1,
      "HIGH": 29,
      "LOW": 3,
-     "MEDIUM": 35,
+     "MEDIUM": 47,
      "UNKNOWN": 3
     },
     "image": "docker.io/library/mongo:8.0",
@@ -2943,10 +2943,10 @@
      "CRITICAL": 1,
      "HIGH": 29,
      "LOW": 9,
-     "MEDIUM": 69,
+     "MEDIUM": 81,
      "UNKNOWN": 3
     },
-    "total": 111
+    "total": 123
    },
    "docker.io/library/mysql:8.4": {
     "charts": [
@@ -3102,9 +3102,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 76,
-     "LOW": 3,
-     "MEDIUM": 46,
+     "HIGH": 110,
+     "LOW": 5,
+     "MEDIUM": 57,
      "UNKNOWN": 3
     },
     "image": "docker.io/powerdns/pdns-auth-51:5.1.5",
@@ -3112,12 +3112,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 8,
-     "HIGH": 249,
-     "LOW": 163,
-     "MEDIUM": 261,
-     "UNKNOWN": 64
+     "HIGH": 283,
+     "LOW": 165,
+     "MEDIUM": 272,
+     "UNKNOWN": 13
     },
-    "total": 745
+    "total": 741
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3140,9 +3140,9 @@
      "HIGH": 152,
      "LOW": 149,
      "MEDIUM": 181,
-     "UNKNOWN": 9
+     "UNKNOWN": 10
     },
-    "total": 491
+    "total": 492
    },
    "docker.io/prometheuscommunity/bind-exporter:master": {
     "charts": [
@@ -3236,9 +3236,9 @@
      "HIGH": 117,
      "LOW": 164,
      "MEDIUM": 173,
-     "UNKNOWN": 4
+     "UNKNOWN": 5
     },
-    "total": 461
+    "total": 462
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3248,9 +3248,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 11,
-     "HIGH": 141,
-     "LOW": 47,
-     "MEDIUM": 135,
+     "HIGH": 175,
+     "LOW": 49,
+     "MEDIUM": 146,
      "UNKNOWN": 3
     },
     "image": "docker.io/taigaio/taiga-back:6.10.2",
@@ -3258,12 +3258,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 11,
-     "HIGH": 244,
-     "LOW": 133,
-     "MEDIUM": 246,
-     "UNKNOWN": 59
+     "HIGH": 278,
+     "LOW": 135,
+     "MEDIUM": 257,
+     "UNKNOWN": 8
     },
-    "total": 693
+    "total": 689
    },
    "docker.io/taigaio/taiga-events:6.10.0": {
     "charts": [
@@ -3336,9 +3336,9 @@
      "HIGH": 114,
      "LOW": 132,
      "MEDIUM": 196,
-     "UNKNOWN": 7
+     "UNKNOWN": 8
     },
-    "total": 452
+    "total": 453
    },
    "docker.io/valkey/valkey:9.1.3-alpine": {
     "charts": [
@@ -3472,9 +3472,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 0,
-     "LOW": 0,
-     "MEDIUM": 1,
+     "HIGH": 38,
+     "LOW": 2,
+     "MEDIUM": 13,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/cloudreve:4.19.1",
@@ -3482,13 +3482,317 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0,
-     "LOW": 0,
-     "MEDIUM": 1,
+     "HIGH": 38,
+     "LOW": 2,
+     "MEDIUM": 13,
      "UNKNOWN": 0
     },
-    "total": 1,
+    "total": 53,
     "vulnerabilities": [
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116304",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116306",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116307",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116309",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116313",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116314",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116315",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116316",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116317",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116318",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116319",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116320",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116323",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116325",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116326",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116328",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116329",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116330",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116331",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116332",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116335",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116336",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120139",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120141",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120142",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120143",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120144",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120145",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120147",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120148",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120149",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120150",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120151",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120153",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-14661",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-18447",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-6460",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-6467",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
      {
       "fixed": "1.3.6",
       "id": "CVE-2023-45292",
@@ -3496,6 +3800,118 @@
       "package": "github.com/mojocn/base64Captcha",
       "severity": "MEDIUM",
       "type": "gobinary"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116308",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116310",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116311",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116312",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116321",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116322",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116327",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116333",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120146",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120152",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120154",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-16237",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116303",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "LOW",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-16240",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "LOW",
+      "type": "alpine"
      }
     ]
    },
@@ -4051,9 +4467,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 0,
-     "LOW": 0,
-     "MEDIUM": 0,
+     "HIGH": 38,
+     "LOW": 2,
+     "MEDIUM": 12,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/pdns-auth:5.1.5",
@@ -4061,13 +4477,430 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0,
-     "LOW": 0,
-     "MEDIUM": 0,
+     "HIGH": 38,
+     "LOW": 2,
+     "MEDIUM": 12,
      "UNKNOWN": 0
     },
-    "total": 0,
-    "vulnerabilities": []
+    "total": 52,
+    "vulnerabilities": [
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116304",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116306",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116307",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116309",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116313",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116314",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116315",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116316",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116317",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116318",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116319",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116320",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116323",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116325",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116326",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116328",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116329",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116330",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116331",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116332",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116335",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116336",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120139",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120141",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120142",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120143",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120144",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120145",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120147",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120148",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120149",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120150",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120151",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120153",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-14661",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-18447",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-6460",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-6467",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116308",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116310",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116311",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116312",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116321",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116322",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116327",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116333",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120146",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120152",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120154",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-16237",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116303",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "LOW",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-16240",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "LOW",
+      "type": "alpine"
+     }
+    ]
    },
    "ghcr.io/unxwares/pdns-recursor:5.4.9": {
     "charts": [
@@ -4155,9 +4988,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 0,
-     "LOW": 0,
-     "MEDIUM": 0,
+     "HIGH": 76,
+     "LOW": 4,
+     "MEDIUM": 24,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/postgresql-client:18",
@@ -4165,13 +4998,846 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0,
-     "LOW": 0,
-     "MEDIUM": 0,
+     "HIGH": 76,
+     "LOW": 4,
+     "MEDIUM": 24,
      "UNKNOWN": 0
     },
-    "total": 0,
-    "vulnerabilities": []
+    "total": 104,
+    "vulnerabilities": [
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116304",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116306",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116307",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116309",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116313",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116314",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116315",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116316",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116317",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116318",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116319",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116320",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116323",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116325",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116326",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116328",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116329",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116330",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116331",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116332",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116335",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116336",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120139",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120141",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120142",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120143",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120144",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120145",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120147",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120148",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120149",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120150",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120151",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120153",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-14661",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-18447",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-6460",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-6467",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116304",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116306",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116307",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116309",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116313",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116314",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116315",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116316",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116317",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116318",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116319",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116320",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116323",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116325",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116326",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116328",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116329",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116330",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116331",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116332",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116335",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116336",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120139",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120141",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120142",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120143",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120144",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120145",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120147",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120148",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120149",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120150",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120151",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120153",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-14661",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-18447",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-6460",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-6467",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116308",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116310",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116311",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116312",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116321",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116322",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116327",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116333",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120146",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120152",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120154",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-16237",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116308",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116310",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116311",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116312",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116321",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116322",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116327",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116333",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120146",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120152",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120154",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-16237",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116303",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "LOW",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-16240",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "LOW",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116303",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "LOW",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-16240",
+      "installed": "18.6-r0",
+      "package": "postgresql18-client",
+      "severity": "LOW",
+      "type": "alpine"
+     }
+    ]
    },
    "ghcr.io/unxwares/taiga-back:6.10.2": {
     "charts": [
@@ -4181,9 +5847,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 3,
-     "LOW": 5,
-     "MEDIUM": 6,
+     "HIGH": 41,
+     "LOW": 7,
+     "MEDIUM": 18,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/taiga-back:6.10.2",
@@ -4191,12 +5857,12 @@
     "ours": true,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 3,
-     "LOW": 5,
-     "MEDIUM": 6,
+     "HIGH": 41,
+     "LOW": 7,
+     "MEDIUM": 18,
      "UNKNOWN": 0
     },
-    "total": 15,
+    "total": 67,
     "vulnerabilities": [
      {
       "fixed": "5.2.8, 5.1.14, 4.2.26",
@@ -4229,6 +5895,310 @@
       "package": "Django",
       "severity": "HIGH",
       "type": "python-pkg"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116304",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116306",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116307",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116309",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116313",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116314",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116315",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116316",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116317",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116318",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116319",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116320",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116323",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116325",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116326",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116328",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116329",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116330",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116331",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116332",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116335",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116336",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120139",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120141",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120142",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120143",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120144",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120145",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120147",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120148",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120149",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120150",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120151",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120153",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-14661",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-18447",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-6460",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-6467",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "HIGH",
+      "type": "alpine"
      },
      {
       "fixed": "5.1.1, 5.0.9, 4.2.16",
@@ -4279,6 +6249,102 @@
       "type": "python-pkg"
      },
      {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116308",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116310",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116311",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116312",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116321",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116322",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116327",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116333",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120146",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120152",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-120154",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-16237",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
       "fixed": "5.2.15, 6.0.6",
       "id": "CVE-2026-48587",
       "installed": "3.2.25",
@@ -4317,6 +6383,22 @@
       "package": "bleach",
       "severity": "LOW",
       "type": "python-pkg"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-116303",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "LOW",
+      "type": "alpine"
+     },
+     {
+      "fixed": "18.7-r0",
+      "id": "CVE-2026-16240",
+      "installed": "18.6-r0",
+      "package": "libpq",
+      "severity": "LOW",
+      "type": "alpine"
      }
     ]
    },
@@ -4423,8 +6505,8 @@
     "total": 13
    }
   },
-  "run_id": 43380812833,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/43380812833",
+  "run_id": 43494490546,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/43494490546",
   "source": "report"
  },
  "files": [
@@ -4588,12 +6670,12 @@
     "accepted": 4,
     "critical": 1,
     "eosl": false,
-    "fixable": 4,
-    "high": 3,
-    "low": 5,
-    "medium": 6,
-    "open_fixable": 0,
-    "total": 15
+    "fixable": 42,
+    "high": 41,
+    "low": 7,
+    "medium": 18,
+    "open_fixable": 38,
+    "total": 67
    },
    "name": "taiga-back",
    "ref": "ghcr.io/unxwares/taiga-back:6.10.2",
@@ -4772,12 +6854,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 0,
-    "high": 0,
-    "low": 0,
-    "medium": 0,
-    "open_fixable": 0,
-    "total": 0
+    "fixable": 38,
+    "high": 38,
+    "low": 2,
+    "medium": 12,
+    "open_fixable": 38,
+    "total": 52
    },
    "name": "pdns-auth",
    "ref": "ghcr.io/unxwares/pdns-auth:5.1.5",
@@ -4864,12 +6946,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 0,
-    "high": 0,
-    "low": 0,
-    "medium": 0,
-    "open_fixable": 0,
-    "total": 0
+    "fixable": 76,
+    "high": 76,
+    "low": 4,
+    "medium": 24,
+    "open_fixable": 76,
+    "total": 104
    },
    "name": "postgresql-client",
    "ref": "ghcr.io/unxwares/postgresql-client:18",
@@ -5006,12 +7088,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 0,
-    "high": 0,
-    "low": 0,
-    "medium": 1,
-    "open_fixable": 0,
-    "total": 1
+    "fixable": 38,
+    "high": 38,
+    "low": 2,
+    "medium": 13,
+    "open_fixable": 38,
+    "total": 53
    },
    "name": "cloudreve",
    "ref": "ghcr.io/unxwares/cloudreve:4.19.1",
@@ -5157,7 +7239,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-13T06:47:06Z",
+ "latest_result": "2026-11-13T19:43:45Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
