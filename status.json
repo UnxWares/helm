@@ -1796,9 +1796,9 @@
       "fixable": 1,
       "high": 1,
       "low": 12,
-      "medium": 36,
+      "medium": 43,
       "open_fixable": 0,
-      "total": 56
+      "total": 58
      },
      "image": "ghcr.io/unxwares/mongosh:2.14.2",
      "name": "mongosh",
@@ -2846,7 +2846,7 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-12T19:55:34Z",
+  "date": "2026-11-13T06:47:06Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
@@ -2884,7 +2884,7 @@
      "CRITICAL": 16,
      "HIGH": 238,
      "LOW": 93,
-     "MEDIUM": 210,
+     "MEDIUM": 209,
      "UNKNOWN": 21
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2894,10 +2894,10 @@
      "CRITICAL": 16,
      "HIGH": 238,
      "LOW": 93,
-     "MEDIUM": 210,
+     "MEDIUM": 209,
      "UNKNOWN": 21
     },
-    "total": 578
+    "total": 577
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -3004,9 +3004,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 44,
+     "HIGH": 25,
      "LOW": 3,
-     "MEDIUM": 38,
+     "MEDIUM": 31,
      "UNKNOWN": 2
     },
     "image": "docker.io/library/postgres:18-alpine",
@@ -3014,12 +3014,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 44,
+     "HIGH": 25,
      "LOW": 3,
-     "MEDIUM": 38,
+     "MEDIUM": 31,
      "UNKNOWN": 2
     },
-    "total": 88
+    "total": 62
    },
    "docker.io/library/postgres:18.6-alpine": {
     "charts": [
@@ -3114,10 +3114,10 @@
      "CRITICAL": 8,
      "HIGH": 249,
      "LOW": 163,
-     "MEDIUM": 246,
-     "UNKNOWN": 27
+     "MEDIUM": 261,
+     "UNKNOWN": 64
     },
-    "total": 693
+    "total": 745
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3139,8 +3139,8 @@
      "CRITICAL": 0,
      "HIGH": 152,
      "LOW": 149,
-     "MEDIUM": 166,
-     "UNKNOWN": 24
+     "MEDIUM": 181,
+     "UNKNOWN": 9
     },
     "total": 491
    },
@@ -3235,8 +3235,8 @@
      "CRITICAL": 3,
      "HIGH": 117,
      "LOW": 164,
-     "MEDIUM": 168,
-     "UNKNOWN": 9
+     "MEDIUM": 173,
+     "UNKNOWN": 4
     },
     "total": 461
    },
@@ -3248,9 +3248,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 11,
-     "HIGH": 140,
+     "HIGH": 141,
      "LOW": 47,
-     "MEDIUM": 134,
+     "MEDIUM": 135,
      "UNKNOWN": 3
     },
     "image": "docker.io/taigaio/taiga-back:6.10.2",
@@ -3258,12 +3258,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 11,
-     "HIGH": 243,
+     "HIGH": 244,
      "LOW": 133,
-     "MEDIUM": 230,
-     "UNKNOWN": 22
+     "MEDIUM": 246,
+     "UNKNOWN": 59
     },
-    "total": 639
+    "total": 693
    },
    "docker.io/taigaio/taiga-events:6.10.0": {
     "charts": [
@@ -3335,8 +3335,8 @@
      "CRITICAL": 3,
      "HIGH": 114,
      "LOW": 132,
-     "MEDIUM": 181,
-     "UNKNOWN": 22
+     "MEDIUM": 196,
+     "UNKNOWN": 7
     },
     "total": 452
    },
@@ -3535,7 +3535,7 @@
      "CRITICAL": 0,
      "HIGH": 1,
      "LOW": 0,
-     "MEDIUM": 2,
+     "MEDIUM": 4,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/mongosh:2.14.2",
@@ -3545,10 +3545,10 @@
      "CRITICAL": 0,
      "HIGH": 1,
      "LOW": 12,
-     "MEDIUM": 36,
-     "UNKNOWN": 7
+     "MEDIUM": 43,
+     "UNKNOWN": 2
     },
-    "total": 56,
+    "total": 58,
     "vulnerabilities": [
      {
       "fixed": "6.2.1",
@@ -3556,6 +3556,22 @@
       "installed": "5.3.1",
       "package": "basic-ftp",
       "severity": "HIGH",
+      "type": "node-pkg"
+     },
+     {
+      "fixed": "6.2.4",
+      "id": "CVE-2026-126345",
+      "installed": "5.3.1",
+      "package": "basic-ftp",
+      "severity": "MEDIUM",
+      "type": "node-pkg"
+     },
+     {
+      "fixed": "6.2.3",
+      "id": "CVE-2026-126346",
+      "installed": "5.3.1",
+      "package": "basic-ftp",
+      "severity": "MEDIUM",
       "type": "node-pkg"
      },
      {
@@ -3800,6 +3816,46 @@
      },
      {
       "fixed": "",
+      "id": "CVE-2026-107496",
+      "installed": "3.5.7-1~deb13u3",
+      "package": "libssl3t64",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-88822",
+      "installed": "3.5.7-1~deb13u3",
+      "package": "libssl3t64",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-88823",
+      "installed": "3.5.7-1~deb13u3",
+      "package": "libssl3t64",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-95691",
+      "installed": "3.5.7-1~deb13u3",
+      "package": "libssl3t64",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-95692",
+      "installed": "3.5.7-1~deb13u3",
+      "package": "libssl3t64",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
       "id": "CVE-2026-102010",
       "installed": "14.2.0-19",
       "package": "libstdc++6",
@@ -3955,46 +4011,6 @@
       "id": "CVE-2026-115819",
       "installed": "2.41-12+deb13u4",
       "package": "libc6",
-      "severity": "UNKNOWN",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-107496",
-      "installed": "3.5.7-1~deb13u3",
-      "package": "libssl3t64",
-      "severity": "UNKNOWN",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-88822",
-      "installed": "3.5.7-1~deb13u3",
-      "package": "libssl3t64",
-      "severity": "UNKNOWN",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-88823",
-      "installed": "3.5.7-1~deb13u3",
-      "package": "libssl3t64",
-      "severity": "UNKNOWN",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-95691",
-      "installed": "3.5.7-1~deb13u3",
-      "package": "libssl3t64",
-      "severity": "UNKNOWN",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-95692",
-      "installed": "3.5.7-1~deb13u3",
-      "package": "libssl3t64",
       "severity": "UNKNOWN",
       "type": "debian"
      }
@@ -4407,8 +4423,8 @@
     "total": 13
    }
   },
-  "run_id": 43294703966,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/43294703966",
+  "run_id": 43380812833,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/43380812833",
   "source": "report"
  },
  "files": [
@@ -4945,9 +4961,9 @@
     "fixable": 1,
     "high": 1,
     "low": 12,
-    "medium": 36,
+    "medium": 43,
     "open_fixable": 0,
-    "total": 56
+    "total": 58
    },
    "name": "mongosh",
    "ref": "ghcr.io/unxwares/mongosh:2.14.2",
@@ -5141,7 +5157,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-12T19:55:34Z",
+ "latest_result": "2026-11-13T06:47:06Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
