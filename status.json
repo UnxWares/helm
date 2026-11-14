@@ -2846,7 +2846,7 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-14T06:23:57Z",
+  "date": "2026-11-14T18:02:16Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
@@ -3233,12 +3233,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 3,
-     "HIGH": 117,
+     "HIGH": 121,
      "LOW": 164,
      "MEDIUM": 174,
      "UNKNOWN": 5
     },
-    "total": 463
+    "total": 467
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -4423,8 +4423,8 @@
     "total": 14
    }
   },
-  "run_id": 43565974953,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/43565974953",
+  "run_id": 43624111026,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/43624111026",
   "source": "report"
  },
  "files": [
@@ -5157,7 +5157,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-14T06:23:57Z",
+ "latest_result": "2026-11-14T18:02:16Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
