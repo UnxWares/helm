@@ -2846,7 +2846,7 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-14T22:25:12Z",
+  "date": "2026-11-15T06:31:55Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
@@ -3115,9 +3115,9 @@
      "HIGH": 283,
      "LOW": 165,
      "MEDIUM": 272,
-     "UNKNOWN": 22
+     "UNKNOWN": 26
     },
-    "total": 750
+    "total": 754
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3140,9 +3140,9 @@
      "HIGH": 152,
      "LOW": 149,
      "MEDIUM": 181,
-     "UNKNOWN": 19
+     "UNKNOWN": 23
     },
-    "total": 501
+    "total": 505
    },
    "docker.io/prometheuscommunity/bind-exporter:master": {
     "charts": [
@@ -4423,8 +4423,8 @@
     "total": 14
    }
   },
-  "run_id": 43647817379,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/43647817379",
+  "run_id": 43685724479,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/43685724479",
   "source": "report"
  },
  "files": [
@@ -5157,7 +5157,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-14T22:25:12Z",
+ "latest_result": "2026-11-15T06:31:55Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
