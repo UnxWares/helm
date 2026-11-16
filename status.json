@@ -2846,8 +2846,8 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-16T06:30:07Z",
-  "event": "schedule",
+  "date": "2026-11-16T12:11:58Z",
+  "event": "workflow_run",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
     "charts": [
@@ -2884,7 +2884,7 @@
      "CRITICAL": 16,
      "HIGH": 276,
      "LOW": 95,
-     "MEDIUM": 221,
+     "MEDIUM": 222,
      "UNKNOWN": 21
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2894,10 +2894,10 @@
      "CRITICAL": 16,
      "HIGH": 276,
      "LOW": 95,
-     "MEDIUM": 221,
+     "MEDIUM": 222,
      "UNKNOWN": 21
     },
-    "total": 629
+    "total": 630
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -4455,8 +4455,8 @@
     "total": 14
    }
   },
-  "run_id": 43816888253,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/43816888253",
+  "run_id": 43864020173,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/43864020173",
   "source": "report"
  },
  "files": [
@@ -5189,7 +5189,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-16T06:30:07Z",
+ "latest_result": "2026-11-16T12:11:58Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
