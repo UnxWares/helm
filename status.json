@@ -1796,9 +1796,9 @@
       "fixable": 1,
       "high": 1,
       "low": 12,
-      "medium": 43,
+      "medium": 47,
       "open_fixable": 0,
-      "total": 58
+      "total": 62
      },
      "image": "ghcr.io/unxwares/mongosh:2.14.2",
      "name": "mongosh",
@@ -2846,7 +2846,7 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-15T18:52:30Z",
+  "date": "2026-11-16T06:30:07Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
@@ -3113,11 +3113,11 @@
     "severity": {
      "CRITICAL": 8,
      "HIGH": 283,
-     "LOW": 165,
-     "MEDIUM": 272,
-     "UNKNOWN": 26
+     "LOW": 168,
+     "MEDIUM": 279,
+     "UNKNOWN": 30
     },
-    "total": 754
+    "total": 768
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3138,11 +3138,11 @@
     "severity": {
      "CRITICAL": 0,
      "HIGH": 152,
-     "LOW": 149,
-     "MEDIUM": 181,
-     "UNKNOWN": 23
+     "LOW": 152,
+     "MEDIUM": 188,
+     "UNKNOWN": 27
     },
-    "total": 505
+    "total": 519
    },
    "docker.io/prometheuscommunity/bind-exporter:master": {
     "charts": [
@@ -3234,11 +3234,11 @@
     "severity": {
      "CRITICAL": 3,
      "HIGH": 121,
-     "LOW": 164,
-     "MEDIUM": 174,
+     "LOW": 166,
+     "MEDIUM": 177,
      "UNKNOWN": 5
     },
-    "total": 467
+    "total": 472
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3259,11 +3259,11 @@
     "severity": {
      "CRITICAL": 11,
      "HIGH": 278,
-     "LOW": 135,
-     "MEDIUM": 257,
+     "LOW": 137,
+     "MEDIUM": 260,
      "UNKNOWN": 8
     },
-    "total": 689
+    "total": 694
    },
    "docker.io/taigaio/taiga-events:6.10.0": {
     "charts": [
@@ -3335,10 +3335,10 @@
      "CRITICAL": 3,
      "HIGH": 114,
      "LOW": 132,
-     "MEDIUM": 196,
+     "MEDIUM": 199,
      "UNKNOWN": 8
     },
-    "total": 453
+    "total": 456
    },
    "docker.io/valkey/valkey:9.1.3-alpine": {
     "charts": [
@@ -3545,10 +3545,10 @@
      "CRITICAL": 0,
      "HIGH": 1,
      "LOW": 12,
-     "MEDIUM": 43,
+     "MEDIUM": 47,
      "UNKNOWN": 2
     },
-    "total": 58,
+    "total": 62,
     "vulnerabilities": [
      {
       "fixed": "6.2.1",
@@ -3601,6 +3601,14 @@
      {
       "fixed": "",
       "id": "CVE-2026-115455",
+      "installed": "14.2.0-19",
+      "package": "gcc-14-base",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-125709",
       "installed": "14.2.0-19",
       "package": "gcc-14-base",
       "severity": "MEDIUM",
@@ -3768,6 +3776,14 @@
      },
      {
       "fixed": "",
+      "id": "CVE-2026-125709",
+      "installed": "14.2.0-19",
+      "package": "libgcc-s1",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
       "id": "CVE-2026-95619",
       "installed": "14.2.0-19",
       "package": "libgcc-s1",
@@ -3801,6 +3817,14 @@
      {
       "fixed": "",
       "id": "CVE-2026-115455",
+      "installed": "14.2.0-19",
+      "package": "libgomp1",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-125709",
       "installed": "14.2.0-19",
       "package": "libgomp1",
       "severity": "MEDIUM",
@@ -3881,6 +3905,14 @@
      {
       "fixed": "",
       "id": "CVE-2026-115455",
+      "installed": "14.2.0-19",
+      "package": "libstdc++6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-125709",
       "installed": "14.2.0-19",
       "package": "libstdc++6",
       "severity": "MEDIUM",
@@ -4423,8 +4455,8 @@
     "total": 14
    }
   },
-  "run_id": 43749021034,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/43749021034",
+  "run_id": 43816888253,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/43816888253",
   "source": "report"
  },
  "files": [
@@ -4961,9 +4993,9 @@
     "fixable": 1,
     "high": 1,
     "low": 12,
-    "medium": 43,
+    "medium": 47,
     "open_fixable": 0,
-    "total": 58
+    "total": 62
    },
    "name": "mongosh",
    "ref": "ghcr.io/unxwares/mongosh:2.14.2",
@@ -5157,7 +5189,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-15T18:52:30Z",
+ "latest_result": "2026-11-16T06:30:07Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
