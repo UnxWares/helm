@@ -352,7 +352,7 @@
       "low": 0,
       "medium": 1,
       "open_fixable": 0,
-      "total": 21
+      "total": 1
      },
      "image": "ghcr.io/unxwares/cloudreve:4.19.1",
      "name": "cloudreve",
@@ -1455,12 +1455,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 3,
-      "high": 3,
+      "fixable": 8,
+      "high": 8,
       "low": 0,
-      "medium": 1,
-      "open_fixable": 3,
-      "total": 4
+      "medium": 5,
+      "open_fixable": 8,
+      "total": 13
      },
      "image": "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim",
      "name": "nginx-unprivileged",
@@ -1777,12 +1777,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 8,
-      "high": 8,
+      "fixable": 0,
+      "high": 0,
       "low": 0,
       "medium": 0,
-      "open_fixable": 8,
-      "total": 8
+      "open_fixable": 0,
+      "total": 0
      },
      "image": "ghcr.io/unxwares/mysql-client:8.4",
      "name": "mysql-client",
@@ -1798,7 +1798,7 @@
       "low": 13,
       "medium": 51,
       "open_fixable": 0,
-      "total": 68
+      "total": 69
      },
      "image": "ghcr.io/unxwares/mongosh:2.14.2",
      "name": "mongosh",
@@ -1809,11 +1809,11 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 3,
-      "high": 3,
+      "fixable": 4,
+      "high": 4,
       "low": 0,
-      "medium": 7,
-      "open_fixable": 3,
+      "medium": 6,
+      "open_fixable": 4,
       "total": 14
      },
      "image": "registry.k8s.io/kubectl:v1.37.2",
@@ -2113,12 +2113,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 8,
-      "high": 8,
+      "fixable": 0,
+      "high": 0,
       "low": 0,
       "medium": 0,
-      "open_fixable": 8,
-      "total": 8
+      "open_fixable": 0,
+      "total": 0
      },
      "image": "ghcr.io/unxwares/mysql-client:8.4",
      "name": "mysql-client",
@@ -2480,12 +2480,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 0,
-      "high": 0,
+      "fixable": 5,
+      "high": 5,
       "low": 0,
-      "medium": 0,
-      "open_fixable": 0,
-      "total": 0
+      "medium": 4,
+      "open_fixable": 5,
+      "total": 9
      },
      "image": "ghcr.io/unxwares/taiga-front:6.10.3",
      "name": "taiga-front",
@@ -2560,12 +2560,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 3,
-      "high": 3,
+      "fixable": 8,
+      "high": 8,
       "low": 0,
-      "medium": 1,
-      "open_fixable": 3,
-      "total": 4
+      "medium": 5,
+      "open_fixable": 8,
+      "total": 13
      },
      "image": "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim",
      "name": "nginx-unprivileged",
@@ -2846,7 +2846,7 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-18T20:32:04Z",
+  "date": "2026-11-19T07:26:35Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
@@ -2857,9 +2857,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 0,
+     "HIGH": 5,
      "LOW": 0,
-     "MEDIUM": 2,
+     "MEDIUM": 6,
      "UNKNOWN": 0
     },
     "image": "docker.io/abrar74774/fossflow:master-b06baad",
@@ -2867,12 +2867,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0,
+     "HIGH": 5,
      "LOW": 0,
-     "MEDIUM": 2,
+     "MEDIUM": 6,
      "UNKNOWN": 0
     },
-    "total": 2
+    "total": 11
    },
    "docker.io/cloudreve/cloudreve:4.19.1": {
     "charts": [
@@ -2882,9 +2882,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 16,
-     "HIGH": 276,
+     "HIGH": 277,
      "LOW": 95,
-     "MEDIUM": 223,
+     "MEDIUM": 221,
      "UNKNOWN": 40
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2892,12 +2892,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 16,
-     "HIGH": 276,
+     "HIGH": 277,
      "LOW": 95,
-     "MEDIUM": 223,
+     "MEDIUM": 221,
      "UNKNOWN": 40
     },
-    "total": 650
+    "total": 649
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -2931,9 +2931,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 29,
+     "HIGH": 30,
      "LOW": 3,
-     "MEDIUM": 48,
+     "MEDIUM": 47,
      "UNKNOWN": 2
     },
     "image": "docker.io/library/mongo:8.0",
@@ -2941,9 +2941,9 @@
     "ours": false,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 29,
+     "HIGH": 30,
      "LOW": 10,
-     "MEDIUM": 84,
+     "MEDIUM": 83,
      "UNKNOWN": 2
     },
     "total": 126
@@ -2955,9 +2955,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 2,
-     "HIGH": 41,
+     "HIGH": 42,
      "LOW": 7,
-     "MEDIUM": 69,
+     "MEDIUM": 68,
      "UNKNOWN": 1
     },
     "image": "docker.io/library/mysql:8.4",
@@ -2965,9 +2965,9 @@
     "ours": false,
     "severity": {
      "CRITICAL": 2,
-     "HIGH": 41,
+     "HIGH": 42,
      "LOW": 7,
-     "MEDIUM": 69,
+     "MEDIUM": 68,
      "UNKNOWN": 1
     },
     "total": 120
@@ -2980,9 +2980,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 44,
+     "HIGH": 45,
      "LOW": 3,
-     "MEDIUM": 39,
+     "MEDIUM": 38,
      "UNKNOWN": 1
     },
     "image": "docker.io/library/postgres:17.11-alpine",
@@ -2990,9 +2990,9 @@
     "ours": false,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 44,
+     "HIGH": 45,
      "LOW": 3,
-     "MEDIUM": 39,
+     "MEDIUM": 38,
      "UNKNOWN": 1
     },
     "total": 88
@@ -3004,9 +3004,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 25,
+     "HIGH": 26,
      "LOW": 3,
-     "MEDIUM": 32,
+     "MEDIUM": 30,
      "UNKNOWN": 1
     },
     "image": "docker.io/library/postgres:18-alpine",
@@ -3014,12 +3014,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 25,
+     "HIGH": 26,
      "LOW": 3,
-     "MEDIUM": 32,
+     "MEDIUM": 30,
      "UNKNOWN": 1
     },
-    "total": 62
+    "total": 61
    },
    "docker.io/library/postgres:18.6-alpine": {
     "charts": [
@@ -3028,9 +3028,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 1,
-     "HIGH": 44,
+     "HIGH": 45,
      "LOW": 3,
-     "MEDIUM": 39,
+     "MEDIUM": 38,
      "UNKNOWN": 1
     },
     "image": "docker.io/library/postgres:18.6-alpine",
@@ -3038,9 +3038,9 @@
     "ours": false,
     "severity": {
      "CRITICAL": 1,
-     "HIGH": 44,
+     "HIGH": 45,
      "LOW": 3,
-     "MEDIUM": 39,
+     "MEDIUM": 38,
      "UNKNOWN": 1
     },
     "total": 88
@@ -3077,9 +3077,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 3,
+     "HIGH": 8,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 5,
      "UNKNOWN": 0
     },
     "image": "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim",
@@ -3087,12 +3087,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 3,
+     "HIGH": 8,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 5,
      "UNKNOWN": 0
     },
-    "total": 4
+    "total": 13
    },
    "docker.io/powerdns/pdns-auth-51:5.1.5": {
     "charts": [
@@ -3115,9 +3115,9 @@
      "HIGH": 282,
      "LOW": 170,
      "MEDIUM": 290,
-     "UNKNOWN": 32
+     "UNKNOWN": 35
     },
-    "total": 782
+    "total": 785
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3140,9 +3140,9 @@
      "HIGH": 151,
      "LOW": 154,
      "MEDIUM": 199,
-     "UNKNOWN": 29
+     "UNKNOWN": 32
     },
-    "total": 533
+    "total": 536
    },
    "docker.io/prometheuscommunity/bind-exporter:master": {
     "charts": [
@@ -3151,9 +3151,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 3,
+     "HIGH": 4,
      "LOW": 0,
-     "MEDIUM": 6,
+     "MEDIUM": 5,
      "UNKNOWN": 1
     },
     "image": "docker.io/prometheuscommunity/bind-exporter:master",
@@ -3161,9 +3161,9 @@
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 3,
+     "HIGH": 4,
      "LOW": 0,
-     "MEDIUM": 6,
+     "MEDIUM": 5,
      "UNKNOWN": 1
     },
     "total": 10
@@ -3175,9 +3175,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 3,
+     "HIGH": 4,
      "LOW": 0,
-     "MEDIUM": 6,
+     "MEDIUM": 5,
      "UNKNOWN": 1
     },
     "image": "docker.io/prometheuscommunity/bind-exporter:master@sha256:a1f46e6abf8d284a158a1ba0e3275bc2e17f9119ec227f18bdb20019d24b3bcf",
@@ -3185,9 +3185,9 @@
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 3,
+     "HIGH": 4,
      "LOW": 0,
-     "MEDIUM": 6,
+     "MEDIUM": 5,
      "UNKNOWN": 1
     },
     "total": 10
@@ -3236,9 +3236,9 @@
      "HIGH": 121,
      "LOW": 168,
      "MEDIUM": 184,
-     "UNKNOWN": 7
+     "UNKNOWN": 8
     },
-    "total": 483
+    "total": 484
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3261,9 +3261,9 @@
      "HIGH": 277,
      "LOW": 139,
      "MEDIUM": 271,
-     "UNKNOWN": 10
+     "UNKNOWN": 13
     },
-    "total": 708
+    "total": 711
    },
    "docker.io/taigaio/taiga-events:6.10.0": {
     "charts": [
@@ -3336,9 +3336,9 @@
      "HIGH": 113,
      "LOW": 134,
      "MEDIUM": 210,
-     "UNKNOWN": 10
+     "UNKNOWN": 13
     },
-    "total": 470
+    "total": 473
    },
    "docker.io/valkey/valkey:9.1.3-alpine": {
     "charts": [
@@ -3475,7 +3475,7 @@
      "HIGH": 0,
      "LOW": 0,
      "MEDIUM": 1,
-     "UNKNOWN": 20
+     "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/cloudreve:4.19.1",
     "os": "alpine 3.24.4",
@@ -3485,9 +3485,9 @@
      "HIGH": 0,
      "LOW": 0,
      "MEDIUM": 1,
-     "UNKNOWN": 20
+     "UNKNOWN": 0
     },
-    "total": 21,
+    "total": 1,
     "vulnerabilities": [
      {
       "fixed": "1.3.6",
@@ -3496,166 +3496,6 @@
       "package": "github.com/mojocn/base64Captcha",
       "severity": "MEDIUM",
       "type": "gobinary"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-115488",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-115489",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-115490",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-115491",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-115493",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-116375",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-116462",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-50582",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-90469",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-90470",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-90475",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-93776",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-93777",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-93831",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-93833",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-93835",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-93842",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-93843",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-93844",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
-     },
-     {
-      "fixed": "3.6.8-r0",
-      "id": "CVE-2026-93845",
-      "installed": "3.6.7-r0",
-      "package": "mbedtls3",
-      "severity": "UNKNOWN",
-      "type": "alpine"
      }
     ]
    },
@@ -3706,9 +3546,9 @@
      "HIGH": 1,
      "LOW": 13,
      "MEDIUM": 51,
-     "UNKNOWN": 3
+     "UNKNOWN": 4
     },
-    "total": 68,
+    "total": 69,
     "vulnerabilities": [
      {
       "fixed": "6.2.1",
@@ -4253,6 +4093,14 @@
       "package": "libc6",
       "severity": "UNKNOWN",
       "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-95690",
+      "installed": "3.5.7-1~deb13u3",
+      "package": "libssl3t64",
+      "severity": "UNKNOWN",
+      "type": "debian"
      }
     ]
    },
@@ -4265,7 +4113,7 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 8,
+     "HIGH": 0,
      "LOW": 0,
      "MEDIUM": 0,
      "UNKNOWN": 0
@@ -4275,78 +4123,13 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 8,
+     "HIGH": 0,
      "LOW": 0,
      "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 8,
-    "vulnerabilities": [
-     {
-      "fixed": "2.37.4-28.0.1.el9_9",
-      "id": "CVE-2026-13595",
-      "installed": "2.37.4-25.0.1.el9",
-      "package": "libblkid",
-      "severity": "HIGH",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.37.4-28.0.1.el9_9",
-      "id": "CVE-2026-53613",
-      "installed": "2.37.4-25.0.1.el9",
-      "package": "libblkid",
-      "severity": "HIGH",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.37.4-28.0.1.el9_9",
-      "id": "CVE-2026-13595",
-      "installed": "2.37.4-25.0.1.el9",
-      "package": "libmount",
-      "severity": "HIGH",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.37.4-28.0.1.el9_9",
-      "id": "CVE-2026-53613",
-      "installed": "2.37.4-25.0.1.el9",
-      "package": "libmount",
-      "severity": "HIGH",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.37.4-28.0.1.el9_9",
-      "id": "CVE-2026-13595",
-      "installed": "2.37.4-25.0.1.el9",
-      "package": "libsmartcols",
-      "severity": "HIGH",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.37.4-28.0.1.el9_9",
-      "id": "CVE-2026-53613",
-      "installed": "2.37.4-25.0.1.el9",
-      "package": "libsmartcols",
-      "severity": "HIGH",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.37.4-28.0.1.el9_9",
-      "id": "CVE-2026-13595",
-      "installed": "2.37.4-25.0.1.el9",
-      "package": "libuuid",
-      "severity": "HIGH",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.37.4-28.0.1.el9_9",
-      "id": "CVE-2026-53613",
-      "installed": "2.37.4-25.0.1.el9",
-      "package": "libuuid",
-      "severity": "HIGH",
-      "type": "oracle"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/pdns-auth:5.1.5": {
     "charts": [
@@ -4659,9 +4442,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 0,
+     "HIGH": 5,
      "LOW": 0,
-     "MEDIUM": 0,
+     "MEDIUM": 4,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/taiga-front:6.10.3",
@@ -4669,13 +4452,86 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 0,
+     "HIGH": 5,
      "LOW": 0,
-     "MEDIUM": 0,
+     "MEDIUM": 4,
      "UNKNOWN": 0
     },
-    "total": 0,
-    "vulnerabilities": []
+    "total": 9,
+    "vulnerabilities": [
+     {
+      "fixed": "1.30.7-r0",
+      "id": "CVE-2026-113425",
+      "installed": "1.30.6-r1",
+      "package": "nginx",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "1.30.7-r0",
+      "id": "CVE-2026-121810",
+      "installed": "1.30.6-r1",
+      "package": "nginx",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "1.30.7-r0",
+      "id": "CVE-2026-123007",
+      "installed": "1.30.6-r1",
+      "package": "nginx",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "1.30.7-r0",
+      "id": "CVE-2026-123633",
+      "installed": "1.30.6-r1",
+      "package": "nginx",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "1.30.7-r0",
+      "id": "CVE-2026-123634",
+      "installed": "1.30.6-r1",
+      "package": "nginx",
+      "severity": "HIGH",
+      "type": "alpine"
+     },
+     {
+      "fixed": "1.30.7-r0",
+      "id": "CVE-2026-118899",
+      "installed": "1.30.6-r1",
+      "package": "nginx",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "1.30.7-r0",
+      "id": "CVE-2026-120967",
+      "installed": "1.30.6-r1",
+      "package": "nginx",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "1.30.7-r0",
+      "id": "CVE-2026-123640",
+      "installed": "1.30.6-r1",
+      "package": "nginx",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "1.30.7-r0",
+      "id": "CVE-2026-125283",
+      "installed": "1.30.6-r1",
+      "package": "nginx",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     }
+    ]
    },
    "ghcr.io/unxwares/taiga-protected:6.10.1": {
     "charts": [
@@ -4710,9 +4566,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 3,
+     "HIGH": 4,
      "LOW": 0,
-     "MEDIUM": 7,
+     "MEDIUM": 6,
      "UNKNOWN": 4
     },
     "image": "registry.k8s.io/kubectl:v1.37.2",
@@ -4720,16 +4576,16 @@
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 3,
+     "HIGH": 4,
      "LOW": 0,
-     "MEDIUM": 7,
+     "MEDIUM": 6,
      "UNKNOWN": 4
     },
     "total": 14
    }
   },
-  "run_id": 44391646641,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/44391646641",
+  "run_id": 44479337440,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/44479337440",
   "source": "report"
  },
  "files": [
@@ -4985,12 +4841,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 0,
-    "high": 0,
+    "fixable": 5,
+    "high": 5,
     "low": 0,
-    "medium": 0,
-    "open_fixable": 0,
-    "total": 0
+    "medium": 4,
+    "open_fixable": 5,
+    "total": 9
    },
    "name": "taiga-front",
    "ref": "ghcr.io/unxwares/taiga-front:6.10.3",
@@ -5215,12 +5071,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 8,
-    "high": 8,
+    "fixable": 0,
+    "high": 0,
     "low": 0,
     "medium": 0,
-    "open_fixable": 8,
-    "total": 8
+    "open_fixable": 0,
+    "total": 0
    },
    "name": "mysql-client",
    "ref": "ghcr.io/unxwares/mysql-client:8.4",
@@ -5268,7 +5124,7 @@
     "low": 13,
     "medium": 51,
     "open_fixable": 0,
-    "total": 68
+    "total": 69
    },
    "name": "mongosh",
    "ref": "ghcr.io/unxwares/mongosh:2.14.2",
@@ -5316,7 +5172,7 @@
     "low": 0,
     "medium": 1,
     "open_fixable": 0,
-    "total": 21
+    "total": 1
    },
    "name": "cloudreve",
    "ref": "ghcr.io/unxwares/cloudreve:4.19.1",
@@ -5462,7 +5318,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-18T20:43:49Z",
+ "latest_result": "2026-11-19T07:26:35Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
