@@ -1798,7 +1798,7 @@
       "low": 13,
       "medium": 53,
       "open_fixable": 0,
-      "total": 70
+      "total": 71
      },
      "image": "ghcr.io/unxwares/mongosh:2.14.2",
      "name": "mongosh",
@@ -2846,7 +2846,7 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-19T20:38:28Z",
+  "date": "2026-11-20T07:17:07Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
@@ -2884,7 +2884,7 @@
      "CRITICAL": 16,
      "HIGH": 277,
      "LOW": 95,
-     "MEDIUM": 221,
+     "MEDIUM": 222,
      "UNKNOWN": 40
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2894,10 +2894,10 @@
      "CRITICAL": 16,
      "HIGH": 277,
      "LOW": 95,
-     "MEDIUM": 221,
+     "MEDIUM": 222,
      "UNKNOWN": 40
     },
-    "total": 649
+    "total": 650
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -2933,7 +2933,7 @@
      "CRITICAL": 1,
      "HIGH": 30,
      "LOW": 3,
-     "MEDIUM": 47,
+     "MEDIUM": 46,
      "UNKNOWN": 2
     },
     "image": "docker.io/library/mongo:8.0",
@@ -2943,10 +2943,10 @@
      "CRITICAL": 1,
      "HIGH": 30,
      "LOW": 10,
-     "MEDIUM": 83,
+     "MEDIUM": 82,
      "UNKNOWN": 2
     },
-    "total": 126
+    "total": 125
    },
    "docker.io/library/mysql:8.4": {
     "charts": [
@@ -3114,10 +3114,10 @@
      "CRITICAL": 8,
      "HIGH": 282,
      "LOW": 170,
-     "MEDIUM": 296,
-     "UNKNOWN": 35
+     "MEDIUM": 303,
+     "UNKNOWN": 33
     },
-    "total": 791
+    "total": 796
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3139,10 +3139,10 @@
      "CRITICAL": 0,
      "HIGH": 151,
      "LOW": 154,
-     "MEDIUM": 205,
-     "UNKNOWN": 32
+     "MEDIUM": 212,
+     "UNKNOWN": 30
     },
-    "total": 542
+    "total": 547
    },
    "docker.io/prometheuscommunity/bind-exporter:master": {
     "charts": [
@@ -3235,10 +3235,10 @@
      "CRITICAL": 3,
      "HIGH": 121,
      "LOW": 168,
-     "MEDIUM": 180,
-     "UNKNOWN": 10
+     "MEDIUM": 182,
+     "UNKNOWN": 12
     },
-    "total": 482
+    "total": 486
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3260,10 +3260,10 @@
      "CRITICAL": 11,
      "HIGH": 277,
      "LOW": 139,
-     "MEDIUM": 277,
-     "UNKNOWN": 10
+     "MEDIUM": 279,
+     "UNKNOWN": 12
     },
-    "total": 714
+    "total": 718
    },
    "docker.io/taigaio/taiga-events:6.10.0": {
     "charts": [
@@ -3336,9 +3336,9 @@
      "HIGH": 113,
      "LOW": 134,
      "MEDIUM": 216,
-     "UNKNOWN": 10
+     "UNKNOWN": 12
     },
-    "total": 476
+    "total": 478
    },
    "docker.io/valkey/valkey:9.1.3-alpine": {
     "charts": [
@@ -3546,9 +3546,9 @@
      "HIGH": 1,
      "LOW": 13,
      "MEDIUM": 53,
-     "UNKNOWN": 3
+     "UNKNOWN": 4
     },
-    "total": 70,
+    "total": 71,
     "vulnerabilities": [
      {
       "fixed": "6.2.1",
@@ -4105,6 +4105,14 @@
      {
       "fixed": "",
       "id": "CVE-2026-124024",
+      "installed": "2.41-12+deb13u4",
+      "package": "libc6",
+      "severity": "UNKNOWN",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-126765",
       "installed": "2.41-12+deb13u4",
       "package": "libc6",
       "severity": "UNKNOWN",
@@ -4697,8 +4705,8 @@
     "total": 14
    }
   },
-  "run_id": 44610348869,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/44610348869",
+  "run_id": 44693481601,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/44693481601",
   "source": "report"
  },
  "files": [
@@ -5237,7 +5245,7 @@
     "low": 13,
     "medium": 53,
     "open_fixable": 0,
-    "total": 70
+    "total": 71
    },
    "name": "mongosh",
    "ref": "ghcr.io/unxwares/mongosh:2.14.2",
@@ -5431,7 +5439,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-19T20:38:28Z",
+ "latest_result": "2026-11-20T07:17:07Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
