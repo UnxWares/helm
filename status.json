@@ -28,12 +28,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 1,
-      "high": 1,
+      "fixable": 0,
+      "high": 0,
       "low": 0,
       "medium": 0,
-      "open_fixable": 1,
-      "total": 1
+      "open_fixable": 0,
+      "total": 0
      },
      "image": "ghcr.io/unxwares/bind9:9.20.30",
      "name": "bind9",
@@ -347,12 +347,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 1,
-      "high": 1,
+      "fixable": 0,
+      "high": 0,
       "low": 0,
       "medium": 1,
-      "open_fixable": 1,
-      "total": 2
+      "open_fixable": 0,
+      "total": 1
      },
      "image": "ghcr.io/unxwares/cloudreve:4.19.1",
      "name": "cloudreve",
@@ -1777,12 +1777,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 4,
-      "high": 4,
+      "fixable": 0,
+      "high": 0,
       "low": 0,
-      "medium": 22,
-      "open_fixable": 4,
-      "total": 26
+      "medium": 0,
+      "open_fixable": 0,
+      "total": 0
      },
      "image": "ghcr.io/unxwares/mysql-client:8.4",
      "name": "mysql-client",
@@ -2113,12 +2113,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 4,
-      "high": 4,
+      "fixable": 0,
+      "high": 0,
       "low": 0,
-      "medium": 22,
-      "open_fixable": 4,
-      "total": 26
+      "medium": 0,
+      "open_fixable": 0,
+      "total": 0
      },
      "image": "ghcr.io/unxwares/mysql-client:8.4",
      "name": "mysql-client",
@@ -2528,12 +2528,12 @@
       "accepted": 0,
       "critical": 0,
       "eosl": false,
-      "fixable": 1,
-      "high": 1,
+      "fixable": 0,
+      "high": 0,
       "low": 0,
       "medium": 0,
-      "open_fixable": 1,
-      "total": 1
+      "open_fixable": 0,
+      "total": 0
      },
      "image": "ghcr.io/unxwares/postgres:17.11-alpine",
      "name": "postgres",
@@ -2846,7 +2846,7 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-20T20:20:39Z",
+  "date": "2026-11-21T07:07:49Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
@@ -2884,7 +2884,7 @@
      "CRITICAL": 16,
      "HIGH": 276,
      "LOW": 95,
-     "MEDIUM": 223,
+     "MEDIUM": 222,
      "UNKNOWN": 43
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2894,10 +2894,10 @@
      "CRITICAL": 16,
      "HIGH": 276,
      "LOW": 95,
-     "MEDIUM": 223,
+     "MEDIUM": 222,
      "UNKNOWN": 43
     },
-    "total": 653
+    "total": 652
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -2955,9 +2955,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 2,
-     "HIGH": 64,
+     "HIGH": 72,
      "LOW": 7,
-     "MEDIUM": 99,
+     "MEDIUM": 100,
      "UNKNOWN": 1
     },
     "image": "docker.io/library/mysql:8.4",
@@ -2965,12 +2965,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 2,
-     "HIGH": 64,
+     "HIGH": 72,
      "LOW": 7,
-     "MEDIUM": 99,
+     "MEDIUM": 100,
      "UNKNOWN": 1
     },
-    "total": 173
+    "total": 182
    },
    "docker.io/library/postgres:17.11-alpine": {
     "charts": [
@@ -3446,7 +3446,7 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 1,
+     "HIGH": 0,
      "LOW": 0,
      "MEDIUM": 0,
      "UNKNOWN": 0
@@ -3456,22 +3456,13 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 1,
+     "HIGH": 0,
      "LOW": 0,
      "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 1,
-    "vulnerabilities": [
-     {
-      "fixed": "2.13.9-r3",
-      "id": "CVE-2026-86144",
-      "installed": "2.13.9-r2",
-      "package": "libxml2",
-      "severity": "HIGH",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/cloudreve:4.19.1": {
     "charts": [
@@ -3481,7 +3472,7 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 1,
+     "HIGH": 0,
      "LOW": 0,
      "MEDIUM": 1,
      "UNKNOWN": 0
@@ -3491,21 +3482,13 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 1,
+     "HIGH": 0,
      "LOW": 0,
      "MEDIUM": 1,
      "UNKNOWN": 0
     },
-    "total": 2,
+    "total": 1,
     "vulnerabilities": [
-     {
-      "fixed": "2.13.9-r3",
-      "id": "CVE-2026-86144",
-      "installed": "2.13.9-r2",
-      "package": "libxml2",
-      "severity": "HIGH",
-      "type": "alpine"
-     },
      {
       "fixed": "1.3.6",
       "id": "CVE-2023-45292",
@@ -4146,9 +4129,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 4,
+     "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 22,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/mysql-client:8.4",
@@ -4156,222 +4139,13 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 4,
+     "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 22,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 26,
-    "vulnerabilities": [
-     {
-      "fixed": "2.37.4-28.0.1.el9_9.1",
-      "id": "CVE-2026-53615",
-      "installed": "2.37.4-28.0.1.el9_9",
-      "package": "libblkid",
-      "severity": "HIGH",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.37.4-28.0.1.el9_9.1",
-      "id": "CVE-2026-53615",
-      "installed": "2.37.4-28.0.1.el9_9",
-      "package": "libmount",
-      "severity": "HIGH",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.37.4-28.0.1.el9_9.1",
-      "id": "CVE-2026-53615",
-      "installed": "2.37.4-28.0.1.el9_9",
-      "package": "libsmartcols",
-      "severity": "HIGH",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.37.4-28.0.1.el9_9.1",
-      "id": "CVE-2026-53615",
-      "installed": "2.37.4-28.0.1.el9_9",
-      "package": "libuuid",
-      "severity": "HIGH",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-290.0.1.el9_9",
-      "id": "CVE-2026-86805",
-      "installed": "2.34-285.0.1.el9_9",
-      "package": "glibc",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-290.0.1.el9_9",
-      "id": "CVE-2026-89092",
-      "installed": "2.34-285.0.1.el9_9",
-      "package": "glibc",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-290.0.1.el9_9",
-      "id": "CVE-2026-95818",
-      "installed": "2.34-285.0.1.el9_9",
-      "package": "glibc",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-290.0.1.el9_9",
-      "id": "CVE-2026-86805",
-      "installed": "2.34-285.0.1.el9_9",
-      "package": "glibc-common",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-290.0.1.el9_9",
-      "id": "CVE-2026-89092",
-      "installed": "2.34-285.0.1.el9_9",
-      "package": "glibc-common",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-290.0.1.el9_9",
-      "id": "CVE-2026-95818",
-      "installed": "2.34-285.0.1.el9_9",
-      "package": "glibc-common",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-290.0.1.el9_9",
-      "id": "CVE-2026-86805",
-      "installed": "2.34-285.0.1.el9_9",
-      "package": "glibc-minimal-langpack",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-290.0.1.el9_9",
-      "id": "CVE-2026-89092",
-      "installed": "2.34-285.0.1.el9_9",
-      "package": "glibc-minimal-langpack",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "2.34-290.0.1.el9_9",
-      "id": "CVE-2026-95818",
-      "installed": "2.34-285.0.1.el9_9",
-      "package": "glibc-minimal-langpack",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "1:3.5.9-1.0.1.el9_9",
-      "id": "CVE-2026-35189",
-      "installed": "1:3.5.8-2.0.1.el9_8",
-      "package": "openssl-libs",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "1:3.5.9-1.0.1.el9_9",
-      "id": "CVE-2026-35191",
-      "installed": "1:3.5.8-2.0.1.el9_8",
-      "package": "openssl-libs",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "1:3.5.9-1.0.1.el9_9",
-      "id": "CVE-2026-42772",
-      "installed": "1:3.5.8-2.0.1.el9_8",
-      "package": "openssl-libs",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "1:3.5.9-1.0.1.el9_9",
-      "id": "CVE-2026-54872",
-      "installed": "1:3.5.8-2.0.1.el9_8",
-      "package": "openssl-libs",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "1:3.5.9-1.0.1.el9_9",
-      "id": "CVE-2026-54873",
-      "installed": "1:3.5.8-2.0.1.el9_8",
-      "package": "openssl-libs",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "1:3.5.9-1.0.1.el9_9",
-      "id": "CVE-2026-54875",
-      "installed": "1:3.5.8-2.0.1.el9_8",
-      "package": "openssl-libs",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "1:3.5.9-1.0.1.el9_9",
-      "id": "CVE-2026-72897",
-      "installed": "1:3.5.8-2.0.1.el9_8",
-      "package": "openssl-libs",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "1:3.5.9-1.0.1.el9_9",
-      "id": "CVE-2026-75804",
-      "installed": "1:3.5.8-2.0.1.el9_8",
-      "package": "openssl-libs",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "1:3.5.9-1.0.1.el9_9",
-      "id": "CVE-2026-75805",
-      "installed": "1:3.5.8-2.0.1.el9_8",
-      "package": "openssl-libs",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "1:3.5.9-1.0.1.el9_9",
-      "id": "CVE-2026-75806",
-      "installed": "1:3.5.8-2.0.1.el9_8",
-      "package": "openssl-libs",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "1:3.5.9-1.0.1.el9_9",
-      "id": "CVE-2026-77696",
-      "installed": "1:3.5.8-2.0.1.el9_8",
-      "package": "openssl-libs",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "1:3.5.9-1.0.1.el9_9",
-      "id": "CVE-2026-84784",
-      "installed": "1:3.5.8-2.0.1.el9_8",
-      "package": "openssl-libs",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     },
-     {
-      "fixed": "5.2.5-8.el9_9.1",
-      "id": "CVE-2026-34743",
-      "installed": "5.2.5-8.el9_8.1",
-      "package": "xz-libs",
-      "severity": "MEDIUM",
-      "type": "oracle"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/pdns-auth:5.1.5": {
     "charts": [
@@ -4433,7 +4207,7 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 1,
+     "HIGH": 0,
      "LOW": 0,
      "MEDIUM": 0,
      "UNKNOWN": 0
@@ -4443,22 +4217,13 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 1,
+     "HIGH": 0,
      "LOW": 0,
      "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 1,
-    "vulnerabilities": [
-     {
-      "fixed": "2.13.9-r3",
-      "id": "CVE-2026-86144",
-      "installed": "2.13.9-r2",
-      "package": "libxml2",
-      "severity": "HIGH",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/postgres:18.6-alpine": {
     "charts": [
@@ -4467,7 +4232,7 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 1,
+     "HIGH": 0,
      "LOW": 0,
      "MEDIUM": 0,
      "UNKNOWN": 0
@@ -4477,22 +4242,13 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 1,
+     "HIGH": 0,
      "LOW": 0,
      "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 1,
-    "vulnerabilities": [
-     {
-      "fixed": "2.13.9-r3",
-      "id": "CVE-2026-86144",
-      "installed": "2.13.9-r2",
-      "package": "libxml2",
-      "severity": "HIGH",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/postgresql-client:18": {
     "charts": [
@@ -4844,8 +4600,8 @@
     "total": 14
    }
   },
-  "run_id": 44810078590,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/44810078590",
+  "run_id": 44878642422,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/44878642422",
   "source": "report"
  },
  "files": [
@@ -4901,12 +4657,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 1,
-    "high": 1,
+    "fixable": 0,
+    "high": 0,
     "low": 0,
     "medium": 0,
-    "open_fixable": 1,
-    "total": 1
+    "open_fixable": 0,
+    "total": 0
    },
    "name": "postgres",
    "ref": "ghcr.io/unxwares/postgres:17.11-alpine",
@@ -4947,12 +4703,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 1,
-    "high": 1,
+    "fixable": 0,
+    "high": 0,
     "low": 0,
     "medium": 0,
-    "open_fixable": 1,
-    "total": 1
+    "open_fixable": 0,
+    "total": 0
    },
    "name": "postgres",
    "ref": "ghcr.io/unxwares/postgres:18.6-alpine",
@@ -5331,12 +5087,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 4,
-    "high": 4,
+    "fixable": 0,
+    "high": 0,
     "low": 0,
-    "medium": 22,
-    "open_fixable": 4,
-    "total": 26
+    "medium": 0,
+    "open_fixable": 0,
+    "total": 0
    },
    "name": "mysql-client",
    "ref": "ghcr.io/unxwares/mysql-client:8.4",
@@ -5427,12 +5183,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 1,
-    "high": 1,
+    "fixable": 0,
+    "high": 0,
     "low": 0,
     "medium": 1,
-    "open_fixable": 1,
-    "total": 2
+    "open_fixable": 0,
+    "total": 1
    },
    "name": "cloudreve",
    "ref": "ghcr.io/unxwares/cloudreve:4.19.1",
@@ -5565,12 +5321,12 @@
     "accepted": 0,
     "critical": 0,
     "eosl": false,
-    "fixable": 1,
-    "high": 1,
+    "fixable": 0,
+    "high": 0,
     "low": 0,
     "medium": 0,
-    "open_fixable": 1,
-    "total": 1
+    "open_fixable": 0,
+    "total": 0
    },
    "name": "bind9",
    "ref": "ghcr.io/unxwares/bind9:9.20.30",
@@ -5578,7 +5334,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-20T20:28:16Z",
+ "latest_result": "2026-11-21T07:07:49Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
