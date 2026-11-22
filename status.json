@@ -2846,7 +2846,7 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-22T06:48:29Z",
+  "date": "2026-11-22T19:40:53Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
@@ -2884,7 +2884,7 @@
      "CRITICAL": 16,
      "HIGH": 276,
      "LOW": 95,
-     "MEDIUM": 223,
+     "MEDIUM": 222,
      "UNKNOWN": 43
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2894,10 +2894,10 @@
      "CRITICAL": 16,
      "HIGH": 276,
      "LOW": 95,
-     "MEDIUM": 223,
+     "MEDIUM": 222,
      "UNKNOWN": 43
     },
-    "total": 653
+    "total": 652
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -3115,9 +3115,9 @@
      "HIGH": 285,
      "LOW": 188,
      "MEDIUM": 298,
-     "UNKNOWN": 23
+     "UNKNOWN": 24
     },
-    "total": 802
+    "total": 803
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3140,9 +3140,9 @@
      "HIGH": 154,
      "LOW": 172,
      "MEDIUM": 207,
-     "UNKNOWN": 20
+     "UNKNOWN": 21
     },
-    "total": 553
+    "total": 554
    },
    "docker.io/prometheuscommunity/bind-exporter:master": {
     "charts": [
@@ -4616,8 +4616,8 @@
     "total": 14
    }
   },
-  "run_id": 44995243972,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/44995243972",
+  "run_id": 45061935749,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/45061935749",
   "source": "report"
  },
  "files": [
@@ -5350,7 +5350,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-22T06:48:29Z",
+ "latest_result": "2026-11-22T19:40:53Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
