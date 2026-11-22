@@ -4645,26 +4645,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237936",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151309",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237772",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151528",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683026",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463701",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "Alpine packages upgraded, `su-exec` instead of `gosu` (built with an old Go toolchain)",
@@ -4691,26 +4691,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238155",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151504",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237918",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151453",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683027",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463679",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "Alpine packages upgraded, `su-exec` instead of `gosu` (built with an old Go toolchain)",
@@ -4753,26 +4753,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237894",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151496",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237864",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151547",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683055",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463675",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "Alpine, non-root (uid 999), dependencies bumped for known vulnerabilities, upstream security fixes not released yet (`patches/`), Django 3.2 security fixes backported by Debian (`django-patches/`), OIDC plugin built in",
@@ -4799,26 +4799,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237953",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151465",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238052",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151492",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683015",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463706",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "Node.js 24, current dependencies, no npm, non-root, read-only root filesystem",
@@ -4845,26 +4845,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237958",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151439",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238047",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151526",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683059",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463662",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "nginx-unprivileged slim, non-root, port 8080, read-only root filesystem, OIDC plugin built in",
@@ -4891,26 +4891,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237960",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151553",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237999",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151570",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683061",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463688",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "Python 3.12 Alpine, current gunicorn and Werkzeug, non-root, read-only root filesystem",
@@ -4937,26 +4937,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238021",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151485",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238044",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151619",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683033",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463621",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "Alpine, built from the release tarball with the backends the chart uses (bind, gsqlite3, gpgsql, gmysql), no vim or curl",
@@ -4983,26 +4983,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238244",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151592",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238082",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151576",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683030",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463853",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "Alpine, built from the release tarball",
@@ -5029,26 +5029,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237910",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151388",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238043",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151574",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683078",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463711",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "The PostgreSQL client only, from Alpine packages, instead of a whole server image; latest 18.x at each rebuild",
@@ -5075,26 +5075,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237961",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151585",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237938",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151668",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683068",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463672",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "The MySQL client only, from the signed packages of the official MySQL repository on Oracle Linux 9 slim; latest 8.4.x at each rebuild",
@@ -5123,26 +5123,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237964",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151650",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238048",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151809",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683017",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463686",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "The official mongosh release, checked against its SHA-256, on a distroless base; its SBOM stays in the image so that scanners see the bundled dependencies",
@@ -5171,26 +5171,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238022",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151750",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238097",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151522",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683022",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463670",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "Built from the release sources with the Go module updates of `patches/` (cloudreve/cloudreve#3618), current Alpine, same thumbnail tools (libvips, FFmpeg, LibreOffice, libheif, libraw); no aria2 or supervisord, no default time zone, non-root (uid 1000)",
@@ -5217,26 +5217,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238005",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151678",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238029",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151670",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683048",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463651",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "Built from the upstream sources (commit `b06baad`, release v1.0.6) without the unused `uuid` dependency of the backend (`patches/`), current Alpine, no npm, su-exec or openssl; nginx on port 8080 and the backend run as uid 1000 with a read-only root filesystem, the backend listens on 127.0.0.1 only and its CORS headers (any origin) are dropped",
@@ -5263,26 +5263,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238024",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151730",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238049",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151560",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683035",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463751",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "Built from the sources of the master branch (commit `bafd56f`, 62 commits after v0.8.0) with Go 1.27 and the `golang.org/x` module updates of `patches/` (prometheus-community/bind_exporter#301), static binary on distroless, same path, flags, port and user (`nobody`)",
@@ -5309,26 +5309,26 @@
     "arch": {
      "amd64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955238013",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151515",
       "scan_findings": 0,
       "status": "passed"
      },
      "arm64": {
       "failed_step": null,
-      "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136955237986",
+      "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137330151584",
       "scan_findings": 0,
       "status": "passed"
      }
     },
     "commit": "cb4cc31179415ebae741045550344f659a830d88",
-    "date": "2026-11-21T19:26:41Z",
+    "date": "2026-11-22T19:49:25Z",
     "event": "workflow_dispatch",
     "publish": {
-     "job_url": "https://github.com/UnxWares/helm/actions/runs/44940114280/job/136957683065",
+     "job_url": "https://github.com/UnxWares/helm/actions/runs/45062120120/job/137332463879",
      "status": "passed"
     },
-    "run_id": 44940114280,
-    "run_url": "https://github.com/UnxWares/helm/actions/runs/44940114280",
+    "run_id": 45062120120,
+    "run_url": "https://github.com/UnxWares/helm/actions/runs/45062120120",
     "status": "passed"
    },
    "changes": "Built from the release tarball, checked against its SHA-256 and the OpenPGP signature of an ISC code-signing key, with the base (Alpine 3.24), build options, paths, ports and user (`bind`, uid 53) of the official image; rebuilt twice a week on current Alpine packages (the official image is rebuilt once per BIND release); starts as `bind` instead of root, logs to stderr, no procps, headers or static libraries",
@@ -5350,7 +5350,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-22T19:40:53Z",
+ "latest_result": "2026-11-22T19:49:25Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
