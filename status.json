@@ -1794,11 +1794,11 @@
       "critical": 0,
       "eosl": false,
       "fixable": 1,
-      "high": 2,
+      "high": 3,
       "low": 17,
       "medium": 37,
       "open_fixable": 0,
-      "total": 59
+      "total": 60
      },
      "image": "ghcr.io/unxwares/mongosh:2.14.2",
      "name": "mongosh",
@@ -2846,8 +2846,8 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-23T13:49:13Z",
-  "event": "workflow_run",
+  "date": "2026-11-23T23:54:30Z",
+  "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
     "charts": [
@@ -2957,7 +2957,7 @@
      "CRITICAL": 2,
      "HIGH": 90,
      "LOW": 7,
-     "MEDIUM": 110,
+     "MEDIUM": 84,
      "UNKNOWN": 1
     },
     "image": "docker.io/library/mysql:8.4",
@@ -2967,10 +2967,10 @@
      "CRITICAL": 2,
      "HIGH": 90,
      "LOW": 7,
-     "MEDIUM": 110,
+     "MEDIUM": 84,
      "UNKNOWN": 1
     },
-    "total": 210
+    "total": 184
    },
    "docker.io/library/postgres:17.11-alpine": {
     "charts": [
@@ -3112,12 +3112,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 8,
-     "HIGH": 285,
-     "LOW": 183,
+     "HIGH": 288,
+     "LOW": 186,
      "MEDIUM": 303,
-     "UNKNOWN": 31
+     "UNKNOWN": 33
     },
-    "total": 810
+    "total": 818
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3137,12 +3137,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 154,
+     "HIGH": 157,
      "LOW": 167,
      "MEDIUM": 212,
-     "UNKNOWN": 28
+     "UNKNOWN": 30
     },
-    "total": 561
+    "total": 566
    },
    "docker.io/prometheuscommunity/bind-exporter:master": {
     "charts": [
@@ -3233,12 +3233,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 3,
-     "HIGH": 121,
+     "HIGH": 122,
      "LOW": 172,
-     "MEDIUM": 182,
-     "UNKNOWN": 17
+     "MEDIUM": 186,
+     "UNKNOWN": 19
     },
-    "total": 495
+    "total": 502
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3258,12 +3258,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 11,
-     "HIGH": 280,
+     "HIGH": 283,
      "LOW": 149,
      "MEDIUM": 274,
-     "UNKNOWN": 17
+     "UNKNOWN": 19
     },
-    "total": 731
+    "total": 736
    },
    "docker.io/taigaio/taiga-events:6.10.0": {
     "charts": [
@@ -3333,12 +3333,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 3,
-     "HIGH": 116,
+     "HIGH": 119,
      "LOW": 148,
      "MEDIUM": 207,
-     "UNKNOWN": 17
+     "UNKNOWN": 19
     },
-    "total": 491
+    "total": 496
    },
    "docker.io/valkey/valkey:9.1.3-alpine": {
     "charts": [
@@ -3543,12 +3543,12 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 2,
+     "HIGH": 3,
      "LOW": 17,
      "MEDIUM": 37,
      "UNKNOWN": 3
     },
-    "total": 59,
+    "total": 60,
     "vulnerabilities": [
      {
       "fixed": "6.2.1",
@@ -3557,6 +3557,14 @@
       "package": "basic-ftp",
       "severity": "HIGH",
       "type": "node-pkg"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-107494",
+      "installed": "3.5.9-1~deb13u1",
+      "package": "libssl3t64",
+      "severity": "HIGH",
+      "type": "debian"
      },
      {
       "fixed": "",
@@ -4504,8 +4512,8 @@
     "total": 14
    }
   },
-  "run_id": 45187309615,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/45187309615",
+  "run_id": 45292519870,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/45292519870",
   "source": "report"
  },
  "files": [
@@ -5040,11 +5048,11 @@
     "critical": 0,
     "eosl": false,
     "fixable": 1,
-    "high": 2,
+    "high": 3,
     "low": 17,
     "medium": 37,
     "open_fixable": 0,
-    "total": 59
+    "total": 60
    },
    "name": "mongosh",
    "ref": "ghcr.io/unxwares/mongosh:2.14.2",
@@ -5238,7 +5246,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-23T13:49:13Z",
+ "latest_result": "2026-11-23T23:54:30Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
