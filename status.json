@@ -2846,7 +2846,7 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-22T19:40:53Z",
+  "date": "2026-11-23T07:39:17Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
@@ -2884,7 +2884,7 @@
      "CRITICAL": 16,
      "HIGH": 276,
      "LOW": 95,
-     "MEDIUM": 222,
+     "MEDIUM": 223,
      "UNKNOWN": 43
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2894,10 +2894,10 @@
      "CRITICAL": 16,
      "HIGH": 276,
      "LOW": 95,
-     "MEDIUM": 222,
+     "MEDIUM": 223,
      "UNKNOWN": 43
     },
-    "total": 652
+    "total": 653
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -3102,9 +3102,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 5,
-     "HIGH": 133,
+     "HIGH": 203,
      "LOW": 9,
-     "MEDIUM": 110,
+     "MEDIUM": 130,
      "UNKNOWN": 3
     },
     "image": "docker.io/powerdns/pdns-auth-51:5.1.5",
@@ -3113,11 +3113,11 @@
     "severity": {
      "CRITICAL": 8,
      "HIGH": 285,
-     "LOW": 188,
-     "MEDIUM": 298,
-     "UNKNOWN": 24
+     "LOW": 183,
+     "MEDIUM": 303,
+     "UNKNOWN": 31
     },
-    "total": 803
+    "total": 810
    },
    "docker.io/powerdns/pdns-recursor-54:5.4.9": {
     "charts": [
@@ -3127,9 +3127,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 3,
+     "HIGH": 73,
      "LOW": 2,
-     "MEDIUM": 28,
+     "MEDIUM": 48,
      "UNKNOWN": 0
     },
     "image": "docker.io/powerdns/pdns-recursor-54:5.4.9",
@@ -3138,11 +3138,11 @@
     "severity": {
      "CRITICAL": 0,
      "HIGH": 154,
-     "LOW": 172,
-     "MEDIUM": 207,
-     "UNKNOWN": 21
+     "LOW": 167,
+     "MEDIUM": 212,
+     "UNKNOWN": 28
     },
-    "total": 554
+    "total": 561
    },
    "docker.io/prometheuscommunity/bind-exporter:master": {
     "charts": [
@@ -3236,9 +3236,9 @@
      "HIGH": 121,
      "LOW": 172,
      "MEDIUM": 182,
-     "UNKNOWN": 10
+     "UNKNOWN": 17
     },
-    "total": 488
+    "total": 495
    },
    "docker.io/taigaio/taiga-back:6.10.2": {
     "charts": [
@@ -3248,9 +3248,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 11,
-     "HIGH": 174,
+     "HIGH": 230,
      "LOW": 51,
-     "MEDIUM": 172,
+     "MEDIUM": 188,
      "UNKNOWN": 3
     },
     "image": "docker.io/taigaio/taiga-back:6.10.2",
@@ -3259,11 +3259,11 @@
     "severity": {
      "CRITICAL": 11,
      "HIGH": 280,
-     "LOW": 153,
-     "MEDIUM": 270,
-     "UNKNOWN": 10
+     "LOW": 149,
+     "MEDIUM": 274,
+     "UNKNOWN": 17
     },
-    "total": 724
+    "total": 731
    },
    "docker.io/taigaio/taiga-events:6.10.0": {
     "charts": [
@@ -3336,9 +3336,9 @@
      "HIGH": 116,
      "LOW": 148,
      "MEDIUM": 207,
-     "UNKNOWN": 10
+     "UNKNOWN": 17
     },
-    "total": 484
+    "total": 491
    },
    "docker.io/valkey/valkey:9.1.3-alpine": {
     "charts": [
@@ -4616,8 +4616,8 @@
     "total": 14
    }
   },
-  "run_id": 45061935749,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/45061935749",
+  "run_id": 45132416292,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/45132416292",
   "source": "report"
  },
  "files": [
@@ -5350,7 +5350,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-22T19:49:25Z",
+ "latest_result": "2026-11-23T07:39:17Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
