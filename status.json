@@ -1795,10 +1795,10 @@
       "eosl": false,
       "fixable": 1,
       "high": 2,
-      "low": 18,
-      "medium": 50,
+      "low": 17,
+      "medium": 37,
       "open_fixable": 0,
-      "total": 73
+      "total": 59
      },
      "image": "ghcr.io/unxwares/mongosh:2.14.2",
      "name": "mongosh",
@@ -2846,8 +2846,8 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-23T07:39:17Z",
-  "event": "schedule",
+  "date": "2026-11-23T13:49:13Z",
+  "event": "workflow_run",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
     "charts": [
@@ -3426,7 +3426,7 @@
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f",
-    "os": "debian 13.7",
+    "os": "debian 13.8",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
@@ -3534,21 +3534,21 @@
     "fixable": {
      "CRITICAL": 0,
      "HIGH": 1,
-     "LOW": 1,
-     "MEDIUM": 17,
+     "LOW": 0,
+     "MEDIUM": 4,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/mongosh:2.14.2",
-    "os": "debian 13.7",
+    "os": "debian 13.8",
     "ours": true,
     "severity": {
      "CRITICAL": 0,
      "HIGH": 2,
-     "LOW": 18,
-     "MEDIUM": 50,
+     "LOW": 17,
+     "MEDIUM": 37,
      "UNKNOWN": 3
     },
-    "total": 73,
+    "total": 59,
     "vulnerabilities": [
      {
       "fixed": "6.2.1",
@@ -3561,7 +3561,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-124709",
-      "installed": "3.5.7-1~deb13u3",
+      "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
       "severity": "HIGH",
       "type": "debian"
@@ -3641,79 +3641,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-115819",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-18374",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-19499",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-19542",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-5435",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-6238",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-6368",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-6791",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-77117",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-80489",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "MEDIUM",
       "type": "debian"
@@ -3721,39 +3649,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-84243",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-8674",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-86805",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-89092",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "MEDIUM",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-95818",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "MEDIUM",
       "type": "debian"
@@ -3857,7 +3753,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-107496",
-      "installed": "3.5.7-1~deb13u3",
+      "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
       "severity": "MEDIUM",
       "type": "debian"
@@ -3865,7 +3761,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-121482",
-      "installed": "3.5.7-1~deb13u3",
+      "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
       "severity": "MEDIUM",
       "type": "debian"
@@ -3873,7 +3769,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-35190",
-      "installed": "3.5.7-1~deb13u3",
+      "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
       "severity": "MEDIUM",
       "type": "debian"
@@ -3881,7 +3777,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-84786",
-      "installed": "3.5.7-1~deb13u3",
+      "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
       "severity": "MEDIUM",
       "type": "debian"
@@ -3889,7 +3785,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-95690",
-      "installed": "3.5.7-1~deb13u3",
+      "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
       "severity": "MEDIUM",
       "type": "debian"
@@ -3897,7 +3793,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-95691",
-      "installed": "3.5.7-1~deb13u3",
+      "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
       "severity": "MEDIUM",
       "type": "debian"
@@ -3905,7 +3801,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-95692",
-      "installed": "3.5.7-1~deb13u3",
+      "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
       "severity": "MEDIUM",
       "type": "debian"
@@ -3977,7 +3873,7 @@
      {
       "fixed": "",
       "id": "CVE-2010-4756",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "LOW",
       "type": "debian"
@@ -3985,7 +3881,7 @@
      {
       "fixed": "",
       "id": "CVE-2018-20796",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "LOW",
       "type": "debian"
@@ -3993,7 +3889,7 @@
      {
       "fixed": "",
       "id": "CVE-2019-1010022",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "LOW",
       "type": "debian"
@@ -4001,7 +3897,7 @@
      {
       "fixed": "",
       "id": "CVE-2019-1010023",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "LOW",
       "type": "debian"
@@ -4009,7 +3905,7 @@
      {
       "fixed": "",
       "id": "CVE-2019-1010024",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "LOW",
       "type": "debian"
@@ -4017,7 +3913,7 @@
      {
       "fixed": "",
       "id": "CVE-2019-1010025",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "LOW",
       "type": "debian"
@@ -4025,7 +3921,7 @@
      {
       "fixed": "",
       "id": "CVE-2019-9192",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "LOW",
       "type": "debian"
@@ -4033,7 +3929,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-100290",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "LOW",
       "type": "debian"
@@ -4041,15 +3937,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-126765",
-      "installed": "2.41-12+deb13u4",
-      "package": "libc6",
-      "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "2.41-12+deb13u5",
-      "id": "CVE-2026-97399",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "LOW",
       "type": "debian"
@@ -4073,7 +3961,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-107493",
-      "installed": "3.5.7-1~deb13u3",
+      "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
       "severity": "LOW",
       "type": "debian"
@@ -4081,7 +3969,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-121481",
-      "installed": "3.5.7-1~deb13u3",
+      "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
       "severity": "LOW",
       "type": "debian"
@@ -4089,7 +3977,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-88822",
-      "installed": "3.5.7-1~deb13u3",
+      "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
       "severity": "LOW",
       "type": "debian"
@@ -4097,7 +3985,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-88823",
-      "installed": "3.5.7-1~deb13u3",
+      "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
       "severity": "LOW",
       "type": "debian"
@@ -4113,7 +4001,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-121757",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "UNKNOWN",
       "type": "debian"
@@ -4121,7 +4009,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-121758",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "UNKNOWN",
       "type": "debian"
@@ -4129,7 +4017,7 @@
      {
       "fixed": "",
       "id": "CVE-2026-124024",
-      "installed": "2.41-12+deb13u4",
+      "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "UNKNOWN",
       "type": "debian"
@@ -4616,8 +4504,8 @@
     "total": 14
    }
   },
-  "run_id": 45132416292,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/45132416292",
+  "run_id": 45187309615,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/45187309615",
   "source": "report"
  },
  "files": [
@@ -5153,10 +5041,10 @@
     "eosl": false,
     "fixable": 1,
     "high": 2,
-    "low": 18,
-    "medium": 50,
+    "low": 17,
+    "medium": 37,
     "open_fixable": 0,
-    "total": 73
+    "total": 59
    },
    "name": "mongosh",
    "ref": "ghcr.io/unxwares/mongosh:2.14.2",
@@ -5350,7 +5238,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-23T13:46:46Z",
+ "latest_result": "2026-11-23T13:49:13Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
