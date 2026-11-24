@@ -1796,7 +1796,7 @@
       "fixable": 1,
       "high": 3,
       "low": 17,
-      "medium": 37,
+      "medium": 38,
       "open_fixable": 0,
       "total": 60
      },
@@ -2846,7 +2846,7 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-23T23:54:30Z",
+  "date": "2026-11-24T09:55:56Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
@@ -2882,9 +2882,9 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 16,
-     "HIGH": 276,
-     "LOW": 95,
-     "MEDIUM": 223,
+     "HIGH": 277,
+     "LOW": 99,
+     "MEDIUM": 229,
      "UNKNOWN": 43
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2892,12 +2892,12 @@
     "ours": false,
     "severity": {
      "CRITICAL": 16,
-     "HIGH": 276,
-     "LOW": 95,
-     "MEDIUM": 223,
+     "HIGH": 277,
+     "LOW": 99,
+     "MEDIUM": 229,
      "UNKNOWN": 43
     },
-    "total": 653
+    "total": 664
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -2955,22 +2955,22 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 2,
-     "HIGH": 90,
+     "HIGH": 33,
      "LOW": 7,
-     "MEDIUM": 84,
+     "MEDIUM": 39,
      "UNKNOWN": 1
     },
     "image": "docker.io/library/mysql:8.4",
-    "os": "oracle 9.8",
+    "os": "oracle 9.9",
     "ours": false,
     "severity": {
      "CRITICAL": 2,
-     "HIGH": 90,
+     "HIGH": 33,
      "LOW": 7,
-     "MEDIUM": 84,
+     "MEDIUM": 39,
      "UNKNOWN": 1
     },
-    "total": 184
+    "total": 82
    },
    "docker.io/library/postgres:17.11-alpine": {
     "charts": [
@@ -3114,8 +3114,8 @@
      "CRITICAL": 8,
      "HIGH": 288,
      "LOW": 186,
-     "MEDIUM": 303,
-     "UNKNOWN": 33
+     "MEDIUM": 305,
+     "UNKNOWN": 31
     },
     "total": 818
    },
@@ -3139,8 +3139,8 @@
      "CRITICAL": 0,
      "HIGH": 157,
      "LOW": 167,
-     "MEDIUM": 212,
-     "UNKNOWN": 30
+     "MEDIUM": 214,
+     "UNKNOWN": 28
     },
     "total": 566
    },
@@ -3235,8 +3235,8 @@
      "CRITICAL": 3,
      "HIGH": 122,
      "LOW": 172,
-     "MEDIUM": 186,
-     "UNKNOWN": 19
+     "MEDIUM": 188,
+     "UNKNOWN": 17
     },
     "total": 502
    },
@@ -3260,8 +3260,8 @@
      "CRITICAL": 11,
      "HIGH": 283,
      "LOW": 149,
-     "MEDIUM": 274,
-     "UNKNOWN": 19
+     "MEDIUM": 276,
+     "UNKNOWN": 17
     },
     "total": 736
    },
@@ -3335,8 +3335,8 @@
      "CRITICAL": 3,
      "HIGH": 119,
      "LOW": 148,
-     "MEDIUM": 207,
-     "UNKNOWN": 19
+     "MEDIUM": 209,
+     "UNKNOWN": 17
     },
     "total": 496
    },
@@ -3545,8 +3545,8 @@
      "CRITICAL": 0,
      "HIGH": 3,
      "LOW": 17,
-     "MEDIUM": 37,
-     "UNKNOWN": 3
+     "MEDIUM": 38,
+     "UNKNOWN": 2
     },
     "total": 60,
     "vulnerabilities": [
@@ -3649,6 +3649,14 @@
      {
       "fixed": "",
       "id": "CVE-2026-115819",
+      "installed": "2.41-12+deb13u5",
+      "package": "libc6",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
+      "id": "CVE-2026-121757",
       "installed": "2.41-12+deb13u5",
       "package": "libc6",
       "severity": "MEDIUM",
@@ -4004,14 +4012,6 @@
       "installed": "14.2.0-19",
       "package": "libstdc++6",
       "severity": "LOW",
-      "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-121757",
-      "installed": "2.41-12+deb13u5",
-      "package": "libc6",
-      "severity": "UNKNOWN",
       "type": "debian"
      },
      {
@@ -4512,8 +4512,8 @@
     "total": 14
    }
   },
-  "run_id": 45292519870,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/45292519870",
+  "run_id": 45369439755,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/45369439755",
   "source": "report"
  },
  "files": [
@@ -5050,7 +5050,7 @@
     "fixable": 1,
     "high": 3,
     "low": 17,
-    "medium": 37,
+    "medium": 38,
     "open_fixable": 0,
     "total": 60
    },
@@ -5246,7 +5246,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-23T23:54:30Z",
+ "latest_result": "2026-11-24T09:55:56Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
