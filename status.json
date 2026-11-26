@@ -350,9 +350,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 1,
+      "medium": 4,
       "open_fixable": 0,
-      "total": 1
+      "total": 4
      },
      "image": "ghcr.io/unxwares/cloudreve:4.19.1",
      "name": "cloudreve",
@@ -589,9 +589,9 @@
       "fixable": 8,
       "high": 8,
       "low": 4,
-      "medium": 8,
+      "medium": 11,
       "open_fixable": 8,
-      "total": 20
+      "total": 23
      },
      "image": "docker.io/zimengxiong/excalidash-frontend:0.6.7",
      "name": "excalidash-frontend",
@@ -873,9 +873,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 0,
+      "medium": 1,
       "open_fixable": 0,
-      "total": 0
+      "total": 1
      },
      "image": "ghcr.io/unxwares/fossflow:1.0.6",
      "name": "fossflow",
@@ -1458,9 +1458,9 @@
       "fixable": 9,
       "high": 5,
       "low": 4,
-      "medium": 10,
+      "medium": 11,
       "open_fixable": 9,
-      "total": 23
+      "total": 24
      },
      "image": "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim",
      "name": "nginx-unprivileged",
@@ -1796,7 +1796,7 @@
       "fixable": 2,
       "high": 4,
       "low": 17,
-      "medium": 38,
+      "medium": 39,
       "open_fixable": 1,
       "total": 62
      },
@@ -2068,9 +2068,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 0,
+      "medium": 3,
       "open_fixable": 0,
-      "total": 0
+      "total": 3
      },
      "image": "ghcr.io/unxwares/pdns-auth:5.1.5",
      "name": "pdns-auth",
@@ -2084,9 +2084,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 0,
+      "medium": 3,
       "open_fixable": 0,
-      "total": 0
+      "total": 3
      },
      "image": "ghcr.io/unxwares/pdns-recursor:5.4.9",
      "name": "pdns-recursor",
@@ -2467,9 +2467,9 @@
       "fixable": 4,
       "high": 3,
       "low": 5,
-      "medium": 6,
+      "medium": 9,
       "open_fixable": 0,
-      "total": 15
+      "total": 18
      },
      "image": "ghcr.io/unxwares/taiga-back:6.10.2",
      "name": "taiga-back",
@@ -2483,9 +2483,9 @@
       "fixable": 6,
       "high": 2,
       "low": 0,
-      "medium": 3,
+      "medium": 4,
       "open_fixable": 6,
-      "total": 9
+      "total": 10
      },
      "image": "ghcr.io/unxwares/taiga-front:6.10.3",
      "name": "taiga-front",
@@ -2563,9 +2563,9 @@
       "fixable": 9,
       "high": 5,
       "low": 4,
-      "medium": 10,
+      "medium": 11,
       "open_fixable": 9,
-      "total": 23
+      "total": 24
      },
      "image": "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim",
      "name": "nginx-unprivileged",
@@ -2846,7 +2846,7 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-25T21:42:34Z",
+  "date": "2026-11-26T08:18:43Z",
   "event": "schedule",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
@@ -2859,7 +2859,7 @@
      "CRITICAL": 4,
      "HIGH": 2,
      "LOW": 6,
-     "MEDIUM": 14,
+     "MEDIUM": 15,
      "UNKNOWN": 0
     },
     "image": "docker.io/abrar74774/fossflow:master-b06baad",
@@ -2869,10 +2869,10 @@
      "CRITICAL": 4,
      "HIGH": 2,
      "LOW": 6,
-     "MEDIUM": 14,
+     "MEDIUM": 15,
      "UNKNOWN": 0
     },
-    "total": 26
+    "total": 27
    },
    "docker.io/cloudreve/cloudreve:4.19.1": {
     "charts": [
@@ -2884,7 +2884,7 @@
      "CRITICAL": 16,
      "HIGH": 277,
      "LOW": 95,
-     "MEDIUM": 233,
+     "MEDIUM": 235,
      "UNKNOWN": 43
     },
     "image": "docker.io/cloudreve/cloudreve:4.19.1",
@@ -2894,10 +2894,10 @@
      "CRITICAL": 16,
      "HIGH": 277,
      "LOW": 95,
-     "MEDIUM": 233,
+     "MEDIUM": 235,
      "UNKNOWN": 43
     },
-    "total": 664
+    "total": 666
    },
    "docker.io/internetsystemsconsortium/bind9:9.20": {
     "charts": [
@@ -2933,7 +2933,7 @@
      "CRITICAL": 1,
      "HIGH": 29,
      "LOW": 3,
-     "MEDIUM": 47,
+     "MEDIUM": 137,
      "UNKNOWN": 2
     },
     "image": "docker.io/library/mongo:8.0",
@@ -2943,10 +2943,10 @@
      "CRITICAL": 1,
      "HIGH": 29,
      "LOW": 10,
-     "MEDIUM": 169,
+     "MEDIUM": 172,
      "UNKNOWN": 2
     },
-    "total": 211
+    "total": 214
    },
    "docker.io/library/mysql:8.4": {
     "charts": [
@@ -3079,7 +3079,7 @@
      "CRITICAL": 4,
      "HIGH": 5,
      "LOW": 4,
-     "MEDIUM": 10,
+     "MEDIUM": 11,
      "UNKNOWN": 0
     },
     "image": "docker.io/nginxinc/nginx-unprivileged:1.30.6-alpine-slim",
@@ -3089,10 +3089,10 @@
      "CRITICAL": 4,
      "HIGH": 5,
      "LOW": 4,
-     "MEDIUM": 10,
+     "MEDIUM": 11,
      "UNKNOWN": 0
     },
-    "total": 23
+    "total": 24
    },
    "docker.io/powerdns/pdns-auth-51:5.1.5": {
     "charts": [
@@ -3114,8 +3114,8 @@
      "CRITICAL": 8,
      "HIGH": 289,
      "LOW": 184,
-     "MEDIUM": 305,
-     "UNKNOWN": 32
+     "MEDIUM": 308,
+     "UNKNOWN": 29
     },
     "total": 818
    },
@@ -3139,8 +3139,8 @@
      "CRITICAL": 0,
      "HIGH": 158,
      "LOW": 165,
-     "MEDIUM": 214,
-     "UNKNOWN": 32
+     "MEDIUM": 217,
+     "UNKNOWN": 29
     },
     "total": 569
    },
@@ -3260,8 +3260,8 @@
      "CRITICAL": 11,
      "HIGH": 284,
      "LOW": 147,
-     "MEDIUM": 274,
-     "UNKNOWN": 21
+     "MEDIUM": 277,
+     "UNKNOWN": 18
     },
     "total": 737
    },
@@ -3335,8 +3335,8 @@
      "CRITICAL": 3,
      "HIGH": 120,
      "LOW": 146,
-     "MEDIUM": 209,
-     "UNKNOWN": 21
+     "MEDIUM": 212,
+     "UNKNOWN": 18
     },
     "total": 499
    },
@@ -3397,7 +3397,7 @@
      "CRITICAL": 0,
      "HIGH": 8,
      "LOW": 4,
-     "MEDIUM": 8,
+     "MEDIUM": 11,
      "UNKNOWN": 0
     },
     "image": "docker.io/zimengxiong/excalidash-frontend:0.6.7",
@@ -3407,10 +3407,10 @@
      "CRITICAL": 0,
      "HIGH": 8,
      "LOW": 4,
-     "MEDIUM": 8,
+     "MEDIUM": 11,
      "UNKNOWN": 0
     },
-    "total": 20
+    "total": 23
    },
    "ghcr.io/unxwares/bind-exporter:0.8.0-62-gbafd56f": {
     "charts": [
@@ -3474,7 +3474,7 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 4,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/cloudreve:4.19.1",
@@ -3484,10 +3484,10 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 4,
      "UNKNOWN": 0
     },
-    "total": 1,
+    "total": 4,
     "vulnerabilities": [
      {
       "fixed": "1.3.6",
@@ -3496,6 +3496,30 @@
       "package": "github.com/mojocn/base64Captcha",
       "severity": "MEDIUM",
       "type": "gobinary"
+     },
+     {
+      "fixed": "2.11.0-r0",
+      "id": "CVE-2026-124317",
+      "installed": "2.10.0-r0",
+      "package": "libexpat",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "2.11.0-r0",
+      "id": "CVE-2026-128241",
+      "installed": "2.10.0-r0",
+      "package": "libexpat",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "2.11.0-r0",
+      "id": "CVE-2026-134703",
+      "installed": "2.10.0-r0",
+      "package": "libexpat",
+      "severity": "MEDIUM",
+      "type": "alpine"
      }
     ]
    },
@@ -3509,7 +3533,7 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 0,
+     "MEDIUM": 1,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/fossflow:1.0.6",
@@ -3519,11 +3543,20 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 0,
+     "MEDIUM": 1,
      "UNKNOWN": 0
     },
-    "total": 0,
-    "vulnerabilities": []
+    "total": 1,
+    "vulnerabilities": [
+     {
+      "fixed": "1.30.8-r0",
+      "id": "CVE-2026-132779",
+      "installed": "1.30.7-r0",
+      "package": "nginx",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     }
+    ]
    },
    "ghcr.io/unxwares/mongosh:2.14.2": {
     "charts": [
@@ -3545,8 +3578,8 @@
      "CRITICAL": 0,
      "HIGH": 4,
      "LOW": 17,
-     "MEDIUM": 38,
-     "UNKNOWN": 3
+     "MEDIUM": 39,
+     "UNKNOWN": 2
     },
     "total": 62,
     "vulnerabilities": [
@@ -3800,6 +3833,14 @@
      },
      {
       "fixed": "",
+      "id": "CVE-2026-84785",
+      "installed": "3.5.9-1~deb13u1",
+      "package": "libssl3t64",
+      "severity": "MEDIUM",
+      "type": "debian"
+     },
+     {
+      "fixed": "",
       "id": "CVE-2026-84786",
       "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
@@ -4037,14 +4078,6 @@
       "package": "libc6",
       "severity": "UNKNOWN",
       "type": "debian"
-     },
-     {
-      "fixed": "",
-      "id": "CVE-2026-84785",
-      "installed": "3.5.9-1~deb13u1",
-      "package": "libssl3t64",
-      "severity": "UNKNOWN",
-      "type": "debian"
      }
     ]
    },
@@ -4085,7 +4118,7 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 0,
+     "MEDIUM": 3,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/pdns-auth:5.1.5",
@@ -4095,11 +4128,36 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 0,
+     "MEDIUM": 3,
      "UNKNOWN": 0
     },
-    "total": 0,
-    "vulnerabilities": []
+    "total": 3,
+    "vulnerabilities": [
+     {
+      "fixed": "2.11.0-r0",
+      "id": "CVE-2026-124317",
+      "installed": "2.10.0-r0",
+      "package": "libexpat",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "2.11.0-r0",
+      "id": "CVE-2026-128241",
+      "installed": "2.10.0-r0",
+      "package": "libexpat",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "2.11.0-r0",
+      "id": "CVE-2026-134703",
+      "installed": "2.10.0-r0",
+      "package": "libexpat",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     }
+    ]
    },
    "ghcr.io/unxwares/pdns-recursor:5.4.9": {
     "charts": [
@@ -4111,7 +4169,7 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 0,
+     "MEDIUM": 3,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/pdns-recursor:5.4.9",
@@ -4121,11 +4179,36 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 0,
+     "MEDIUM": 3,
      "UNKNOWN": 0
     },
-    "total": 0,
-    "vulnerabilities": []
+    "total": 3,
+    "vulnerabilities": [
+     {
+      "fixed": "2.11.0-r0",
+      "id": "CVE-2026-124317",
+      "installed": "2.10.0-r0",
+      "package": "libexpat",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "2.11.0-r0",
+      "id": "CVE-2026-128241",
+      "installed": "2.10.0-r0",
+      "package": "libexpat",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "2.11.0-r0",
+      "id": "CVE-2026-134703",
+      "installed": "2.10.0-r0",
+      "package": "libexpat",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     }
+    ]
    },
    "ghcr.io/unxwares/postgres:17.11-alpine": {
     "charts": [
@@ -4215,7 +4298,7 @@
      "CRITICAL": 1,
      "HIGH": 3,
      "LOW": 5,
-     "MEDIUM": 6,
+     "MEDIUM": 9,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/taiga-back:6.10.2",
@@ -4225,10 +4308,10 @@
      "CRITICAL": 1,
      "HIGH": 3,
      "LOW": 5,
-     "MEDIUM": 6,
+     "MEDIUM": 9,
      "UNKNOWN": 0
     },
-    "total": 15,
+    "total": 18,
     "vulnerabilities": [
      {
       "fixed": "5.2.8, 5.1.14, 4.2.26",
@@ -4311,6 +4394,30 @@
       "type": "python-pkg"
      },
      {
+      "fixed": "2.11.0-r0",
+      "id": "CVE-2026-124317",
+      "installed": "2.10.0-r0",
+      "package": "libexpat",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "2.11.0-r0",
+      "id": "CVE-2026-128241",
+      "installed": "2.10.0-r0",
+      "package": "libexpat",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
+      "fixed": "2.11.0-r0",
+      "id": "CVE-2026-134703",
+      "installed": "2.10.0-r0",
+      "package": "libexpat",
+      "severity": "MEDIUM",
+      "type": "alpine"
+     },
+     {
       "fixed": "5.2.15, 6.0.6",
       "id": "CVE-2026-48587",
       "installed": "3.2.25",
@@ -4388,7 +4495,7 @@
      "CRITICAL": 4,
      "HIGH": 2,
      "LOW": 0,
-     "MEDIUM": 3,
+     "MEDIUM": 4,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/taiga-front:6.10.3",
@@ -4398,10 +4505,10 @@
      "CRITICAL": 4,
      "HIGH": 2,
      "LOW": 0,
-     "MEDIUM": 3,
+     "MEDIUM": 4,
      "UNKNOWN": 0
     },
-    "total": 9,
+    "total": 10,
     "vulnerabilities": [
      {
       "fixed": "1.30.7-r0",
@@ -4474,6 +4581,14 @@
       "package": "nginx",
       "severity": "MEDIUM",
       "type": "alpine"
+     },
+     {
+      "fixed": "1.30.8-r0",
+      "id": "CVE-2026-132779",
+      "installed": "1.30.6-r1",
+      "package": "nginx",
+      "severity": "MEDIUM",
+      "type": "alpine"
      }
     ]
    },
@@ -4528,8 +4643,8 @@
     "total": 14
    }
   },
-  "run_id": 45706539689,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/45706539689",
+  "run_id": 45781754514,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/45781754514",
   "source": "report"
  },
  "files": [
@@ -4696,9 +4811,9 @@
     "fixable": 4,
     "high": 3,
     "low": 5,
-    "medium": 6,
+    "medium": 9,
     "open_fixable": 0,
-    "total": 15
+    "total": 18
    },
    "name": "taiga-back",
    "ref": "ghcr.io/unxwares/taiga-back:6.10.2",
@@ -4788,9 +4903,9 @@
     "fixable": 6,
     "high": 2,
     "low": 0,
-    "medium": 3,
+    "medium": 4,
     "open_fixable": 6,
-    "total": 9
+    "total": 10
    },
    "name": "taiga-front",
    "ref": "ghcr.io/unxwares/taiga-front:6.10.3",
@@ -4880,9 +4995,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 0,
+    "medium": 3,
     "open_fixable": 0,
-    "total": 0
+    "total": 3
    },
    "name": "pdns-auth",
    "ref": "ghcr.io/unxwares/pdns-auth:5.1.5",
@@ -4926,9 +5041,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 0,
+    "medium": 3,
     "open_fixable": 0,
-    "total": 0
+    "total": 3
    },
    "name": "pdns-recursor",
    "ref": "ghcr.io/unxwares/pdns-recursor:5.4.9",
@@ -5066,7 +5181,7 @@
     "fixable": 2,
     "high": 4,
     "low": 17,
-    "medium": 38,
+    "medium": 39,
     "open_fixable": 1,
     "total": 62
    },
@@ -5114,9 +5229,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 1,
+    "medium": 4,
     "open_fixable": 0,
-    "total": 1
+    "total": 4
    },
    "name": "cloudreve",
    "ref": "ghcr.io/unxwares/cloudreve:4.19.1",
@@ -5160,9 +5275,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 0,
+    "medium": 1,
     "open_fixable": 0,
-    "total": 0
+    "total": 1
    },
    "name": "fossflow",
    "ref": "ghcr.io/unxwares/fossflow:1.0.6",
@@ -5262,7 +5377,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-25T21:42:34Z",
+ "latest_result": "2026-11-26T08:18:43Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
