@@ -350,9 +350,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 4,
+      "medium": 1,
       "open_fixable": 0,
-      "total": 4
+      "total": 1
      },
      "image": "ghcr.io/unxwares/cloudreve:4.19.1",
      "name": "cloudreve",
@@ -873,9 +873,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 1,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 1
+      "total": 0
      },
      "image": "ghcr.io/unxwares/fossflow:1.0.6",
      "name": "fossflow",
@@ -1793,12 +1793,12 @@
       "accepted": 1,
       "critical": 0,
       "eosl": false,
-      "fixable": 2,
-      "high": 4,
+      "fixable": 1,
+      "high": 3,
       "low": 17,
       "medium": 39,
-      "open_fixable": 1,
-      "total": 62
+      "open_fixable": 0,
+      "total": 61
      },
      "image": "ghcr.io/unxwares/mongosh:2.14.2",
      "name": "mongosh",
@@ -2068,9 +2068,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 3,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 3
+      "total": 0
      },
      "image": "ghcr.io/unxwares/pdns-auth:5.1.5",
      "name": "pdns-auth",
@@ -2084,9 +2084,9 @@
       "fixable": 0,
       "high": 0,
       "low": 0,
-      "medium": 3,
+      "medium": 0,
       "open_fixable": 0,
-      "total": 3
+      "total": 0
      },
      "image": "ghcr.io/unxwares/pdns-recursor:5.4.9",
      "name": "pdns-recursor",
@@ -2467,9 +2467,9 @@
       "fixable": 4,
       "high": 3,
       "low": 5,
-      "medium": 9,
+      "medium": 6,
       "open_fixable": 0,
-      "total": 18
+      "total": 15
      },
      "image": "ghcr.io/unxwares/taiga-back:6.10.2",
      "name": "taiga-back",
@@ -2846,8 +2846,8 @@
  ],
  "cve_watch": {
   "commit": "cb4cc31179415ebae741045550344f659a830d88",
-  "date": "2026-11-26T08:18:43Z",
-  "event": "schedule",
+  "date": "2026-11-26T13:22:08Z",
+  "event": "workflow_run",
   "images": {
    "docker.io/abrar74774/fossflow:master-b06baad": {
     "charts": [
@@ -3474,7 +3474,7 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 4,
+     "MEDIUM": 1,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/cloudreve:4.19.1",
@@ -3484,10 +3484,10 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 4,
+     "MEDIUM": 1,
      "UNKNOWN": 0
     },
-    "total": 4,
+    "total": 1,
     "vulnerabilities": [
      {
       "fixed": "1.3.6",
@@ -3496,30 +3496,6 @@
       "package": "github.com/mojocn/base64Captcha",
       "severity": "MEDIUM",
       "type": "gobinary"
-     },
-     {
-      "fixed": "2.11.0-r0",
-      "id": "CVE-2026-124317",
-      "installed": "2.10.0-r0",
-      "package": "libexpat",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "2.11.0-r0",
-      "id": "CVE-2026-128241",
-      "installed": "2.10.0-r0",
-      "package": "libexpat",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "2.11.0-r0",
-      "id": "CVE-2026-134703",
-      "installed": "2.10.0-r0",
-      "package": "libexpat",
-      "severity": "MEDIUM",
-      "type": "alpine"
      }
     ]
    },
@@ -3533,7 +3509,7 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/fossflow:1.0.6",
@@ -3543,20 +3519,11 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 1,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 1,
-    "vulnerabilities": [
-     {
-      "fixed": "1.30.8-r0",
-      "id": "CVE-2026-132779",
-      "installed": "1.30.7-r0",
-      "package": "nginx",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/mongosh:2.14.2": {
     "charts": [
@@ -3566,7 +3533,7 @@
     "eosl": false,
     "fixable": {
      "CRITICAL": 0,
-     "HIGH": 2,
+     "HIGH": 1,
      "LOW": 0,
      "MEDIUM": 4,
      "UNKNOWN": 0
@@ -3576,12 +3543,12 @@
     "ours": true,
     "severity": {
      "CRITICAL": 0,
-     "HIGH": 4,
+     "HIGH": 3,
      "LOW": 17,
      "MEDIUM": 39,
      "UNKNOWN": 2
     },
-    "total": 62,
+    "total": 61,
     "vulnerabilities": [
      {
       "fixed": "6.2.1",
@@ -3604,14 +3571,6 @@
       "id": "CVE-2026-124709",
       "installed": "3.5.9-1~deb13u1",
       "package": "libssl3t64",
-      "severity": "HIGH",
-      "type": "debian"
-     },
-     {
-      "fixed": "1.5.7+dfsg-1+deb13u1",
-      "id": "CVE-2026-124851",
-      "installed": "1.5.7+dfsg-1",
-      "package": "libzstd1",
       "severity": "HIGH",
       "type": "debian"
      },
@@ -4118,7 +4077,7 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 3,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/pdns-auth:5.1.5",
@@ -4128,36 +4087,11 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 3,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 3,
-    "vulnerabilities": [
-     {
-      "fixed": "2.11.0-r0",
-      "id": "CVE-2026-124317",
-      "installed": "2.10.0-r0",
-      "package": "libexpat",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "2.11.0-r0",
-      "id": "CVE-2026-128241",
-      "installed": "2.10.0-r0",
-      "package": "libexpat",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "2.11.0-r0",
-      "id": "CVE-2026-134703",
-      "installed": "2.10.0-r0",
-      "package": "libexpat",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/pdns-recursor:5.4.9": {
     "charts": [
@@ -4169,7 +4103,7 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 3,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/pdns-recursor:5.4.9",
@@ -4179,36 +4113,11 @@
      "CRITICAL": 0,
      "HIGH": 0,
      "LOW": 0,
-     "MEDIUM": 3,
+     "MEDIUM": 0,
      "UNKNOWN": 0
     },
-    "total": 3,
-    "vulnerabilities": [
-     {
-      "fixed": "2.11.0-r0",
-      "id": "CVE-2026-124317",
-      "installed": "2.10.0-r0",
-      "package": "libexpat",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "2.11.0-r0",
-      "id": "CVE-2026-128241",
-      "installed": "2.10.0-r0",
-      "package": "libexpat",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "2.11.0-r0",
-      "id": "CVE-2026-134703",
-      "installed": "2.10.0-r0",
-      "package": "libexpat",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     }
-    ]
+    "total": 0,
+    "vulnerabilities": []
    },
    "ghcr.io/unxwares/postgres:17.11-alpine": {
     "charts": [
@@ -4298,7 +4207,7 @@
      "CRITICAL": 1,
      "HIGH": 3,
      "LOW": 5,
-     "MEDIUM": 9,
+     "MEDIUM": 6,
      "UNKNOWN": 0
     },
     "image": "ghcr.io/unxwares/taiga-back:6.10.2",
@@ -4308,10 +4217,10 @@
      "CRITICAL": 1,
      "HIGH": 3,
      "LOW": 5,
-     "MEDIUM": 9,
+     "MEDIUM": 6,
      "UNKNOWN": 0
     },
-    "total": 18,
+    "total": 15,
     "vulnerabilities": [
      {
       "fixed": "5.2.8, 5.1.14, 4.2.26",
@@ -4392,30 +4301,6 @@
       "package": "bleach",
       "severity": "MEDIUM",
       "type": "python-pkg"
-     },
-     {
-      "fixed": "2.11.0-r0",
-      "id": "CVE-2026-124317",
-      "installed": "2.10.0-r0",
-      "package": "libexpat",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "2.11.0-r0",
-      "id": "CVE-2026-128241",
-      "installed": "2.10.0-r0",
-      "package": "libexpat",
-      "severity": "MEDIUM",
-      "type": "alpine"
-     },
-     {
-      "fixed": "2.11.0-r0",
-      "id": "CVE-2026-134703",
-      "installed": "2.10.0-r0",
-      "package": "libexpat",
-      "severity": "MEDIUM",
-      "type": "alpine"
      },
      {
       "fixed": "5.2.15, 6.0.6",
@@ -4643,8 +4528,8 @@
     "total": 14
    }
   },
-  "run_id": 45781754514,
-  "run_url": "https://github.com/UnxWares/helm/actions/runs/45781754514",
+  "run_id": 45828044994,
+  "run_url": "https://github.com/UnxWares/helm/actions/runs/45828044994",
   "source": "report"
  },
  "files": [
@@ -4811,9 +4696,9 @@
     "fixable": 4,
     "high": 3,
     "low": 5,
-    "medium": 9,
+    "medium": 6,
     "open_fixable": 0,
-    "total": 18
+    "total": 15
    },
    "name": "taiga-back",
    "ref": "ghcr.io/unxwares/taiga-back:6.10.2",
@@ -4995,9 +4880,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 3,
+    "medium": 0,
     "open_fixable": 0,
-    "total": 3
+    "total": 0
    },
    "name": "pdns-auth",
    "ref": "ghcr.io/unxwares/pdns-auth:5.1.5",
@@ -5041,9 +4926,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 3,
+    "medium": 0,
     "open_fixable": 0,
-    "total": 3
+    "total": 0
    },
    "name": "pdns-recursor",
    "ref": "ghcr.io/unxwares/pdns-recursor:5.4.9",
@@ -5178,12 +5063,12 @@
     "accepted": 1,
     "critical": 0,
     "eosl": false,
-    "fixable": 2,
-    "high": 4,
+    "fixable": 1,
+    "high": 3,
     "low": 17,
     "medium": 39,
-    "open_fixable": 1,
-    "total": 62
+    "open_fixable": 0,
+    "total": 61
    },
    "name": "mongosh",
    "ref": "ghcr.io/unxwares/mongosh:2.14.2",
@@ -5229,9 +5114,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 4,
+    "medium": 1,
     "open_fixable": 0,
-    "total": 4
+    "total": 1
    },
    "name": "cloudreve",
    "ref": "ghcr.io/unxwares/cloudreve:4.19.1",
@@ -5275,9 +5160,9 @@
     "fixable": 0,
     "high": 0,
     "low": 0,
-    "medium": 1,
+    "medium": 0,
     "open_fixable": 0,
-    "total": 1
+    "total": 0
    },
    "name": "fossflow",
    "ref": "ghcr.io/unxwares/fossflow:1.0.6",
@@ -5377,7 +5262,7 @@
    "upstream": "`docker.io/internetsystemsconsortium/bind9`"
   }
  ],
- "latest_result": "2026-11-26T13:19:32Z",
+ "latest_result": "2026-11-26T13:22:08Z",
  "repository": "UnxWares/helm",
  "signing_key": "7902E52EA435EF27C6432E5378D6B532C599DA9B",
  "site": "https://helm.unxwares.studio"
